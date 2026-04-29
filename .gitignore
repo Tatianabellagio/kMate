@@ -1,0 +1,98 @@
+# =============================================================================
+# .gitignore for hapfire_sv
+# Track: code (.py, .sh), docs (.md), small config (manifests, ecotype lists)
+# Don't track: large intermediate data, fastqs, BAMs, VCFs, npz, plots, logs
+# =============================================================================
+
+# --- caches ---
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+.pytest_cache/
+
+# --- per-tool large outputs (heavy data dirs) ---
+poolfreq/data/
+poolfreq/results/
+poolfreq/tests/logs/
+imputation/work/
+imputation/logs/
+pangenie_test/
+pangenie_genotyping/data/raw_fastqs/
+pangenie_genotyping/logs/
+cactus_panel_overlap/data/*.vcf*
+cactus_panel_overlap/data/*.fastq*
+cactus_panel_overlap/data/*.fq*
+cactus_panel_overlap/logs/
+
+# --- general logs ---
+logs/
+*.out
+*.err
+*.log
+
+# --- large binary / data formats ---
+*.bam
+*.bam.bai
+*.bai
+*.cram
+*.crai
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.tbi
+*.fastq.gz
+*.fq.gz
+*.fastq
+*.fq
+*.fa
+*.fa.fai
+*.fai
+*.fasta
+*.npz
+*.npy
+*.parquet
+*.h5
+*.hdf5
+*.gfa
+*.gfa.gz
+*.gbz
+*.dist
+*.zip
+
+# --- per-record TSVs in results dirs (one per sample, MB-scale) ---
+results/**/per_sample_*/
+poolfreq/results/**/*.tsv
+
+# --- sub-repos (own git history) ---
+sims/visor_freqk/
+
+# --- bulky reference/external dirs (not our code) ---
+HapFIRE/
+papers/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# --- claude ---
+.claude/
+
+# --- but explicitly KEEP small important data files ---
+!data/*.tsv
+!data/*.txt
+!data/*.csv
+!**/manifest*.tsv
+!**/missing*.txt
+!**/*_ecotypes.txt
+!cactus_panel_overlap/data/our_*_to_xwu_*.tsv
+!cactus_panel_overlap/data/ecotype_ids_to_keep*.txt
+
+# --- explicitly KEEP small MD5/SHA files for provenance ---
+!**/*.md5
+!**/*.sha256
