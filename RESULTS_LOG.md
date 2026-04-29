@@ -51,6 +51,40 @@ Plots: `plots/cactus_vs_xwu82_snp_venn.png`, `plots/imputation_panel_design_3way
 
 ---
 
+## 2026-04-29 ~12:00 — Tier 1 root-cause fix VALIDATED on Chr4 (job 57779)
+
+Built a corrected merged VCF from `ref_80 + imputed_151` (instead of the buggy
+`cactus_svs + imputed_151`), rebuilt cn_kmer_v2 + cn_var_v2 for Chr4 only,
+re-ran per_sample_driver in global mode on SEEDMIX_S1 reads.
+
+**Headline numbers vs the old (buggy) version**:
+
+| Metric | OLD (buggy build) | NEW (with cactus SNPs) |
+|---|---|---|
+| **slope** | 1.43 | **1.0031** ✓ |
+| intercept | 0.0034 | 0.00044 |
+| **R² (raw)** | 0.68 | **0.9935** ✓ |
+| Pearson r | 0.984 | 0.9968 |
+| RMSE | 0.071 | 0.0154 |
+
+**Density check** (cactus founders' alt-rate at SNP records, was the root cause):
+
+| | OLD | NEW |
+|---|---|---|
+| cactus founders mean density | 0.0020 | ≈imputed (0.95×) |
+| imputed/cactus density ratio | 50× | 0.95× |
+
+This **conclusively confirms** the 1.43× slope was a build artifact, not a
+fundamental rank-deficiency. **No calibration needed** — slope = 1.003.
+
+**Action**: full-genome rebuild submitted as job **57794** (~10h: ~7.5h for
+the 5 cn_kmer chrom builds + 30 min cn_var). Once done, we have a working
+clean 231-founder Beagle-imputed panel ready for production immediately,
+without waiting for pang_69 / PanGenie. PanGenie path is still preferred
+architecturally (no imputation step) but Tier 1 fix gives a fallback today.
+
+---
+
 ## 2026-04-29 ~11:00 — Deep dive: where does the 1.43× slope come from?
 
 ### Finding 1: cn_var_231 has no SNP genotypes for the 80 cactus founders
