@@ -9,11 +9,20 @@
 
 # =============================================================================
 # preprocess_loo_one.sh
-# Trimmomatic PE + Clumpify dedup for one LOO sample. Conventions match the
-# canonical GrENE-Net pipeline at /home/tbellagio/scratch/pang/grenenet_reads/
-#   - single `pang` conda env (provides both trimmomatic and clumpify)
-#   - same Trimmomatic params (ILLUMINACLIP TruSeq3-PE-2 / SLIDINGWINDOW etc.)
-#   - clumpify -Xmx30g, dedupe=t dupesubs=0 optical=f
+# Trimmomatic PE + Clumpify dedup for one LOO sample. Threshold-matched to
+# xwu's 1001G individual-accession pipeline at
+# /carnegie/nobackup/scratch/xwu/GrENE_net/vcf/sra/commands.sh:
+#   - TruSeq3-PE-2.fa adapter
+#   - ILLUMINACLIP 2:30:10:2:True (minAdapterLength=2, keepBothReads=True)
+#   - LEADING:5 TRAILING:5 MINLEN:36, no SLIDINGWINDOW
+# (xwu's 1001G command is intentionally lighter than the GrENE Pool-seq trim,
+# which uses SLIDINGWINDOW:4:20 — older 1001G data was already lower quality
+# at the ends and over-trimming there loses too many reads.)
+#
+# Dedup: Clumpify (BBTools) — fastq-stage equivalent of xwu's Picard
+# MarkDuplicates step. We don't have aligned BAMs in this pipeline (PanGenie
+# is k-mer based), so a sequence-identity dedup is the appropriate analog.
+#
 # Reads from data/loo_ena_manifest.tsv, writes to data/loo_preprocessed/.
 # =============================================================================
 set -euo pipefail
@@ -60,18 +69,18 @@ TRIM_R2=$TRIMMED_DIR/${ECOTYPE}_2P.fq.gz
 TRIM_U1=$TRIMMED_DIR/${ECOTYPE}_1U.fq.gz
 TRIM_U2=$TRIMMED_DIR/${ECOTYPE}_2U.fq.gz
 
-# Step A: Trimmomatic
+# Step A: Trimmomatic — exact thresholds from xwu's 1001G command
 if [ -n "$RAW_R2" ]; then
     trimmomatic PE -phred33 -threads 5 \
       "$RAW_R1" "$RAW_R2" \
       "$TRIM_R1" "$TRIM_U1" "$TRIM_R2" "$TRIM_U2" \
-      ILLUMINACLIP:"$ADAPT_PE":2:30:10:8:TRUE \
-      SLIDINGWINDOW:4:20 LEADING:5 TRAILING:5 MINLEN:36
+      ILLUMINACLIP:"$ADAPT_PE":2:30:10:2:True \
+      LEADING:5 TRAILING:5 MINLEN:36
 else
     TRIM_SE=$TRIMMED_DIR/${ECOTYPE}.trim.fq.gz
     trimmomatic SE -phred33 -threads 5 "$RAW_R1" "$TRIM_SE" \
       ILLUMINACLIP:"$ADAPT_SE":2:30:10 \
-      SLIDINGWINDOW:4:20 LEADING:5 TRAILING:5 MINLEN:36
+      LEADING:5 TRAILING:5 MINLEN:36
 fi
 
 # Step B: Clumpify dedup (canonical params)

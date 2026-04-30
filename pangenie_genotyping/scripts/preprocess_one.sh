@@ -87,18 +87,23 @@ TRIM_R2=$TRIMMED_DIR/${ECOTYPE}_2P.fq.gz
 TRIM_U1=$TRIMMED_DIR/${ECOTYPE}_1U.fq.gz
 TRIM_U2=$TRIMMED_DIR/${ECOTYPE}_2U.fq.gz
 
+# Trimmomatic — exact thresholds from xwu's 1001G command at
+# /carnegie/nobackup/scratch/xwu/GrENE_net/vcf/sra/commands.sh
+# (lighter trim than the GrENE Pool-seq pipeline: minAdapterLength=2 and no
+# SLIDINGWINDOW; 1001G data was already lower quality at the ends and
+# over-trimming there loses too many reads.)
 if [ -n "$RAW_R2" ]; then
     java -jar $TRIM PE -threads 4 -phred33 \
         $RAW_R1 $RAW_R2 \
         $TRIM_R1 $TRIM_U1 $TRIM_R2 $TRIM_U2 \
-        ILLUMINACLIP:${ADAPT_PE}:2:30:10:8:TRUE \
-        SLIDINGWINDOW:4:20 LEADING:5 TRAILING:5 MINLEN:36
+        ILLUMINACLIP:${ADAPT_PE}:2:30:10:2:True \
+        LEADING:5 TRAILING:5 MINLEN:36
 else
     TRIM_R1=$TRIMMED_DIR/${ECOTYPE}.trim.fq.gz
     java -jar $TRIM SE -threads 4 -phred33 \
         $RAW_R1 $TRIM_R1 \
         ILLUMINACLIP:${ADAPT_SE}:2:30:10 \
-        SLIDINGWINDOW:4:20 LEADING:5 TRAILING:5 MINLEN:36
+        LEADING:5 TRAILING:5 MINLEN:36
 fi
 
 # Step C: Clumpify dedup (same as GrENE-Net)
