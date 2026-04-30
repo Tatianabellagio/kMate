@@ -102,7 +102,8 @@ else
 fi
 
 # Step C: Clumpify dedup (same as GrENE-Net)
-CLUMPIFY=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/clumpify.sh
+# Note: sequencing_pipeline env doesn't have clumpify; use pang env's BBTools install
+CLUMPIFY=/home/tbellagio/miniforge3/envs/pang/bin/clumpify.sh
 if [ -n "$RAW_R2" ]; then
     $CLUMPIFY in=$TRIM_R1 in2=$TRIM_R2 \
         out=$OUT_R1 out2=$OUT_R2 \
