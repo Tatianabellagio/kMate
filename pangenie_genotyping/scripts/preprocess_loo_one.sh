@@ -48,12 +48,6 @@ LINE=$(sed -n "$((IDX+1))p" $MANIFEST)
 ECOTYPE=$(echo "$LINE" | cut -f1)
 RUN=$(echo "$LINE" | cut -f2)
 
-OUT_R1=$PREP_DIR/${ECOTYPE}_1P_dedup.fq.gz
-OUT_R2=$PREP_DIR/${ECOTYPE}_2P_dedup.fq.gz
-if [ -f "$OUT_R1" ] && [ -f "$OUT_R2" ]; then
-    echo "[$(date)] $ECOTYPE already preprocessed, skipping"; exit 0
-fi
-
 ECO_RAW=$RAW_DIR/$ECOTYPE
 RAW_R1=""; RAW_R2=""
 if [ -f "$ECO_RAW/${RUN}_1.fastq.gz" ] && [ -f "$ECO_RAW/${RUN}_2.fastq.gz" ]; then
@@ -65,6 +59,19 @@ else
     echo "ERROR: no raw fastq for $ECOTYPE in $ECO_RAW" >&2; exit 1
 fi
 echo "[$(date)] LOO $ECOTYPE: R1=$(basename $RAW_R1) R2=$(basename ${RAW_R2:-NONE})"
+
+# OUT_R1/OUT_R2 differ between PE (paired _1P/_2P) and SE (single _dedup). Set
+# them after layout detection so the idempotency check matches the actual
+# output filenames written by Clumpify below.
+if [ -n "$RAW_R2" ]; then
+    OUT_R1=$PREP_DIR/${ECOTYPE}_1P_dedup.fq.gz
+    OUT_R2=$PREP_DIR/${ECOTYPE}_2P_dedup.fq.gz
+    [ -f "$OUT_R1" ] && [ -f "$OUT_R2" ] && { echo "[$(date)] $ECOTYPE already preprocessed (PE), skipping"; exit 0; }
+else
+    OUT_R1=$PREP_DIR/${ECOTYPE}_dedup.fq.gz
+    OUT_R2=""
+    [ -f "$OUT_R1" ] && { echo "[$(date)] $ECOTYPE already preprocessed (SE), skipping"; exit 0; }
+fi
 
 TRIMMED_DIR=$PREP_DIR/${ECOTYPE}_trim
 mkdir -p $TRIMMED_DIR
@@ -92,7 +99,7 @@ if [ -n "$RAW_R2" ]; then
     clumpify.sh in1="$TRIM_R1" in2="$TRIM_R2" out1="$OUT_R1" out2="$OUT_R2" \
       dedupe=t dupesubs=0 optical=f -Xmx30g
 else
-    clumpify.sh in="$TRIM_SE" out=$PREP_DIR/${ECOTYPE}_dedup.fq.gz \
+    clumpify.sh in="$TRIM_SE" out="$OUT_R1" \
       dedupe=t dupesubs=0 optical=f -Xmx30g
 fi
 
