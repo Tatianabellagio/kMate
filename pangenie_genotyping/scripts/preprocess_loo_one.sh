@@ -25,9 +25,13 @@
 #
 # Reads from data/loo_ena_manifest.tsv, writes to data/loo_preprocessed/.
 # =============================================================================
-set -euo pipefail
+set -eo pipefail
+# Activate conda *before* `set -u`: the `pang` env's activation hook
+# (cactus_env_vars.sh) does `export PYTHONPATH=...:$PYTHONPATH`, which trips
+# nounset when PYTHONPATH is unset on entry.
 source $(conda info --base)/etc/profile.d/conda.sh
 conda activate pang
+set -u
 
 BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/loo_ena_manifest.tsv
