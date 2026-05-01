@@ -1,0 +1,5 @@
+# Per-task SLURM TSVs (regen via qc_one.sh) and SLURM logs
+output/qc_results/
+logs/
+notebooks/.ipynb_checkpoints/
+notebooks/*.executed.ipynb
