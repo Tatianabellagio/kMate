@@ -4,6 +4,71 @@ Add new findings at the top with timestamp.
 
 ---
 
+## 2026-05-02 — PanGenie genotyping production: validation
+
+End-to-end PanGenie pipeline run on **226 ecotypes** against the new
+135-founder cactus pangenome (`pang_135_pangenie_index`):
+  - 151 main panel = the GrENE-Net founders without long-read assemblies (the
+    actual production deliverable, fills in their SV catalog from short reads)
+  - 78 LOO panel = cactus-overlap GrENE-Net founders (cross-validation
+    against cactus assembly truth)
+  - 75/78 LOO completed; 3 failed because of truncated R2 raw fastqs that
+    the original LOO download didn't catch (9764 / 9837 / 9910)
+
+**Per-ecotype Genotype Concordance (GC) — % of called genotypes that match
+the truth source at overlapping positions:**
+
+| Truth source | Panel | n | GC median | GC IQR | nRD median |
+|---|---|---:|---:|---:|---:|
+| GrENE-Net 231 SNP catalog (independent short-read calls) | main | 151 | **98.36%** | [97.65, 98.74]% | 11.62% |
+| GrENE-Net 231 SNP catalog | LOO | 75 | **99.37%** | [99.16, 99.45]% | 4.59% |
+| Cactus assembly truth (long-read genomes) | LOO | 75 | **98.95%** | [98.58, 99.14]% | 4.14% |
+
+**LOO ecotypes get ~99% concordance against BOTH cactus truth (assembly
+truth) and GrENE-Net truth (independent SNP calls).** Two independent
+truth sources cross-validate PanGenie — the residual ~1% disagreement is
+distributed across both (i.e. neither truth source is the dominant source
+of error), and PanGenie reproduces both.
+
+**Per-size-class for LOO vs cactus** (mean across 75 ecotypes):
+
+| size_class | GC mean | GC median | nRD mean |
+|---|---:|---:|---:|
+| SNP | 98.86% | 99.47% | 9.22% |
+| small_indel | 97.10% | 98.38% | 9.33% |
+| small_sv (50–500bp) | 96.41% | 97.85% | 4.75% |
+| medium_sv (500–5kb) | 97.93% | 98.76% | 2.33% |
+| large_sv (≥5kb) | **98.98%** | 99.39% | 1.09% |
+
+SV-class concordance is uniformly high; large_sv slightly outperforms the
+others (fewer ALT alternatives competing in the bubbles).
+
+**Two outlier groups worth noting:**
+
+1. **8 main-panel low-GC samples (86–95%)**: 9977, 9507, 9985, 10013, 9941,
+   9978, 9944, 9748. All are 2010-era Cao 2011 / Genome Analyzer II
+   submissions with 38–42 bp reads at 1–7× post-trim coverage. PanGenie
+   accuracy tracks input coverage as expected; this is intrinsic source-data
+   limitation, not a pipeline issue.
+
+2. **5 LOO outliers (cactus-truth GC < 92%)**: 7164 (80.7%), 6939 (85.4%),
+   5772 (86.3%), 9947 (89.6%), 9606 (92.2%). To investigate: are they
+   similarly low against GrENE-Net (→ admixture / assembly-vs-resequence
+   sample swap), or only low against cactus (→ cactus assembly mislabel)?
+
+**Files:**
+  - `preprocess_qc/output/grenenet_concordance_aggregate.tsv` — per-ecotype × panel
+  - `preprocess_qc/output/concordance_combined.tsv` — joined cactus + GrENE-Net per ecotype
+  - `pangenie_genotyping/data/loo_concordance/<eco>_{summary,records}.tsv*` — per-ecotype size_class breakdown vs cactus
+
+**Pipeline timings:**
+  - PanGenie-index on pang_135 (5.21M bubbles): 36 min, 34.7 GB peak RSS
+  - PanGenie genotype per sample: ~13–16 min wall, ~27 GB peak RSS, 8 cores
+  - 151 main panel total wall (8-concurrent): ~6 hours
+  - 75 LOO + concordance: ~2 hours
+
+---
+
 ## 2026-04-29 ~10:40 — Cactus 82 ↔ xwu 231 SNP overlap
 
 Replicates the syri-vs-xwu analysis (`/carnegie/nobackup/scratch/tbellagio/freqk_gr/panel_overlap_test/`)
