@@ -27,13 +27,11 @@ BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 PREP_DIR=$BASE/data/preprocessed
 GT_DIR=$BASE/data/genotyped
-mkdir -p $GT_DIR
+TMP_DIR=$BASE/data/tmp_genotype
+mkdir -p $GT_DIR $TMP_DIR
 
-# pang_69 graph index (built once after pang_69 finishes)
-PANG69_DIR=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output
-PANG69_VCF=$PANG69_DIR/pang_1001gplus_all.vcf.gz                # vcfbub-filtered
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
-INDEX_PREFIX=$BASE/data/pang69_pangenie_index    # built by an upstream step
+# Pre-built PanGenie graph index (output of build_pangenie_index.sh).
+INDEX_PREFIX=$BASE/data/pang_135_pangenie_index
 
 IDX=${SLURM_ARRAY_TASK_ID:-1}
 LINE=$(sed -n "$((IDX+1))p" $MANIFEST)
@@ -42,29 +40,36 @@ ECOTYPE=$(echo "$LINE" | cut -f2)
 PREP_R1=$PREP_DIR/${ECOTYPE}_1.dedup.fq.gz
 PREP_R2=$PREP_DIR/${ECOTYPE}_2.dedup.fq.gz
 PREP_SE=$PREP_DIR/${ECOTYPE}.dedup.fq.gz
-OUT_VCF=$GT_DIR/${ECOTYPE}.vcf
+OUT_PREFIX=$GT_DIR/${ECOTYPE}
+OUT_VCF=${OUT_PREFIX}_genotyping.vcf
+TMP_FQ=$TMP_DIR/${ECOTYPE}.fq
 
 if [ -f "${OUT_VCF}.gz" ]; then
     echo "[$(date)] $ECOTYPE: already genotyped"; exit 0
 fi
 
-# Build read input string
+# PanGenie requires UNCOMPRESSED reads in a single file. Decompress + concat
+# PE pairs into one .fq (PanGenie just k-mer counts, doesn't care about pairing).
+trap "rm -f $TMP_FQ" EXIT
+echo "[$(date)] $ECOTYPE: decompress reads -> $TMP_FQ"
 if [ -f "$PREP_R1" ] && [ -f "$PREP_R2" ]; then
-    READS="$PREP_R1 $PREP_R2"
+    zcat "$PREP_R1" "$PREP_R2" > "$TMP_FQ"
 elif [ -f "$PREP_SE" ]; then
-    READS="$PREP_SE"
+    zcat "$PREP_SE" > "$TMP_FQ"
 else
     echo "ERROR: no preprocessed reads for $ECOTYPE" >&2; exit 1
 fi
+ls -lh "$TMP_FQ"
 
-echo "[$(date)] $ECOTYPE: PanGenie genotype against pang_69"
+echo "[$(date)] $ECOTYPE: PanGenie genotype against pang_135"
+PanGenie -f $INDEX_PREFIX -i $TMP_FQ -o $OUT_PREFIX -s $ECOTYPE -t 8 -j 8
 
-# PanGenie genotype: takes pre-built index + reads + sample name → VCF
-PanGenie -i $READS -r $REF -v $PANG69_VCF -o $OUT_VCF -s $ECOTYPE -t 8 -j 8
-
-# Compress + index the output VCF
-bgzip -f $OUT_VCF
-tabix -p vcf ${OUT_VCF}.gz
+# PanGenie writes <prefix>_genotyping.vcf — compress + index it. The pangenie
+# conda env doesn't ship bgzip/tabix, so reach into the pang env directly.
+BGZIP=/home/tbellagio/miniforge3/envs/pang/bin/bgzip
+TABIX=/home/tbellagio/miniforge3/envs/pang/bin/tabix
+$BGZIP -f $OUT_VCF
+$TABIX -p vcf ${OUT_VCF}.gz
 
 echo "[$(date)] $ECOTYPE: DONE"
 ls -lh ${OUT_VCF}.gz
