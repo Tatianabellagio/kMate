@@ -4,6 +4,50 @@ Add new findings at the top with timestamp.
 
 ---
 
+## 2026-05-03 — PanGenie het rate is mostly artifact, not biology — sticking with carrier-status cn
+
+Question: would moving from carrier-status cn (any-alt = 1) to dose-aware cn (sum/ploidy) recover meaningful information for the pool-seq frequency model? Specifically: what's the true het rate in our 151 PanGenie-genotyped ecotypes?
+
+**Per-sample het distribution (151 ecotypes):**
+
+| metric | value |
+|---|---|
+| total called records | 787M (151 × 5.21M) |
+| het as % of all called | **1.20%** |
+| het as % of *alt-carrying* records | **10.04%** |
+| median per-sample het | **0.89%** |
+| max per-sample het | 6.22% (sample 9507) |
+| ecotypes with het ≥ 2% | 15 / 151 (10%) |
+| ecotypes with het ≥ 5% | 2 / 151 (1.3%) |
+
+**Key finding — het correlates strongly with disagreement vs GrENE-Net independent calls:**
+
+```
+Pearson correlation: het_pct vs (1 - GC_vs_GrENE-Net) = 0.958
+```
+
+Het bins vs median GC vs GrENE-Net:
+
+| het bin | n | median GC | median nRD |
+|---|---|---|---|
+| <0.5% | 7 | **99.41%** | 4.5% |
+| 0.5–1% | 81 | 98.64% | 10% |
+| 1–2% | 48 | 97.68% | 16% |
+| 2–3% | 8 | 95.83% | 25% |
+| **≥3%** | 7 | **92.32%** | 45% |
+
+The 6 of top-10 most-het samples are exactly our flagged Cao 2011 GAII low-quality libraries (9507, 9977, 9985, 10013, 9941, 9978). Their "het" is PanGenie returning ambiguous calls on noisy short reads, not real heterozygosity — confirmed because their GrENE-Net concordance also drops.
+
+**Implications for cn matrix design:**
+
+1. True biological het rate in clean inbred *A. thaliana* lines is **probably <0.5%** (the lowest-het bin in our data is at 0.29-0.49% het, and even those samples have ~99.4% concordance — most "het" calls below that floor are quiet noise).
+2. Going dose-aware (cn = sum/ploidy giving 0.5 for het, 1.0 for hom_alt) would propagate PanGenie's call noise on the ~10% of panel that's high-het.
+3. The pool-seq f_SV impact of staying carrier-status vs dose-aware is at most **~5% relative AF error** for typical SVs, mostly driven by noise rather than real biology.
+
+**Decision: stick with carrier-status cn.** Don't rebuild the pangenome diploid, don't upgrade the cn-builder to dose-aware. Better strategy is to drop or downweight the 15 high-het founders (mostly Cao 2011 GAII) in downstream analyses if needed.
+
+---
+
 ## 2026-05-02 — PanGenie genotyping production: validation
 
 End-to-end PanGenie pipeline run on **226 ecotypes** against the new
