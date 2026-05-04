@@ -4,6 +4,81 @@ Add new findings at the top with timestamp.
 
 ---
 
+## 2026-05-03 — Beagle imputation hurts SV accuracy — reverting to pre-imputation merged VCF
+
+Tested whether Beagle 5.5 imputation of the merged 231-founder VCF
+(`founders_231_chr.vcf.gz`) improves or degrades concordance against PanGenie
+LOO short-read calls. **It degrades — consistently and significantly for SVs.**
+
+**Setup:**
+- Pre-imputation merged VCF had 18.5% records with ≥1 missing GT (mostly
+  cactus haploid `.` from assembly bubble-traversal absence; 0.19% PanGenie-side).
+- Ran Beagle 5.5 per-chromosome (xwu's `ne=10000` parameter, default cM
+  windows), pre-step diploidized cactus haploid + decomposed multi-allelic via
+  `bcftools norm -m -any`. Output: `founders_231_imputed.vcf.gz` (6.43M
+  biallelic records, 0 missing).
+- Re-merged biallelic→multi-allelic with `bcftools norm -m +` → 4.96M records
+  for apples-to-apples comparison with the original LOO test.
+- Re-ran loo_concordance.py for each of 75 LOO ecotypes against this imputed
+  multi-allelic truth.
+
+**Results — concordance vs imputed truth is WORSE than vs cactus assembly truth:**
+
+| comparison | median GC | IQR |
+|---|---:|---:|
+| vs cactus assembly truth (pre-imputation) | **98.95%** | [98.58, 99.14] |
+| vs imputed multi-allelic truth (post-imputation) | **92.55%** | [92.12, 92.89] |
+| Δ | **−6.31pp** | 0/75 ecotypes improved |
+
+**Per size class — Beagle hurts MORE for SVs:**
+
+| size_class | orig GC | imputed GC | Δ | orig nRD | imputed nRD |
+|---|---:|---:|---:|---:|---:|
+| SNP | 98.86% | 98.33% | −0.5pp | 9.2% | 11.6% |
+| small_indel | 97.10% | 88.27% | −8.8pp | 9.3% | 39.8% |
+| **small_sv** | **96.41%** | **66.46%** | **−29.9pp** | 4.7% | 46.5% |
+| **medium_sv** | **97.93%** | **73.25%** | **−24.7pp** | 2.3% | 30.7% |
+| large_sv | 98.98% | 89.89% | −9.1pp | 1.1% | 10.9% |
+
+**Interpretation:**
+
+Beagle preserves cactus's observed (non-missing) calls perfectly. The
+disagreement is concentrated at cells where cactus had `.` (haploid no-path).
+At those cells, Beagle imputes from SNP-haplotype LD across the panel, while
+PanGenie short-read k-mer evidence has a direct call. **For SVs (especially
+small_sv 50-500bp and medium_sv 500-5kb) Beagle's LD-based guesses strongly
+disagree with PanGenie's direct short-read evidence — PanGenie is more
+trustworthy at the SV missing cells.**
+
+This matches a reasonable biological prior: cactus haploid `.` is not the
+same as missing-by-quality. It means "this assembly's path doesn't traverse
+this bubble" — closer to "no alt allele present" than to "unknown". Filling
+with Beagle's LD-based guess at SVs loses information rather than recovers
+it.
+
+**Decision: revert to using the pre-imputation merged VCF as the production
+deliverable.** `pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`
+(231 samples, 5.21M records, 18.5% records with cactus-side haploid `.`).
+The cn-builder (`build_cn_var.py`) treats missing as carrier=False, which is
+biologically correct for haploid `.` (the assembly didn't carry alt at this
+bubble). Imputed VCFs (`work_merged/founders_231_imputed*.vcf.gz`) kept on
+disk for posterity but not used downstream.
+
+**xwu's Beagle pattern works fine for SNPs** (only −0.5pp degradation, mostly
+imputation noise). The issue is unique to SVs and is consistent with general
+SV-imputation literature: LD around SVs is weaker, multi-allelic structure
+is harder for the HMM, and the haplotype reference panel here only contains
+80 directly-observed founders (the rest are PanGenie-genotyped, which Beagle
+treats no differently from the cactus side).
+
+**Files:**
+  - `pangenie_genotyping/data/loo_concordance/`           pre-imputation LOO concord
+  - `pangenie_genotyping/data/loo_concordance_imputed/`   post-imputation LOO concord (this entry)
+  - `imputation/work_merged/founders_231_imputed.vcf.gz`  Beagle output (kept for reference; NOT used in production)
+  - `imputation/work_merged/founders_231_imputed_multiallelic.vcf.gz`  bcftools norm -m + version
+
+---
+
 ## 2026-05-03 — PanGenie het rate is mostly artifact, not biology — sticking with carrier-status cn
 
 Question: would moving from carrier-status cn (any-alt = 1) to dose-aware cn (sum/ploidy) recover meaningful information for the pool-seq frequency model? Specifically: what's the true het rate in our 151 PanGenie-genotyped ecotypes?
