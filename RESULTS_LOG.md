@@ -4,7 +4,146 @@ Add new findings at the top with timestamp.
 
 ---
 
+## 2026-05-06 — Literature confirms: keep PanGenie SVs unimputed as the production standard
+
+After our 2026-05-03 finding that Beagle imputation degrades SV concordance
+(−25 to −30pp on small/medium SVs), I checked the literature to validate the
+decision. **Three independent data points confirm: don't impute SVs that
+already have direct PanGenie genotype calls.**
+
+**1. Cattle pangenome paper (Crysnanto et al. 2024, Genome Research, PMC10984387)**
+   — same architecture we're using, applied at scale on hundreds of cattle.
+   - Workflow: PanGenie genotypes SVs from short reads → DeepVariant calls
+     small variants → **Beagle is applied ONLY to small variants from
+     DeepVariant, not to PanGenie SVs**.
+   - 85% concordance vs HiFi reads for common SVs (MAF >0.1) using direct
+     PanGenie calls — sufficient that they didn't add an imputation step.
+
+**2. French dairy cattle SV imputation study (Roboubi et al., bioRxiv 2026)**
+   — explicitly benchmarked Beagle 5.4 / Minimac 4 / GLIMPSE 2 on SV imputation:
+   - Deletions:    0.79 concordance
+   - Insertions:   0.79 concordance
+   - **Duplications: 0.14 concordance** (essentially failed)
+   Compared to typical SNP imputation r² > 0.95.
+
+**3. SV imputation field consensus** (eLife 2024, Nat Commun 2024 rare-disease
+   paper, PanGenie original 2022): SV imputation accuracy is "a developing
+   area with room for improvement, particularly for multi-allelic structural
+   variants". Direct pangenome-based genotyping (PanGenie, KAGE) is
+   recommended over LD-based SV imputation when short-read coverage is
+   sufficient (≥10×).
+
+**Production decision (locked in):**
+
+| variant class | production source | rationale |
+|---|---|---|
+| **SVs (≥50bp)** | **PanGenie direct calls — no Beagle** | Cattle 2024 workflow precedent; our −25 to −30pp Beagle degradation; literature consensus; haploid `.` is biologically meaningful (assembly didn't traverse bubble), not missing-by-quality |
+| Small indels | PanGenie direct calls | Borderline (Beagle marginal effect) — keep unimputed for consistency |
+| SNPs | PanGenie direct calls in production VCF; **separate Beagle-imputed SNP-only VCF** can be produced for downstream tools that need full coverage (e.g., hapFIRE) | Beagle SNP imputation is well-validated (our −0.5pp drop is noise); xwu's standard hapFIRE pipeline imputes SNPs only |
+
+**THE GOLDEN-STANDARD VCF:**
+
+```
+pangenie_genotyping/data/merged/founders_231_chr.vcf.gz
+  - 231 founder samples (80 cactus assembly genotypes + 151 PanGenie short-read calls)
+  - 5,214,959 records
+  - SVs + small indels + SNPs in one multi-allelic catalog
+  - cactus-side haploid `.` PRESERVED (carries biological "no path through bubble" info)
+  - PanGenie-side ~0.01% missing
+  - downstream cn-builder treats missing as carrier=False (correct interpretation)
+```
+
+The Beagle-imputed VCFs (`imputation/work_merged/founders_231_imputed*.vcf.gz`)
+remain on disk for reference but are NOT used for production downstream.
+
+**Sources:**
+- Crysnanto et al. 2024, *Genome Research* 34:300 — PMC10984387
+- Roboubi et al. 2026, bioRxiv 10.64898/2026.01.18.700144
+- Ebler et al. 2022, *Nature Genetics* — original PanGenie
+- Yan et al. 2024, *Nat Commun* — Pangenome graphs in rare-disease SV analysis
+
+---
+
+## 2026-05-03 evening — bigld_haplotype design and rationale
+
+In-progress new mode `--block-mode bigld_haplotype` for `cactus_em`. Goal:
+push fine-block accuracy past `bigld_panel` and `hapfire_perblock`
+specifically in the recombination-heavy regimes where current methods
+underperform window_200kb.
+
+**Why a new mode** — stratified recomb-sim numbers (chr1 only):
+
+| | n=200, g=1 | n=50, g=1 | n=50, g=3 |
+|---|---|---|---|
+| global | 0.993 | 0.974 | 0.917 |
+| window_200kb | 0.982 | 0.969 | **0.946** |
+| bigld_panel | 0.868 | 0.863 | 0.838 |
+| hapfire_perblock | 0.987 | 0.963 | 0.882 |
+
+Under heavy recomb (g=3), neither bigld method beats window_200kb. At
+fine-block resolution, current cactus_em (`bigld_panel` mode) lacks
+discriminative k-mer signal because PanGenie's bubble-local-unique filter
+keeps only ~1-60 k-mers per ~7kb block. hapFIRE's HARP runs at COARSE
+independent LD blocks (~13 multi-Mb per chrom), then PROPAGATES analytically
+to fine blocks — that propagation breaks under heavy recomb (intact-coarse
+assumption fails).
+
+**Approach**:
+
+1. Use the BigLD block index ONLY for `(chrom, start, end)` positions
+   (~4,123 blocks on Chr1, median 963 bp, 7kb mean).
+2. Per block, hash all 231 founder FASTA slices (Beagle-imputed FASTAs,
+   so they include SV alleles).
+3. **Dedup founders by their actual k-mer set** — founders with identical
+   block sequences (same SNPs AND same SVs) collapse to one class.
+   Founders with same SNPs but different SVs become DIFFERENT classes,
+   so SV-distinguishing k-mers drive their separation in the EM.
+4. Within-block discriminative filter (1 ≤ #carriers ≤ #classes-1) +
+   cross-block dedup (drop k-mers shared across blocks).
+5. Per pool-seq sample, count kept k-mers and run EM on the
+   sequence-unique class simplex per block. Project `h_class → h_founder`
+   via founder_to_class with equal split among founders in each class.
+6. AF projection through `cn_var_231_v2` is unchanged.
+
+**Single-block smoke test signal density** (vs current bigld_panel):
+
+| | typical 7kb block (229 SNPs, 64 haps) | small 297bp block (15 SNPs, 22 haps) |
+|---|---|---|
+| PanGenie cn_full (current bigld_panel) | 61 k-mers | 1 k-mer |
+| Block-haplotype cn (this mode) | 73,816 k-mers | 5,873 k-mers |
+| Discrimination factor (K / n_uniq) | 1153× | 267× |
+
+So per-block evidence is ~1,000× richer than the current bigld_panel cn_full,
+which is what unlocks robust EM at fine-block resolution.
+
+**Status**: builder + driver written; full Chr1 build + sim re-runs pending.
+
+**Files**:
+- `poolfreq/scripts/build_block_haplotype_cn.py` — Chr-wide builder
+- `poolfreq/src/block_haplotype_em.py` — per-chrom EM driver
+- `poolfreq/src/per_sample_bigld_haplotype.py` — per-sample driver
+- `sims/visor_freqk/scripts/run_cem_bigld_haplotype.sh` — SLURM wrapper
+- `compare_recomb_stratified.py` — already includes `bigld_haplotype` in
+  the methods set
+
+**Caveat**: `cn_var_231_v2` IS Beagle-imputed (not pre-imputation). The
+2026-05-03 morning entry below about Beagle reverts applies to a different
+cn_var build for the PanGenie 226-eco panel, NOT to the cn_var_231_v2
+used here. See memory file `project_cn_var_231_v2_is_beagle_imputed.md`.
+
+---
+
 ## 2026-05-03 — Beagle imputation hurts SV accuracy — reverting to pre-imputation merged VCF
+
+> **Scope note (added 2026-05-03 evening)**: this entry concerns the
+> PanGenie 226-eco genotyping panel deliverable
+> (`pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`) and its derived
+> cn_var. It does NOT apply to `poolfreq/data/cn_var_231_v2.cn_var.npz`,
+> which IS Beagle-imputed (verified: 64.5% of SV records have imputed-founder
+> carriers in cn_var_231_v2; pre-imputation would show ~0). The recomb sims
+> and the new `bigld_haplotype` mode use cn_var_231_v2 (Beagle-imputed) and
+> the matching Beagle-imputed `founder_fastas_231/`, so that pipeline is
+> internally consistent with imputed SVs included.
 
 Tested whether Beagle 5.5 imputation of the merged 231-founder VCF
 (`founders_231_chr.vcf.gz`) improves or degrades concordance against PanGenie
