@@ -2,8 +2,8 @@
 #SBATCH --job-name=val_v2
 #SBATCH --partition=bse
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=128G
-#SBATCH --time=4:00:00
+#SBATCH --mem=256G
+#SBATCH --time=6:00:00
 #SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/imputation/logs/val_v2_%j.out
 #SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/imputation/logs/val_v2_%j.err
 

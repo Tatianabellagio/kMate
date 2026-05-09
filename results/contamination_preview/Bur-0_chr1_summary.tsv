@@ -1,0 +1,2 @@
+accession	n_asm_kmers	n_panel_kmers	n_common	n_asm_only	n_panel_only	frac_in_panel	jaccard
+Bur-0	29063728	20788617	2779956	26283772	18008661	0.0957	0.0591

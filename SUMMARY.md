@@ -1,5 +1,21 @@
 # hapFIRE-projection for SV allele frequencies — findings
 
+> **Status note (2026-05-07): historical document, preserved for context.**
+> The hapFIRE-projection approach described below was the original deliverable
+> (Chr1 simulation + 8-sample SEEDMIX). The pipeline has since pivoted to the
+> **`cactus_em` end-to-end recipe** for production. For current authoritative
+> results read in this order:
+>
+> 1. `HANDOFF.md` (TL;DR + production recipe + what's pending)
+> 2. `FINAL_RESULTS.ipynb` and `FINAL_RESULTS_cov10.ipynb` (head-to-head benchmarks)
+> 3. `RESULTS_LOG.md` (chronological reasoning, 2026-05-06 / 2026-05-07 entries)
+>
+> The numbers in this file remain factually correct for the original
+> `hapFIRE-proj` method on the no-recomb sim and SEEDMIX, but they are NOT the
+> production deliverable — the production pipeline now uses
+> `cactus_em --block-mode window --window-bp 10000 --global-anchor-weight 0.3
+> --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5` (locked in 2026-05-07).
+
 ## Method (one line)
 
 Run hapFIRE on SNPs as published, then project the recovered ecotype-frequency vector onto SVs via a precomputed founder × SV genotype matrix:

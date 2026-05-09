@@ -1,0 +1,5 @@
+# Per-record TSVs are 30-50 MB each — regen via scripts/classify_records.py
+output/*.records.tsv
+# Notebook execution intermediates
+notebooks/*.executed.ipynb
+notebooks/.ipynb_checkpoints/

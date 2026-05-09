@@ -86,6 +86,7 @@ def run_one_sample(
     bubble_meta: dict | None = None,     # required for block_mode="window":
                                          #   keys bubble_id, bubble_chrom,
                                          #   bubble_start, bubble_end
+    global_anchor_weight: float = 0.0,   # NEW: λ for per-window EM anchor toward h_global
 ):
     """Run the full pipeline on one sample.
 
@@ -145,6 +146,7 @@ def run_one_sample(
             counts.astype(np.float32), cn_dense, kmer_block, n_blocks,
             cov, em_max_iter=em_max_iter, tol=1e-7,
             min_kmers_per_block=200, verbose=True,
+            global_anchor_weight=global_anchor_weight,
         )
         print(f"  block-EM total: {time.time()-t:.0f}s "
               f"({(status==0).sum()}/{n_blocks} local fits, "
@@ -227,6 +229,11 @@ if __name__ == "__main__":
                          "global: single genome-wide h.")
     ap.add_argument("--window-bp", type=int, default=200_000,
                     help="window size for block_mode=window (default 200 kb)")
+    ap.add_argument("--global-anchor-weight", type=float, default=0.0,
+                    help="λ for per-window EM Dirichlet anchor toward chrom-wide "
+                         "h_global. 0 = legacy MLE (default). 0.05–0.5 = mild "
+                         "anchor — helps low-evidence windows match the global "
+                         "solution while letting high-evidence windows adapt.")
     args = ap.parse_args()
 
     (cn_kmer, kmer_index, bubble_id, bubble_chrom,
@@ -250,4 +257,5 @@ if __name__ == "__main__":
     run_one_sample(cn_kmer, kmer_index, cn_var, var_meta, founders,
                     reads, args.sample, args.out, threads=args.threads,
                     block_mode=args.block_mode, window_bp=args.window_bp,
-                    bubble_meta=bubble_meta)
+                    bubble_meta=bubble_meta,
+                    global_anchor_weight=args.global_anchor_weight)

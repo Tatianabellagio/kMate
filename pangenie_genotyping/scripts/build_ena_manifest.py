@@ -78,9 +78,17 @@ def pick_best(rows: list[dict]) -> dict | None:
 
 
 def main():
+    import argparse
     DATA = Path(__file__).parent.parent / "data"
-    eco_list = [l.strip() for l in open(DATA/"missing_151_ecotypes.txt") if l.strip()]
-    print(f"Querying ENA for {len(eco_list)} ecotypes...")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--in", dest="in_path", default=str(DATA/"missing_151_ecotypes.txt"),
+                    help="newline-delimited list of ecotype IDs")
+    ap.add_argument("--out-manifest", default=str(DATA/"ena_manifest.tsv"))
+    ap.add_argument("--out-missing", default=str(DATA/"ena_missing.tsv"))
+    args = ap.parse_args()
+
+    eco_list = [l.strip() for l in open(args.in_path) if l.strip()]
+    print(f"Querying ENA for {len(eco_list)} ecotypes from {args.in_path}...")
 
     manifest = []
     missing = []
@@ -107,24 +115,21 @@ def main():
                 "instrument_model": best.get("instrument_model", ""),
             })
 
-    # Write manifest
-    out = DATA / "ena_manifest.tsv"
     cols = ["ecotype_id", "run_accession", "study_accession", "fastq_ftp",
             "fastq_md5", "base_count", "read_count", "library_strategy",
             "library_layout", "instrument_model"]
-    with open(out, "w") as f:
+    with open(args.out_manifest, "w") as f:
         f.write("\t".join(cols) + "\n")
         for r in manifest:
             f.write("\t".join(str(r[c]) for c in cols) + "\n")
-    print(f"\nWrote manifest: {out}  ({len(manifest)} ecotypes)")
+    print(f"\nWrote manifest: {args.out_manifest}  ({len(manifest)} ecotypes)")
 
     if missing:
-        out2 = DATA / "ena_missing.tsv"
-        with open(out2, "w") as f:
+        with open(args.out_missing, "w") as f:
             f.write("ecotype_id\tn_total_rows\n")
             for r in missing:
                 f.write(f"{r['ecotype_id']}\t{r['n_total_rows']}\n")
-        print(f"Wrote missing list: {out2}  ({len(missing)} ecotypes)")
+        print(f"Wrote missing list: {args.out_missing}  ({len(missing)} ecotypes)")
 
     # Summary stats
     if manifest:
