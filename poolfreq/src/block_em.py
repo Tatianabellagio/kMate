@@ -38,23 +38,35 @@ class BlockSpec:
         return f"{self.chrom}:{self.start}-{self.end}"
 
 
-def define_windows(bubble_chrom, bubble_start, bubble_end, window_bp=200_000):
+def define_windows(bubble_chrom, bubble_start, bubble_end,
+                   window_bp=200_000, window_step: int | None = None):
     """Define fixed-bp windows covering all bubbles.
 
+    Args:
+        window_bp: width of each window in bp.
+        window_step: step between window starts. If None or == window_bp, windows
+            are disjoint (legacy behaviour). If < window_bp, windows overlap by
+            (window_bp - window_step). E.g. window_bp=10000, window_step=3000 →
+            10 kb windows stepping every 3 kb, each k-mer in ~3-4 covering
+            windows. Used for Route 2 (overlapping-window smoothing).
+
     Returns list of BlockSpec tuples, ordered by (chrom, start).
-    Each window covers the genomic range [start, start+window_bp).
     """
+    if window_step is None:
+        window_step = window_bp
+    if window_step <= 0:
+        raise ValueError(f"window_step must be > 0, got {window_step}")
     blocks = []
     for chrom in sorted(set(bubble_chrom)):
         m = bubble_chrom == chrom
         if not m.any():
             continue
         chrom_max = int(bubble_end[m].max())
-        n_w = (chrom_max + window_bp - 1) // window_bp
+        n_w = (chrom_max + window_step - 1) // window_step
         for w in range(n_w):
-            blocks.append(BlockSpec(chrom=chrom,
-                                     start=w * window_bp + 1,
-                                     end=(w + 1) * window_bp))
+            start = w * window_step + 1
+            end = start + window_bp - 1
+            blocks.append(BlockSpec(chrom=chrom, start=start, end=end))
     return blocks
 
 
@@ -65,6 +77,10 @@ def assign_kmers_to_blocks(kmer_bubble_id, bubble_chrom, bubble_start,
     A k-mer is assigned to the block whose [start, end] range overlaps its
     bubble centroid. Bubbles spanning a block boundary are assigned to the
     block containing their start.
+
+    NOTE: this returns a 1D K-vec assuming disjoint windows (each k-mer in
+    exactly one block). For OVERLAPPING windows use
+    `assign_kmers_to_blocks_multi` instead, which returns a per-block list.
     """
     K = len(kmer_bubble_id)
     bubble_centroid = (bubble_start + bubble_end) // 2
@@ -93,6 +109,53 @@ def assign_kmers_to_blocks(kmer_bubble_id, bubble_chrom, bubble_start,
     # Map k-mers via their bubble_id
     kmer_block = bubble_block[kmer_bubble_id]
     return kmer_block
+
+
+def assign_kmers_to_blocks_multi(kmer_bubble_id, bubble_chrom, bubble_start,
+                                  bubble_end, blocks):
+    """For each k-mer, return ALL block indices containing its bubble centroid.
+
+    Used for overlapping windows where each k-mer participates in 2+ EM solves.
+
+    Returns:
+        block_kmer_idx: list of length n_blocks; entry b is an int64 array of
+            k-mer indices that belong to block b.
+    """
+    bubble_centroid = (bubble_start + bubble_end) // 2
+
+    # Per-chrom: sorted (start, end, block_idx) triples + arrays for searchsorted
+    chrom_blocks: dict[str, list[tuple[int, int, int]]] = {}
+    for i, b in enumerate(blocks):
+        chrom_blocks.setdefault(b.chrom, []).append((b.start, b.end, i))
+    for c in chrom_blocks:
+        chrom_blocks[c].sort()
+
+    n_blocks = len(blocks)
+    # Per-bubble: list of block indices
+    bubble_blocks: list[list[int]] = [[] for _ in range(len(bubble_chrom))]
+    for b_idx in range(len(bubble_chrom)):
+        c = str(bubble_chrom[b_idx])
+        p = int(bubble_centroid[b_idx])
+        if c not in chrom_blocks:
+            continue
+        # Walk blocks (sorted by start) — they're contiguous in start order.
+        # Worst-case O(blocks/chrom) per bubble; still cheap for ~10k windows.
+        for s, e, idx in chrom_blocks[c]:
+            if s > p:
+                break  # sorted by start; nothing later contains p
+            if p <= e:
+                bubble_blocks[b_idx].append(idx)
+
+    # Build block_kmer_idx by inverting bubble_blocks via kmer_bubble_id
+    # First, accumulate (kmer_id, block_id) pairs efficiently:
+    # for each k-mer, all of its bubble's blocks.
+    block_kmer_lists: list[list[int]] = [[] for _ in range(n_blocks)]
+    for k in range(len(kmer_bubble_id)):
+        b_idx = int(kmer_bubble_id[k])
+        for blk in bubble_blocks[b_idx]:
+            block_kmer_lists[blk].append(k)
+    block_kmer_idx = [np.asarray(lst, dtype=np.int64) for lst in block_kmer_lists]
+    return block_kmer_idx
 
 
 def assign_records_to_blocks(record_chrom, record_pos, blocks):
@@ -266,7 +329,9 @@ def solve_em_clustered_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
 def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
                        coverage, em_max_iter=200, tol=1e-7,
                        min_kmers_per_block=200, verbose=False,
-                       n_workers=4):
+                       n_workers=4,
+                       global_anchor_weight: float = 0.0,
+                       block_kmer_idx_override: list | None = None):
     """Run EM independently per block.
 
     Args:
@@ -279,6 +344,10 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
             back to a global-h estimate (their h is undefined locally).
         n_workers: thread workers for per-block EM (numpy releases GIL during
             BLAS, so threading shares memory. Default 4. Set to 1 for serial.)
+        global_anchor_weight: λ ≥ 0. If > 0, per-block EM is solved with a
+            Dirichlet pseudocount centered on `global_h` (the chrom-wide EM
+            solution that's already computed for fallback). λ = 0 → pure
+            per-window MLE (legacy behaviour). 0.05–0.5 = mild anchor.
 
     Returns:
         h_blocks: (n_blocks, F) float32 — per-block ancestry vectors. For
@@ -305,14 +374,29 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
     if verbose:
         print(f"    global EM: {info['iterations']} iters, {time.time()-t:.0f}s",
               flush=True)
+        if global_anchor_weight > 0:
+            print(f"    global_anchor_weight λ={global_anchor_weight} — "
+                  f"per-window EM will be anchored toward h_global",
+                  flush=True)
 
     nz = counts > 0
     t0 = time.time()
 
-    # Pre-compute per-block masks once (avoid redundant kmer_block == b scans)
-    block_kmer_idx = [None] * n_blocks
-    for b in range(n_blocks):
-        block_kmer_idx[b] = np.flatnonzero(kmer_block == b)
+    # Pre-compute per-block masks once. Use override (overlapping windows)
+    # if provided; otherwise build from the legacy 1D kmer_block scheme.
+    if block_kmer_idx_override is not None:
+        block_kmer_idx = block_kmer_idx_override
+        if verbose:
+            n_kmers_in_some_block = sum(len(idx) for idx in block_kmer_idx)
+            print(f"  using overlapping-window block_kmer_idx: "
+                  f"{n_kmers_in_some_block:,} (kmer, block) pairs across "
+                  f"{n_blocks} blocks "
+                  f"(avg {n_kmers_in_some_block/max(1,n_blocks):.0f} kmers/block)",
+                  flush=True)
+    else:
+        block_kmer_idx = [None] * n_blocks
+        for b in range(n_blocks):
+            block_kmer_idx[b] = np.flatnonzero(kmer_block == b)
 
     def _fit_one(b):
         idxs = block_kmer_idx[b]
@@ -323,7 +407,14 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
             return b, global_h, 1
         cn_b = np.ascontiguousarray(cn_kmer_dense[:, idxs_nz])
         c_b = counts[idxs_nz]
-        h_b, _ = solve_em(c_b, cn_b, coverage, max_iter=em_max_iter, tol=tol)
+        if global_anchor_weight > 0:
+            h_b, _ = solve_em(c_b, cn_b, coverage,
+                              max_iter=em_max_iter, tol=tol,
+                              prior_h=global_h,
+                              prior_weight=global_anchor_weight)
+        else:
+            h_b, _ = solve_em(c_b, cn_b, coverage,
+                              max_iter=em_max_iter, tol=tol)
         return b, h_b.astype(np.float32), 0
 
     # Limit per-thread BLAS to avoid oversubscription. n_workers × inner_threads
@@ -350,6 +441,119 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
               f"(workers={n_workers}, inner_threads={inner_threads})",
               flush=True)
     return h_blocks, block_status, global_h
+
+
+def project_blocks_to_records_overlap(h_blocks, block_status, global_h,
+                                       cn_var, blocks,
+                                       record_chrom, record_pos,
+                                       eps_bp: float = 100.0):
+    """Project per-block h to per-record AFs using INVERSE-DISTANCE AVERAGING
+    across all blocks that COVER the record.
+
+    For overlapping windows (Route 2): each record at position p is inside ~3
+    windows; compute h_r as the inverse-distance-weighted average of those
+    windows' h vectors, then project alt_freq = h_r @ cn_var[:, r].
+
+    Args:
+        h_blocks, block_status, global_h: as in project_blocks_to_records
+        blocks: list of BlockSpec
+        record_chrom, record_pos: per-record metadata
+        eps_bp: small offset to inverse-distance weights so a record exactly
+            at a window center doesn't blow up; ε=100 bp matches the typical
+            window step granularity.
+    """
+    N = cn_var.shape[1]
+    out = np.zeros(N, dtype=np.float64)
+    record_chrom = np.asarray(record_chrom)
+    record_pos = np.asarray(record_pos).astype(np.int64)
+
+    # Effective per-block h with fallback for excluded/global windows
+    F = h_blocks.shape[1]
+    h_eff = h_blocks.copy().astype(np.float32)
+    fallback_mask = (block_status != 0)
+    h_eff[fallback_mask] = global_h.astype(np.float32)
+
+    # Per-chrom: sorted blocks for fast cover-search
+    chrom_to_block_idxs: dict[str, list[int]] = {}
+    for i, b in enumerate(blocks):
+        chrom_to_block_idxs.setdefault(b.chrom, []).append(i)
+    block_centers = np.array([(b.start + b.end) / 2.0 for b in blocks])
+    block_starts_arr = np.array([b.start for b in blocks], dtype=np.int64)
+    block_ends_arr = np.array([b.end for b in blocks], dtype=np.int64)
+
+    cn_var_csc = cn_var.tocsc()
+    for chrom, idxs in chrom_to_block_idxs.items():
+        idxs_sorted = np.array(sorted(idxs, key=lambda i: blocks[i].start),
+                               dtype=np.int64)
+        starts_c = block_starts_arr[idxs_sorted]
+        ends_c = block_ends_arr[idxs_sorted]
+        centers_c = block_centers[idxs_sorted]
+        chr_mask = record_chrom == chrom
+        if not chr_mask.any():
+            continue
+        rec_idx = np.flatnonzero(chr_mask)
+        positions = record_pos[rec_idx]
+
+        # For each record p, the covering windows are those with start <= p <= end.
+        # Since windows are sorted by start and have fixed width W, we can find
+        # the leftmost candidate (rightmost block whose start <= p) and walk
+        # back/forward while end >= p / start <= p.
+        # Vectorized: for each record, find candidate left index via searchsorted
+        # on starts_c (rightmost start <= p). Then expand to the cover set.
+        n_blocks_c = len(idxs_sorted)
+
+        # Compute the maximum possible window width to know how far back to look
+        widths_c = ends_c - starts_c + 1
+        max_w = int(widths_c.max()) if len(widths_c) else 0
+        # The "step" between adjacent starts gives # of overlapping windows
+        if n_blocks_c > 1:
+            steps = np.diff(starts_c)
+            min_step = int(steps.min())
+        else:
+            min_step = max_w
+        max_overlap = max(1, max_w // max(1, min_step))
+
+        # Per-record cover sets: walk from candidate index +/- max_overlap
+        right = np.searchsorted(starts_c, positions, side='right') - 1
+        right = np.clip(right, 0, n_blocks_c - 1)
+
+        rec_block_lists: list[np.ndarray] = []
+        for ri, p in enumerate(positions):
+            r = int(right[ri])
+            cover = []
+            # walk back: while starts_c[k] <= p and ends_c[k] >= p
+            k = r
+            while k >= 0 and starts_c[k] <= p:
+                if ends_c[k] >= p:
+                    cover.append(int(idxs_sorted[k]))
+                k -= 1
+                if (r - k) > max_overlap + 2:
+                    break  # bounded walk
+            # walk forward (in case starts_c[r] > p missed some)
+            k = r + 1
+            while k < n_blocks_c and starts_c[k] <= p:
+                if ends_c[k] >= p:
+                    cover.append(int(idxs_sorted[k]))
+                k += 1
+                if (k - r) > max_overlap + 2:
+                    break
+            if not cover:
+                # No block covers this record — fall back to nearest center
+                d = np.abs(centers_c - p)
+                cover = [int(idxs_sorted[int(np.argmin(d))])]
+            rec_block_lists.append(np.asarray(cover, dtype=np.int64))
+
+        # Compute weights and aggregate
+        cv = cn_var_csc[:, rec_idx].toarray().astype(np.float32)  # F × n_rec
+        for ri, p in enumerate(positions):
+            cover = rec_block_lists[ri]
+            ctrs = block_centers[cover]
+            d = np.abs(ctrs - p) + eps_bp
+            w = (1.0 / d).astype(np.float32)
+            w /= w.sum()
+            h_avg = (h_eff[cover].T @ w).astype(np.float32)
+            out[rec_idx[ri]] = float(h_avg @ cv[:, ri])
+    return out
 
 
 def project_blocks_to_records(h_blocks, block_status, global_h,
