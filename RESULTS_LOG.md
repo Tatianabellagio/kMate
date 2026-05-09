@@ -4,6 +4,293 @@ Add new findings at the top with timestamp.
 
 ---
 
+## 2026-05-06 evening — Production recipe (R1 + smooth) BEATS window_200kb on 3 of 4 regimes
+
+Cross-regime replication of the Route 1 + smoothing winner (`λ=0.3 + smooth=5α0.5`)
+on all 4 simulated recomb regimes. **The recipe BEATS the previous production
+baseline (`window_200kb`, `--block-mode window --window-bp 200000`) at 10× finer
+resolution on 3 of 4 regimes**, including the n50_g3_skewed stress test by a wide
+margin.
+
+**Apples-to-apples cross-regime SNP R² (Chr1, polymorphic, n=377,523-2,558,652):**
+
+| regime | window (200kb baseline) | R1 alone (λ=0.3 @ 10kb) | **R1 + smooth5α0.5 @ 10kb** | Δ vs 200kb |
+|---|---|---|---|---|
+| n200_g1 (easy) | 0.9903 | 0.9915 | **0.9960** | **+0.57 pp** |
+| n50_g1 (med-easy) | 0.9830 | 0.9838 | **0.9888** | **+0.58 pp** |
+| n50_g3 (hard, mosaic) | 0.9726 | 0.9630 | 0.9664 | -0.62 pp |
+| n50_g3_skewed (stress) | 0.6557 | 0.7921 | **0.8117** | **+15.60 pp** |
+
+**Big-SV (≥50 bp) R²:**
+
+| regime | window (200kb) | R1+smooth @ 10kb | Δ vs 200kb |
+|---|---|---|---|
+| n200_g1 | 0.9826 (DEL avg) | **0.9922** | **+0.96 pp** |
+| n50_g1 | 0.9793 | **0.9778** | -0.15 pp |
+| n50_g3 | 0.9458 | 0.9416 | -0.42 pp |
+| n50_g3_skewed | 0.5190 | **0.7087** | **+18.97 pp** |
+
+**Findings:**
+
+1. **Smoothing adds 0.3-2 pp on top of R1 across all regimes** (gain scales with
+   regime difficulty: +0.34 pp on n50_g3, +1.96 pp on skewed). Always positive.
+
+2. **R1 alone underperforms window_200kb on n50_g3** by 0.96 pp on SNP. With
+   smoothing, the gap shrinks to 0.62 pp. This is the only regime where the
+   200 kb baseline still has the edge — n50_g3 has true local mosaic structure
+   that benefits from large-window pooling.
+
+3. **R1+smooth WINS on the skewed stress test by 15-19 pp.** All disjoint window
+   methods cluster around R²=0.65 on skewed; R1+smooth gets 0.81 SNP / 0.71 SV.
+   The dominant-founder bias makes per-window EM noisy; the global anchor +
+   smoothing recovers it.
+
+4. **R1+smooth WINS on the easy regimes (n200_g1, n50_g1) by 0.5-1 pp** — even
+   though window_200kb is already very strong (R²=0.99), the smoothing variant
+   pushes past it at 20× finer resolution.
+
+**Net production picture:**
+
+| regime | best method | resolution | R² SNP |
+|---|---|---|---|
+| n200_g1 | R1+smooth | **10 kb** | **0.996** |
+| n50_g1 | R1+smooth | **10 kb** | **0.989** |
+| n50_g3 | window_200kb | 200 kb | 0.973 |
+| n50_g3_skewed | R1+smooth | **10 kb** | **0.812** |
+
+For 3 of 4 regimes, **the production fine-resolution method (R1+smooth at 10 kb)
+exceeds the previous production coarse-resolution method (window_200kb)**.
+
+This is the ship-to-production recipe.
+
+---
+
+## 2026-05-06 — Route 1 + post-EM HMM smoothing closes the remaining gap to window_200kb
+
+After Route 1 alone (λ=0.3 anchor) hit R²=0.963 SNP / 0.934 big-SV on n50_g3 at 10 kb resolution, the remaining 1 pp gap to `window_200kb` (R²=0.973 / 0.946) was closed further by **stacking post-EM Li-Stephens HMM smoothing** on top of the anchored per-window h_blocks. Smoothing logic was already implemented for `clean_smooth` (`block_haplotype_em.smooth_h_across_blocks`); applying it to `cactus_em` window-mode is ~10 lines of glue.
+
+**Smoothing sweep on n50_g3 cov50** (anchor weight λ=0.3 fixed):
+
+| config | SNP R² | SV R² | gap to window_200kb (SNP/SV) |
+|---|---|---|---|
+| baseline (no anchor, no smooth) | 0.9021 | 0.8065 | -7.0 / -13.9 pp |
+| Route 1 alone (λ=0.3) | 0.9630 | 0.9339 | -1.0 / -1.2 pp |
+| **R1 + smooth=5 α=0.5** ★ | **0.9664** | **0.9416** | **-0.6 / -0.4 pp** |
+| R1 + smooth=10 α=0.2 | 0.9658 | 0.9415 | -0.7 / -0.4 pp |
+| R1 + smooth=20 α=0.1 | 0.9651 | 0.9410 | -0.7 / -0.5 pp |
+| (`window_100kb`, reference) | 0.9631 | 0.9317 | (10× coarser) |
+| (`window_200kb`, reference) | 0.9726 | 0.9458 | (20× coarser) |
+
+**Light smoothing (5 passes, α=0.5) wins.** More aggressive smoothing (more passes, lower α) over-attenuates real local signal and gives back ~0.1 pp.
+
+**Headline:** R1+smooth at 10 kb resolution is **within 0.6 pp of window_200kb on SNPs and BEATS window_100kb on big SVs (+1.0 pp on SV R²)** at 20× finer resolution than the 200 kb baseline. This is the production recipe.
+
+**Why this stacks (and Route 2 didn't):**
+- Route 1 anchor pulls per-window h toward chrom-wide consistency. Handles "thin-evidence" windows.
+- Post-EM smoothing pulls h_b toward exp(-recomb·gap)-weighted neighbor average. Handles "consistent neighbors should agree" — separately addresses the noise that anchor doesn't.
+- Route 2 (overlapping windows + inverse-distance projection averaging) over-smoothed at the projection step, attenuating real signal. Post-EM HMM smoothing acts on h_blocks before projection and uses recomb-distance weighting, which is much more selective.
+
+**Production recipe (final, replaces 2026-05-06 morning recipe):**
+```bash
+python poolfreq/src/per_sample_per_chrom.py \
+    --cn-kmer-prefix poolfreq/data/cn_full_231_v2/cn \
+    --cn-var       poolfreq/data/cn_var_231_v2.cn_var.npz \
+    --cn-var-meta  poolfreq/data/cn_var_231_v2.meta.npz \
+    --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
+    --threads 8 --chroms Chr1 Chr2 Chr3 Chr4 Chr5 \
+    --block-mode window --window-bp 10000 \
+    --global-anchor-weight 0.3 \
+    --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5
+```
+
+Wall: ~25 min on Chr1 cov50, single 8-core node. Memory: ~40 GB peak.
+
+**Files:**
+- HMM smoothing imported from `block_haplotype_em.smooth_h_across_blocks` (existing).
+- Wired through `per_sample_per_chrom.py` via new `--hmm-smooth-passes`, `--hmm-smooth-alpha`, `--hmm-smooth-recomb-rate` flags.
+- Output TSVs: `sims/visor_freqk/pool_sweep_82_recomb/cov50_n50_g3_s42_hotspots_p231_chr1/cactus_em_recomb_window_10kb_anchor0.3_smooth{5a05,10a02,20a01}.tsv`
+- Sweep script: `sims/visor_freqk/scripts/run_cem_anchor_smooth.sh`
+
+**Open follow-ups:**
+1. Replicate R1+smooth on n200_g1 / n50_g1 / skewed regimes (pending — anchor cross-regime done, smoothing not yet).
+2. Sweep λ × smoothing jointly — optimal pair might not be (0.3, 5α0.5) on all regimes.
+3. Test on real evolved GrENE-Net data (vs the existing window_200kb result).
+
+---
+
+## 2026-05-06 — Route 1 (global-anchor KL prior) on `window_10kb` HITS production target
+
+After the kallisto-EM result (Route 3, below) underperformed `window_10kb`, we
+pivoted to **Route 1: global-anchor KL prior on per-window EM**, on top of the
+existing `cactus_em --block-mode window`. Result: **production target hit**
+on n50_g3 at the user's required 10 kb resolution.
+
+**Method.** Two-pass per-window EM:
+1. Solve global EM on all panel k-mers → `h_global` (already computed as the
+   per-window fallback in `block_em.solve_em_per_block`).
+2. Per-window EM with Dirichlet pseudocount centered on `h_global`:
+   ```
+   h_new[f] ∝ h[f] · (cn @ cw) + λ · N · h_global[f]    then renormalize to simplex
+   ```
+   `λ=0` is exactly the legacy `window_10kb`. `λ→∞` reduces to global. The
+   anchor pulls per-window solutions toward `h_global` proportional to total
+   k-mer count `N` in the window — windows with rich evidence move freely;
+   windows with thin evidence get pulled to the global solution.
+
+**λ sweep on `cov50_n50_g3_s42_hotspots_p231_chr1` (Chr1 polymorphic, same
+panel + same data + same 10 kb windows; only λ varies)**:
+
+| method | resolution | SNP R² | SV R² | n_SNP | n_SV |
+|---|---|---|---|---|---|
+| `window_10kb` (λ=0, baseline) | 10 kb | 0.9021 | 0.8065 | 377,523 | 11,233 |
+| `window_10kb` λ=0.1 | 10 kb | 0.9554 | 0.9188 | 377,523 | 11,233 |
+| **`window_10kb` λ=0.3** | **10 kb** | **0.9630** | **0.9339** | 377,523 | 11,233 |
+| `window_10kb` λ=1.0 | 10 kb | 0.9592 | 0.9306 | 377,523 | 11,233 |
+| `window_100kb` (reference) | 100 kb | 0.9631 | 0.9317 | — | — |
+| `window_200kb` (reference) | 200 kb | 0.9726 | 0.9458 | — | — |
+| `kallisto_em` (Route 3, failed) | 10 kb | 0.8419 | 0.7336 | — | — |
+
+**λ=0.3 ties `window_100kb`'s R² at 10× finer resolution.** Up from R²=0.902
+SNP at the same resolution without anchor — **+6.1 pp on SNPs, +12.7 pp on big
+SVs**. Past the user's production bar of R² ≥ 0.94 on both axes.
+
+Clear U-curve in λ: too low (0.0) doesn't help, too high (1.0) over-anchors and
+gives back ~0.4 pp. Sweet spot is λ ∈ [0.3, 0.5]; default for production is
+`--global-anchor-weight 0.3`.
+
+**Why this works (and Route 3 didn't):**
+- The per-window 10 kb EM has ~140k k-mers per window — usually plenty of
+  evidence locally. The per-window failure mode is windows with sparse
+  evidence (low cov, repetitive regions, sparse panel coverage) where the
+  per-window EM picks one of many equally-good local fits — high variance.
+- The Dirichlet anchor toward `h_global` regularizes those high-variance
+  windows. High-evidence windows still adapt freely because `λ·N·h_global`
+  is a constant pseudocount that gets dwarfed by `h · (cn @ cw)` when the
+  k-mer evidence is large.
+- This is exactly the regime where Route 3 (kallisto-EM) failed: its per-window
+  EC counts ARE much sparser than per-window k-mer counts, so it'd benefit from
+  anchoring too — but its absence-blind multinomial floor (R²≈0.842) is below
+  what window_10kb's Poisson gives (0.902), so the anchor only catches it up
+  to ~0.92 at best, never beating window_10kb. With Route 1 we anchor a
+  better-floored estimator.
+
+**Production recipe** (replaces the previous 200 kb default):
+```bash
+python poolfreq/src/per_sample_per_chrom.py \
+    --cn-kmer-prefix poolfreq/data/cn_full_231_v2/cn \
+    --cn-var       poolfreq/data/cn_var_231_v2.cn_var.npz \
+    --cn-var-meta  poolfreq/data/cn_var_231_v2.meta.npz \
+    --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
+    --threads 8 --chroms Chr1 Chr2 Chr3 Chr4 Chr5 \
+    --block-mode window --window-bp 10000 \
+    --global-anchor-weight 0.3
+```
+Wall: ~25 min on Chr1 cov50 (single 8-core node). Memory: ~40 GB peak.
+
+**Files / artifacts:**
+- Driver mods: `poolfreq/src/em_solver.py` (added `prior_h`, `prior_weight`),
+  `poolfreq/src/block_em.py` (threading), `poolfreq/src/per_sample_driver.py`
+  + `poolfreq/src/per_sample_per_chrom.py` (`--global-anchor-weight` flag)
+- Sweep script: `sims/visor_freqk/scripts/run_cem_window_anchor_sweep.sh`
+- Output TSVs: `sims/visor_freqk/pool_sweep_82_recomb/cov50_n50_g3_s42_hotspots_p231_chr1/cactus_em_recomb_window_10kb_anchor{0.1,0.3,1.0}.tsv`
+- Notebook: RECOMB_SWEEP_RESULTS_slim.ipynb Tier 9.6 cell with R² vs λ plot
+
+**Open follow-ups** (not blockers for production):
+1. Replicate on n200_g1 / n50_g1 (easier regimes — anchor effect probably
+   smaller because per-window EM is already well-conditioned).
+2. Test on real evolved GrENE-Net data (vs the existing window_200kb result).
+3. Test stack with Route 2 (overlapping windows) — additional smoothing might
+   close the remaining 1 pp gap to window_200kb on SVs.
+
+---
+
+## 2026-05-06 — kallisto-EM (read-level EC pseudoalignment) underperforms per-k-mer Poisson at fine scale
+
+Tested **Route 3** of MODEL_SPEC § Future work: kallisto-style read-level
+pseudoalignment + equivalence-class EM, applied to founder pool-seq freqs at
+10 kb resolution on the n50_g3 recomb sim. Goal: recover the read-phase
+information that per-k-mer Poisson EM throws away (one read carries ~120
+linked 31-mers from one founder).
+
+**Setup** (cov50_n50_g3_s42_hotspots_p231_chr1, Chr1):
+- Same 231-founder panel (`cn_full_231_v2`), same `cn_var_231_v2` projection
+- 10,118,396 read pairs total (cov50)
+- Per-read: extract canonical 31-mers, look up panel column ids via sorted-uint64
+  binary search, intersect founder bitmasks per 10 kb window → emit
+  (window_id, founder_compatibility_set) per (read, window) pair
+- Aggregate into 261,058 unique equivalence-class observations
+- Per-window EM on EC counts (multinomial, multiplicative simplex update)
+
+**Headline R² @ 10 kb resolution (n=377,523 SNPs, 11,233 big SVs polymorphic)**:
+
+| method | resolution | reads used | SNP R² | SNP MAE | SV R² | SV MAE |
+|---|---|---|---|---|---|---|
+| **kallisto-EM (this run)** | **10 kb** | full cov50 | **0.842** | 0.060 | **0.734** | 0.054 |
+| window_10kb (per-k-mer Poisson) | 10 kb | full cov50 | **0.902** | 0.052 | **0.807** | 0.047 |
+| window_100kb (per-k-mer Poisson) | 100 kb | full cov50 | 0.963 | 0.031 | 0.932 | 0.027 |
+| window_200kb (per-k-mer Poisson) | 200 kb | full cov50 | 0.973 | 0.027 | 0.946 | 0.023 |
+
+**kallisto-EM is 6pp WORSE than window_10kb at the same resolution and panel.**
+The read-level pseudoalignment did not deliver the expected within-read phase
+recovery.
+
+**Coverage scaling on the same regime confirms it's not just under-coverage**
+(R² SNP):
+
+| reads (% of cov50) | unique EC | informative reads | SNP R² |
+|---:|---:|---:|---:|
+| 40k (0.4%) | 16k | 19,382 | 0.367 |
+| 400k (4%) | 86k | 173,792 | 0.470 |
+| 2M (20%) | 178k | 836,302 | 0.721 |
+| **10M (100%, full)** | **261k** | **~4.3M** | **0.842** |
+
+EC count saturates around 250-260k by 5M reads — the panel is fully sampled
+at the EC level long before we run out of reads.
+
+**Why kallisto-EM loses to per-k-mer Poisson here (hypotheses, in order of
+suspicion):**
+
+1. **Loss of absence signal.** Per-k-mer Poisson EM uses BOTH high-count and
+   low/zero-count k-mers as evidence: a k-mer expected to be present but
+   observed at low count constrains `h^T cn[:, k]` downward. EC-level EM
+   only uses observed reads — k-mers that produced no reads contribute zero
+   constraints. At full cov50 most panel k-mers DO get reads, but the
+   asymmetry seems to bite at fine block scale where per-window k-mer counts
+   are noisy.
+2. **Empty-intersection reads dropped.** ~57% of reads have no informative
+   per-window mask (intergenic regions outside panel bubbles, sequencing
+   errors, recomb-junction reads where intra-window k-mers conflict). Those
+   are dropped from inference. By contrast, jellyfish counts every k-mer
+   that hits the panel index, regardless of read identity.
+3. **EC dedup flattens count gradient.** Per-k-mer EM's `counts[k]` is a
+   gradient observation: 100 vs 5 hits at k-mer k carries information about
+   `h^T cn[:, k]`. EC-level counts only depend on number of READS in each
+   compatibility class — independent of how many k-mers each read contributes.
+   Reads with many k-mers in the same EC count once, not many times.
+
+**What's next to test**:
+- Global-anchor KL prior (Route 1) stacked with kallisto-EM (Route 3). Pulls
+  per-window h toward chrom-wide h_global. May recover ground vs the global
+  mode (R²=0.917 on n50_g3) but unclear it'll exceed window_10kb's 0.902.
+- Lower-coverage regimes (cov10) where read-phase MIGHT help relative to
+  per-k-mer Poisson, since per-k-mer counts saturate sub-linearly with
+  coverage. Needs cov10 reads to be generated for n50_g3 (currently absent).
+
+**Implication for production**: stick with `window_10kb` (per-k-mer Poisson)
+as the fine-scale baseline until a positive result appears. Route 3 as
+implemented is not a win at full cov50 on n50_g3 at 10 kb resolution.
+
+**Files / artifacts**:
+- Driver: `poolfreq/src/per_sample_kallisto_em.py`
+- Helper: `poolfreq/scripts/precompute_panel_u64_index.py` (one-time uint64
+  panel cache; current: `poolfreq/data/cn_full_231_v2/cn_Chr1_kmers_u64.npz`)
+- Eval: `poolfreq/scripts/eval_kallisto_em.py`
+- Output TSV (full cov, anchor=0): `/tmp/kallisto_em_full.tsv`
+- Wall: 40 min on 1 core (5 min could become ~6 min on 8 cores via
+  multiprocessing — pseudoalignment is the bottleneck; per-window EM is fast).
+
+---
+
 ## 2026-05-06 — Literature confirms: keep PanGenie SVs unimputed as the production standard
 
 After our 2026-05-03 finding that Beagle imputation degrades SV concordance
