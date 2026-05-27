@@ -1,30 +1,27 @@
 """
-Per-chromosome cactus_em driver.
+Per-chromosome kMate driver — founder-mixture (h) estimation + AF projection.
 
-Memory optimization for production scale-out: instead of loading the genome-wide
-cn_kmer matrix (80M k-mers × 231 founders → ~74 GB dense float32), process one
-chromosome at a time. Each chromosome is ~1/5 of the matrix → peak memory drops
-~5×, fits in 32-64 GB SLURM allocations and unlocks the 128 GB memex nodes for
-parallel scale-out.
+Two estimators only:
+  * global  — one h per chromosome (selfing / inbred / F0 pools, e.g. SEEDMIX).
+  * window  — per-window h for recombinant pools (the production "star2" recipe:
+              --block-mode window --window-bp 10000 --global-anchor-weight 0.3
+              --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5). These are the
+              defaults below, so `--block-mode window` alone reproduces it.
 
-Tradeoff: each chrom's EM uses only that chrom's k-mers as evidence (vs the
-joint genome-wide EM in per_sample_driver.py). With ~16 M k-mers per chrom and
-a 231-founder simplex, the EM is still massively over-determined — empirically
-the per-chrom h vectors agree to within ~0.1% of the genome-wide h.
+Memory note: instead of loading the genome-wide cn_kmer matrix (~74 GB dense
+float32 for 80M k-mers × 231 founders), we process one chromosome at a time
+(~5× lower peak). Per-chrom h agrees with a genome-wide solve to ~0.1%.
 
-Usage (drop-in replacement for per_sample_driver.py):
-
+Usage:
     python per_sample_per_chrom.py \\
-        --cn-kmer-prefix data/cn_full_231_v2/cn \\
-        --cn-var data/cn_var_231_v2.cn_var.npz \\
-        --cn-var-meta data/cn_var_231_v2.meta.npz \\
-        --reads R1.fq R2.fq \\
-        --sample <name> \\
-        --out <name>.tsv \\
-        --threads 4
+        --cn-kmer-prefix data/cn_full_231/cn \\
+        --cn-var       arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \\
+        --cn-var-called arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \\
+        --cn-var-meta  arch3/chr1/cn_var_231_arch3_chr1.meta.npz \\
+        --reads R1.fq R2.fq --sample <name> --out <name>.tsv \\
+        --threads 8 --chroms Chr1 --block-mode global
 
-Output: per-VCF-record alt-allele frequency TSV (same schema as
-per_sample_driver.py: chrom, pos, ref_len, alt_len, alt_freq).
+Output: per-record TSV (chrom, pos, ref_len, alt_len, alt_freq, info, n_called, se).
 """
 from __future__ import annotations
 import argparse, gc, os, sys, time
@@ -34,42 +31,17 @@ from scipy.sparse import load_npz
 from em_solver import solve_em
 from kmer_count import count_kmers_in_bam, count_kmers_in_fasta
 from block_em import (define_windows, assign_kmers_to_blocks,
-                      assign_kmers_to_blocks_multi,
                       assign_records_to_blocks, solve_em_per_block,
-                      project_blocks_to_records,
-                      project_blocks_to_records_overlap,
-                      BlockSpec)
+                      project_blocks_to_records, BlockSpec)
 from block_haplotype_em import smooth_h_across_blocks
-from ld_blocks import compute_ld_blocks_gabriel, compute_ld_blocks
-
-
-def load_bigld_panel_blocks(npz_path, chrom_filter=None):
-    """Load fine BigLD blocks from a hapfire_block_index.npz (built by
-    build_hapfire_block_index.py from xwu's panel partition). Returns a list
-    of BlockSpec.
-
-    The npz uses chromosome IDs '1', '2', ... (panel VCF convention); we
-    convert to 'ChrN' to match cactus_em's internal usage. If chrom_filter
-    is given, only keep blocks on that chrom.
-    """
-    npz = np.load(npz_path, allow_pickle=True)
-    block_chrom = np.asarray(npz['block_chrom']).astype(str)
-    block_pos_start = np.asarray(npz['block_pos_start']).astype(np.int64)
-    block_pos_end = np.asarray(npz['block_pos_end']).astype(np.int64)
-    blocks = []
-    for c, s, e in zip(block_chrom, block_pos_start, block_pos_end):
-        target = f'Chr{c}' if not str(c).startswith('Chr') else str(c)
-        if chrom_filter is not None and target != chrom_filter:
-            continue
-        blocks.append(BlockSpec(chrom=target, start=int(s), end=int(e)))
-    return blocks
 
 
 def _count_and_load_cn_dense(chrom, cn_prefix, reads_input, threads):
     """Load one chrom's cn_kmer + meta, count k-mers in reads, densify to float32.
 
-    Shared between global and window modes. Returns (cn_dense, counts, meta, cov, F, K)
-    or (None, None, None, 0.0, 0, 0) if the chrom is missing.
+    Shared between global and window modes. Returns
+    (cn_dense, counts, meta, cov, F, K) or
+    (None, None, None, 0.0, 0, 0) if the chrom is missing.
     """
     cn_path = cn_prefix + f"_{chrom}.cn.npz"
     meta_path = cn_prefix + f"_{chrom}.meta.npz"
@@ -100,6 +72,33 @@ def _count_and_load_cn_dense(chrom, cn_prefix, reads_input, threads):
     return cn_dense, counts, meta, cov, F, K
 
 
+# Module-level globals populated by main(): cn_var_called sparse matrix.
+# _project_with_called_mask reads this so we don't plumb it through every
+# function signature.
+_CN_VAR_CALLED = None  # scipy.sparse, founder × variant; 1 if GT != ./.
+
+def _project_with_called_mask(cn_var_chrom, h, idx):
+    """Project h through cn_var with per-record renormalization by the called mask.
+
+    AF_est[r] = (h @ cn_var)[r] / (h @ cn_var_called)[r]
+
+    Handles missing GTs: at records where a subset of founders is ./., their
+    h-mass is excluded from BOTH numerator and denominator. Equals AC/AN when
+    h is uniform. Falls back to plain (h @ cn_var) if cn_var_called is absent.
+    """
+    freqs = cn_var_chrom.T @ h
+    if hasattr(freqs, "toarray"):
+        freqs = np.asarray(freqs).flatten()
+    if _CN_VAR_CALLED is None:
+        return freqs
+    called_chrom = _CN_VAR_CALLED[:, idx]
+    called_weight = called_chrom.T @ h
+    if hasattr(called_weight, "toarray"):
+        called_weight = np.asarray(called_weight).flatten()
+    safe = np.maximum(called_weight, np.array(1e-12, dtype=freqs.dtype))
+    return (freqs / safe).astype(freqs.dtype)
+
+
 def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, threads,
                          em_max_iter=200):
     """Global-mode (single h per chrom) EM + projection."""
@@ -111,7 +110,6 @@ def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
 
     # Filter to nonzero-count k-mers (the EM only needs those)
     nz = counts > 0
-    n_nz = int(nz.sum())
     cn_em = np.ascontiguousarray(cn_dense[:, nz])
     counts_em = counts[nz].astype(np.float32)
     del cn_dense
@@ -127,38 +125,31 @@ def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     rec_chrom = np.asarray(var_meta["chrom"]).astype(str)
     idx = np.where(rec_chrom == str(chrom))[0]
     cn_var_chrom = cn_var[:, idx]
-    freqs = (cn_var_chrom.T @ h)
-    if hasattr(freqs, "toarray"):
-        freqs = np.asarray(freqs).flatten()
+    freqs = _project_with_called_mask(cn_var_chrom, h, idx)
+    # Per-record info = h-mass on called founders at record r (the projection
+    # denominator). info ∈ [0, 1]; small info → low-confidence AF.
+    if _CN_VAR_CALLED is not None:
+        info = np.asarray(_CN_VAR_CALLED[:, idx].T @ h).flatten().astype(np.float32)
+    else:
+        info = np.ones(len(idx), dtype=np.float32)
     elapsed = time.time() - t_chrom
     print(f"  [{chrom}] {elapsed:.0f}s total — {len(idx):,} records projected", flush=True)
-    return idx, freqs, h, elapsed
+    return idx, freqs, info, h, elapsed
 
 
 def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, threads,
-                         window_bp=200_000, em_max_iter=200,
-                         block_partition="fixed",
-                         r2_threshold=0.5, smooth_window=50,
-                         min_block_records=100, max_block_bp=500_000,
-                         bigld_panel_npz=None,
-                         global_anchor_weight: float = 0.0,
-                         window_step: int | None = None,
-                         hmm_smooth_passes: int = 0,
-                         hmm_smooth_alpha: float = 0.2,
-                         hmm_smooth_recomb_rate: float = 4e-8,
-                         projection_smooth: str = "auto"):
-    """Window/block-mode per-chrom EM + smooth projection.
+                         window_bp=10_000, em_max_iter=200,
+                         global_anchor_weight=0.3,
+                         hmm_smooth_passes=5,
+                         hmm_smooth_alpha=0.5,
+                         hmm_smooth_recomb_rate=4e-8,
+                         projection_smooth="auto"):
+    """Window-mode per-chrom EM + smooth projection (production "star2" recipe).
 
-    block_partition options:
-      "fixed":      hard-cut every window_bp (default, HAFpipe-like)
-      "ld_gabriel": Gabriel-style adjacent-r² block boundaries (LD-informed)
-      "ld_complete": CompleteLDPartition (hapFIRE-style fully-independent blocks)
-
-    LD modes use cn_var (founder × record) to derive blocks where founders are
-    in LD; recombination breakpoints between blocks are where founder identity
-    can shift independently. Block sizes adapt to the local recombination
-    landscape, so they're large where LD spans far (chromosome arms) and short
-    where LD breaks (centromeres, hotspots).
+    Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
+    h_global (global_anchor_weight) and post-smoothed across windows
+    (Li-Stephens-style, hmm_smooth_*). Each window's h projects its records
+    through cn_var with the missing-aware (called-mask) normalization.
     """
     t_chrom = time.time()
     cn_dense, counts, meta, cov, F, K = _count_and_load_cn_dense(
@@ -171,70 +162,13 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     bubble_start = meta["bubble_start"]
     bubble_end = meta["bubble_end"]
 
-    if block_partition == "fixed":
-        blocks = define_windows(bubble_chrom, bubble_start, bubble_end,
-                                window_bp=window_bp, window_step=window_step)
-        if window_step is not None and window_step < window_bp:
-            print(f"  [{chrom}] {len(blocks)} OVERLAPPING windows of {window_bp:,} bp "
-                  f"(step={window_step:,} bp, ~{window_bp//window_step}× cover)",
-                  flush=True)
-        else:
-            print(f"  [{chrom}] {len(blocks)} fixed windows of {window_bp:,} bp",
-                  flush=True)
-    elif block_partition == "bigld_panel":
-        # Load pre-computed BigLD blocks from hapfire_block_index.npz, filter
-        # to this chrom. Identical block boundaries to hapFIRE's per-fine-block
-        # output → the strictest apples-to-apples for "same blocks, different
-        # evidence (k-mers vs SNP-haplotype)".
-        if bigld_panel_npz is None:
-            raise ValueError("block_partition='bigld_panel' requires --bigld-panel-npz")
-        blocks = load_bigld_panel_blocks(bigld_panel_npz, chrom_filter=str(chrom))
-        sizes_bp = [(b.end - b.start + 1) for b in blocks] if blocks else [0]
-        print(f"  [{chrom}] {len(blocks)} BigLD-panel blocks; "
-              f"sizes bp: median={int(np.median(sizes_bp)):,}, max={max(sizes_bp):,}", flush=True)
-    elif block_partition in ("ld_gabriel", "ld_complete"):
-        # Restrict cn_var to this chrom's biallelic records (cn_var rows are founders,
-        # cols are records on the projection axis). LD blocks are panel-derived,
-        # one-time work per chromosome.
-        rec_chrom_all = np.asarray(var_meta["chrom"]).astype(str)
-        rec_pos_all = np.asarray(var_meta["pos"]).astype(np.int64)
-        rec_idx = np.where(rec_chrom_all == str(chrom))[0]
-        cn_var_chrom_records = cn_var[:, rec_idx]
-        rec_chrom_c = rec_chrom_all[rec_idx]
-        rec_pos_c = rec_pos_all[rec_idx]
-        t = time.time()
-        if block_partition == "ld_gabriel":
-            blocks = compute_ld_blocks_gabriel(
-                cn_var_chrom_records, rec_chrom_c, rec_pos_c,
-                r2_threshold=r2_threshold, smooth_window=smooth_window,
-                min_block_records=min_block_records, max_block_bp=max_block_bp,
-                verbose=False,
-            )
-        else:  # ld_complete
-            blocks = compute_ld_blocks(
-                cn_var_chrom_records, rec_chrom_c, rec_pos_c,
-                r2_threshold=r2_threshold, search_window=100,
-                min_block_records=min_block_records, verbose=False,
-            )
-        sizes_bp = [(b.end - b.start + 1) for b in blocks]
-        print(f"  [{chrom}] {len(blocks)} LD blocks ({block_partition}, "
-              f"r²={r2_threshold}); block sizes bp: median={int(np.median(sizes_bp)):,}, "
-              f"max={max(sizes_bp):,}; {time.time()-t:.0f}s", flush=True)
-    else:
-        raise ValueError(f"unknown block_partition: {block_partition!r}")
+    blocks = define_windows(bubble_chrom, bubble_start, bubble_end,
+                            window_bp=window_bp)
+    print(f"  [{chrom}] {len(blocks)} fixed windows of {window_bp:,} bp", flush=True)
     n_blocks = len(blocks)
 
-    overlapping = (block_partition == "fixed"
-                   and window_step is not None and window_step < window_bp)
-    if overlapping:
-        # Each k-mer can be in multiple windows — pass per-block kmer indices
-        block_kmer_idx = assign_kmers_to_blocks_multi(
-            bubble_id, bubble_chrom, bubble_start, bubble_end, blocks)
-        kmer_block = None
-    else:
-        kmer_block = assign_kmers_to_blocks(bubble_id, bubble_chrom,
-                                             bubble_start, bubble_end, blocks)
-        block_kmer_idx = None
+    kmer_block = assign_kmers_to_blocks(bubble_id, bubble_chrom,
+                                        bubble_start, bubble_end, blocks)
 
     t = time.time()
     h_blocks, status, global_h = solve_em_per_block(
@@ -242,7 +176,6 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
         cov, em_max_iter=em_max_iter, tol=1e-7,
         min_kmers_per_block=200, verbose=False,
         global_anchor_weight=global_anchor_weight,
-        block_kmer_idx_override=block_kmer_idx,
     )
     print(f"  [{chrom}] block-EM {time.time()-t:.0f}s "
           f"({(status==0).sum()}/{n_blocks} local fits, "
@@ -251,12 +184,11 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     gc.collect()
 
     # Optional post-EM HMM smoothing across blocks (Li-Stephens style).
-    # Recipe matches clean_smooth's best params on bigld blocks (passes=10, α=0.2).
     if hmm_smooth_passes > 0:
         block_pos_start = np.array([b.start for b in blocks], dtype=np.int64)
         block_pos_end = np.array([b.end for b in blocks], dtype=np.int64)
         n_eco = h_blocks.shape[1]
-        # Only smooth blocks with successful local fit (status == 0)
+        # Only smooth blocks with a successful local fit (status == 0)
         h_dict = {b: h_blocks[b].copy() for b in range(n_blocks) if status[b] == 0}
         n_in = len(h_dict)
         t = time.time()
@@ -274,38 +206,42 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     rec_pos = np.asarray(var_meta["pos"])
     idx = np.where(rec_chrom == str(chrom))[0]
     cn_var_chrom = cn_var[:, idx]
+    # MAR projection: pass cn_var_called sliced to this chrom so window-mode
+    # matches global-mode's (h@cn_var)/(h@cn_var_called) semantics.
+    cn_var_called_chrom = _CN_VAR_CALLED[:, idx] if _CN_VAR_CALLED is not None else None
 
-    if overlapping:
-        # Multi-cover inverse-distance averaging
-        freqs = project_blocks_to_records_overlap(
-            h_blocks, status, global_h, cn_var_chrom, blocks,
-            record_chrom=rec_chrom[idx], record_pos=rec_pos[idx],
-        )
+    # If HMM smoothing already ran, skip projection-time linear interpolation
+    # (double-smoothing over-attenuates local signal).
+    if projection_smooth == "auto":
+        do_smooth = (hmm_smooth_passes == 0)
+    elif projection_smooth in ("on", "true", "1"):
+        do_smooth = True
+    elif projection_smooth in ("off", "false", "0"):
+        do_smooth = False
     else:
-        # Decide whether to apply linear-interpolation smoothing at projection.
-        # If we already applied HMM smoothing on h_blocks, doing linear
-        # interpolation on top double-smooths and over-attenuates local signal.
-        if projection_smooth == "auto":
-            do_smooth = (hmm_smooth_passes == 0)
-        elif projection_smooth in ("on", "true", "1"):
-            do_smooth = True
-        elif projection_smooth in ("off", "false", "0"):
-            do_smooth = False
-        else:
-            raise ValueError(f"projection_smooth must be auto/on/off, got {projection_smooth!r}")
-        if hmm_smooth_passes > 0:
-            print(f"  [{chrom}] projection smooth={do_smooth} "
-                  f"(HMM smoothing {'already' if hmm_smooth_passes>0 else 'not'} applied)",
-                  flush=True)
-        rec_block = assign_records_to_blocks(rec_chrom[idx], rec_pos[idx], blocks)
-        freqs = project_blocks_to_records(
-            h_blocks, status, global_h, cn_var_chrom, rec_block,
+        raise ValueError(f"projection_smooth must be auto/on/off, got {projection_smooth!r}")
+
+    rec_block = assign_records_to_blocks(rec_chrom[idx], rec_pos[idx], blocks)
+    freqs = project_blocks_to_records(
+        h_blocks, status, global_h, cn_var_chrom, rec_block,
+        record_chrom=rec_chrom[idx], record_pos=rec_pos[idx],
+        blocks=blocks, smooth=do_smooth,
+        cn_var_called=cn_var_called_chrom,
+    )
+    # Info = same projection but with cn_var_called as the carrier matrix and
+    # no called-mask normalization (raw h-weighted called mass per record).
+    if cn_var_called_chrom is not None:
+        info = project_blocks_to_records(
+            h_blocks, status, global_h, cn_var_called_chrom, rec_block,
             record_chrom=rec_chrom[idx], record_pos=rec_pos[idx],
             blocks=blocks, smooth=do_smooth,
-        )
+            cn_var_called=None,
+        ).astype(np.float32)
+    else:
+        info = np.ones(len(idx), dtype=np.float32)
     elapsed = time.time() - t_chrom
     print(f"  [{chrom}] {elapsed:.0f}s total — {len(idx):,} records projected", flush=True)
-    return idx, freqs, (h_blocks, status, global_h, blocks), elapsed
+    return idx, freqs, info, (h_blocks, status, global_h, blocks), elapsed
 
 
 def main():
@@ -313,59 +249,39 @@ def main():
     ap.add_argument("--cn-kmer-prefix", required=True)
     ap.add_argument("--cn-var", required=True)
     ap.add_argument("--cn-var-meta", required=True)
+    ap.add_argument("--cn-var-called", default=None,
+                    help="Path to cn_var_called.npz (founder × variant 1/0 mask "
+                         "of called genotypes). When provided, AF projection "
+                         "uses (h@cn_var)/(h@cn_var_called) to correctly handle "
+                         "./. cells. Auto-detected next to --cn-var if not given.")
     ap.add_argument("--reads", required=True, nargs="+")
     ap.add_argument("--sample", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--chroms", nargs="+", default=["Chr1","Chr2","Chr3","Chr4","Chr5"])
-    ap.add_argument("--block-mode", default="global",
-                    choices=["global", "window", "ld_gabriel", "ld_complete", "bigld_panel"],
-                    help="global: one h per chrom (F0 pools). "
-                         "window: fixed-bp per-window h. "
-                         "ld_gabriel: Gabriel-style adjacent-r² LD blocks (cn_var-derived). "
-                         "ld_complete: hapFIRE CompleteLDPartition. "
-                         "bigld_panel: use pre-computed BigLD blocks from a panel "
-                         "(hapfire_block_index.npz) — strictest head-to-head with hapFIRE.")
-    ap.add_argument("--bigld-panel-npz", default=None,
-                    help="path to hapfire_block_index.npz for --block-mode bigld_panel")
-    ap.add_argument("--window-bp", type=int, default=200_000,
-                    help="fixed-window size for --block-mode window (default 200 kb)")
-    ap.add_argument("--ld-r2", type=float, default=0.5,
-                    help="r² threshold for LD-block partitioning (default 0.5)")
-    ap.add_argument("--ld-smooth-window", type=int, default=50,
-                    help="smoothing window (records) for ld_gabriel (default 50)")
-    ap.add_argument("--ld-min-block-records", type=int, default=100,
-                    help="merge blocks with fewer than N records into prior (default 100)")
-    ap.add_argument("--ld-max-block-bp", type=int, default=500_000,
-                    help="hard cap on LD block size in bp (default 500 kb)")
-    ap.add_argument("--global-anchor-weight", type=float, default=0.0,
+    ap.add_argument("--block-mode", default="global", choices=["global", "window"],
+                    help="global: one h per chrom (selfing / inbred / F0 pools). "
+                         "window: per-window h for recombinant pools (production "
+                         "'star2' recipe; window defaults below reproduce it).")
+    ap.add_argument("--window-bp", type=int, default=10_000,
+                    help="fixed-window size for --block-mode window (production: 10 kb)")
+    ap.add_argument("--global-anchor-weight", type=float, default=0.3,
                     help="λ for per-window EM Dirichlet anchor toward chrom-wide "
-                         "h_global. 0 = legacy MLE (default). 0.05–0.5 = mild "
-                         "anchor — helps low-evidence windows match the global "
-                         "solution while letting high-evidence windows adapt.")
-    ap.add_argument("--window-step", type=int, default=None,
-                    help="step (bp) between adjacent fixed windows. Default = "
-                         "window-bp (disjoint windows). Set < window-bp to use "
-                         "OVERLAPPING windows (Route 2): each k-mer enters "
-                         "multiple windows, per-record AF is inverse-distance "
-                         "averaged over all covering windows. E.g. window-bp "
-                         "10000 + window-step 3000 → ~3-4× cover.")
-    ap.add_argument("--hmm-smooth-passes", type=int, default=0,
-                    help="Post-EM Li-Stephens-style HMM smoothing on h_blocks. "
-                         "0 = off (default). clean_smooth's best params: passes=10, α=0.2.")
-    ap.add_argument("--hmm-smooth-alpha", type=float, default=0.2,
+                         "h_global. 0 = pure per-window MLE; production: 0.3.")
+    ap.add_argument("--hmm-smooth-passes", type=int, default=5,
+                    help="Post-EM Li-Stephens-style smoothing passes on h_blocks. "
+                         "0 = off; production: 5.")
+    ap.add_argument("--hmm-smooth-alpha", type=float, default=0.5,
                     help="α for HMM smoothing: h_b' = α·h_b + (1-α)·neighbor_avg. "
-                         "Smaller α = more smoothing. Default 0.2.")
+                         "Smaller = more smoothing. Production: 0.5.")
     ap.add_argument("--hmm-smooth-recomb-rate", type=float, default=4e-8,
                     help="Recomb rate per bp for distance-weighted neighbor averaging "
                          "(default 4e-8 = 4 cM/Mb, A. thaliana).")
     ap.add_argument("--projection-smooth", default="auto",
                     choices=["auto", "on", "off"],
-                    help="Whether to apply HAFpipe-style linear-interpolation "
-                         "smoothing between adjacent windows at projection time. "
-                         "'auto' (default): smooth=False if HMM smoothing is on "
-                         "(avoids double-smoothing), True otherwise. "
-                         "'on' / 'off' force the behaviour.")
+                    help="Linear-interpolation smoothing between adjacent windows "
+                         "at projection time. 'auto' (default): off when HMM "
+                         "smoothing is on (avoids double-smoothing), on otherwise.")
     args = ap.parse_args()
 
     print(f"=== {args.sample} (per-chrom {args.block_mode} mode) ===", flush=True)
@@ -377,34 +293,52 @@ def main():
     n_records = cn_var.shape[1]
     print(f"  cn_var: {cn_var.shape}, n_records: {n_records:,}", flush=True)
 
+    # Optional: load cn_var_called mask for missing-aware AF projection.
+    global _CN_VAR_CALLED
+    called_path = args.cn_var_called
+    if called_path is None:
+        guess = args.cn_var.replace(".cn_var.npz", ".cn_var_called.npz")
+        if guess != args.cn_var and os.path.exists(guess):
+            called_path = guess
+    if called_path and os.path.exists(called_path):
+        _CN_VAR_CALLED = load_npz(called_path)
+        print(f"  cn_var_called: {_CN_VAR_CALLED.shape}, nnz={_CN_VAR_CALLED.nnz:,} "
+              f"(loaded from {called_path}; AF projection will divide by h@called)",
+              flush=True)
+    else:
+        _CN_VAR_CALLED = None
+        print(f"  cn_var_called: NOT FOUND — AF projection treats ./. as REF "
+              f"(legacy behavior). Rebuild with build_cn_var.py for "
+              f"missing-aware projection.", flush=True)
+
     reads_input = args.reads if len(args.reads) > 1 else args.reads[0]
 
     freqs_global = np.full(n_records, np.nan, dtype=np.float32)
-    h_save = {}  # global mode: h_per_chrom[chrom] = h. window mode: per-chrom block packs.
+    info_global  = np.full(n_records, np.nan, dtype=np.float32)
+    h_save = {}  # global: h_per_chrom[chrom] = h. window: per-chrom block packs.
+
+    # Panel-level per-record called counts (h-independent QC metric). When
+    # cn_var_called is unavailable, assume the panel size F (all called).
+    F_total = cn_var.shape[0]
+    if _CN_VAR_CALLED is not None:
+        n_called_per_rec = np.asarray(_CN_VAR_CALLED.sum(axis=0)).flatten().astype(np.int32)
+    else:
+        n_called_per_rec = np.full(n_records, F_total, dtype=np.int32)
 
     for chrom in args.chroms:
         if args.block_mode == "global":
-            idx, freqs, h, _ = run_one_chrom_global(
+            idx, freqs, info, h, _ = run_one_chrom_global(
                 chrom, args.cn_kmer_prefix, cn_var, var_meta,
-                reads_input, args.threads,
-            )
+                reads_input, args.threads)
             if idx is None:
                 continue
             h_save[chrom] = h
-        else:
-            partition = "fixed" if args.block_mode == "window" else args.block_mode
-            idx, freqs, pack, _ = run_one_chrom_window(
+        else:  # window
+            idx, freqs, info, pack, _ = run_one_chrom_window(
                 chrom, args.cn_kmer_prefix, cn_var, var_meta,
                 reads_input, args.threads,
                 window_bp=args.window_bp,
-                block_partition=partition,
-                r2_threshold=args.ld_r2,
-                smooth_window=args.ld_smooth_window,
-                min_block_records=args.ld_min_block_records,
-                max_block_bp=args.ld_max_block_bp,
-                bigld_panel_npz=args.bigld_panel_npz,
                 global_anchor_weight=args.global_anchor_weight,
-                window_step=args.window_step,
                 hmm_smooth_passes=args.hmm_smooth_passes,
                 hmm_smooth_alpha=args.hmm_smooth_alpha,
                 hmm_smooth_recomb_rate=args.hmm_smooth_recomb_rate,
@@ -420,18 +354,32 @@ def main():
             h_save[f"{chrom}_block_start"] = np.array([b.start for b in blocks])
             h_save[f"{chrom}_block_end"] = np.array([b.end for b in blocks])
         freqs_global[idx] = freqs
+        info_global[idx]  = info
         gc.collect()
+
+    # SE per record (Wald, using n_called as effective N). NaN if p is NaN or
+    # n_called == 0. n_called is the integer count of called founders at each
+    # record (h-independent panel QC); info is the h-weighted version.
+    with np.errstate(invalid='ignore', divide='ignore'):
+        p_clip = np.clip(freqs_global, 0.0, 1.0)
+        se_global = np.sqrt(p_clip * (1.0 - p_clip) / np.maximum(n_called_per_rec, 1))
+        se_global = np.where(np.isfinite(freqs_global) & (n_called_per_rec > 0),
+                             se_global, np.nan).astype(np.float32)
 
     chrom_arr = np.asarray(var_meta["chrom"])
     pos_arr = np.asarray(var_meta["pos"])
     ref_arr = np.asarray(var_meta["ref_len"])
     alt_arr = np.asarray(var_meta["alt_len"])
     with open(args.out, "w") as f:
-        f.write("chrom\tpos\tref_len\talt_len\talt_freq\n")
+        f.write("chrom\tpos\tref_len\talt_len\talt_freq\tinfo\tn_called\tse\n")
         for i in range(n_records):
             af = freqs_global[i]
             af_str = f"{af:.5f}" if np.isfinite(af) else "NaN"
-            f.write(f"{chrom_arr[i]}\t{pos_arr[i]}\t{ref_arr[i]}\t{alt_arr[i]}\t{af_str}\n")
+            inf_str = f"{info_global[i]:.5f}" if np.isfinite(info_global[i]) else "NaN"
+            nc_str = f"{int(n_called_per_rec[i])}"
+            se_str = f"{se_global[i]:.5f}" if np.isfinite(se_global[i]) else "NaN"
+            f.write(f"{chrom_arr[i]}\t{pos_arr[i]}\t{ref_arr[i]}\t{alt_arr[i]}\t"
+                    f"{af_str}\t{inf_str}\t{nc_str}\t{se_str}\n")
     print(f"  wrote {n_records:,} records to {args.out}", flush=True)
 
     suffix = ".h_per_chrom.npz" if args.block_mode == "global" else ".h_blocks_per_chrom.npz"

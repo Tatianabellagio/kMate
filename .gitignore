@@ -99,6 +99,7 @@ sims/visor_freqk/
 # --- bulky reference/external dirs (not our code) ---
 HapFIRE/
 papers/
+external_tools/
 
 # --- OS / editor ---
 .DS_Store
@@ -125,3 +126,30 @@ Thumbs.db
 # --- explicitly KEEP small MD5/SHA files for provenance ---
 !**/*.md5
 !**/*.sha256
+
+# =============================================================================
+# 2026-05-26 cleanup: heavy regeneratable intermediates the older rules missed.
+# Policy unchanged: track code/docs/notebooks/plots/small-config, not data.
+# =============================================================================
+# jellyfish dumps (~28 GB)
+*.jf
+# in-house k-mer index tables (large; regeneratable from PanGenie-index)
+kmer_index/**/*.tsv.gz
+# per-sample AF result TSVs + analysis intermediates (regeneratable)
+scratch/*.tsv
+scratch/*.tsv.gz
+scratch/**/*.tsv
+scratch/**/*.tsv.gz
+arch3/**/*.tsv
+arch3/**/*.tsv.gz
+control_p80/results/**/*.tsv
+panel_overlap_v3_grenenet/data/*.tsv
+panel_overlap_135_vs_82/results/*.tsv.gz
+# sim truth tables (regeneratable from ancestry tracks + cn_var)
+**/recomb_truth.tsv.gz
+# pangenie per-class / missingness reports (multi-GB)
+pangenie_genotyping/data/v3qc*/**/*.tsv
+pangenie_genotyping/data/v3qc*/**/*.txt
+# editor/OS sidecars & notebook backups
+*.ipynb.bak*
+._*

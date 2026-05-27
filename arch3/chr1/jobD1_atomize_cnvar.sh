@@ -1,0 +1,27 @@
+#!/bin/bash
+#SBATCH --job-name=chr1_atomize
+#SBATCH --partition=bse
+#SBATCH --cpus-per-task=2
+#SBATCH --mem=128G
+#SBATCH --time=02:00:00
+#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/D1_atomize_%j.out
+#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/D1_atomize_%j.err
+set -euo pipefail
+
+# Build atomized cn_var from the merged Arch 3 chr1 biallelic VCF.
+# Each output row is a single-base substitution (pos, ref_base, alt_base) with
+# carriers UNIONed across all source records that imply it. MNPs and overlapping
+# region of INS/DEL contribute; pure INS/DEL beyond the alignment overlap do not.
+
+cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
+PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+VCF=merged_231_chr1_final.vcf.gz
+OUT_PREFIX=cn_var_231_arch3_chr1_atomized
+
+[ -s "$VCF" ] || { echo "ERROR: missing $VCF"; exit 1; }
+
+echo "[$(date)] === atomize cn_var from $VCF ==="
+$PY -u build_cn_var_atomized.py --vcf "$VCF" --out "$OUT_PREFIX"
+echo
+ls -lh ${OUT_PREFIX}.*
+echo "[$(date)] DONE D1"

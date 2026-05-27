@@ -1,0 +1,16 @@
+Assembly_ID	Accession_name	Accession_ID	Status	Reason
+101003	Set-1	5772	exclude-cactus-keep-pg	"Fernando Best_for_Moi=""?"" Reason=""Heterozygosity: Too many variants"". Independent evidence: cactus FASTA mislabeled T980 dup (k-mer J=0.964 to T980, 1001G J=0.300). PG-substitute from SRR1945578 (~37x PE)."
+100852	Ped-0	9947	exclude-cactus-keep-pg	"Fernando: Coverage ~10x ONT. LOO PG-vs-cactus disagreement 30.34% (rank 4/75 worst). PG-substitute from SRR1946490 (~10x SE). Borderline (PG-side also low cov) but cactus errors are baked in; PG side filterable via GQ+V4."
+100891	IP-Nog-17	9564	flag-low-cov-but-concordance-OK	"Fernando: Coverage ~9x ONT. Empirical LOO disagreement 5.24% — within normal distribution (median 4.14%). KEEP CACTUS. Fernando coverage flag did not predict assembly quality issue."
+100760	Pi-0	7298	flag-het-but-concordance-OK	"Fernando: Het ~4Mb in 3 blocks. Empirical LOO disagreement 7.64% — upper end of normal (p87). KEEP CACTUS. Het in source did not predict catastrophic concordance issue."
+100892	IP-Alm-0	9518	flag-low-cov-but-concordance-OK	"Fernando: Coverage ~11x ONT. Empirical LOO disagreement 3.66% — at median. KEEP CACTUS."
+100862	IP-Fun-0	9542	flag-low-cov-but-concordance-OK	"Fernando: Coverage ~14x ONT. Empirical LOO disagreement 3.08% — cleanest third! KEEP CACTUS."
+100395	Kru-3	9416	flag-low-cov-but-concordance-OK	"Fernando: Coverage ~15x ONT. Empirical LOO disagreement 4.04% — at median. KEEP CACTUS."
+100300	Ei-2	6915	flag-ambiguous-pair	Anomalously close to 100692 (St-0) in both cactus FASTA k-mer Jaccard (0.966) and 1001G GT Jaccard (0.935). Concordant across both pipelines -> not a cactus pipeline issue; upstream wet-lab dup. EM mass-splits between duplicate columns (handled).
+100692	St-0	8387	flag-ambiguous-pair	Anomalously close to 100300 (Ei-2); see 100300 row.
+100226	Stw-0	7347	flag-ambiguous-pair	Anomalously close to 100645 (Ct-1) in both cactus FASTA k-mer Jaccard (0.911) and 1001G GT Jaccard (0.697). Concordant across both pipelines.
+100645	Ct-1	6910	flag-ambiguous-pair	Anomalously close to 100226 (Stw-0); see 100226 row. Note: ID 6910 is one of two valid arapheno entries for Ct-1 (other is 7067, used by 1001G short-read); Fernando confirms both refer to the same biological accession.
+7164	Hau-0	7164	flag-untriaged-tail	"LOO PG-vs-cactus disagreement 52.31% — WORST of 75. NOT Fernando-flagged. KEEP CACTUS for v3qc. Park for follow-up k-mer Jaccard investigation (possible mislabeling like 5772 case)."
+6939	Mt-0	6939	flag-untriaged-tail	"LOO PG-vs-cactus disagreement 49.93% — 2nd worst. NOT Fernando-flagged. KEEP CACTUS for v3qc. Park for follow-up investigation."
+9606	Aitba-1	9606	flag-untriaged-tail	"LOO PG-vs-cactus disagreement 24.27% — rank 5/75. NOT Fernando-flagged. KEEP CACTUS for v3qc. Park for follow-up."
+8231	Bro1-6	8231	flag-untriaged-tail	"LOO PG-vs-cactus disagreement 16.56% — rank 6/75. NOT Fernando-flagged. KEEP CACTUS for v3qc. Park for follow-up."

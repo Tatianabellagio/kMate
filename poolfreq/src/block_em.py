@@ -78,9 +78,8 @@ def assign_kmers_to_blocks(kmer_bubble_id, bubble_chrom, bubble_start,
     bubble centroid. Bubbles spanning a block boundary are assigned to the
     block containing their start.
 
-    NOTE: this returns a 1D K-vec assuming disjoint windows (each k-mer in
-    exactly one block). For OVERLAPPING windows use
-    `assign_kmers_to_blocks_multi` instead, which returns a per-block list.
+    Returns a 1D K-vec assuming disjoint windows (each k-mer in exactly one
+    block).
     """
     K = len(kmer_bubble_id)
     bubble_centroid = (bubble_start + bubble_end) // 2
@@ -111,53 +110,6 @@ def assign_kmers_to_blocks(kmer_bubble_id, bubble_chrom, bubble_start,
     return kmer_block
 
 
-def assign_kmers_to_blocks_multi(kmer_bubble_id, bubble_chrom, bubble_start,
-                                  bubble_end, blocks):
-    """For each k-mer, return ALL block indices containing its bubble centroid.
-
-    Used for overlapping windows where each k-mer participates in 2+ EM solves.
-
-    Returns:
-        block_kmer_idx: list of length n_blocks; entry b is an int64 array of
-            k-mer indices that belong to block b.
-    """
-    bubble_centroid = (bubble_start + bubble_end) // 2
-
-    # Per-chrom: sorted (start, end, block_idx) triples + arrays for searchsorted
-    chrom_blocks: dict[str, list[tuple[int, int, int]]] = {}
-    for i, b in enumerate(blocks):
-        chrom_blocks.setdefault(b.chrom, []).append((b.start, b.end, i))
-    for c in chrom_blocks:
-        chrom_blocks[c].sort()
-
-    n_blocks = len(blocks)
-    # Per-bubble: list of block indices
-    bubble_blocks: list[list[int]] = [[] for _ in range(len(bubble_chrom))]
-    for b_idx in range(len(bubble_chrom)):
-        c = str(bubble_chrom[b_idx])
-        p = int(bubble_centroid[b_idx])
-        if c not in chrom_blocks:
-            continue
-        # Walk blocks (sorted by start) — they're contiguous in start order.
-        # Worst-case O(blocks/chrom) per bubble; still cheap for ~10k windows.
-        for s, e, idx in chrom_blocks[c]:
-            if s > p:
-                break  # sorted by start; nothing later contains p
-            if p <= e:
-                bubble_blocks[b_idx].append(idx)
-
-    # Build block_kmer_idx by inverting bubble_blocks via kmer_bubble_id
-    # First, accumulate (kmer_id, block_id) pairs efficiently:
-    # for each k-mer, all of its bubble's blocks.
-    block_kmer_lists: list[list[int]] = [[] for _ in range(n_blocks)]
-    for k in range(len(kmer_bubble_id)):
-        b_idx = int(kmer_bubble_id[k])
-        for blk in bubble_blocks[b_idx]:
-            block_kmer_lists[blk].append(k)
-    block_kmer_idx = [np.asarray(lst, dtype=np.int64) for lst in block_kmer_lists]
-    return block_kmer_idx
-
-
 def assign_records_to_blocks(record_chrom, record_pos, blocks):
     """Per-cn_var-record block index. Same scheme as assign_kmers_to_blocks."""
     chrom_blocks = {}
@@ -184,146 +136,6 @@ def assign_records_to_blocks(record_chrom, record_pos, blocks):
         block_for_rec = np.where(in_range, idxs[i_starts], -1)
         rec_block[mask] = block_for_rec
     return rec_block
-
-
-def find_haplotype_clusters(cn_block, min_cluster_overlap=1):
-    """Group founders that share an identical haplotype within a block.
-
-    Args:
-        cn_block: F × K_block dense int8/float32 (founders × k-mers in block)
-        min_cluster_overlap: minimum non-zero entries to consider a founder
-            informative within this block (founders with all-zero rows are
-            placed in a single "uninformative" cluster)
-
-    Returns:
-        cluster_id: F-vec of cluster index (0..C-1)
-        n_clusters: number of distinct clusters
-    """
-    F = cn_block.shape[0]
-    # Hash each founder's row by its bytes
-    cn_int = (cn_block > 0).astype(np.uint8)  # binarize
-    row_active = cn_int.sum(axis=1) >= min_cluster_overlap
-    cluster_id = np.full(F, -1, dtype=np.int32)
-    seen = {}
-    next_id = 0
-    for f in range(F):
-        if not row_active[f]:
-            continue
-        h = cn_int[f].tobytes()
-        if h in seen:
-            cluster_id[f] = seen[h]
-        else:
-            seen[h] = next_id
-            cluster_id[f] = next_id
-            next_id += 1
-    # All-zero founders go to a shared uninformative cluster
-    if (~row_active).any():
-        cluster_id[~row_active] = next_id
-        next_id += 1
-    return cluster_id, next_id
-
-
-def solve_em_clustered_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
-                                 coverage, em_max_iter=200, tol=1e-7,
-                                 min_kmers_per_block=200, verbose=False):
-    """Per-block cluster-EM — fixes rank deficiency in 231-dim direct EM.
-
-    For each block:
-      1. Cluster founders by exact-match haplotype within the block
-         (typically reduces 231→10–50 clusters per 200 kb in selfing pop)
-      2. Run multinomial EM in cluster-frequency space (well-conditioned)
-      3. Distribute cluster freqs uniformly within cluster → per-founder h
-         (mathematically equivalent for the alt_freq projection: alt_freq(r)
-          is invariant to redistributing mass among founders sharing the
-          same local haplotype)
-
-    Returns:
-        h_blocks_founder: (n_blocks, F) — per-founder h per block (uniform
-            within each cluster, by construction; useful for downstream
-            comparison with non-clustered results)
-        block_status: (n_blocks,) — 0=local, 1=global-fallback, 2=excluded
-        global_h: F-vec global fallback (uniform-founder EM)
-        cluster_info: list of dicts, one per block, with
-            {n_clusters, cluster_id (F-vec), h_cluster (C-vec)}
-    """
-    F = cn_kmer_dense.shape[0]
-    h_blocks = np.zeros((n_blocks, F), dtype=np.float32)
-    block_status = np.full(n_blocks, 2, dtype=np.int8)
-    cluster_info = [None] * n_blocks
-
-    if verbose:
-        print(f"  computing global-h fallback...", flush=True)
-    t = time.time()
-    global_h, info = solve_em(counts, cn_kmer_dense, coverage,
-                              max_iter=em_max_iter, tol=tol)
-    global_h = global_h.astype(np.float32)
-    if verbose:
-        print(f"    global EM: {info['iterations']} iters, {time.time()-t:.0f}s")
-
-    nz = counts > 0
-    cluster_sizes_log = []
-    n_local = n_global = n_excl = 0
-    t0 = time.time()
-    for b in range(n_blocks):
-        in_block = (kmer_block == b)
-        if not in_block.any():
-            h_blocks[b] = global_h
-            block_status[b] = 2
-            n_excl += 1
-            continue
-        in_block_nz = in_block & nz
-        if in_block_nz.sum() < min_kmers_per_block:
-            h_blocks[b] = global_h
-            block_status[b] = 1
-            n_global += 1
-            continue
-        cn_b = np.ascontiguousarray(cn_kmer_dense[:, in_block_nz])
-        c_b = counts[in_block_nz]
-
-        # Cluster founders within the block
-        cluster_id, n_clust = find_haplotype_clusters(cn_b)
-        cluster_sizes_log.append(n_clust)
-        # Build cluster representative cn_kmer (C × K_block)
-        # — each cluster's row is the OR (or any representative) of its founders
-        # — since exact-match clustering, all members are identical
-        cn_cluster = np.zeros((n_clust, cn_b.shape[1]), dtype=np.float32)
-        cluster_size = np.zeros(n_clust, dtype=np.int32)
-        for f in range(F):
-            cid = cluster_id[f]
-            if cid < 0:
-                continue
-            if cluster_size[cid] == 0:
-                cn_cluster[cid] = cn_b[f]
-            cluster_size[cid] += 1
-
-        # Cluster-EM (well-conditioned: dim = n_clust, typically 10–50)
-        h_cluster, _ = solve_em(c_b, cn_cluster, coverage,
-                                max_iter=em_max_iter, tol=tol)
-        h_cluster = h_cluster.astype(np.float32)
-
-        # Distribute uniformly within cluster → per-founder h for this block
-        h_founder = np.zeros(F, dtype=np.float32)
-        for f in range(F):
-            cid = cluster_id[f]
-            if cid >= 0 and cluster_size[cid] > 0:
-                h_founder[f] = h_cluster[cid] / cluster_size[cid]
-
-        h_blocks[b] = h_founder
-        block_status[b] = 0
-        cluster_info[b] = {
-            "n_clusters": int(n_clust),
-            "cluster_id": cluster_id,
-            "h_cluster": h_cluster,
-        }
-        n_local += 1
-    if verbose:
-        if cluster_sizes_log:
-            print(f"  cluster dim per block: median={int(np.median(cluster_sizes_log))}, "
-                  f"min={min(cluster_sizes_log)}, max={max(cluster_sizes_log)} "
-                  f"(out of F={F})")
-        print(f"  per-block cluster-EM: {n_local} local, {n_global} fallback, "
-              f"{n_excl} excluded; {time.time()-t0:.0f}s")
-    return h_blocks, block_status, global_h, cluster_info
 
 
 def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
@@ -443,123 +255,11 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
     return h_blocks, block_status, global_h
 
 
-def project_blocks_to_records_overlap(h_blocks, block_status, global_h,
-                                       cn_var, blocks,
-                                       record_chrom, record_pos,
-                                       eps_bp: float = 100.0):
-    """Project per-block h to per-record AFs using INVERSE-DISTANCE AVERAGING
-    across all blocks that COVER the record.
-
-    For overlapping windows (Route 2): each record at position p is inside ~3
-    windows; compute h_r as the inverse-distance-weighted average of those
-    windows' h vectors, then project alt_freq = h_r @ cn_var[:, r].
-
-    Args:
-        h_blocks, block_status, global_h: as in project_blocks_to_records
-        blocks: list of BlockSpec
-        record_chrom, record_pos: per-record metadata
-        eps_bp: small offset to inverse-distance weights so a record exactly
-            at a window center doesn't blow up; ε=100 bp matches the typical
-            window step granularity.
-    """
-    N = cn_var.shape[1]
-    out = np.zeros(N, dtype=np.float64)
-    record_chrom = np.asarray(record_chrom)
-    record_pos = np.asarray(record_pos).astype(np.int64)
-
-    # Effective per-block h with fallback for excluded/global windows
-    F = h_blocks.shape[1]
-    h_eff = h_blocks.copy().astype(np.float32)
-    fallback_mask = (block_status != 0)
-    h_eff[fallback_mask] = global_h.astype(np.float32)
-
-    # Per-chrom: sorted blocks for fast cover-search
-    chrom_to_block_idxs: dict[str, list[int]] = {}
-    for i, b in enumerate(blocks):
-        chrom_to_block_idxs.setdefault(b.chrom, []).append(i)
-    block_centers = np.array([(b.start + b.end) / 2.0 for b in blocks])
-    block_starts_arr = np.array([b.start for b in blocks], dtype=np.int64)
-    block_ends_arr = np.array([b.end for b in blocks], dtype=np.int64)
-
-    cn_var_csc = cn_var.tocsc()
-    for chrom, idxs in chrom_to_block_idxs.items():
-        idxs_sorted = np.array(sorted(idxs, key=lambda i: blocks[i].start),
-                               dtype=np.int64)
-        starts_c = block_starts_arr[idxs_sorted]
-        ends_c = block_ends_arr[idxs_sorted]
-        centers_c = block_centers[idxs_sorted]
-        chr_mask = record_chrom == chrom
-        if not chr_mask.any():
-            continue
-        rec_idx = np.flatnonzero(chr_mask)
-        positions = record_pos[rec_idx]
-
-        # For each record p, the covering windows are those with start <= p <= end.
-        # Since windows are sorted by start and have fixed width W, we can find
-        # the leftmost candidate (rightmost block whose start <= p) and walk
-        # back/forward while end >= p / start <= p.
-        # Vectorized: for each record, find candidate left index via searchsorted
-        # on starts_c (rightmost start <= p). Then expand to the cover set.
-        n_blocks_c = len(idxs_sorted)
-
-        # Compute the maximum possible window width to know how far back to look
-        widths_c = ends_c - starts_c + 1
-        max_w = int(widths_c.max()) if len(widths_c) else 0
-        # The "step" between adjacent starts gives # of overlapping windows
-        if n_blocks_c > 1:
-            steps = np.diff(starts_c)
-            min_step = int(steps.min())
-        else:
-            min_step = max_w
-        max_overlap = max(1, max_w // max(1, min_step))
-
-        # Per-record cover sets: walk from candidate index +/- max_overlap
-        right = np.searchsorted(starts_c, positions, side='right') - 1
-        right = np.clip(right, 0, n_blocks_c - 1)
-
-        rec_block_lists: list[np.ndarray] = []
-        for ri, p in enumerate(positions):
-            r = int(right[ri])
-            cover = []
-            # walk back: while starts_c[k] <= p and ends_c[k] >= p
-            k = r
-            while k >= 0 and starts_c[k] <= p:
-                if ends_c[k] >= p:
-                    cover.append(int(idxs_sorted[k]))
-                k -= 1
-                if (r - k) > max_overlap + 2:
-                    break  # bounded walk
-            # walk forward (in case starts_c[r] > p missed some)
-            k = r + 1
-            while k < n_blocks_c and starts_c[k] <= p:
-                if ends_c[k] >= p:
-                    cover.append(int(idxs_sorted[k]))
-                k += 1
-                if (k - r) > max_overlap + 2:
-                    break
-            if not cover:
-                # No block covers this record — fall back to nearest center
-                d = np.abs(centers_c - p)
-                cover = [int(idxs_sorted[int(np.argmin(d))])]
-            rec_block_lists.append(np.asarray(cover, dtype=np.int64))
-
-        # Compute weights and aggregate
-        cv = cn_var_csc[:, rec_idx].toarray().astype(np.float32)  # F × n_rec
-        for ri, p in enumerate(positions):
-            cover = rec_block_lists[ri]
-            ctrs = block_centers[cover]
-            d = np.abs(ctrs - p) + eps_bp
-            w = (1.0 / d).astype(np.float32)
-            w /= w.sum()
-            h_avg = (h_eff[cover].T @ w).astype(np.float32)
-            out[rec_idx[ri]] = float(h_avg @ cv[:, ri])
-    return out
-
-
 def project_blocks_to_records(h_blocks, block_status, global_h,
                               cn_var, record_block,
                               record_chrom=None, record_pos=None,
-                              blocks=None, smooth=True):
+                              blocks=None, smooth=True,
+                              cn_var_called=None):
     """Project per-block h to per-record alt freqs.
 
     smooth=False (legacy): each record uses h_blocks[record_block[r]] directly
@@ -572,6 +272,11 @@ def project_blocks_to_records(h_blocks, block_status, global_h,
         discontinuities while preserving local mosaic structure.
 
     For smooth=True, record_chrom, record_pos, and blocks must be provided.
+
+    cn_var_called (MAR projection, 2026-05-21): if provided, divide each
+    record's AF by `h_avg @ cn_var_called[:, r]` (h-weighted called mass).
+    Matches global-mode semantics. Without it, ./. is silently treated as REF
+    → SV AF under-call at high-missingness records.
     """
     N = cn_var.shape[1]
     out = np.zeros(N, dtype=np.float64)
@@ -580,13 +285,20 @@ def project_blocks_to_records(h_blocks, block_status, global_h,
         rb = np.asarray(record_block)
         unique_b = np.unique(rb)
         cn_var_csc = cn_var.tocsc()
+        cvc_csc = cn_var_called.tocsc() if cn_var_called is not None else None
         for b in unique_b:
             mask = (rb == b)
             if not mask.any():
                 continue
             h = h_blocks[b] if b >= 0 else global_h
             cv = cn_var_csc[:, mask]
-            out[mask] = (h.astype(np.float32) @ cv.toarray()).astype(np.float64)
+            num = (h.astype(np.float32) @ cv.toarray()).astype(np.float64)
+            if cvc_csc is not None:
+                cvc = cvc_csc[:, mask]
+                den = (h.astype(np.float32) @ cvc.toarray()).astype(np.float64)
+                out[mask] = num / np.maximum(den, 1e-12)
+            else:
+                out[mask] = num
         return out
 
     # Smooth: linear interpolation between adjacent blocks on same chrom.
@@ -609,6 +321,7 @@ def project_blocks_to_records(h_blocks, block_status, global_h,
     block_centers = np.array([(b.start + b.end) / 2.0 for b in blocks])
 
     cn_var_csc = cn_var.tocsc()
+    cvc_csc = cn_var_called.tocsc() if cn_var_called is not None else None
     for chrom, idxs in chrom_to_block_idxs.items():
         idxs = np.array(sorted(idxs, key=lambda i: blocks[i].start))
         centers_c = block_centers[idxs]
@@ -641,7 +354,14 @@ def project_blocks_to_records(h_blocks, block_status, global_h,
         # alt_freq[i] = w_left[i] * (Hl[i] @ cv[:,i]) + w_right[i] * (Hr[i] @ cv[:,i])
         # = sum_f cv[f,i] * (w_left[i] * Hl[i,f] + w_right[i] * Hr[i,f])
         # Compute as einsum
-        af = (w_left * np.einsum("if,fi->i", Hl, cv)
-              + w_right * np.einsum("if,fi->i", Hr, cv))
-        out[rec_idx] = af
+        af_num = (w_left * np.einsum("if,fi->i", Hl, cv)
+                  + w_right * np.einsum("if,fi->i", Hr, cv))
+        if cvc_csc is not None:
+            # MAR projection: divide by interpolated h-weighted called mass.
+            cvc = cvc_csc[:, rec_idx].toarray()
+            af_den = (w_left * np.einsum("if,fi->i", Hl, cvc)
+                      + w_right * np.einsum("if,fi->i", Hr, cvc))
+            out[rec_idx] = af_num / np.maximum(af_den, 1e-12)
+        else:
+            out[rec_idx] = af_num
     return out

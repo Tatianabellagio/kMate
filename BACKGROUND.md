@@ -1,16 +1,15 @@
 # Background — why this project exists, and why the approach is what it is
 
-This file captures the reasoning that led to the current method. `SUMMARY.md` is the results writeup; `HANDOFF.md` is the next-steps queue. Read this if you need the *why*.
+This file captures the reasoning that led to the current method. `HANDOFF.md` is the current-state pointer + next-steps queue. Read this if you need the *why*.
 
 ---
 
 ## The problem
 
-Estimate **structural variant (SV) allele frequencies** in evolved Pool-seq populations from the **GrENE-Net** experiment.
+Estimate **structural variant (SV) and SNP allele frequencies** in evolved Pool-seq populations from the **GrENE-Net** experiment.
 
 - 2,415 evolved Pool-seq libraries (`MLFH*`), 8 SEEDMIX founder-pool replicates.
-- Founder panel: 231 *A. thaliana* ecotypes, of which **81 have long-read assemblies** (others have only short-read SNP genotypes from 1001 Genomes / GrENE-Net VCF).
-- Existing SV calls: minimap + syri on the 81 assemblies → SV VCF (50,446 SVs × 80 unique 1001G IDs after collapsing duplicate assemblies).
+- Founder panel: 231 *A. thaliana* ecotypes, of which **80 have long-read assemblies** in the cactus pangenome; the remaining **151 are PanGenie-genotyped** from public 1001 Genomes short reads.
 - Existing SV frequency method: **freqk** (k-mer-based per-sample AF). Suffers at low coverage and for SVs with non-unique flanking k-mers.
 
 Goal: a more accurate per-sample SV allele-frequency table that slots into the downstream GEA pipeline.
@@ -19,61 +18,59 @@ Goal: a more accurate per-sample SV allele-frequency table that slots into the d
 
 ## The method, in one line
 
-Run **hapFIRE** unmodified on SNPs, then project its founder-frequency output onto SVs via the founder × SV genotype matrix:
+**`cactus_em`**: per-sample k-mer Poisson EM on the 231-founder simplex, projected through a founder × variant matrix (`cn_var_231_arch3`):
 
 ```
-f_SV(v) = Σ_e G_SV(e, v) · f_ecotype(e)
+c_k ~ Poisson( λ · h^T · cn_full[:, k] )   for each panel k-mer k
+AF_r = h^T · cn_var[:, r]                  for each VCF record r
 ```
 
-Mathematically identical to how hapFIRE itself computes per-SNP frequencies internally (`snp_frequency = haplotype_freq @ haplotype_to_SNP_matrix`). ~50 lines of post-processing Python on top of unmodified hapFIRE.
+Joint EM across all ~80M panel k-mers buys identifiability for the 231-vector `h`, then a linear projection through `cn_var` gives per-record SNP + INS + DEL + SV alt frequencies in one pass. See `ALGORITHM.md` (prose) and `CACTUS_EM_MATH.md` (math).
+
+The current cactus_em pipeline **replaced** an earlier hapFIRE-projection approach (run hapFIRE on SNPs, project its founder-frequency vector onto SVs via a founder × SV genotype matrix). The architectural pattern — recover `h` once, project to many variants — is the same; the inference is now k-mer-EM rather than HARP per-LD-block + CVXPY.
 
 ---
 
-## Why hapFIRE / HARP, and why we don't modify them
+## Why a founder-mixture model (and not direct per-SV genotyping)
 
-**hapFIRE** (Wu, Exposito-Alonso lab — github.com/xingwu2/hapFIRE, also github.com/moiexpositoalonsolab/HapFIRE): infers SNP and founder-accession frequencies from Pool-seq BAMs given a phased founder panel.
-- Uses **HARP** (Kessner et al. 2013, PMID 23364324) under the hood for windowed haplotype-frequency estimation.
-- Two-stage internally:
-  1. **HARP** estimates haplotype frequencies in each LD block from the BAM, using SNPs.
-  2. **CVXPY** projects haplotype frequencies onto founder accession frequencies via constrained least-squares (`ecotype_frequency_estimation_selected`), using the founder × haplotype dosage matrix.
-- Per-SNP frequencies are then `haplotype_freq @ haplotype_to_SNP_matrix`.
-- Conceptually similar to **HAF-pipe** but uses LD-defined haplotype blocks instead of fixed windows.
-- Documented in the GrENE-Net paper (Text S4); described as a tool that exploits whole-genome linkage so effective coverage exceeds true coverage.
+**hapFIRE** (Wu, Exposito-Alonso lab) and **HARP** (Kessner et al. 2013, PMID 23364324) demonstrated that recovering whole-genome founder frequencies from pool-seq is feasible and that per-SNP frequencies fall out as a linear projection. Conceptually similar to **HAF-pipe** but uses LD-defined haplotype blocks instead of fixed windows.
 
 ### Why we cannot just feed SVs into HARP
 
-HARP's likelihood is **per-base**: each read contributes `P(observed base | true base, qual)` at SNP positions, summed over reads. The SNP-table format (`snp_table_construction`) literally has A/C/G/T columns per haplotype per position. SVs don't fit that model — a deletion or insertion isn't a base substitution; the evidence is split reads / discordant pairs / coverage shifts. Making HARP SV-native would require replacing the entire per-base likelihood with a structural-evidence model — a real rewrite.
+HARP's likelihood is **per-base**: each read contributes `P(observed base | true base, qual)` at SNP positions, summed over reads. The SNP-table format literally has A/C/G/T columns per haplotype per position. SVs don't fit that model — a deletion or insertion isn't a base substitution; the evidence is split reads / discordant pairs / coverage shifts. Making HARP SV-native would require replacing the entire per-base likelihood — a real rewrite.
 
-### Why we don't need to
+### Why cactus_em instead of "hapFIRE then project"
 
-hapFIRE *already* outputs the founder-frequency vector. SNP frequencies fall out by linear projection. Nothing about that projection is SNP-specific — swap the marker matrix from `founder × SNP` to `founder × SV` and the same machinery yields SV frequencies. **The estimator is mathematically identical to what hapFIRE does for SNPs.**
+Three reasons (see `old_docs/METHODS_TRIED.md` for the historical design-space map):
 
-### Alternatives considered and ruled out
+1. **Single pipeline handles SNPs + INS + DEL + SVs natively** — k-mer EM doesn't care what kind of variant the k-mer flanks.
+2. **Graph-aware k-mers are richer evidence than per-SNP windows** — pangenome bubbles produce 16-32 k-mers per allele, capturing SV breakpoints directly.
+3. **~3× faster end-to-end** than hapFIRE on real pool-seq samples (hapFIRE's Phase 2 HARP loop is serial across LD blocks).
 
-1. **Modify HARP's likelihood for split-read / breakpoint evidence.** Real engineering, brittle, unnecessary given option 3 works.
-2. **Pangenome-graph approach** (vg map / giraffe; founders = paths through minigraph-cactus graph). More elegant, uses existing pangenome infrastructure, but it's a rewrite not an adaptation.
-3. **Marker-substitution / projection** ← what we're doing. Smallest change, exact projection (no estimation noise added at the SV step), reuses unmodified hapFIRE.
-4. **freqk-style per-SV estimates with founder SV genotypes as a design matrix.** Discards HARP's read-level information; loses the whole point of using LD.
+cactus_em and hapFIRE agree at R²=0.996 on SNPs in real SEEDMIX_S1 — same inverse problem, different inference routes. cactus_em adds SVs; hapFIRE can't.
 
 ---
 
 ## Known limitations of this approach
 
-In rough priority for downstream GrENE-Net analysis:
+In rough priority for downstream GrENE-Net analysis (current cactus_em era):
 
-1. **No-recombination assumption.** hapFIRE assumes every haplotype in the pool is one of the listed founders. The simulation does not test this (VISOR pools intact founder consensus FASTAs). Evolved GrENE-Net samples have 1–3 generations of recombination → expect degraded per-block accuracy. This is the assumption that *matters* and is *untested*.
-2. **Panel ascertainment ceiling.** Only 80 of 231 GrENE-Net ecotypes have SV genotypes (≈33% of seedmix mass, 17.7% by recipe). SVs polymorphic only among the un-genotyped 151 are invisible to projection. Estimates for SVs that segregate in both groups will be biased low proportional to mass on un-assembled founders.
-3. **231-simplex identifiability.** With many similar founder haplotypes, CVXPY can have multiple near-optimal solutions. Per-ecotype Pearson r between hapFIRE freqs and seedmix recipe is ~0; aggregates (sums over multiple carriers) are accurate.
-4. **Per-window vs genome-wide.** hapFIRE currently saves only the genome-wide weighted average ecotype frequency (top-20% by haplotype diversity). Per-block freqs are computed but discarded (`hapFIRE.py:138-139` are commented out). Patching to use per-block freqs would mitigate (1) by isolating recombinants to their own blocks.
+1. **Recombination violates the "every haplotype = a clean founder" assumption.** Evolved GrENE-Net samples have 1–3 generations of recombination → per-block ancestry. The window-mode + global-anchor + HMM-smooth (`★★`) recipe mitigates this; window_200kb still wins on the hardest n50_g3 regime by a narrow margin.
+2. **Cactus-vs-PG k-mer asymmetry (+41% cactus h-bias).** Cactus founders have richer k-mer fingerprints (CV 2.6% across founders) than PanGenie-genotyped founders. The EM weighs k-mer evidence and over-credits cactus founders. Hurts the ~0.58% of records where carrier rates differ extremely (PG-specific variants, mostly Chr1q knob Mb 21-23). Mitigation strategies explored in `old_docs/BALANCING_KMERS.md`; production k-mer filter is **undecided** (see `PIPELINE_STATE_2026-05-22.md`).
+3. **`cn_var` GT disagreement at multi-allelic atomization sites.** `bcftools norm -m -any` produced spurious per-founder carrier calls at SNPs adjacent to INDELs/SVs (`old_docs/OUTLIERS_SUMMARY.md`). **Fix in current production**: arch decomposition (annotate_vcf + convert-to-biallelic) avoids `norm -m -any` entirely. See `INVESTIGATION_2026-05-19_CN_VAR_DECOMPOSITION.md`.
+4. **231-simplex identifiability.** With many near-identical founder haplotypes, multiple `h` solutions are near-optimal. Per-ecotype recovery is noisy; aggregates (sums over multiple carriers) are accurate.
+5. **Beagle imputation hard-rejected for SVs.** LOO testing showed −25 to −30 pp concordance loss on small/medium SVs. Production VCF keeps PanGenie SV calls unimputed. See `pangenie_genotyping/data/merged/README_GOLDEN_STANDARD.md`.
+6. **Centromere alignment dead zone (Chr1 Mb 14–17 and pericentromeric regions on all chroms).** Structural; not fixable at EM or `cn_var` level. ~30% of per-SNP outliers live there.
 
 ---
 
 ## Data provenance
 
-- **GrENE-Net SNP VCF** (`greneNet_final_v1.1.recode.vcf`): 231 founders, used unmodified by hapFIRE. Chr1-only subset at `data/vcf/greneNet_Chr1_only.vcf`. Note: the VCF originally has a blank trailing column — header lists 232 names, only 231 are real.
-- **Founder SV VCF** (50,446 SVs): minimap + syri on **81 long-read assemblies**, then bcftools merge. Pipeline at `/home/tbellagio/scratch/pang/sv_panel/`. Collapses to 80 unique 1001G IDs (one accession had two assemblies).
-- **Founder × SV dosage matrix** (`data/founder_sv_matrix.parquet`): 50,446 × 82, 0/1 dosage. Built by `scripts/build_founder_sv_matrix.py`. *A. thaliana* inbreds are effectively haploid for the purposes of this matrix.
-- **Assembly inventory** (`ASSEMBLIES_Best_version_of_dataset.csv`): 534 unique Accession_IDs total across all available long-read data; only **84** overlap GrENE-Net 231 (so a bigger panel from current data buys at most +4 over the 80 we have).
+- **Production panel VCF**: `arch3/chr1/merged_231_chr1_final.vcf.gz` — Arch 3 231-founder biallelic haploid panel (Chr1; graph-annotated, symbolic-ID decomposed). `pangenie_genotyping/data/merged/founders_231_chr.vcf.gz` is the pre-Arch 3 mixed-ploidy catalog *(archive)*; see `pangenie_genotyping/data/merged/README_GOLDEN_STANDARD.md`.
+- **GrENE-Net SNP VCF** (`greneNet_final_v1.1.recode.vcf`): 231 founders, ~3.24M SNPs. Used by hapFIRE in the methods-comparison column and as a `cn_var` second-source in the Fix 2 hybrid `cn_var`. Note: the VCF header lists 232 names but the 232nd is blank.
+- **Cactus pangenome**: `/home/tbellagio/scratch/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.vcf.gz` — minigraph-cactus on 82 long-read assemblies (80 unique GrENE-Net Accession_IDs after dedup; the two known-duplicate pairs are 5772/6150 and 6915/8387 — historical labeling query at `old_docs/CACTUS_ASSEMBLY_LABELING_QUERY.md`; resolved by dropping 5772 + 9947 in v3qc).
+- **PanGenie genotypes**: 148 of the 151 missing founders genotyped from ENA fastqs (PRJNA273563 + PRJNA30811), 2 from xwu BAMs (100001, 100002), 1 absent.
+- **Production cn matrices**: cn_full — `poolfreq/data/cn_full_231_v3qc_v3_mixedloose/cn_Chr1.cn.npz`; cn_var — `arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` (Arch 3). Earlier versions `cn_full_231_v3`, `cn_var_231_v3` etc. are *(archive)*.
 - **Existing hapFIRE outputs from Xing Wu** for the SEEDMIX samples: `/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s{1..8}_ecotype_frequency.txt`. For the 2,415 evolved samples: `…/hapFIRE_frequencies/samples/ecotype_frequency/MLFH*_ecotype_frequency.txt`.
 
 ---

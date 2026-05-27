@@ -1,166 +1,452 @@
-# cactus_em — algorithm explanation
+# kMate — algorithm, math, and production wiring (code-verified)
 
-End-to-end description of how cactus_em estimates SNP and SV allele frequencies in pool-seq samples. Companion docs: `MODEL_SPEC.md` (math + early design notes), `BACKGROUND.md` (why we built it), `SUMMARY.md` (real-data results), `SIMULATION_RESULTS.ipynb` (full benchmark).
+Single source of truth for the kMate algorithm. Replaces `ALGORITHM.md` (out-of-date
+prose) and `CACTUS_EM_MATH.md` (out-of-date math). Every formula and pipeline step
+below has been cross-checked against the production code; references are
+`file:line` so they stay traceable.
 
-## The problem
+Code-verified against:
+- `poolfreq/src/em_solver.py` — EM core
+- `poolfreq/src/build_kmer_cn.py` — cn_full builder
+- `poolfreq/src/build_cn_var.py` — cn_var + cn_var_called builder
+- `poolfreq/src/per_sample_per_chrom.py` — production per-sample driver
+- `poolfreq/src/block_em.py` — per-window / per-block EM
+- `poolfreq/src/kmer_count.py` — jellyfish wrapper
 
-Given pool-seq reads from a population that's a mixture of N known founder genomes (the "panel"), recover the allele frequency at every variant in the panel.
+Last verified: 2026-05-22.
 
-For GrENE-Net specifically:
-- 231 *A. thaliana* founders in the panel — 80 with long-read assemblies (cactus pangenome), 151 imputed via Beagle from short-read SNPs
-- ~3.4 M variants per chrom panel (SNPs + INS + DEL + SVs)
-- Pool-seq short reads from one sample (e.g. SEEDMIX_S1, or one of the 2,415 evolved GrENE-Net samples)
+---
 
-Output: per-VCF-record alt allele frequency in the pool, one number per (chrom, pos, ref, alt) per sample.
+## 1. Problem statement
 
-## Two key matrices, computed once per panel
+Given pool-seq short reads from a sample that is a mixture of $F$ known founder
+genomes (the *panel*), recover the alternate-allele frequency at every variant
+in the panel VCF.
 
-### `cn_full` — founder × k-mer (the EM evidence)
+Input per sample: paired FASTQs / one BAM.
+Output: per-VCF-record alt-allele frequency TSV (chrom, pos, ref_len, alt_len,
+alt_freq, info, n_called, se), one row per atomized record.
 
-For each pangenome bubble, **PanGenie** produces a list of unique-to-this-bubble k-mers (post var-dedup + ref-dedup, capped at 16/allele). For each k-mer `k` in bubble `v`, we check which of the N founders' haplotypes through bubble `v` contain `k`.
+For the 231-founder *A. thaliana* panel used here: $F = 231$, $K \approx 8\times10^7$
+distinct panel k-mers genome-wide, $R \approx 3.4\times10^6$ atomized VCF records
+covering SNPs, short indels, and SVs $\geq 50$ bp.
 
+---
+
+## 2. Precomputed panel matrices
+
+Three sparse $F \times \cdot$ indicator matrices are built once per panel:
+
+### 2.1 `cn` — founder × k-mer (the EM evidence)
+
+$$\mathrm{cn} \in \{0,1\}^{F \times K}, \quad \mathrm{cn}_{f,k} = \mathbb{1}[\text{founder } f \text{ carries panel k-mer } k]$$
+
+Built per-chromosome by `build_kmer_cn.py:96-230` from PanGenie's bubble-level
+k-mer index (`kmers.tsv.gz`), the panel VCF, and the reference FASTA. For each
+PanGenie bubble:
+
+1. PanGenie's k-mer list for the bubble is taken as-is. PanGenie has already
+   applied: (i) in-bubble dedup, (ii) genomic ref-dedup, (iii) a cap of 16
+   k-mers/allele for biallelic bubbles and 32/allele for multi-allelic bubbles.
+   We inherit those filters.
+2. For each founder, we reconstruct their haplotype across the bubble by
+   applying their genotype to the reference (`reconstruct_haplotype`,
+   `build_kmer_cn.py:45-76`).
+3. We compute the canonical k-mer set of the reconstructed haplotype
+   (`canonical_kmer_set`, `build_kmer_cn.py:34-42`). A canonical k-mer is the
+   lexicographically smaller of $(k, \text{revcomp}(k))$; k-mers containing N
+   are skipped.
+4. $\mathrm{cn}_{f,k} = 1$ iff the bubble's k-mer $k$ is in founder $f$'s
+   canonical k-mer set.
+
+**Haploid panel input.** The panel VCF that feeds both `cn` and `cn_var` is
+*pre-haploidized* (e.g. `pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz`):
+each GT field contains a single allele, `0`, `1`, ..., or `.`. PanGenie outputs
+diploid GTs for the 153 short-read–genotyped founders, which we haploidize
+before merging with the 78 long-read–assembled cactus founders, so the resulting
+231-founder panel is entirely haploid. Under pysam this surfaces as
+single-element tuples (`(0,)`, `(1,)`, `(None,)`); `build_kmer_cn.py:189-194`
+reads `gt[0]`, which is the only allele.
+
+**Missing-GT handling (`build_kmer_cn.py:189-194`):** controlled by
+`--treat-missing-as-n`. Production `cn_full_v3qc_v3` was built with
+`treat_missing_as_n=False`, i.e. `./.` → REF in the reconstructed haplotype.
+The earlier `v3qc_v2` build with `treat_missing_as_n=True` over-inflated
+private-k-mer ratios via N-poisoning of short bubbles and is archived.
+
+### 2.2 `cn_var` — founder × variant (the projection target)
+
+$$\mathrm{cn}_{\text{var}} \in \{0,1\}^{F \times R}, \quad \mathrm{cn}_{\text{var},f,r} = \mathbb{1}[\text{any allele of founder } f \text{'s GT at } r \text{ is alt}]$$
+
+Built by `build_cn_var.py:30-109` from the same haploid biallelic-decomposed
+panel VCF used for `cn`, processed with `bcftools norm -m -`. A founder is
+marked as an alt-carrier iff any allele in its GT field is non-zero
+(`build_cn_var.py:68`: `any(a is not None and a > 0 for a in gt)`). On a
+haploid GT (`(0,)`, `(1,)`, ...) this is equivalent to checking `gt[0] > 0`,
+so the alt-carrier definitions in `cn` and `cn_var` agree exactly under the
+production panel.
+
+### 2.3 `cn_var_called` — founder × variant (the call mask)
+
+$$\mathrm{cn}_{\text{var\_called}} \in \{0,1\}^{F \times R}, \quad \mathrm{cn}_{\text{var\_called},f,r} = \mathbb{1}[\text{founder } f \text{'s GT at } r \text{ is NOT } ./.]$$
+
+Built alongside `cn_var` (`build_cn_var.py:62-66`). This call mask is **critical
+for the AF projection** in §6 — without it, `./.` cells get silently treated as
+REF, which under-counts AF at records with high `F_MISSING` (up to 0.66 on
+cactus-only or PG-only records after the cactus-78 + PG-153 merge).
+
+---
+
+## 3. Observation model
+
+Per pool-seq sample, we count occurrences of every panel k-mer with Jellyfish 2
+(`kmer_count.py:32-99`), invoked in canonical mode (`-C`, k=31). Reads are
+streamed from BAM via `samtools fastq -F 0x900` (drops secondary +
+supplementary alignments; **does not** drop duplicates — preprocessing
+must handle that for non-PCR-free libraries).
+
+Let $c_k \in \mathbb{Z}_{\geq 0}$ be the observed canonical-k-mer count and
+$\mathbf{h} \in \Delta^{F-1}$ the latent founder mixture. We model
+
+$$\boxed{\; c_k \;\sim\; \mathrm{Poisson}\!\left(\lambda \cdot \mu_k(\mathbf{h})\right), \qquad \mu_k(\mathbf{h}) = \sum_{f=1}^F h_f \, \mathrm{cn}_{f,k} \;}$$
+
+as conditionally independent across $k$, with simplex constraint
+$h_f \geq 0$, $\sum_f h_f = 1$.
+
+The Poisson log-likelihood
+$\ell(\mathbf{h}) = \sum_k \left[c_k \log \mu_k(\mathbf{h}) - \lambda \, \mu_k(\mathbf{h})\right] + \text{const}$
+is concave on $\Delta^{F-1}$.
+
+**Coverage estimate $\lambda$.** Reported at load time as a sanity-check value
+(`per_sample_per_chrom.py:104-106`):
+
+$$\hat{\lambda} \;=\; \frac{F \cdot \sum_k c_k}{\sum_{f,k} \mathrm{cn}_{f,k}}$$
+
+(total counts $\times$ $F$ divided by total founder–k-mer carrier entries;
+assumes uniform $h$). **$\lambda$ cancels in the M-step ratio (§4) and is not
+consumed by the EM** — the value is logged for inspection only.
+
+---
+
+## 4. EM algorithm
+
+Treat each unit of count at k-mer $k$ as a latent draw from one of the
+founders carrying $k$. Let $z_{k,f}$ be the (unobserved) count attributed to
+founder $f$, with $z_{k,f} = 0$ if $\mathrm{cn}_{f,k} = 0$ and
+$\sum_f z_{k,f} = c_k$.
+
+**E-step.** Given current $\mathbf{h}^{(t)}$:
+
+$$\mathbb{E}\!\left[z_{k,f} \mid c_k, \mathbf{h}^{(t)}\right] \;=\; c_k \cdot \frac{h_f^{(t)} \, \mathrm{cn}_{f,k}}{\mu_k(\mathbf{h}^{(t)})}$$
+
+**M-step.** Constrained MLE on the simplex:
+
+$$\boxed{\; h_f^{(t+1)} \;\propto\; h_f^{(t)} \cdot \sum_{k=1}^K \mathrm{cn}_{f,k} \cdot \frac{c_k}{\mu_k(\mathbf{h}^{(t)})} \;}$$
+
+followed by L1 renormalization $\sum_f h_f^{(t+1)} = 1$. The coverage $\lambda$
+cancels.
+
+Vectorized implementation (`em_solver.py:86-100`):
+
+```python
+denom   = np.maximum(h @ cn, 1e-7)   # μ_k(h), with numerical floor
+cw      = counts / denom              # c_k / μ_k
+em_term = h * (cn @ cw)               # h_f · Σ_k cn[f,k] · c_k/μ_k
+h_new   = em_term / em_term.sum()     # L1 renormalize
 ```
-cn_full[f, k] = 1   if founder f carries k-mer k
-                0   otherwise
-```
 
-Genome-wide: ~80 M unique k-mers × 231 founders, sparse int8 CSR. ~30-50 GB in RAM.
+**Initialization (`em_solver.py:70-71`):** $h_f^{(0)} = 1/F$ (uniform).
+**Termination (`em_solver.py:108-111`):** halt when
+$\lVert\mathbf{h}^{(t+1)} - \mathbf{h}^{(t)}\rVert_2 < \varepsilon$, with
+$\varepsilon = 10^{-7}$ in production (`per_sample_per_chrom.py:225`,
+`block_em.py:362`). Typical 30–80 iterations in float32.
 
-Built by `poolfreq/src/build_kmer_cn.py` from PanGenie's `kmers.tsv.gz` + the panel VCF + reference FASTA. One-time cost: ~5-8 h SLURM.
+**EM is run only on k-mers with $c_k > 0$** (`per_sample_per_chrom.py:207-211`).
+The Poisson M-step sums $\mathrm{cn}_{f,k} \, c_k / \mu_k$, so terms with $c_k = 0$
+contribute zero — filtering is exact, not an approximation. Production
+$n_{nz} / K \approx 0.05$–$0.30$ depending on coverage.
 
-### `cn_var` — founder × variant (the projection target)
+The update is the standard Lee–Seung multiplicative NMF update with simplex
+renormalization; the same iteration arises in finite-mixture EM (Dempster,
+Laird, Rubin 1977) and in RNA-seq abundance estimation (RSEM, kallisto,
+salmon) under the substitution {transcripts → founders, reads → k-mers}.
 
-One column per VCF record (per ALT allele after `bcftools norm -m -`), N founder rows.
+### 4.1 Optional priors (per-window mode only, see §7)
 
-```
-cn_var[f, r] = 1   if founder f's GT at variant r is the ALT (any GT > 0)
-               0   otherwise
-```
+Two regularizers are wired into `em_solver.solve_em` and used in `block_em.py`
+when running per-window EM:
 
-Genome-wide: ~3.4 M variants × 231 founders.
+**Symmetric Dirichlet$(\alpha)$ prior on $\mathbf{h}$** (`em_solver.py:74-75, 92-94`):
 
-Built by `poolfreq/src/build_cn_var.py` from the panel VCF GT field. ~30 min.
+$$h_f^{(t+1)} \;\propto\; h_f^{(t)} \sum_k \mathrm{cn}_{f,k} \frac{c_k}{\mu_k} \;+\; (\alpha - 1)$$
 
-For the 80 cactus founders, GTs come from the cactus pangenome VCF directly. For the 151 imputed founders, GTs come from Beagle imputation against the GrENE-Net SNP haplotypes — see `imputation/IMPUTATION_PLAN.md`.
+$\alpha = 1$ recovers the MLE; $\alpha > 1$ pulls toward uniform.
 
-## Per-sample run (the heavy step)
+**Anchor toward a prior $\mathbf{h}_{\text{prior}}$** (typically the
+chromosome-wide global $\hat{\mathbf{h}}$, weighted by $\beta$;
+`em_solver.py:78-94`):
 
-**Input:** paired FASTQs from a pool-seq sample.
+$$h_f^{(t+1)} \;\propto\; h_f^{(t)} \sum_k \mathrm{cn}_{f,k} \frac{c_k}{\mu_k} \;+\; \beta \, N \, h_{\text{prior},f}, \qquad N = \sum_k c_k$$
 
-**Step 1 — count k-mers in reads.** Use jellyfish with the genome-wide k-mer set as the query. Output: `c[k]` = number of read-hits to each of the 80M k-mers in cn_full's index. Discard k-mers not in the index — irrelevant for downstream.
+$\beta = 0$ is pure MLE; $\beta = 1$ weights the prior as much as the data;
+$\beta \in [0.05, 0.5]$ is the working range.
 
-**Step 2 — estimate sample coverage `λ`.** From total k-mer hits, derive an expected per-k-mer rate (≈ read coverage / 1 since each k-mer position is hit once per copy).
+---
 
-**Step 3 — EM solve for founder frequencies `h`.** This is the core innovation. The generative model is
+## 5. Per-chromosome execution (production)
 
-```
-c[k] ~ Poisson( λ · h^T · cn_full[:, k] )
-```
+The production driver `per_sample_per_chrom.py:68-121` runs **one EM per
+chromosome**, not a single genome-wide EM. Rationale (`per_sample_per_chrom.py:1-13`):
+loading the full genome-wide `cn` matrix would peak at ~74 GB float32; per-chrom
+peaks ~5× lower, fitting in 32–64 GB SLURM allocations.
 
-for each k-mer `k`, with `h` on the founder simplex (`h ≥ 0`, `Σh = 1`). Equivalently: treat each unit of count at k-mer `k` as a latent draw from one of the founders carrying that k-mer, with mixture proportion `h`.
+The per-chromosome $\hat{\mathbf{h}}_c$ vectors agree with the genome-wide
+$\hat{\mathbf{h}}$ to within ~0.1% in practice (because each chromosome's
+~16M k-mers already massively over-determines the 231-vector simplex).
 
-The simplex-constrained MLE is found by the standard multiplicative EM update (Lee–Seung-style; identical in form to multinomial-mixture EM and to NMF with simplex normalization):
+For the methods section: state this as **one EM per chromosome** and treat the
+genome-wide formulation as the conceptual model.
 
-```
-μ_k(h)    =  h^T · cn_full[:, k]                          (E-step denominator)
-h_new[f]  ∝  h[f] · Σ_k  cn_full[f, k] · c[k] / μ_k(h)    (M-step, then renormalize Σh = 1)
-```
+---
 
-`λ` cancels in the M-step ratio (it's constant across `k` under the mixture interpretation), so the solver doesn't actually consume the coverage estimate from Step 2 — coverage is computed for sanity-checking only.
+## 6. Allele-frequency projection (corrected formula)
 
-The iteration monotonically increases the likelihood and converges in tens of iterations from a uniform start. The float32-throughout implementation runs in ~5–15 min per sample on the 80M-k-mer matrix. See `poolfreq/src/em_solver.py`.
+Given the per-chromosome $\hat{\mathbf{h}}_c$, the alternate-allele frequency
+at record $r$ on chromosome $c$ is the **missing-aware projection**
+(`per_sample_per_chrom.py:129-150`):
 
-**Why pool k-mers across the whole genome?** Each individual k-mer is sparse (most founders don't carry it), but jointly the 80M k-mers over-determine the 231-vector h. This is why we get clean h estimates even at low pool-seq coverage — the joint signal is huge.
+$$\boxed{\; \widehat{\mathrm{AF}}_r \;=\; \frac{\hat{\mathbf{h}}_c^{\!\top} \, \mathrm{cn}_{\text{var},:,r}}{\hat{\mathbf{h}}_c^{\!\top} \, \mathrm{cn}_{\text{var\_called},:,r}} \;}$$
 
-**Step 4 — project h to per-record AFs.** Once h is known, the alt allele frequency at variant `r` is just:
+with a safe-divide floor of $10^{-12}$ on the denominator. This is the standard
+"AF among called samples" (AC/AN). For uniform $\mathbf{h} = (1/F) \mathbf{1}$ it
+collapses to AC/AN exactly.
 
-```
-pred_af[r] = h · cn_var[:, r]
-```
+**Why the call-mask matters.** Under the bare projection $\hat{\mathbf{h}}^\top
+\mathrm{cn}_{\text{var}}$ (the formula in the old `ALGORITHM.md` and
+`CACTUS_EM_MATH.md`), `./.` cells are treated as REF (because `cn_var` is 0
+both for confirmed-REF and for missing). At records where a substantial
+fraction of founders is `./.` (e.g. cactus-only or PG-only records after the
+cactus-78 + PG-153 merge, where `F_MISSING` runs up to 0.66), this
+systematically under-counts the true AF. The fix divides by the h-weighted
+called mass at each record. See `build_cn_var.py:12-18` for the production
+note.
 
-Vector-matrix multiply. Linear, exact, no estimation noise added at this step. Output: per-VCF-record alt freq. See `poolfreq/src/per_sample_driver.py:run_one_sample()`.
+### 6.1 Per-record uncertainty outputs (added 2026-05-21)
 
-## Optional: per-block (window) EM
+Alongside `alt_freq`, every record carries three uncertainty / QC fields, written
+for both `global` and `window` modes (`per_sample_per_chrom.py:658-684`):
 
-For evolved samples with mosaic ancestry (1-3 generations of recombination + selection), the assumption "every haplotype is a clean founder" is violated. The mitigation in `poolfreq/src/block_em.py`:
+| field | definition | h-dependent? | code |
+|---|---|---|---|
+| `info` | $\hat{\mathbf{h}}_c^{\!\top}\,\mathrm{cn}_{\text{var\_called},:,r}\in[0,1]$ — the h-weighted called mass (the projection denominator) | yes | `:246-249` |
+| `n_called` | $\sum_f \mathrm{cn}_{\text{var\_called},f,r}\in\{0,\dots,F\}$ — integer count of called founders at $r$ | no | `:594-600` |
+| `se` | $\sqrt{\,p(1-p)/\max(n_{\text{called}},1)\,}$, $p=\widehat{\mathrm{AF}}_r$ clipped to $[0,1]$; NaN if AF is NaN or $n_{\text{called}}=0$ | only through $p$ | `:662-666` |
 
-- Partition the genome into ~200 kb windows (`--window-bp 200000`, default)
-- Solve the EM per-window → per-window `h_w`
-- For each variant `r` in window `w`, project `pred_af = h_w · cn_var[:, r]`
+**What `se` is.** The Wald (binomial) standard error of a proportion
+$p=\widehat{\mathrm{AF}}_r$ whose effective sample size is the number of *called
+founders* at that record, $n_{\text{called}}$. For uniform $\mathbf{h}$,
+$\widehat{\mathrm{AF}}_r=\text{AC}/\text{AN}$ and `se` is exactly the textbook SE
+of that AC/AN proportion. So `se` answers **"how well is the per-record AF pinned
+down by the panel genotypes available at that record?"** — a panel-completeness /
+AC-AN sampling term. Records where most founders are `./.` (small
+$n_{\text{called}}$) get a large `se`; fully-genotyped records get a small one.
 
-Window mode trades global accuracy for local resolution — handles recombinants who switch founders across windows. This is the production setting for evolved samples (`--block-mode window`). For homogeneous F0 pools (SEEDMIX), `--block-mode global` is correct.
+**What `se` does NOT capture — carry into the paper and downstream.** `se` is a
+*panel-side* term only. It deliberately omits the three variance sources that
+actually dominate a pool-seq AF estimate:
 
-## What's structurally different from freqk
+1. **EM estimation error in $\hat{\mathbf{h}}$.** Finite reads make
+   $\hat{\mathbf{h}}$ itself uncertain; that uncertainty propagates linearly
+   through the projection but is invisible to `se`.
+2. **Read-coverage (Poisson) sampling.** At low coverage the k-mer counts — and
+   hence $\hat{\mathbf{h}}$ — are noisier, but `se` does not move with coverage.
+3. **Pool finite-$N$ sampling.** The realized pool is a multinomial draw of $N$
+   individuals from the source population (`SIMULATIONS_METHODS.md` §2); the
+   source-vs-realized gap is irreducible and not in `se`.
 
-| | cactus_em | freqk |
+`se` also keys off the integer *count* $n_{\text{called}}$, not the h-weighted
+mass `info`: a record whose called founders all carry negligible $\hat{h}$ can
+still report a small `se` when $n_{\text{called}}$ is large. Treat `info` and
+`n_called` as complementary — `info` is the *observed* confidence, `n_called` the
+*panel* confidence.
+
+**Downstream guidance.** Use `info` / `n_called` / `se` to **filter or flag**
+low-panel-support records (e.g. drop records below an `n_called` threshold, as the
+p80 notebook does at `missing_frac ≤ 10%`). Do **not** inverse-variance-weight on
+`se` as if it were the full estimation error — that weights by panel completeness,
+not AF precision. A precision estimate that folds in the EM/coverage terms would
+require propagating $\hat{\mathbf{h}}$ covariance or a read/k-mer bootstrap, which
+is **not implemented** in the production driver.
+
+---
+
+## 7. Per-window mode (recombinant pools)
+
+For pools whose ancestry is a recombinant mosaic (evolved samples after
+multiple generations of meiosis), partition the chromosome into windows
+$\{W_w\}$ and run the EM independently within each window. Window-mode
+projection becomes
+
+$$\widehat{\mathrm{AF}}_r \;=\; \frac{\hat{\mathbf{h}}_{w(r)}^{\!\top} \, \mathrm{cn}_{\text{var},:,r}}{\hat{\mathbf{h}}_{w(r)}^{\!\top} \, \mathrm{cn}_{\text{var\_called},:,r}}$$
+
+where $w(r)$ is the window containing record $r$.
+
+**Partitioning schemes** (`per_sample_per_chrom.py:255-344`, selected via
+`--block-mode`):
+- `global` (default): one $\hat{\mathbf{h}}_c$ per chromosome — for selfers /
+  inbreds / F0 pools (SEEDMIX).
+- `window` (fixed-bp): hard cuts every `--window-bp` (default 200 kb), optional
+  `--window-step` for overlapping windows + inverse-distance projection.
+- `ld_gabriel`, `ld_complete`: Gabriel-style or hapFIRE-style LD blocks
+  derived from `cn_var` (founder-genotype correlation).
+- `bigld_panel`: pre-computed BigLD blocks from the panel
+  (`hapfire_block_index.npz`) — strictest apples-to-apples with hapFIRE.
+
+**Anchoring** (`--global-anchor-weight`): per-window EM can be anchored to
+the chromosome-wide $\hat{\mathbf{h}}_c$ via the Dirichlet anchor of §4.1 with
+$\beta$ = `--global-anchor-weight`. Used when low-evidence windows would
+otherwise collapse onto a single founder.
+
+**Window-mode caveat.** A 100 kb hard-window mode on the 827k-SNP panel
+(hapFIRE-equivalent fine-scale) blew up haplotype-class count to 196/231 →
+HARP-style class methods failed; the founder-simplex EM in cn-window mode
+was unaffected (it doesn't form discrete classes). See
+`PIPELINE_STATE_2026-05-19.md`.
+
+---
+
+## 8. Experimental flags (off by default — not part of the paper algorithm)
+
+The production driver exposes several flags that wire in alternative EM
+variants. **All are off by default; none of them are part of the algorithm
+described in the paper.** Documented here for code-archaeology purposes only —
+these are under active testing.
+
+### 8.1 K-mer-budget balancing (`--row-normalize-cn`, `--kf-correction-alpha`)
+
+Empirically, the 78 cactus founders carry roughly 2× as many private k-mers
+per founder as the 153 PanGenie-imputed founders (median 8.7K vs 4.5K),
+producing a +41% h-bias toward cactus founders even in a balanced ground
+truth. The mitigation
+(`per_sample_per_chrom.py:111-121, 153-183`):
+
+1. Pre-EM: $\mathrm{cn}_{f,k} \leftarrow \mathrm{cn}_{f,k} / K_f$ where
+   $K_f = \sum_k \mathrm{cn}_{f,k}$. This makes each founder row sum to 1.
+2. Post-EM: $h_f^{\text{proj}} \propto \hat{h}_f / K_f^{\alpha}$ (renormalize).
+   $\alpha = 1$ is the mass-domain inverse exactly; $\alpha > 1$ over-corrects
+   to suppress residual h-bias.
+
+Tested in parallel SLURM arrays (k-mer-imbalance investigation,
+2026-05-15); **none of the rebalancing variants beat the plain Poisson EM
+(`filt2`) on per-record AF MAE**. The class h-bias and per-record AF MAE are
+anti-correlated; balancing one degrades the other. **Plain EM stays the
+production default.**
+
+### 8.2 Carrier-weighted counts (`--ac-weight-counts`)
+
+Multiplies $c_k \leftarrow c_k \cdot a_k$ where $a_k = \sum_f \mathrm{cn}_{f,k}$
+before the EM (`per_sample_per_chrom.py:214-222`). Cancels the
+"singleton voice" amplification: in plain EM, a k-mer carried by a single
+founder gets a $1/a_k = 1$ weight in the M-step, vs. $1/231$ for a
+universally-shared k-mer, which over-amplifies private k-mers. Off by default.
+
+### 8.3 HMM smoothing across blocks (`--hmm-smooth-passes`)
+
+Post-EM Li-Stephens-style smoothing of $\hat{\mathbf{h}}_w$ across adjacent
+windows, with recombination-rate-weighted neighbor averaging
+(`per_sample_per_chrom.py:375-391`; `block_haplotype_em.smooth_h_across_blocks`).
+Best params from `clean_smooth`: 10 passes, $\alpha = 0.2$, recomb rate
+$4 \times 10^{-8}$/bp.
+
+### 8.4 Contamination ω (`em_solver.solve_em_with_omega`)
+
+Augments the EM with a per-k-mer contamination rate $\omega_k$ that doesn't
+depend on $\mathbf{h}$ (`em_solver.py:118-175`). Experimental — not invoked by
+the production driver.
+
+---
+
+## 9. Per-sample output schema
+
+`per_sample_per_chrom.py:672-684` writes a TSV with columns:
+
+| column | meaning |
+|---|---|
+| `chrom` | chromosome (string, e.g. `Chr1`) |
+| `pos` | 1-based position (matches `cn_var.meta.pos`; freqk users: see §10 L4) |
+| `ref_len` | length of REF allele (bp) |
+| `alt_len` | length of ALT allele (bp) |
+| `alt_freq` | $\widehat{\mathrm{AF}}_r$, the missing-aware projection of §6 |
+| `info` | h-weighted called mass per record, $\in [0,1]$ |
+| `n_called` | integer panel-level called count, $\in [0,F]$ |
+| `se` | Wald binomial SE assuming $n = n_{\text{called}}$ |
+
+Also written: `*.h_per_chrom.npz` (global mode) or `*.h_blocks_per_chrom.npz`
+(window mode) with the per-chrom or per-block h vectors.
+
+---
+
+## 10. Audit findings (carry into the paper / discussion)
+
+The following are issues / assumptions worth knowing about. Severity tags:
+`CRITICAL` = wrong scientific result, `HIGH` = wrong in realistic edge cases,
+`MEDIUM` = fragile / undocumented, `LOW` = minor.
+
+| ID | Sev | Issue |
 |---|---|---|
-| **Inference** | joint EM across all 80M k-mers under simplex constraint | per-bubble independent counts |
-| **Founder modelling** | explicit (h is per-founder) | none (no founder concept) |
-| **Cross-bubble pooling** | yes — bubbles with sparse k-mers borrow strength from bubbles with rich k-mers via h | no |
-| **Per-record output** | h × cn_var — exact projection | per-bubble alt-count / total-count |
+| C1 | CRITICAL | Old AF projection formula in `ALGORITHM.md` and `CACTUS_EM_MATH.md` (`AF = h^T cn_var`) silently treats `./.` as REF and under-counts AF on records with high `F_MISSING`. **Fixed in production**: §6 above is the correct formula. The old MDs are why this single source of truth was needed. |
+| H1 | HIGH | Production runs **one EM per chromosome**, not a single genome-wide EM. Empirically per-chrom $\hat{\mathbf{h}}_c$ agrees to ~0.1% with genome-wide $\hat{\mathbf{h}}$, but methods text must say "per-chromosome" not "genome-wide". |
+| H2 | HIGH | The EM filters to $c_k > 0$ k-mers before solving. Mathematically equivalent under the M-step, but the matrix actually fed to EM is ~5–30% the size of $K$ depending on coverage. State this so reviewers don't get confused by "80M k-mer EM" claims. |
+| H3 | ~~HIGH~~ → resolved | The cn-vs-cn_var heterozygote-handling asymmetry in code (`GT[0]`-only vs `any(a > 0)`) is **not active** for the production panel: `founders_231_v3qc_v3.haploid.vcf.gz` is pre-haploidized (only `.`, `0`, `1` tokens; verified 2026-05-22). pysam returns 1-tuples, both definitions agree. **Latent hazard closed 2026-05-22**: both `build_kmer_cn.py:189-202` and `build_cn_var.py:62-73` now raise `ValueError` on any GT with `len(gt) != 1`, so feeding a diploid VCF fails fast instead of silently producing inconsistent matrices. |
+| H4 | HIGH | The per-record `se` (`per_sample_per_chrom.py:662-666`) is a **panel-side** binomial SE: $\sqrt{p(1-p)/n_{\text{called}}}$ with effective N = number of genotyped founders. It captures panel completeness / AC-AN sampling only, and **omits** EM-$\hat{\mathbf{h}}$ estimation error, read-coverage Poisson noise, and pool finite-$N$ sampling. Safe to use for **filtering/flagging** low-support records; **not** safe to inverse-variance-weight on as if it were the full AF precision (that weights by panel completeness). Documented in §6.1; a coverage/EM-aware uncertainty is not implemented. |
+| M1 | MEDIUM | The old MD coverage formula "$\lambda$ = total read length / genome size" doesn't match production code, which uses $\hat\lambda = F \cdot \sum c_k / \sum_{f,k} \mathrm{cn}_{f,k}$ (uniform-h estimate). Cosmetic since $\lambda$ cancels; fixed in §3 above. |
+| M2 | ~~MEDIUM~~ → resolved | Production tolerance is $\varepsilon = 10^{-7}$ throughout (`per_sample_per_chrom.py:225`, `block_em.py:362`); §4 above uses that single value. |
+| M3 | MEDIUM | `--treat-missing-as-n` flag in `build_kmer_cn.py`. Production v3qc-v3 was built with this **OFF** (./. → REF). The v3qc-v2 build with the flag ON inflated K_f ratios and is archived. State which build the paper uses. |
+| M4 | MEDIUM | `denom = max(h @ cn, 1e-7)` numerical floor in EM (`em_solver.py:87`). Kicks in only at simplex boundaries; mention if you want to be precise. |
+| M5 | MEDIUM | `samtools fastq -F 0x900` filters secondary+supplementary but **not** PCR duplicates (`kmer_count.py:72`). SEEDMIX is PCR-free (memory: `seedmix_is_pcr_free`) so no dedup needed. **Evolved GrENE-Net samples are not PCR-free and require an upstream dedup step** (clumpify or equivalent) before kMate; otherwise PCR-duplicate reads inflate k-mer counts and bias the EM. State the preprocessing distinction in the paper's per-sample pipeline section. |
+| L1 | LOW | `cn_full` is conceptually genome-wide but physically per-chromosome (`build_kmer_cn.build_cn_for_chrom`). Cosmetic. |
+| L2 | LOW | `solve_em_with_omega` (contamination) exists in code but is unused in production runs. |
+| L3 | LOW | `freqk` reports `VCF_pos - 2`; add 2 before joining freqk output to any VCF or cn_var (memory: `freqk_pos_offset`). |
+| L4 | LOW | `pos` in the kMate TSV is the original VCF position (1-based). Joining to other tools requires checking their offset convention. |
 
-The joint EM is the structural differentiator. freqk treats each bubble independently; cactus_em pools k-mer evidence across all bubbles via the founder-frequency vector h. On panels where individual bubbles have sparse k-mer evidence (after PanGenie's cap + dedup), cactus_em's pooling is what buys the extra accuracy.
+**Top 3 to carry into the paper:**
 
-## What's structurally similar to hapFIRE
+1. **C1** — state the AF projection with the missing-mask denominator, not the
+   bare projection. This is the single biggest correctness item.
+2. **H1** — say "per-chromosome EM" not "genome-wide EM" in the methods.
+3. **M5** — state that the per-sample preprocessing for evolved GrENE-Net
+   samples includes PCR-duplicate removal (SEEDMIX is PCR-free and skips this
+   step).
 
-| | cactus_em | hapFIRE |
-|---|---|---|
-| **Joint inference** | EM on all k-mers | HARP per LD-block, then CVXPY founder projection |
-| **Founder modelling** | h on simplex | haplotype freqs → founder freqs via CVXPY |
-| **Per-record output** | h @ cn_var | haplotype_freq @ haplotype_to_SNP_matrix |
+---
 
-That's why cactus_em and hapFIRE agree at R² = 0.996 on real SEEDMIX_S1 SNPs — they're solving the same inverse problem with the same panel info, just via different inference routes (k-mer EM vs HARP+CVXPY).
+## 11. Relationship to existing methods
 
-cactus_em adds SVs (which hapFIRE can't do, because HARP is per-base SNP-only), and uses the cactus pangenome graph k-mers (richer than HARP's per-SNP windows).
+| | kMate | HARP / hapFIRE | freqk |
+|---|---|---|---|
+| Latent | founder mixture $\mathbf{h}$ on simplex | per-LD-block haplotype mixture → CVXPY founder solve | none (no founder concept) |
+| Evidence | canonical k-mer counts $c_k$ | per-base read pileup $P(\text{base}|\text{hap}, q)$ | per-bubble k-mer counts (independent bubbles) |
+| Inference | Poisson EM, multiplicative update | per-base likelihood EM (HARP) | per-bubble alt/total ratio |
+| Cross-bubble pooling | yes — bubbles with sparse k-mers borrow strength via h | yes within an LD block | no |
+| Projection | $\hat{\mathbf{h}}^\top \mathrm{cn}_{\text{var}} / \hat{\mathbf{h}}^\top \mathrm{cn}_{\text{var\_called}}$ | $\hat{\mathbf{h}}_{\text{hap}}^\top \mathrm{H2S}$ + founder solve | per-bubble alt-count / total-count |
+| Sees SVs | yes — k-mers span bubble alleles | no (per-base SNP-only) | yes (bubble-level) |
+| Reference | pangenome graph | single linear reference | pangenome graph |
 
-## Files in the pipeline
+The M-step form
+$h_f^{(t+1)} \propto h_f^{(t)} \sum_k \mathrm{cn}_{f,k} c_k / \mu_k$
+also recurs in NMF (Lee & Seung 1999), the original EM derivation (Dempster
+et al. 1977), and RNA-seq abundance estimation (RSEM/kallisto/salmon).
 
-```
-poolfreq/
-├── src/
-│   ├── build_kmer_cn.py       # builds cn_full from PanGenie kmers.tsv + VCF
-│   ├── build_cn_var.py        # builds cn_var from VCF GT field
-│   ├── em_solver.py           # core EM (float32-throughout)
-│   ├── kmer_count.py          # jellyfish wrapper for read k-mer counts
-│   ├── block_em.py            # window-mode partition + per-block EM
-│   ├── per_sample_driver.py   # one sample → per-record AF TSV
-│   └── batch_runner.py        # multi-sample parallel
-└── data/
-    ├── cn_full_231_v2/cn_Chr{1..5}.cn.npz   # 231 × 80M matrix
-    └── cn_var_231_v2.cn_var.npz             # 231 × 3.4M matrix
-```
+---
 
-## Tradeoffs
+## References
 
-**Strengths:**
-- Joint k-mer EM gives ~1% per-record MAE (matches hapFIRE's accuracy on SNPs)
-- Single pipeline handles SNPs + INS + DEL + SVs (no separate runs)
-- Coverage-saturated below 1× — the joint-evidence is over-determined
-
-**Costs:**
-- 100-200 GB per-sample memory (vs freqk's 16-32 GB) — see `HANDOFF.md` for the production-scale memory note
-- 30-45 min per-sample runtime (vs freqk's 10-20 min)
-- Requires pre-built cn_full and cn_var (one-time, ~10h SLURM)
-- Founder genotypes must be available (from long-read assemblies + Beagle imputation for missing founders)
-
-## Empirical performance
-
-See `SIMULATION_RESULTS.ipynb` for the full benchmark suite. Headlines:
-
-**Simulation (cov 10×, 82-founder skewed pool, n=2.69M polymorphic records):**
-- cactus_em (231-cn): R² = 0.998, MAE = 0.008, slope = 1.02, intercept = -0.001
-- freqk on cactus pangenome: R² ≈ 0.43 on biallelic single-record windows
-- Coverage saturation: same MAE at 1× as at 30×
-
-**Real SEEDMIX_S1 SNPs vs hapFIRE (n=3.24M):**
-- cactus_em: R² = 0.996, RMSE = 0.013, MAE = 0.008 (slope 1.013, basically reproduces hapFIRE)
-- freqk: R² = 0.94, RMSE = 0.056, MAE = 0.034 (per `freqk_gr/results/`)
-
-**Real evolved samples (site04, 57 samples)** — running now via SLURM array `58866`. Will give cactus_em-vs-hapFIRE-vs-freqk on real recombinant pools.
-
-## Open questions / loose ends
-
-1. **Recombinant-pool simulation** (HANDOFF.md item #2) — all sims so far pool intact founder FASTAs. Real evolved samples have recombination. The window-mode EM should handle this but is only validated on real SEEDMIX (no truth) — a controlled mosaic-FASTA sim is the right way to verify.
-2. **Memory mitigation** (HANDOFF.md memory note) — cn_full mmap from disk would cut RAM 5-10× and unlock more concurrent SLURM tasks. Worth doing before scaling to >2,500 samples.
-3. **SV recovery on noisy multi-allelic records** (Tier 6 of the simulation notebook) — clean per-allele 1:1 alignment in the v2 aggregator showed SVs at R² ≥ 0.988 once the aggregation bug was fixed; the open question is whether real evolved samples preserve this.
-4. **Replicate consistency** — only SEEDMIX_S1 has been run through the v2 cactus_em pipeline. Running S2-S8 would tighten the hapFIRE comparison from 1 rep to 8.
+- Dempster A, Laird N, Rubin D (1977) *J. R. Stat. Soc. B* 39:1–38 — EM algorithm.
+- Lee D, Seung S (1999) *Nature* 401:788–791 — NMF multiplicative update.
+- Marçais & Kingsford (2011) — Jellyfish.
+- Li & Dewey (2011) — RSEM. Bray et al. (2016) — kallisto. Patro et al. (2017) — salmon.
+- Kessner et al. (2013) — HARP.
+- Wu et al. (2024) — hapFIRE.
+- Ebler et al. (2022) *Nat. Genet.* 54:518–525 — PanGenie.
+- Danecek et al. (2021) — bcftools.
+- Hickey et al. (2024) — minigraph-cactus.

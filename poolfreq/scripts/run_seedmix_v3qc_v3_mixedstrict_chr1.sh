@@ -1,0 +1,28 @@
+#!/bin/bash
+#SBATCH --job-name=sm_v3_ms
+#SBATCH --partition=bse
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=80G
+#SBATCH --time=2:00:00
+#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/sm_v3_ms_%j.out
+#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/sm_v3_ms_%j.err
+# SEEDMIX_S1 cactus_em on v3qc_v3 mixed-strict Chr1, NEW cn_var with called mask.
+set -uo pipefail
+cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+OUT_DIR=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_mixedstrict_chr1
+mkdir -p $OUT_DIR
+READS=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix
+R1=$READS/S1-1.1_P.fq.gz; R2=$READS/S1-1.2_P.fq.gz
+
+/usr/bin/time -v /home/tbellagio/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
+    --cn-kmer-prefix data/cn_full_231_v3qc_v3_mixedstrict/cn \
+    --cn-var        data/cn_var_231_v3qc_v3.cn_var.npz \
+    --cn-var-meta   data/cn_var_231_v3qc_v3.meta.npz \
+    --cn-var-called data/cn_var_231_v3qc_v3.cn_var_called.npz \
+    --reads $R1 $R2 \
+    --sample SEEDMIX_S1 \
+    --out $OUT_DIR/SEEDMIX_S1.tsv \
+    --threads 8 \
+    --chroms Chr1
+echo "[$(date)] DONE"
+ls -lh $OUT_DIR/

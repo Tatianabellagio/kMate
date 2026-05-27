@@ -53,6 +53,7 @@ def reconstruct_haplotype(
 
     vcf_records: list of tuples (pos, ref, [alt1, alt2, ...], gt_alt_index)
                  gt_alt_index: 0 = ref, 1 = first alt, etc.
+                               -1 = missing (./.) — write N over the REF span
     """
     seq = ref_seq
     for pos, ref, alts, gt in sorted(vcf_records, key=lambda r: r[0], reverse=True):
@@ -61,10 +62,16 @@ def reconstruct_haplotype(
         offset = pos - region_start
         if offset < 0 or offset > len(seq):
             continue  # out of range — defensive
+        rl = len(ref)
+        if gt == -1:
+            # Missing GT: mark the REF span with N. canonical_kmer_set skips
+            # k-mers containing N, so the founder neither gets REF k-mer credit
+            # nor ALT k-mer credit for k-mers spanning this position.
+            seq = seq[:offset] + ("N" * rl) + seq[offset + rl:]
+            continue
         if gt - 1 >= len(alts):
             continue  # missing alt index
         alt = alts[gt - 1]
-        rl = len(ref)
         seq = seq[:offset] + alt + seq[offset + rl:]
     return flank_left + seq + flank_right
 
@@ -95,6 +102,7 @@ def build_cn_for_chrom(
     flank: int = 100,           # extra ref bases on each side for k-mer scanning
     max_bubbles: int | None = None,
     verbose: bool = True,
+    treat_missing_as_n: bool = False,  # if True: ./. → N (no evidence). If False: ./. → REF (legacy v3 behavior).
 ):
     """Build the founder × k-mer matrix for one chromosome.
 
@@ -178,8 +186,21 @@ def build_cn_for_chrom(
                 gt = rec.samples[founder]["GT"]
                 if gt is None or len(gt) == 0:
                     continue
-                # diploid; both alleles same for inbred → take [0]
-                gt_idx = gt[0] if gt[0] is not None else 0
+                # Panel must be pre-haploidized. cn_full reconstructs ONE
+                # sequence per founder; with diploid GTs (e.g. 0/1) we'd
+                # silently use only gt[0] and disagree with cn_var's
+                # any(a>0) carrier rule. Fail loudly instead.
+                if len(gt) != 1:
+                    raise ValueError(
+                        f"Panel VCF must be haploid (got len(GT)={len(gt)} for "
+                        f"{founder} at {rec.chrom}:{rec.pos}). Haploidize the "
+                        f"VCF before building cn_full."
+                    )
+                if gt[0] is None:
+                    # Missing GT. Behavior depends on treat_missing_as_n flag.
+                    gt_idx = -1 if treat_missing_as_n else 0
+                else:
+                    gt_idx = gt[0]
                 rec_summary.append((rec.pos, rec.ref, rec.alts, gt_idx))
 
             # Reconstruct: pad ref with left+right flanks already present in full_ref
@@ -227,11 +248,19 @@ if __name__ == "__main__":
     ap.add_argument("--chrom", required=True)
     ap.add_argument("--out",   required=True, help="Output prefix")
     ap.add_argument("--max-bubbles", type=int, default=None)
+    ap.add_argument("--treat-missing-as-n", action="store_true",
+                    help="Write N at positions where founder has ./. GT, instead "
+                         "of defaulting to REF. Drops k-mers spanning N from cn_full. "
+                         "Use for v3qc-v2 and onwards. v3/v3qc were built without this.")
     args = ap.parse_args()
+
+    if args.treat_missing_as_n:
+        print("[build_cn] --treat-missing-as-n ON: ./. → N in haplotype")
 
     cn, kmer_index, bubble_id, bubble_meta, founders = build_cn_for_chrom(
         args.kmers, args.vcf, args.ref, args.chrom,
         max_bubbles=args.max_bubbles,
+        treat_missing_as_n=args.treat_missing_as_n,
     )
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     save_npz(args.out + ".cn.npz", cn)

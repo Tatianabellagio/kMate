@@ -1,0 +1,55 @@
+=== Load h vector (v3qc_v3) ===
+  h shape: (231,), sum: 1.0000
+=== Load atomized cn_var + meta ===
+  cn_var: (231, 7464709), 76,920,922 nnz
+  cn_var_called: (231, 7464709), 1,178,293,839 nnz
+  meta records: 7,464,709
+  founder ordering identical, no reindex needed
+
+=== Project AF = h @ cn_var / h @ cn_var_called ===
+  projected in 35.3s; AF range [0.000, 1.000], NaN=0
+=== Write atomized per-record TSV ===
+  wrote SEEDMIX_S1_arch3_chr1_atomized.tsv  (7,464,709 rows)
+
+=== Load hapFIRE AF + REF/ALT ===
+  hapFIRE w/ REF/ALT: 827,765
+=== Build atomized DataFrame ===
+=== 4-tuple join: atomized ∩ hapFIRE ===
+  4-tuple intersect: 711,669  (of 827,765 hapFIRE SNPs = 86.0%)
+  finite-AF after drop NaN: 711,669
+
+=== ATOMIZED vs hapFIRE ===
+  MAE=0.0162  RMSE=0.0334  bias=+0.0020  r=0.9869
+    |Δ|>0.01: 320,597 (45.05%)
+    |Δ|>0.05: 37,936 (5.33%)
+    |Δ|>0.1: 8,900 (1.25%)
+
+=== Compare to RAW (path-aware) Arch 3 from prior A7 run ===
+  raw 4-tuple rows: 518,570
+  3-way join (atomized ∩ arch3_raw ∩ hapFIRE): 518,570
+
+=== Head-to-head on 518,570 shared 4-tuple SNPs ===
+  v3qc_v3 raw vs hF     MAE=0.0150  RMSE=0.0383  bias=-0.0015  |Δ|>0.10: 4,589 (0.88%)
+  arch3 raw vs hF       MAE=0.0140  RMSE=0.0294  bias=-0.0004  |Δ|>0.10: 3,344 (0.64%)
+  arch3 ATOMIZED vs hF  MAE=0.0131  RMSE=0.0225  bias=+0.0009  |Δ|>0.10: 1,894 (0.37%)
+
+=== Outlier transitions (|Δ|>0.10) ===
+  raw outliers fixed by atomization:        1,624  (48.6% of raw outliers)
+  outliers introduced by atomization:       174
+  raw outliers still outlier post-atomize:  1,720
+
+=== Sample of FIXED outliers (top 10 by |Δ_raw|) ===
+ chrom_num      pos ref alt  af_hapfire  af_arch3_raw  af_atomized     d_raw    d_atom
+         1  5668686   C   G    0.996085       0.00295     0.997203 -0.993135  0.001118
+         1  2988827   C   A    0.994365       0.00161     0.997240 -0.992755  0.002875
+         1  5670415   G   A    0.992128       0.00045     0.989702 -0.991678 -0.002426
+         1 16232597   A   G    0.987774       0.00420     0.992962 -0.983574  0.005188
+         1 22530899   C   G    0.988032       0.00748     0.983249 -0.980552 -0.004783
+         1 14142157   A   T    0.972991       0.00044     0.968864 -0.972551 -0.004127
+         1  4045437   T   A    0.990749       0.03072     0.987855 -0.960029 -0.002894
+         1 11416103   T   C    0.974982       0.01798     0.978985 -0.957002  0.004003
+         1 23056829   G   A    0.985050       0.03149     0.982837 -0.953560 -0.002213
+         1 23059522   T   A    0.953305       0.00001     0.943560 -0.953295 -0.009745
+
+Wrote SEEDMIX_S1_chr1_atomized_AF_compare.tsv (518,570 rows)
+Total time: 60.3s

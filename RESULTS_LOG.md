@@ -206,7 +206,7 @@ Wall: ~25 min on Chr1 cov50 (single 8-core node). Memory: ~40 GB peak.
 
 ## 2026-05-06 — kallisto-EM (read-level EC pseudoalignment) underperforms per-k-mer Poisson at fine scale
 
-Tested **Route 3** of MODEL_SPEC § Future work: kallisto-style read-level
+Tested **Route 3** (kallisto-style read-level
 pseudoalignment + equivalence-class EM, applied to founder pool-seq freqs at
 10 kb resolution on the n50_g3 recomb sim. Goal: recover the read-phase
 information that per-k-mer Poisson EM throws away (one read carries ~120
@@ -859,7 +859,7 @@ by VISOR SHORtS using the HACk-modified founder FASTAs.
 | Chr1 outside deletion | 1,564,851 | **0.9985** | 0.0080 | 0.9993 |
 | Chr1 inside deletion (60 cactus VCF records in 1kb) | 60 | 0.997 vs no-deletion truth | 0.009 | 0.999 |
 
-**Comparison to old SUMMARY.md hapFIRE-proj**: MAE 0.0010-0.0013 at cov50 on
+**Comparison to old hapFIRE-projection results**: MAE 0.0010-0.0013 at cov50 on
 GrENE-Net 231-ecotype sims. Our cactus_em on cactus 10-founder sim achieves
 RMSE 0.008 — comparable order of magnitude (the pools differ).
 

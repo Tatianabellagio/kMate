@@ -1,0 +1,47 @@
+=== Load NEW Arch 3 (Chr1, SNPs only) ===
+  total NEW records: 2,617,370
+  SNP-only: 1,896,034
+
+=== Load OLD v3qc_v3 (Chr1, SNPs only) ===
+  total OLD records: 6,293,085
+  SNP-only: 4,128,028
+
+=== Re-attach REF/ALT bases from meta.npz to NEW ===
+  meta records: 2,617,370, SNPs (ref_len=alt_len=1): 1,896,034
+  NEW SNP records w/ REF/ALT: 1,896,034
+=== Re-attach REF/ALT bases to OLD ===
+  OLD SNP records w/ REF/ALT: 4,128,028
+
+=== Load hapFIRE AF + REF/ALT from greneNet_final_v1.1 ===
+  hapFIRE chr1 SNPs: 827,765
+  refalt records:    827,765
+  hapFIRE rows missing REF/ALT after join: 0  (should be 0 or near-0)
+  hapFIRE w/ REF/ALT: 827,765
+
+=== Join NEW ∩ hapFIRE on (chrom, pos, ref, alt) ===
+  4-tuple intersect: 660,655  (of 827,765 hapFIRE SNPs = 79.8%)
+  pos-only intersect (positions present in both, dedup): 662,391
+  NEW vs hapFIRE: MAE=0.0159  RMSE=0.0368  bias=-0.0014
+    |Δ|>0.01: 290,159 (43.92%)
+    |Δ|>0.05: 31,636 (4.79%)
+    |Δ|>0.1: 7,533 (1.14%)
+
+=== Join OLD ∩ hapFIRE on (chrom, pos, ref, alt) if possible ===
+  4-tuple intersect: 518,576  (62.6% of hapFIRE)
+  OLD vs hapFIRE: MAE=0.0150  RMSE=0.0383  bias=-0.0015
+    |Δ|>0.01: 217,381 (41.92%)
+    |Δ|>0.05: 20,068 (3.87%)
+    |Δ|>0.1: 4,589 (0.88%)
+
+=== NEW ∩ OLD ∩ hapFIRE (3-way, 4-tuple) ===
+  3-way intersect rows: 518,570
+  NEW vs hapFIRE (3way): MAE=0.0140  bias=-0.0004  |Δ|>0.10: 3,344
+  OLD vs hapFIRE (3way): MAE=0.0150  bias=-0.0015  |Δ|>0.10: 4,589
+  NEW vs OLD     (3way): MAE=0.0011  bias=+0.0011  |Δ|>0.10: 1,309
+  → Arch 3 is 6.6% BETTER than v3qc_v3 (MAE delta vs hapFIRE: -0.0010)
+  wrote SEEDMIX_S1_chr1_AF_compare.tsv (518,570 rows)
+
+=== Spot-checks at 3 canonical positions (NEW vs hapFIRE) ===
+  Chr1:5870018 T>A: NEW=0.0189  hapFIRE=0.0254  Δ=-0.0065
+  Chr1:10421645 T>C: NEW=0.9698  hapFIRE=0.9896  Δ=-0.0198
+  Chr1:13843898 C>T: NEW=0.1100  hapFIRE=0.9876  Δ=-0.8775
