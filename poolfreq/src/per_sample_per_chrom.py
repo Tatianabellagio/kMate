@@ -80,23 +80,22 @@ _CN_VAR_CALLED = None  # scipy.sparse, founder × variant; 1 if GT != ./.
 def _project_with_called_mask(cn_var_chrom, h, idx):
     """Project h through cn_var with per-record renormalization by the called mask.
 
-    AF_est[r] = (h @ cn_var)[r] / (h @ cn_var_called)[r]
-
-    Handles missing GTs: at records where a subset of founders is ./., their
-    h-mass is excluded from BOTH numerator and denominator. Equals AC/AN when
-    h is uniform. Falls back to plain (h @ cn_var) if cn_var_called is absent.
+    Returns (alt_freq, info): AF = (h@cn_var)/(h@cn_var_called) and info = the
+    projection denominator, i.e. the h-weighted called mass per record (ones when
+    no called mask is loaded). At records where some founders are ./., their
+    h-mass is excluded from both numerator and denominator; equals AC/AN under
+    uniform h.
     """
     freqs = cn_var_chrom.T @ h
     if hasattr(freqs, "toarray"):
         freqs = np.asarray(freqs).flatten()
     if _CN_VAR_CALLED is None:
-        return freqs
-    called_chrom = _CN_VAR_CALLED[:, idx]
-    called_weight = called_chrom.T @ h
+        return freqs, np.ones(len(idx), dtype=freqs.dtype)
+    called_weight = _CN_VAR_CALLED[:, idx].T @ h
     if hasattr(called_weight, "toarray"):
         called_weight = np.asarray(called_weight).flatten()
     safe = np.maximum(called_weight, np.array(1e-12, dtype=freqs.dtype))
-    return (freqs / safe).astype(freqs.dtype)
+    return (freqs / safe).astype(freqs.dtype), called_weight.astype(freqs.dtype)
 
 
 def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, threads,
@@ -125,13 +124,8 @@ def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     rec_chrom = np.asarray(var_meta["chrom"]).astype(str)
     idx = np.where(rec_chrom == str(chrom))[0]
     cn_var_chrom = cn_var[:, idx]
-    freqs = _project_with_called_mask(cn_var_chrom, h, idx)
-    # Per-record info = h-mass on called founders at record r (the projection
-    # denominator). info ∈ [0, 1]; small info → low-confidence AF.
-    if _CN_VAR_CALLED is not None:
-        info = np.asarray(_CN_VAR_CALLED[:, idx].T @ h).flatten().astype(np.float32)
-    else:
-        info = np.ones(len(idx), dtype=np.float32)
+    freqs, info = _project_with_called_mask(cn_var_chrom, h, idx)
+    info = info.astype(np.float32)
     elapsed = time.time() - t_chrom
     print(f"  [{chrom}] {elapsed:.0f}s total — {len(idx):,} records projected", flush=True)
     return idx, freqs, info, h, elapsed
@@ -142,8 +136,7 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
                          global_anchor_weight=0.3,
                          hmm_smooth_passes=5,
                          hmm_smooth_alpha=0.5,
-                         hmm_smooth_recomb_rate=4e-8,
-                         projection_smooth="auto"):
+                         hmm_smooth_recomb_rate=4e-8):
     """Window-mode per-chrom EM + smooth projection (production "star2" recipe).
 
     Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
@@ -210,35 +203,15 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     # matches global-mode's (h@cn_var)/(h@cn_var_called) semantics.
     cn_var_called_chrom = _CN_VAR_CALLED[:, idx] if _CN_VAR_CALLED is not None else None
 
-    # If HMM smoothing already ran, skip projection-time linear interpolation
-    # (double-smoothing over-attenuates local signal).
-    if projection_smooth == "auto":
-        do_smooth = (hmm_smooth_passes == 0)
-    elif projection_smooth in ("on", "true", "1"):
-        do_smooth = True
-    elif projection_smooth in ("off", "false", "0"):
-        do_smooth = False
-    else:
-        raise ValueError(f"projection_smooth must be auto/on/off, got {projection_smooth!r}")
-
+    # Hard window assignment: each record gets the h of its window (already
+    # HMM-smoothed across windows above). The projection returns the AF and the
+    # per-record info (h-weighted called mass) in one pass.
     rec_block = assign_records_to_blocks(rec_chrom[idx], rec_pos[idx], blocks)
-    freqs = project_blocks_to_records(
-        h_blocks, status, global_h, cn_var_chrom, rec_block,
-        record_chrom=rec_chrom[idx], record_pos=rec_pos[idx],
-        blocks=blocks, smooth=do_smooth,
+    freqs, info = project_blocks_to_records(
+        h_blocks, global_h, cn_var_chrom, rec_block,
         cn_var_called=cn_var_called_chrom,
     )
-    # Info = same projection but with cn_var_called as the carrier matrix and
-    # no called-mask normalization (raw h-weighted called mass per record).
-    if cn_var_called_chrom is not None:
-        info = project_blocks_to_records(
-            h_blocks, status, global_h, cn_var_called_chrom, rec_block,
-            record_chrom=rec_chrom[idx], record_pos=rec_pos[idx],
-            blocks=blocks, smooth=do_smooth,
-            cn_var_called=None,
-        ).astype(np.float32)
-    else:
-        info = np.ones(len(idx), dtype=np.float32)
+    info = info.astype(np.float32)
     elapsed = time.time() - t_chrom
     print(f"  [{chrom}] {elapsed:.0f}s total — {len(idx):,} records projected", flush=True)
     return idx, freqs, info, (h_blocks, status, global_h, blocks), elapsed
@@ -277,11 +250,6 @@ def main():
     ap.add_argument("--hmm-smooth-recomb-rate", type=float, default=4e-8,
                     help="Recomb rate per bp for distance-weighted neighbor averaging "
                          "(default 4e-8 = 4 cM/Mb, A. thaliana).")
-    ap.add_argument("--projection-smooth", default="auto",
-                    choices=["auto", "on", "off"],
-                    help="Linear-interpolation smoothing between adjacent windows "
-                         "at projection time. 'auto' (default): off when HMM "
-                         "smoothing is on (avoids double-smoothing), on otherwise.")
     args = ap.parse_args()
 
     print(f"=== {args.sample} (per-chrom {args.block_mode} mode) ===", flush=True)
@@ -342,7 +310,6 @@ def main():
                 hmm_smooth_passes=args.hmm_smooth_passes,
                 hmm_smooth_alpha=args.hmm_smooth_alpha,
                 hmm_smooth_recomb_rate=args.hmm_smooth_recomb_rate,
-                projection_smooth=args.projection_smooth,
             )
             if idx is None:
                 continue

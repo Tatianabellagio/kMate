@@ -142,8 +142,7 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
                        coverage, em_max_iter=200, tol=1e-7,
                        min_kmers_per_block=200, verbose=False,
                        n_workers=4,
-                       global_anchor_weight: float = 0.0,
-                       block_kmer_idx_override: list | None = None):
+                       global_anchor_weight: float = 0.0):
     """Run EM independently per block.
 
     Args:
@@ -194,21 +193,8 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
     nz = counts > 0
     t0 = time.time()
 
-    # Pre-compute per-block masks once. Use override (overlapping windows)
-    # if provided; otherwise build from the legacy 1D kmer_block scheme.
-    if block_kmer_idx_override is not None:
-        block_kmer_idx = block_kmer_idx_override
-        if verbose:
-            n_kmers_in_some_block = sum(len(idx) for idx in block_kmer_idx)
-            print(f"  using overlapping-window block_kmer_idx: "
-                  f"{n_kmers_in_some_block:,} (kmer, block) pairs across "
-                  f"{n_blocks} blocks "
-                  f"(avg {n_kmers_in_some_block/max(1,n_blocks):.0f} kmers/block)",
-                  flush=True)
-    else:
-        block_kmer_idx = [None] * n_blocks
-        for b in range(n_blocks):
-            block_kmer_idx[b] = np.flatnonzero(kmer_block == b)
+    # Pre-compute per-block k-mer index lists once.
+    block_kmer_idx = [np.flatnonzero(kmer_block == b) for b in range(n_blocks)]
 
     def _fit_one(b):
         idxs = block_kmer_idx[b]
@@ -255,113 +241,37 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
     return h_blocks, block_status, global_h
 
 
-def project_blocks_to_records(h_blocks, block_status, global_h,
-                              cn_var, record_block,
-                              record_chrom=None, record_pos=None,
-                              blocks=None, smooth=True,
+def project_blocks_to_records(h_blocks, global_h, cn_var, record_block,
                               cn_var_called=None):
-    """Project per-block h to per-record alt freqs.
+    """Project per-block h to per-record alt freqs by hard window assignment.
 
-    smooth=False (legacy): each record uses h_blocks[record_block[r]] directly
-        — produces hard step discontinuities at block boundaries.
+    Each record uses the h of the window containing it, h_blocks[record_block[r]]
+    (already set to global_h for fallback/excluded windows by solve_em_per_block;
+    records with no window, record_block == -1, use global_h). With HMM smoothing
+    applied upstream, this hard assignment is the production projection.
 
-    smooth=True (default, HAFpipe-like): for each record, linearly
-        interpolate between the h of the block containing it and the h of
-        the geometrically nearest neighbor block on the same chromosome.
-        Weighted by inverse distance to block centers. Removes the step
-        discontinuities while preserving local mosaic structure.
+    With cn_var_called, AF is the missing-aware (h@cn_var)/(h@cn_var_called);
+    without it, ./. is treated as REF (→ SV AF under-call at high missingness).
 
-    For smooth=True, record_chrom, record_pos, and blocks must be provided.
-
-    cn_var_called (MAR projection, 2026-05-21): if provided, divide each
-    record's AF by `h_avg @ cn_var_called[:, r]` (h-weighted called mass).
-    Matches global-mode semantics. Without it, ./. is silently treated as REF
-    → SV AF under-call at high-missingness records.
+    Returns (alt_freq, info), both length-N float64. info[r] is the projection
+    denominator — the h-weighted called mass at r (1.0 when no called mask).
     """
     N = cn_var.shape[1]
     out = np.zeros(N, dtype=np.float64)
-
-    if not smooth:
-        rb = np.asarray(record_block)
-        unique_b = np.unique(rb)
-        cn_var_csc = cn_var.tocsc()
-        cvc_csc = cn_var_called.tocsc() if cn_var_called is not None else None
-        for b in unique_b:
-            mask = (rb == b)
-            if not mask.any():
-                continue
-            h = h_blocks[b] if b >= 0 else global_h
-            cv = cn_var_csc[:, mask]
-            num = (h.astype(np.float32) @ cv.toarray()).astype(np.float64)
-            if cvc_csc is not None:
-                cvc = cvc_csc[:, mask]
-                den = (h.astype(np.float32) @ cvc.toarray()).astype(np.float64)
-                out[mask] = num / np.maximum(den, 1e-12)
-            else:
-                out[mask] = num
-        return out
-
-    # Smooth: linear interpolation between adjacent blocks on same chrom.
-    if record_chrom is None or record_pos is None or blocks is None:
-        raise ValueError("smooth=True requires record_chrom, record_pos, blocks")
-
-    record_chrom = np.asarray(record_chrom)
-    record_pos = np.asarray(record_pos)
-
-    # Pre-compute h_for_block including the global fallback for missing/excluded
-    F = h_blocks.shape[1]
-    h_eff = h_blocks.copy().astype(np.float32)
-    fallback_mask = (block_status != 0)
-    h_eff[fallback_mask] = global_h.astype(np.float32)
-
-    # Per-chromosome processing (within-chrom interpolation only)
-    chrom_to_block_idxs = {}
-    for i, b in enumerate(blocks):
-        chrom_to_block_idxs.setdefault(b.chrom, []).append(i)
-    block_centers = np.array([(b.start + b.end) / 2.0 for b in blocks])
-
+    info = np.ones(N, dtype=np.float64)
+    rb = np.asarray(record_block)
     cn_var_csc = cn_var.tocsc()
     cvc_csc = cn_var_called.tocsc() if cn_var_called is not None else None
-    for chrom, idxs in chrom_to_block_idxs.items():
-        idxs = np.array(sorted(idxs, key=lambda i: blocks[i].start))
-        centers_c = block_centers[idxs]
-        chr_mask = record_chrom == chrom
-        if not chr_mask.any():
+    for b in np.unique(rb):
+        mask = (rb == b)
+        if not mask.any():
             continue
-        positions = record_pos[chr_mask]
-        # For each record on this chrom, find the two flanking block centers.
-        # right_idx in [0..len(idxs)] is where pos would insert
-        right_idx = np.searchsorted(centers_c, positions)
-        # Left and right block indices (clip at edges)
-        right_idx_clip = np.clip(right_idx, 1, len(idxs))
-        left_idx_clip = right_idx_clip - 1
-        left_centers = centers_c[left_idx_clip]
-        right_centers = centers_c[np.clip(right_idx_clip, 0, len(idxs)-1)]
-        # When pos is outside both edges, weight collapses to nearest block
-        denom = np.maximum(right_centers - left_centers, 1.0)
-        w_right = np.clip((positions - left_centers) / denom, 0.0, 1.0)
-        w_left = 1.0 - w_right
-        # Map back to global block ids
-        gb_left = idxs[left_idx_clip]
-        gb_right = idxs[np.clip(right_idx_clip, 0, len(idxs)-1)]
-
-        # Subset cn_var to these records
-        rec_idx = np.flatnonzero(chr_mask)
-        cv = cn_var_csc[:, rec_idx].toarray()  # F × n_rec dense
-        # h_left @ cv and h_right @ cv (vectorized over records)
-        Hl = h_eff[gb_left]   # (n_rec, F)
-        Hr = h_eff[gb_right]  # (n_rec, F)
-        # alt_freq[i] = w_left[i] * (Hl[i] @ cv[:,i]) + w_right[i] * (Hr[i] @ cv[:,i])
-        # = sum_f cv[f,i] * (w_left[i] * Hl[i,f] + w_right[i] * Hr[i,f])
-        # Compute as einsum
-        af_num = (w_left * np.einsum("if,fi->i", Hl, cv)
-                  + w_right * np.einsum("if,fi->i", Hr, cv))
+        h = (h_blocks[b] if b >= 0 else global_h).astype(np.float32)
+        num = (h @ cn_var_csc[:, mask].toarray()).astype(np.float64)
         if cvc_csc is not None:
-            # MAR projection: divide by interpolated h-weighted called mass.
-            cvc = cvc_csc[:, rec_idx].toarray()
-            af_den = (w_left * np.einsum("if,fi->i", Hl, cvc)
-                      + w_right * np.einsum("if,fi->i", Hr, cvc))
-            out[rec_idx] = af_num / np.maximum(af_den, 1e-12)
+            den = (h @ cvc_csc[:, mask].toarray()).astype(np.float64)
+            out[mask] = num / np.maximum(den, 1e-12)
+            info[mask] = den
         else:
-            out[rec_idx] = af_num
-    return out
+            out[mask] = num
+    return out, info

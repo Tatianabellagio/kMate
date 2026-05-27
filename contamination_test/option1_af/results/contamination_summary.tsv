@@ -1,5 +1,0 @@
-sample	n_sites_total	n_sites_used	mean_dp	mean_obs_af	median_obs_af	mean_panel_af	c_naive_mean_af_minus_error	c_uniform_contam_mean	c_uniform_contam_median	c_regression_slope	regression_intercept	regression_r2	obs_af_by_panel_af_0.05_0.10	obs_af_by_panel_af_0.10_0.20	obs_af_by_panel_af_0.20_0.30	obs_af_by_panel_af_0.30_0.50	obs_af_by_panel_af_0.50_1.00
-seedmix_S1	2609	2609	55.07551	0.00233	0.00000	0.10612	-0.00267	-0.02534	-0.04643	-0.01408	0.00404	-0.00041	0.00193	0.00241			
-seedmix_S2	2609	2607	35.65708	0.00227	0.00000	0.10612	-0.00273	-0.02640	-0.04643	0.04597	-0.00232	0.00132	0.00175	0.00237			
-seedmix_S3	2608	2607	39.55236	0.00269	0.00000	0.10612	-0.00231	-0.02186	-0.04643	-0.01802	0.00476	-0.00027	0.00222	0.00278			
-seedmix_S4	2608	2608	39.50192	0.00251	0.00000	0.10612	-0.00249	-0.02356	-0.04643	-0.05590	0.00885	-0.00207	0.00247	0.00252			

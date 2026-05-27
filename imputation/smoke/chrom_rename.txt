@@ -1,5 +1,0 @@
-Chr1	1
-Chr2	2
-Chr3	3
-Chr4	4
-Chr5	5

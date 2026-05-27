@@ -153,3 +153,11 @@ pangenie_genotyping/data/v3qc*/**/*.txt
 # editor/OS sidecars & notebook backups
 *.ipynb.bak*
 ._*
+
+# archived subprojects (archive/): keep their code/docs/notebooks/plots, drop the
+# data dumps. The old top-level-anchored data rules don't match under archive/,
+# so re-assert the repo's keep-code-not-data policy here for the moved dirs.
+archive/**/*.tsv
+archive/**/*.tsv.gz
+archive/**/*.txt
+archive/**/*.gz
