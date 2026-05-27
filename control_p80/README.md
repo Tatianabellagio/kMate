@@ -1,5 +1,7 @@
 # `control_p80/` — 80-cactus-founder control experiment
 
+> **Naming:** the AF-estimation method is now called **kMate** (see `../ALGORITHM.md`). The `cactus_em_*` result-dir names and `07*_run_cactus_em_*.sh` scripts here retain the legacy name `cactus_em`; a full path rename is deferred.
+
 **Standalone project.** Successor to `control_p82/` after the 2026-05-16 panel-QC decisions dropped 2 cactus assemblies. Tests the same hypothesis: that the +41% cactus h-bias and the off-diagonal streaks in `FINAL_RESULTS_cov10_v3.ipynb` vanish (or shrink) when the panel is homogeneous (all founders are long-read cactus assemblies, no PG short-read genotypes).
 
 See `../HANDOFF_P82_CONTROL.md` for the full hypothesis-test rationale (still applies; only the panel size and decomposition method changed). See `../SESSION_2026-05-16.md` for the 2-assembly exclusion decision.

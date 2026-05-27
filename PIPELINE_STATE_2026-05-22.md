@@ -1,4 +1,4 @@
-# Pipeline state — production cactus_em (2026-05-22)
+# Pipeline state — production kMate (2026-05-22)
 
 Supersedes `old_docs/SESSION_*` and the prior `PIPELINE_STATE_2026-05-19.md`. This file is the single source of truth on what's production-ready vs in evaluation vs deprecated.
 
@@ -10,9 +10,10 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 - **Decomposition**: **arch3** (annotate_vcf + convert-to-biallelic), NOT `bcftools norm -m -any`
 - **Matrices**: `cn_var_231_arch3` (standard, for SV-level analyses) AND `cn_var_231_arch3_atomized` (per-base, for SNP-level GEA)
 - **Chrom scope**: Chr1 built; **Chr2–5 extension is the open production task**
-- **K-mer filter**: **undecided** — currently testing `filt2` (AC≥2). `mixed-loose` is **NOT production** (was previously documented as such; that statement was wrong).
+- **K-mer filter / cn_full build**: **OPEN** — 30+ candidate builds on disk (`cn_full_231_v3qc_v3` raw, `_filt2`, `_mixedloose` [deprecated], `_subsampMedian_refilt2`, `_subsampProtect{1,2}_refilt2`, …), under active test as of 2026-05-26 (SLURM `protect_sweep` array). `subsampProtect1` currently leads on per-founder h-RMSE (−22% vs `filt2` at dense pools; see memory `project_h_kmer_cap_strategy`) — decision pending the sweep, not yet final. `mixed-loose` is **NOT** the answer (earlier docs wrongly said so).
 - **Projection**: MAR — `(h @ cn_var) / (h @ cn_var_called)` in both global and window modes. Patched 2026-05-21.
 - **Modes**: both `global` (one h per chrom) and `★★` (window 10kb + global anchor 0.3 + HMM smooth 5α0.5) are production; pick per-regime.
+- **Naming**: the method is **kMate** (algorithm + math: `ALGORITHM.md`). Legacy code, result-dir paths (`*/cactus_em_*`), and the `sims/visor_freqk` sub-repo still use the prior name `cactus_em`; the full path/code rename is deferred until the in-flight k-mer-filter experiment concludes.
 
 ## What changed since the last pipeline-state doc (2026-05-19)
 
@@ -67,8 +68,8 @@ Both `--block-mode global` and `--block-mode window --window-bp 10000 --global-a
 ## 5. Companion docs (still current)
 
 - `BACKGROUND.md` — project framing
-- `ALGORITHM.md` — prose walkthrough of cactus_em
-- `CACTUS_EM_MATH.md` — formal math
+- `ALGORITHM.md` — kMate algorithm, math & production wiring (code-verified single source of truth; supersedes the old prose doc and `CACTUS_EM_MATH.md`)
+- `old_docs/CACTUS_EM_MATH.md` — superseded formal-math doc (folded into `ALGORITHM.md`)
 - `SIMULATIONS_METHODS.md` — methods-ready description of the pool-seq simulation framework
 - `INVESTIGATION_2026-05-19_CN_VAR_DECOMPOSITION.md` — context for the arch decomposition switch
 - `MISSINGNESS_231PANEL.md` — F_MISSING characterization on the production panel

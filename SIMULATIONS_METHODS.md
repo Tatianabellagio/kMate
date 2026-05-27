@@ -1,6 +1,6 @@
 # Simulation methods
 
-Methods-ready description of the pool-seq simulation framework used to benchmark `cactus_em` (and comparators). This document describes the simulation pipeline (how pools and reads are generated, how truth is computed) and the regime matrix tested.
+Methods-ready description of the pool-seq simulation framework used to benchmark `kMate` (and comparators). This document describes the simulation pipeline (how pools and reads are generated, how truth is computed) and the regime matrix tested.
 
 The code lives in two places:
 
@@ -72,7 +72,7 @@ Reads in this framework are simulated from **VCF-consensus** founder FASTAs — 
 
 **The risk (read-side closed loop).** Consensus reads contain only the variants the panel VCF encoded, and `cn_full` (the EM's k-mer dictionary) is built from that same VCF. So the simulated read substrate is a guaranteed subset of the estimator's k-mers: no read carries a k-mer `cn_full` hasn't seen. Real pool-seq reads do — real genomes carry variation and repeat content the pangenome graph never captured. If that off-panel k-mer mass degraded the EM, a consensus-only simulation would hide it.
 
-**The validation (g0).** We tested this on the two non-recombinant regimes by re-simulating reads **straight from the raw assemblies** (`…/pang_1001gplus/…/chr_only/<asm_id>.chr.fa`, via `pywgsim`, bypassing the VCF→consensus→VISOR path entirely; `control_p80/scripts/sim_from_raw_assemblies.py`) and re-running `cactus_em global` against the *same* `cn_full`, `cn_var`, and truth. Only the read source differs. Both substrates used the same 10× read budget (verified: 9.95× consensus / 10.00× raw of TAIR10 Chr1). Raw reads carry extra off-panel k-mer mass relative to consensus — the EM's λ̂ coverage estimate read ~7.2× for raw vs ~7.6× for consensus from the *identical* budget (λ̂ counts only k-mers present in `cn_full`; the ~7.x value is itself a uniform-h / partly-represented-panel artifact seen for both substrates, not missing depth).
+**The validation (g0).** We tested this on the two non-recombinant regimes by re-simulating reads **straight from the raw assemblies** (`…/pang_1001gplus/…/chr_only/<asm_id>.chr.fa`, via `pywgsim`, bypassing the VCF→consensus→VISOR path entirely; `control_p80/scripts/sim_from_raw_assemblies.py`) and re-running `kMate global` against the *same* `cn_full`, `cn_var`, and truth. Only the read source differs. Both substrates used the same 10× read budget (verified: 9.95× consensus / 10.00× raw of TAIR10 Chr1). Raw reads carry extra off-panel k-mer mass relative to consensus — the EM's λ̂ coverage estimate read ~7.2× for raw vs ~7.6× for consensus from the *identical* budget (λ̂ counts only k-mers present in `cn_full`; the ~7.x value is itself a uniform-h / partly-represented-panel artifact seen for both substrates, not missing depth).
 
 Per-record AF error vs the same realized-pool truth (`control_p80/scripts/compare_af_vs_truth.py`):
 
@@ -101,7 +101,7 @@ $$
 
 where `w_i` is the pool-weight of individual `i`, `anc_i(r)` is the founder owning the ancestry segment containing record `r`'s position in individual `i`, and `cn_var[f, r]`, `cn_var_called[f, r]` are the carrier and called indicators (1 if founder `f` carries the ALT at record `r` / has a non-missing GT, 0 otherwise).
 
-This projection is the same form `cactus_em` uses to map the EM-inferred founder mass vector to per-record AF, applied here with *exact* per-individual ancestry rather than an inferred mixture. Conceptually it is the optimal AF a perfect estimator could recover from the realised pool — independent of read sampling noise.
+This projection is the same form `kMate` uses to map the EM-inferred founder mass vector to per-record AF, applied here with *exact* per-individual ancestry rather than an inferred mixture. Conceptually it is the optimal AF a perfect estimator could recover from the realised pool — independent of read sampling noise.
 
 The truth file also reports `info[r] = Σ_i w_i · cn_var_called[anc_i(r), r]` — the h-weighted fraction of pool mass observable at record `r`. At records where `info → 0` (no individual's ancestry-founder is called), `truth_af` is emitted as `NaN`.
 
@@ -168,7 +168,7 @@ The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `
 - **LD-block hotspots**: BigLD partitioning (Kim et al. 2018, *Bioinformatics* 34:359) on the GrENE-Net 231-panel SNP set (`hapfire_block_index_chr1.npz`).
 - **Pool-seq sampling theory**: Futschik & Schlötterer 2010, *Genetics* 186:207 — variance decomposition `Var(p̂) ≈ p(1-p)[1/(2N) + 1/D]` characterising the Stage-1 + Stage-2 floor.
 - **MimicrEE2** (referenced for comparison; not used here): Vlachos & Kofler 2018, *PLoS Comp Biol* — full forward-time pool-seq simulator with drift and selection.
-- **cactus_em** projection math: `CACTUS_EM_MATH.md`.
+- **kMate** projection math: `ALGORITHM.md` (`old_docs/CACTUS_EM_MATH.md` is the superseded version).
 
 ## 10. Reproducibility
 

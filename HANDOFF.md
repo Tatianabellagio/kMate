@@ -5,7 +5,9 @@
 
 ## TL;DR
 
-`cactus_em` end-to-end: per-sample k-mer Poisson EM on the 231-founder simplex, projected through `cn_var` to per-record AF (SNPs + indels + SVs in one pass). Production panel uses the **arch decomposition** (annotate_vcf + convert-to-biallelic). MAR-aware projection is now the recipe in both `global` and `★★` window modes. K-mer filter is **undecided** (testing `filt2`; `mixed-loose` is NOT production despite earlier docs claiming otherwise).
+`kMate` end-to-end: per-sample k-mer Poisson EM on the 231-founder simplex, projected through `cn_var` to per-record AF (SNPs + indels + SVs in one pass). Production panel uses the **arch decomposition** (annotate_vcf + convert-to-biallelic). MAR-aware projection is now the recipe in both `global` and `★★` window modes. K-mer filter is **undecided** (testing `filt2`; `mixed-loose` is NOT production despite earlier docs claiming otherwise).
+
+**Naming:** the method is **kMate** (see `ALGORITHM.md`). Legacy code, result-dir paths (`*/cactus_em_*`), and the `sims/visor_freqk` sub-repo still carry the prior name `cactus_em`; the full path/code rename is deferred until the in-flight k-mer-filter experiment (`protect_sweep`) concludes.
 
 ## Authoritative source on current state
 
@@ -36,13 +38,19 @@ python poolfreq/src/per_sample_per_chrom.py \
     --threads 8 --chroms Chr1 \
     --block-mode global
 
-# ★★ — for high-recomb regimes (evolved pools with multi-gen mosaic ancestry)
+# window ("★★") — for high-recomb regimes (evolved pools with multi-gen mosaic
+# ancestry). The window-mode DEFAULTS are this recipe (window-bp 10000,
+# global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5), so the
+# flag alone reproduces it — pass those flags only to override.
 python poolfreq/src/per_sample_per_chrom.py \
-    [same as above] \
-    --block-mode window --window-bp 10000 \
-    --global-anchor-weight 0.3 \
-    --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5
+    [same inputs as global] \
+    --block-mode window
 ```
+
+**Estimator code (2026-05-26 cleanup):** two modes only — `global` and `window`.
+LD-block modes, overlapping windows, k-mer rebalancing, carrier-weighting and
+contamination-ω were archived to `poolfreq/src/archive/`. The authoritative file
+list + invocation recipes are in **`poolfreq/src/INVENTORY.md`**.
 
 Output TSV (post-2026-05-21 patch) has 8 columns:
 
@@ -66,8 +74,8 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 |---|---|
 | `PIPELINE_STATE_2026-05-22.md` | Production-state SoT |
 | `BACKGROUND.md` | Project framing |
-| `ALGORITHM.md` | cactus_em prose walkthrough |
-| `CACTUS_EM_MATH.md` | Formal math |
+| `ALGORITHM.md` | kMate algorithm, math & wiring (code-verified single source of truth) |
+| `old_docs/CACTUS_EM_MATH.md` | Formal math (superseded; folded into `ALGORITHM.md`) |
 | `INVESTIGATION_2026-05-19_CN_VAR_DECOMPOSITION.md` | Why we switched to arch decomposition |
 | `MISSINGNESS_231PANEL.md` | F_MISSING characterization on the production panel |
 | `PIPELINE_FASTQ_PREPROCESSING.md` | Read-side preprocessing pipeline |
@@ -86,5 +94,5 @@ Historical / superseded docs are preserved under `old_docs/`. Useful for archaeo
 - **Conda env**: `hapfm` (`/home/tbellagio/miniforge3/envs/hapfm/`)
 - **HARP binary**: `/carnegie/nobackup/scratch/xwu/haplotype_frequency_estimation/hapFIRE_sourcecode/bin/harp` (for hapFIRE comparator runs only)
 - **GrENE-Net VCF sample list**: VCF header has 232 cols; 232nd is blank trailing. Drop with `bcftools query -l … | grep -v "^$"` to get the 231.
-- **Chrom naming**: GrENE-Net VCF uses `1..5`; cactus / cactus_em use `Chr1..Chr5`. Conversion handled per-pipeline.
+- **Chrom naming**: GrENE-Net VCF uses `1..5`; cactus / kMate use `Chr1..Chr5`. Conversion handled per-pipeline.
 - **Reference FASTA**: cactus VCFs normalize IUPAC codes to N. Use `TAIR10.chr.iupacN.fa` for `bcftools consensus` and downstream FASTA work.
