@@ -26,7 +26,7 @@ import numpy as np
 import pandas as pd
 from collections import defaultdict
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 t0 = time.time()
 print('=== loading cactus_em + meta ===', flush=True)

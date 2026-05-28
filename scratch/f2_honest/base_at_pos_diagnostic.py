@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 M = pd.read_csv(ROOT / 'scratch/f2_honest/base_at_pos_test.tsv', sep='\t')
 M['cell'] = (M['high_fmiss'].astype(int)*2 + M['is_mixed_bubble']).map({
     0:'[a] low_F pure_SNP',

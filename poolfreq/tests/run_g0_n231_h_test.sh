@@ -13,7 +13,7 @@
 
 mkdir -p logs
 set -euo pipefail
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 SIM=$ROOT/control_p80/sims/cov10_n231_g0_s42_hotspots_p80_chr1
 OUT_DIR=$ROOT/scratch/g0_n231_h_test

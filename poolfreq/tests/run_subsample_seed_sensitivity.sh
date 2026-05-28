@@ -11,7 +11,7 @@
 
 mkdir -p logs
 set -euo pipefail
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 OUT_DIR=$ROOT/scratch/subsample_h_test
 READS1=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_1.dedup.fq.gz

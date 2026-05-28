@@ -22,8 +22,8 @@
 mkdir -p logs
 set -euo pipefail
 
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
-BASE=/global/scratch/users/tbellg/hapfire_sv
+CTRL=/global/scratch/users/tbellg/kmate/control_p80
+BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 KMERS=$BASE/pangenie_genotyping/data/pang_135_pangenie_index_Chr1_kmers.tsv.gz

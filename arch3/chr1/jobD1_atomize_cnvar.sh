@@ -16,7 +16,7 @@ set -euo pipefail
 # carriers UNIONed across all source records that imply it. MNPs and overlapping
 # region of INS/DEL contribute; pure INS/DEL beyond the alignment overlap do not.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 VCF=merged_231_chr1_final.vcf.gz
 OUT_PREFIX=cn_var_231_arch3_chr1_atomized

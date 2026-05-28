@@ -12,7 +12,7 @@
 #SBATCH --error=logs/protect_sweep_%A_%a.err
 mkdir -p logs
 set -euo pipefail
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 export PYTHONPATH=$ROOT/poolfreq/src:${PYTHONPATH:-}
 OUT_DIR=$ROOT/scratch/g0_sweep_h_test

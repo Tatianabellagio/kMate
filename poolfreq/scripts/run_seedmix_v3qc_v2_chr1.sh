@@ -12,16 +12,16 @@
 # Test SEEDMIX_S1 cactus_em with the corrected v3qc_v2 cn_full (multi-allelic fix + missing-as-N).
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_v2_test
+cd /global/scratch/users/tbellg/kmate/poolfreq
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/seedmix_v3qc_v2_test
 mkdir -p $OUT_DIR
 
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix
 R1=$READS/S1-1.1_P.fq.gz
 R2=$READS/S1-1.2_P.fq.gz
 
-CN_VAR=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_var_231_v3qc_v2.cn_var.npz
-CN_VAR_META=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_var_231_v3qc_v2.meta.npz
+CN_VAR=/global/scratch/users/tbellg/kmate/poolfreq/data/cn_var_231_v3qc_v2.cn_var.npz
+CN_VAR_META=/global/scratch/users/tbellg/kmate/poolfreq/data/cn_var_231_v3qc_v2.meta.npz
 [ -s "$CN_VAR" ] || { echo "ERROR: cn_var_v3qc_v2 not built yet"; exit 1; }
 
 echo "[$(date)] SEEDMIX_S1 v3qc_v2 (Chr1)"

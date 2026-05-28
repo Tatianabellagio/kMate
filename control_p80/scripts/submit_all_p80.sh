@@ -22,11 +22,11 @@
 #   bash scripts/submit_all_p80.sh
 # =============================================================================
 set -euo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/control_p80
+cd /global/scratch/users/tbellg/kmate/control_p80
 
 # Verify the shared arch3 A1 prerequisite exists
-A1_ANNOT=/global/scratch/users/tbellg/hapfire_sv/arch3/chr1/chr1_135_annotated.sorted.vcf.gz
-A1_BIAL=/global/scratch/users/tbellg/hapfire_sv/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz
+A1_ANNOT=/global/scratch/users/tbellg/kmate/arch3/chr1/chr1_135_annotated.sorted.vcf.gz
+A1_BIAL=/global/scratch/users/tbellg/kmate/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz
 for f in $A1_ANNOT $A1_BIAL; do
     [ -s "$f" ] || { echo "ERROR: missing arch3 A1 output $f" >&2; exit 1; }
 done

@@ -3,7 +3,7 @@
 # Computes carrier counts at the 3 canonical positions and compares to known truth.
 set -euo pipefail
 
-cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/kmate/scratch/arch3_test
 
 OUT_VCF=cactus_78_per_sample_biallelic.vcf
 [ -s "$OUT_VCF" ] || { echo "ERROR: missing $OUT_VCF"; exit 1; }

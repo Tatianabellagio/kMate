@@ -32,7 +32,7 @@ SEED=${3:-42}
 COVERAGE=10
 CHROMS="Chr1"
 
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 CTRL=$ROOT/control_p231
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python

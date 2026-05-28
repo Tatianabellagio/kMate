@@ -11,7 +11,7 @@
 
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 mkdir -p results/smoke
 
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python

@@ -12,7 +12,7 @@
 #   4. cactus truth VCF accessible at $PANG69_VCF for concordance step
 # =============================================================================
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 PANG69_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
 
 # Sanity checks

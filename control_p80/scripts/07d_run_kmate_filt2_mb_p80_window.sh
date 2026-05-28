@@ -27,9 +27,9 @@ WEIGHT=${2:-inv_mb}
 [[ "$WEIGHT" == "inv_mb" ]] && WTAG="filt2mbW" || WTAG="filt2uW"
 [[ "$WEIGHT" == "inv_mb" ]] && ODIR="cactus_em_window_filt2_mb" || ODIR="cactus_em_window_filt2_uniform"
 
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+CTRL=/global/scratch/users/tbellg/kmate/control_p80
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-DRIVER=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src/per_sample_per_chrom.py
+DRIVER=/global/scratch/users/tbellg/kmate/poolfreq/src/per_sample_per_chrom.py
 COV=10; SEED=42
 
 case "$REGIME" in

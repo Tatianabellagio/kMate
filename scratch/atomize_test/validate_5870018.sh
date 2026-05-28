@@ -9,7 +9,7 @@ MINIMAP=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/minima
 SAMTOOLS=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools
 FA_DIR=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only
 TAIR=$FA_DIR/TAIR10.chr.fa
-OUT=/global/scratch/users/tbellg/hapfire_sv/scratch/atomize_test
+OUT=/global/scratch/users/tbellg/kmate/scratch/atomize_test
 mkdir -p $OUT/validation
 
 POS=5870018

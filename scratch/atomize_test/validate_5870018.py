@@ -12,7 +12,7 @@ Goal: which is right? minimap2 alignment to founder genomes is independent of bo
 import subprocess, re, os
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 FA_DIR = Path('/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only')
 TAIR = FA_DIR / 'TAIR10.chr.fa'
 MINIMAP = '/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/minimap2'

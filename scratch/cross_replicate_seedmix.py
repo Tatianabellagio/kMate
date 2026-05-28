@@ -27,7 +27,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 SAMPLES_FILE = ROOT / 'data/vcf_samples_231.txt'
 SPLIT_FILE = ROOT / 'data/founder_split_cactus_pg.json'
 CEM_DIR = ROOT / 'scratch/seedmix_v3_dedup'

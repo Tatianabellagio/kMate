@@ -11,14 +11,14 @@
 
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 # Build cn for full Chr1 first (most informative single chromosome, fastest to validate)
 for chrom in Chr1 Chr2 Chr3 Chr4 Chr5; do
     echo "[$(date)] Building cn for $chrom"
     /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python src/build_kmer_cn.py \
-        --kmers /global/scratch/users/tbellg/hapfire_sv/pangenie_test/pangenie_idx_rawv2_${chrom}_kmers.tsv.gz \
-        --vcf   /global/scratch/users/tbellg/hapfire_sv/pangenie_test/raw_vcfbub_lv0_diploid.vcf.gz \
+        --kmers /global/scratch/users/tbellg/kmate/pangenie_test/pangenie_idx_rawv2_${chrom}_kmers.tsv.gz \
+        --vcf   /global/scratch/users/tbellg/kmate/pangenie_test/raw_vcfbub_lv0_diploid.vcf.gz \
         --ref   /global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa \
         --chrom $chrom \
         --out data/cn_full_${chrom}

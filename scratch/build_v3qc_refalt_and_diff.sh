@@ -14,7 +14,7 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 

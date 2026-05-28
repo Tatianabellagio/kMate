@@ -10,7 +10,7 @@
 #SBATCH --error=logs/subsamp_protect_%j.err
 mkdir -p logs
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 IN=$BASE/poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1
 # filt2 bins: [2,3,5,11,26,51,101,201,232] -> bin0=ac2, bin1=ac3-4, bin2=ac5-10,...

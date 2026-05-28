@@ -19,7 +19,7 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/pang/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix

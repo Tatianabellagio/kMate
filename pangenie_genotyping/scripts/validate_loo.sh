@@ -29,7 +29,7 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 eval "$(conda shell.bash hook)"
 conda activate pangenie
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 
 # Ecotypes to LOO-test: cactus founders that ALSO have ENA short reads.
 # (Their cactus assembly = ground truth; their short reads = test input)

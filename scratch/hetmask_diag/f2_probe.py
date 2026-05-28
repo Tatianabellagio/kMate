@@ -12,7 +12,7 @@ import pandas as pd
 from pathlib import Path
 import gzip
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 RAW  = '/home/tbellagio/scratch/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.raw.vcf'
 
 # Load F1 test joined table; pick cell [d] (high F_MISSING + mixed bubble) records

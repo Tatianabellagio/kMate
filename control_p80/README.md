@@ -93,7 +93,7 @@ control_p80/
 ## How to run
 
 ```bash
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
+cd /carnegie/nobackup/scratch/tbellagio/kmate/control_p80
 bash scripts/submit_all_p80.sh
 ```
 

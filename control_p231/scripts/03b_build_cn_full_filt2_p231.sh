@@ -14,7 +14,7 @@
 mkdir -p logs
 set -uo pipefail
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p231
+CTRL=/global/scratch/users/tbellg/kmate/control_p231
 SRC=$CTRL/data/cn_full_p231
 OUT=$CTRL/data/cn_full_p231_filt2
 mkdir -p $OUT

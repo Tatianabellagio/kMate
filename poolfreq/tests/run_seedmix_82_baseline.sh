@@ -15,7 +15,7 @@
 
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 mkdir -p results/seedmix_82
 
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/batch_runner.py \

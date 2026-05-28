@@ -5,8 +5,8 @@
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
 #SBATCH --array=1-8
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/logs/sm_v3_dedup_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/logs/sm_v3_dedup_%A_%a.err
+#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/kmate/scratch/logs/sm_v3_dedup_%A_%a.out
+#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/kmate/scratch/logs/sm_v3_dedup_%A_%a.err
 
 # cactus_em-v3 global on the 8 SEEDMIX replicates using Trimmomatic+Clumpify-deduped reads
 # (NOT BAM-extracted — those lose reads that didn't align to TAIR10).
@@ -14,7 +14,7 @@
 
 set -euo pipefail
 PYBIN=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
+ROOT=/carnegie/nobackup/scratch/tbellagio/kmate
 READS_DIR=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix_trimmed/dedup
 OUT_DIR=$ROOT/scratch/seedmix_v3_dedup
 mkdir -p $OUT_DIR $ROOT/scratch/logs

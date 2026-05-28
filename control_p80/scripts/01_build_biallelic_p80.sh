@@ -37,8 +37,8 @@
 # =============================================================================
 set -euo pipefail
 
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
-BASE=/global/scratch/users/tbellg/hapfire_sv
+CTRL=/global/scratch/users/tbellg/kmate/control_p80
+BASE=/global/scratch/users/tbellg/kmate
 
 BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip

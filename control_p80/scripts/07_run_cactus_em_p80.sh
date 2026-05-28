@@ -30,9 +30,9 @@ if [[ "$METHOD" != "global" && "$METHOD" != "star2" ]]; then
     exit 1
 fi
 
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+CTRL=/global/scratch/users/tbellg/kmate/control_p80
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-DRIVER=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src/per_sample_per_chrom.py
+DRIVER=/global/scratch/users/tbellg/kmate/poolfreq/src/per_sample_per_chrom.py
 
 # Sim work dir (built by 06_run_sim_p80.sh). Seed 42 by convention.
 COV=10

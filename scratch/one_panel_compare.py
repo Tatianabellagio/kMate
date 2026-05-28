@@ -4,7 +4,7 @@ import numpy as np, pandas as pd, pysam
 from scipy.sparse import load_npz
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 task = int(sys.argv[1])
 
 PANELS = {

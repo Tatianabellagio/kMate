@@ -11,5 +11,5 @@
 
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u tests/test_genomewide_validation.py

@@ -12,7 +12,7 @@
 #SBATCH --error=logs/sm_h_%A_%a.err
 mkdir -p logs
 set -euo pipefail
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 export PYTHONPATH=$ROOT/poolfreq/src:${PYTHONPATH:-}
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup

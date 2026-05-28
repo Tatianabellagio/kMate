@@ -12,9 +12,9 @@
 # SEEDMIX_S1 cactus_em on row-normalized cn_full_v3qc_v2 (Chr1).
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_v2_rownorm_test
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/seedmix_v3qc_v2_rownorm_test
 mkdir -p $OUT_DIR
 
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix

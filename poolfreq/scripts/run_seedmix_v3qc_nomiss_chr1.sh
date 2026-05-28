@@ -13,9 +13,9 @@
 # Checks if the h vector is balanced (cactus ~ PG instead of 30x bias).
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_nomiss_test
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/seedmix_v3qc_nomiss_test
 mkdir -p $OUT_DIR
 
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix

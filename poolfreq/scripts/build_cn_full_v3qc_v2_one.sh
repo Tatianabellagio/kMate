@@ -13,7 +13,7 @@
 # Uses founders_231_v3qc_v2.haploid.vcf.gz as source.
 mkdir -p logs
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR="Chr${SLURM_ARRAY_TASK_ID:-1}"
 

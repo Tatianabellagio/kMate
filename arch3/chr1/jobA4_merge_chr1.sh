@@ -14,7 +14,7 @@ set -euo pipefail
 # Phase 2 Job A4: merge cactus_78 + PG_153 (both Chr1 haploid biallelic) + post-merge AN=0 filter.
 # Outputs the final 231-panel for Chr1.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 
 BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix

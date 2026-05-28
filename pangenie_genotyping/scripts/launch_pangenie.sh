@@ -8,7 +8,7 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 INDEX=$BASE/data/pang69_pangenie_index
 

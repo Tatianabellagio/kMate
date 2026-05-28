@@ -21,8 +21,8 @@ from scipy.sparse import load_npz, save_npz
 from pathlib import Path
 
 chrom = f"Chr${CHR}"
-SRC = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc')
-OUT = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_filt2')
+SRC = Path('/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc')
+OUT = Path('/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_filt2')
 OUT.mkdir(exist_ok=True)
 
 cn = load_npz(SRC / f'cn_{chrom}.cn.npz')

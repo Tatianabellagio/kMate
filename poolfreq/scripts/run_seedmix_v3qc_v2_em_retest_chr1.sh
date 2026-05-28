@@ -24,10 +24,10 @@
 
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-SCRATCH=/global/scratch/users/tbellg/hapfire_sv/scratch
+SCRATCH=/global/scratch/users/tbellg/kmate/scratch
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix
 R1=$READS/S1-1.1_P.fq.gz
 R2=$READS/S1-1.2_P.fq.gz

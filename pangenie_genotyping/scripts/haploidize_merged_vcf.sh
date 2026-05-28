@@ -34,7 +34,7 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 SRC=$BASE/data/merged/founders_231_chr.vcf.gz
 OUT=$BASE/data/merged/founders_231_chr.haploid.vcf.gz
 

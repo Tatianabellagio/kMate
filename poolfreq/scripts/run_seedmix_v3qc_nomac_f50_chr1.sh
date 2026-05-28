@@ -11,8 +11,8 @@
 
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_nomac_f50_test
+cd /global/scratch/users/tbellg/kmate/poolfreq
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/seedmix_v3qc_nomac_f50_test
 mkdir -p $OUT_DIR
 
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix

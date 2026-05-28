@@ -40,8 +40,8 @@
 #     sbatch --array=0-48%10 tests/run_batch_template.sh
 
 set -uo pipefail
-mkdir -p /global/scratch/users/tbellg/hapfire_sv/poolfreq/logs
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+mkdir -p /global/scratch/users/tbellg/kmate/poolfreq/logs
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 MANIFEST="${MANIFEST:-data/sample_manifest.tsv}"
 OUT_DIR="${OUT_DIR:-results/per_sample}"

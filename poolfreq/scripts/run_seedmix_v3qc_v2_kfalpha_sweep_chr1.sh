@@ -19,14 +19,14 @@
 # inside the EM driver captures K_f from the original cn rows.
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 # Map SLURM_ARRAY_TASK_ID -> alpha value
 ALPHAS=(0.0 1.0 2.0 3.0 5.0)
 ALPHA=${ALPHAS[$SLURM_ARRAY_TASK_ID]}
 ALPHA_TAG=${ALPHA//./p}
 
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_v2_kfalpha${ALPHA_TAG}_chr1
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/seedmix_v3qc_v2_kfalpha${ALPHA_TAG}_chr1
 mkdir -p $OUT_DIR
 
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix

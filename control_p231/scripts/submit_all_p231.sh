@@ -11,7 +11,7 @@
 # Usage: bash scripts/submit_all_p231.sh    (idempotent: stages skip if present)
 # =============================================================================
 set -euo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/control_p231
+cd /global/scratch/users/tbellg/kmate/control_p231
 S=scripts
 
 A5=$(sbatch --parsable $S/05_build_fastas_p231.sh)                          # 231 FASTAs from arch3 VCF

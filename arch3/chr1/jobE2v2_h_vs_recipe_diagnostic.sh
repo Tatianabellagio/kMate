@@ -16,7 +16,7 @@ set -euo pipefail
 # carrier_hbias[r] = mean_h(carriers) / mean(h) - 1
 # Then correlate carrier_hbias with (arch3_af - recipe_af) at outlier records.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY -u <<'PYEOF'
@@ -25,12 +25,12 @@ from scipy.sparse import load_npz
 import json
 
 print('=== Load h + cn_var ===')
-h_data = np.load('/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
+h_data = np.load('/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
 h = h_data['Chr1'].astype(np.float64)
 h_founders = list(h_data['founders'])
 F = len(h)
 
-with open('/global/scratch/users/tbellg/hapfire_sv/data/founder_split_cactus_pg.json') as f:
+with open('/global/scratch/users/tbellg/kmate/data/founder_split_cactus_pg.json') as f:
     split = json.load(f)
 is_cactus = np.array([str(s) in set(map(str, split['cactus'])) for s in h_founders])
 is_pg = np.array([str(s) in set(map(str, split['PG'])) for s in h_founders])

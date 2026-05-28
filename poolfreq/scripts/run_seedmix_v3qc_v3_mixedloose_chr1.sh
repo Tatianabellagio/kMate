@@ -20,8 +20,8 @@
 #     S1-1.1_P.fq.gz / S1-1.2_P.fq.gz — kept as-is on disk, not deleted.
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1
+cd /global/scratch/users/tbellg/kmate/poolfreq
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1
 mkdir -p $OUT_DIR
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup
 R1=$READS/SEEDMIX_S1_1.dedup.fq.gz; R2=$READS/SEEDMIX_S1_2.dedup.fq.gz

@@ -14,11 +14,11 @@
 # Per-sample: derive per-block ecotype freqs from hapFIRE outputs, then
 # project through cn_var_231_v2 → per-record AFs (incl. SVs).
 set -uo pipefail
-mkdir -p /global/scratch/users/tbellg/hapfire_sv/poolfreq/scripts/logs
-mkdir -p /global/scratch/users/tbellg/hapfire_sv/poolfreq/results/site04_hapfire_perblock_h
-mkdir -p /global/scratch/users/tbellg/hapfire_sv/poolfreq/results/site04_hapfire_perblock_proj
+mkdir -p /global/scratch/users/tbellg/kmate/poolfreq/scripts/logs
+mkdir -p /global/scratch/users/tbellg/kmate/poolfreq/results/site04_hapfire_perblock_h
+mkdir -p /global/scratch/users/tbellg/kmate/poolfreq/results/site04_hapfire_perblock_proj
 
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 LINE=$((SLURM_ARRAY_TASK_ID + 1))   # +1 to skip header
 SAMPLE=$(awk -F'\t' -v n=$LINE 'NR==n {print $1}' data/site04_manifest.tsv)

@@ -14,7 +14,7 @@ set -euo pipefail
 source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate pangenie
 
-WORK=/global/scratch/users/tbellg/hapfire_sv/kmer_index
+WORK=/global/scratch/users/tbellg/kmate/kmer_index
 
 PanGenie-index \
     -r $WORK/data/test_ref_chr1.fa \

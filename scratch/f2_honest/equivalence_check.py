@@ -21,7 +21,7 @@ import pysam
 import numpy as np
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 PRE  = ROOT / 'pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz'
 POST = ROOT / 'pangenie_genotyping/data/v3qc_v2/cactus_78_bi.vcf.gz'
 

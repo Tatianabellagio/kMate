@@ -22,7 +22,7 @@ set -euo pipefail
 source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate sequencing_pipeline
 
-WORK=/global/scratch/users/tbellg/hapfire_sv/panel_overlap_135_vs_82
+WORK=/global/scratch/users/tbellg/kmate/panel_overlap_135_vs_82
 RAW=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.raw.vcf.gz
 
 echo "[$(date +%H:%M:%S)] building biallelic-SNP-only subset for gtcheck"

@@ -13,7 +13,7 @@ set -euo pipefail
 # Plain-EM h estimate (alpha=0, no shape norm) for one cn_full on one sim.
 # Usage: sbatch em_h_run.sh <CN_PREFIX> <R1> <R2> <SAMPLE> <OUT_PREFIX>
 CN_PREFIX=$1; R1=$2; R2=$3; SAMPLE=$4; OUT_PREFIX=$5
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 # script lives in src/archive/ but imports em_solver/kmer_count from src/
 export PYTHONPATH=$ROOT/poolfreq/src:${PYTHONPATH:-}

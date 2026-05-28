@@ -22,10 +22,10 @@ import pandas as pd
 import subprocess
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 BCF = '/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools'
 # TODO: generate chr1 split from /global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf via "bcftools view -r 1"
-XWU = '/global/scratch/users/tbellg/hapfire_sv/data/greneNet_final_v1.1_chr1.recode.vcf'
+XWU = '/global/scratch/users/tbellg/kmate/data/greneNet_final_v1.1_chr1.recode.vcf'
 
 # ---------- 1. Pick 30 cell [d] probes ----------
 # Use the F2-honest joined table; pick records with high hapFIRE-cactus_em residual

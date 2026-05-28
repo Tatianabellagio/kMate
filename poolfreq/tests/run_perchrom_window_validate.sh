@@ -15,7 +15,7 @@
 # Output goes to a separate dir so we can diff against site04_231_v2/.
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 mkdir -p results/site04_231_v2_perchrom
 
 SAMPLE=MLFH040120180306

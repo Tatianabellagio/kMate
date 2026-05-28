@@ -22,7 +22,7 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping/data
 BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
 TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa

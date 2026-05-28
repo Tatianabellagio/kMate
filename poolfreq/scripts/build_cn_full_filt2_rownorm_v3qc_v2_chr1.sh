@@ -22,8 +22,8 @@ from scipy.sparse import load_npz, save_npz, diags
 from pathlib import Path
 import shutil
 
-SRC = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
-OUT = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_filt2_rownorm')
+SRC = Path('/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2')
+OUT = Path('/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2_filt2_rownorm')
 OUT.mkdir(exist_ok=True)
 
 chrom = 'Chr1'
@@ -68,4 +68,4 @@ print(f'[{chrom}] DONE, saved to {OUT}', flush=True)
 EOF
 
 echo "[$(date)] DONE"
-ls -lh /global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_filt2_rownorm/
+ls -lh /global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2_filt2_rownorm/

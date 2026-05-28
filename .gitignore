@@ -1,5 +1,5 @@
 # =============================================================================
-# .gitignore for hapfire_sv
+# .gitignore for kmate
 # Track: code (.py, .sh), docs (.md), small config (manifests, ecotype lists)
 # Don't track: large intermediate data, fastqs, BAMs, VCFs, npz, plots, logs
 # =============================================================================

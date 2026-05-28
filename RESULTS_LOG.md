@@ -724,7 +724,7 @@ be private to specific founders and Beagle imputation is conservative.
 `bcftools merge ref_80.vcf.gz imputed_151.vcf.gz`, where `ref_80` already
 contains the 80 cactus founders' SNP genotypes (from `grene_80.vcf.gz`,
 used as Beagle's reference panel input). The `ref_80.vcf.gz` already
-exists at `/carnegie/nobackup/scratch/tbellagio/hapfire_sv/imputation/work/`.
+exists at `/carnegie/nobackup/scratch/tbellagio/kmate/imputation/work/`.
 Estimated rebuild cost: cn_kmer ~9h + cn_var ~30 min, single SLURM job.
 
 **Workaround (current)**: post-hoc 1.43× calibration recovers R² 0.68→0.97

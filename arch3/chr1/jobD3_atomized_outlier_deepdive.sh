@@ -21,7 +21,7 @@ set -euo pipefail
 #  - vs raw arch3 / vs v3qc_v3 — were they outliers there too?
 # Plus spot-checks: top 15 outliers in each class.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY -u <<'PYEOF'
@@ -42,7 +42,7 @@ meta_a = np.load('cn_var_231_arch3_chr1_atomized.meta.npz', allow_pickle=True)
 m_pos = meta_a['pos']; m_ref = meta_a['ref']; m_alt = meta_a['alt']
 founders = meta_a['founders']
 
-cactus_ids = set(open('/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
+cactus_ids = set(open('/global/scratch/users/tbellg/kmate/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
 f_is_cactus = np.array([str(f) in cactus_ids for f in founders])
 print(f'  cactus founders: {f_is_cactus.sum()}, PG founders: {(~f_is_cactus).sum()}')
 

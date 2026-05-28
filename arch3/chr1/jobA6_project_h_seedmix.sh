@@ -15,10 +15,10 @@ set -euo pipefail
 # Why we can do this: cn_full is unchanged → existing h is still correct.
 # Only cn_var (the projection matrix) changed in Arch 3.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-H_PATH=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
+H_PATH=/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
 CN_VAR=cn_var_231_arch3_chr1.cn_var.npz
 CN_VAR_CALLED=cn_var_231_arch3_chr1.cn_var_called.npz
 CN_VAR_META=cn_var_231_arch3_chr1.meta.npz

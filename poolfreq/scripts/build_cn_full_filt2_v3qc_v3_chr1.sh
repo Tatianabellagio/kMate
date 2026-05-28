@@ -15,7 +15,7 @@
 mkdir -p logs
 set -euo pipefail
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v3_filt2
+OUT_DIR=/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v3_filt2
 mkdir -p $OUT_DIR
 
 $PY << EOF
@@ -23,14 +23,14 @@ import numpy as np, json
 from scipy.sparse import load_npz, save_npz
 from pathlib import Path
 CHR = 'Chr1'
-SRC = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v3')
+SRC = Path('/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v3')
 OUT = Path('${OUT_DIR}')
 cn = load_npz(SRC / f'cn_{CHR}.cn.npz').tocsr()
 meta = np.load(SRC / f'cn_{CHR}.meta.npz', allow_pickle=True)
 founders = np.asarray(meta['founders']).astype(str)
 F, K = cn.shape
 print(f'cn_full input: ({F}, {K:,}) nnz={cn.nnz:,}', flush=True)
-with open('/global/scratch/users/tbellg/hapfire_sv/data/founder_split_cactus_pg.json') as fp:
+with open('/global/scratch/users/tbellg/kmate/data/founder_split_cactus_pg.json') as fp:
     split = json.load(fp)
 cactus = set(map(str, split['cactus'])); pg = set(map(str, split['PG']))
 is_c = np.array([f in cactus for f in founders])

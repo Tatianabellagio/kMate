@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 J = pd.read_csv(ROOT / 'scratch/hetmask_diag/joined_hetmask_chr1.tsv', sep='\t')
 fm = pd.read_csv(
     ROOT / 'scratch/hetmask_diag/panel231_chr1_snp_fmissing.tsv',

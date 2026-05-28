@@ -27,8 +27,8 @@ set -euo pipefail
 REGIME=${1:?Usage: REGIME METHOD}
 METHOD=${2:?Usage: REGIME METHOD}
 
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+CTRL=/global/scratch/users/tbellg/kmate/control_p80
+ROOT=/global/scratch/users/tbellg/kmate
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 DRIVER=$ROOT/poolfreq/src/per_sample_per_chrom.py
 

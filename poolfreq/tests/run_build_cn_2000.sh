@@ -11,11 +11,11 @@
 
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python src/build_kmer_cn.py \
-    --kmers /global/scratch/users/tbellg/hapfire_sv/pangenie_test/pangenie_idx_rawv2_Chr1_kmers.tsv.gz \
-    --vcf   /global/scratch/users/tbellg/hapfire_sv/pangenie_test/raw_vcfbub_lv0_diploid.vcf.gz \
+    --kmers /global/scratch/users/tbellg/kmate/pangenie_test/pangenie_idx_rawv2_Chr1_kmers.tsv.gz \
+    --vcf   /global/scratch/users/tbellg/kmate/pangenie_test/raw_vcfbub_lv0_diploid.vcf.gz \
     --ref   /global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa \
     --chrom Chr1 \
     --max-bubbles 2000 \

@@ -7,7 +7,7 @@
 import json, copy
 from pathlib import Path
 
-NB = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_4way.ipynb')
+NB = Path('/carnegie/nobackup/scratch/tbellagio/kmate/panel_overlap_4way.ipynb')
 nb = json.loads(NB.read_text())
 
 def src(s): return s if isinstance(s, list) else s.splitlines(keepends=True)
@@ -56,7 +56,7 @@ nb['cells'][i]['source'] = [
     "import matplotlib.pyplot as plt\n",
     "from matplotlib.colors import LogNorm\n",
     "\n",
-    "ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')\n",
+    "ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')\n",
     "\n",
     "# Load 3 panel comparisons (drop task 4 = v2 — same as GN, not informative)\n",
     "results = []\n",

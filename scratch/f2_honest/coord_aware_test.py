@@ -14,7 +14,7 @@ import numpy as np
 import scipy.sparse as sp
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 print('Loading cn_var and meta...')
 cv = sp.load_npz(ROOT / 'poolfreq/data/cn_var_231_v3qc_v3.cn_var.npz').tocsc()

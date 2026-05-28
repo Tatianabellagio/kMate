@@ -38,7 +38,7 @@ source $(conda info --base)/etc/profile.d/conda.sh
 conda activate pang
 set -u
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 MANIFEST=$BASE/data/loo_ena_manifest.tsv
 RAW_DIR=$BASE/data/loo_raw_fastqs
 PREP_DIR=$BASE/data/loo_preprocessed

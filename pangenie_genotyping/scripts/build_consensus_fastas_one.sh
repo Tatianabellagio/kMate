@@ -24,7 +24,7 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
 SAMTOOLS=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools
 

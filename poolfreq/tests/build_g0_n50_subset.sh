@@ -16,7 +16,7 @@ set -euo pipefail
 # discriminating of cn_full identifiability than the perfect 1/231 mix: the EM
 # must put mass on the RIGHT 50 and zero elsewhere.
 
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 WGSIM=/global/home/users/tbellg/miniforge3/envs/pang/bin/wgsim
 SAMTOOLS=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools
 FOUNDER_DIR=$ROOT/sims/visor_freqk/founder_fastas_231_v3

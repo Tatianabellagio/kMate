@@ -18,7 +18,7 @@
 #   sbatch --export=ALL,MXDIV=0.05,MAX_BLOCKS=50 ...   # for quick smoke
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv
+cd /global/scratch/users/tbellg/kmate
 
 MXDIV=${MXDIV:-0.0}
 MAF=${MAF:-0.0}

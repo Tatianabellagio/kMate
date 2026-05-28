@@ -12,8 +12,8 @@
 # One-time: build per-block ecotype-to-haplotype-index lookup from the
 # hapFIRE panel + BigLD partition. Used by derive_hapfire_perblock_h.py.
 set -uo pipefail
-mkdir -p /global/scratch/users/tbellg/hapfire_sv/poolfreq/scripts/logs
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+mkdir -p /global/scratch/users/tbellg/kmate/poolfreq/scripts/logs
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 /usr/bin/time -v /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u \
     scripts/build_hapfire_block_index.py 2>&1

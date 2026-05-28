@@ -13,12 +13,12 @@ Upstream docs: https://docs-research-it.berkeley.edu/services/high-performance-c
 | What | Path | Quota | Backup | Notes |
 |---|---|---|---|---|
 | `$HOME` | `/global/home/users/tbellg` | 50 GB | yes | Code, configs, binaries only. **Not for data.** |
-| `$SCRATCH` (user) | `/global/scratch/users/tbellg` | soft 12 TB | no | Lustre. Active compute scratch. Project root lives here: `…/hapfire_sv/`. |
+| `$SCRATCH` (user) | `/global/scratch/users/tbellg` | soft 12 TB | no | Lustre. Active compute scratch. Project root lives here: `…/kmate/`. |
 | Lab condo scratch | `/global/scratch/projects/co_moilab/` | 200 GB | no | Shared lab space (currently empty for us). |
 | Lab FCA scratch | `/global/scratch/projects/fc_moilab/` | — | no | Shared lab space (in active use by lab; check before writing). |
 | Convenience symlink | `/global/home/users/tbellg/scratch` → `/global/scratch/users/tbellg` | — | — | Pre-existing. Both paths work. |
 
-**Rule of thumb:** project root is `/global/scratch/users/tbellg/hapfire_sv/`. All
+**Rule of thumb:** project root is `/global/scratch/users/tbellg/kmate/`. All
 runtime data, intermediate `.npz`, k-mer indexes, FASTQs, result TSVs go under
 `$SCRATCH`. Only the code and the conda env live in `$HOME`.
 

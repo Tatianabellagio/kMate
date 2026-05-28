@@ -13,7 +13,7 @@
 # One-time job per panel; produces poolfreq/data/block_haplotype_cn/chr1_full.npz.
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv
+cd /global/scratch/users/tbellg/kmate
 
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 echo "[$(date)] starting build_block_haplotype_cn for Chr1 (numpy 2-bit hashing, 8 threads)"

@@ -24,7 +24,7 @@
 mkdir -p logs
 set -uo pipefail
 
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+CTRL=/global/scratch/users/tbellg/kmate/control_p80
 VCF=$CTRL/data/pangenome_p80_chr1.vcf.gz
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$CTRL/fastas_80

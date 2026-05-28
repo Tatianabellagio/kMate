@@ -12,7 +12,7 @@
 # Run cactus_em (231-cn v2) on site 04 samples (57 samples).
 # block-mode window — evolved samples have local mosaic ancestry, so window > global.
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 mkdir -p results/site04_231_v2 tests/logs
 
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/batch_runner.py \

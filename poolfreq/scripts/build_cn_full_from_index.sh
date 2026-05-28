@@ -22,7 +22,7 @@ set -euo pipefail
 KMERS=$1
 OUT_DIR=$2
 
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR=Chr1
 VCF=$BASE/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz

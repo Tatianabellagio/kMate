@@ -22,7 +22,7 @@ import scipy.sparse as sp
 from pathlib import Path
 from scipy.stats import pearsonr
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 GT_TSV = ROOT / 'scratch/f2_honest/raw_chr1_biallelic_GT.tsv'
 
 # ---------- 1) Build Assembly_ID -> Accession_ID mapping ----------

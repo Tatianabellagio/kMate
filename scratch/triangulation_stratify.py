@@ -10,7 +10,7 @@ For each stratum: report n, mean cem, mean hf, mean rec_lab, and the differences
 """
 import numpy as np, pandas as pd
 
-ROOT = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv'
+ROOT = '/carnegie/nobackup/scratch/tbellagio/kmate'
 df = pd.read_parquet(f'{ROOT}/scratch/triangulation_S1_chr1.parquet')
 
 m = (np.isfinite(df.cem) & np.isfinite(df.hf)

@@ -21,7 +21,7 @@ from pathlib import Path
 import numpy as np
 from scipy.sparse import load_npz
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 sys.path.insert(0, str(ROOT / 'poolfreq/src'))
 from em_solver import solve_em
 

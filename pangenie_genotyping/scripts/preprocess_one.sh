@@ -27,7 +27,7 @@ mkdir -p logs
 set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-}"
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 RAW_DIR=$BASE/data/raw_fastqs
 PREP_DIR=$BASE/data/preprocessed

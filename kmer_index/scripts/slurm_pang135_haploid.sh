@@ -24,7 +24,7 @@ set -euo pipefail
 source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate pangenie
 
-WORK=/global/scratch/users/tbellg/hapfire_sv/kmer_index
+WORK=/global/scratch/users/tbellg/kmate/kmer_index
 VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
 OUT_DIR=$WORK/pang_135_haploid

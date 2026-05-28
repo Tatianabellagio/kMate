@@ -29,7 +29,7 @@ set -euo pipefail
 source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate sequencing_pipeline
 
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 WORK=$BASE/panel_overlap_135_vs_82
 GENOTYPED=$BASE/pangenie_genotyping/data/genotyped
 

@@ -15,13 +15,13 @@ set -euo pipefail
 # Produces the annotated multi-allelic VCF + biallelic catalog for Chr1.
 # These outputs feed both PG (A2) and cactus (A3) downstream jobs.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 
 BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-ANNOTATE=/global/scratch/users/tbellg/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+ANNOTATE=/global/scratch/users/tbellg/kmate/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
 
 GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
 FULL_135_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz

@@ -26,8 +26,8 @@
 mkdir -p logs
 set -uo pipefail
 
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p231
-VCF=/global/scratch/users/tbellg/hapfire_sv/arch3/chr1/merged_231_chr1_final.vcf.gz
+CTRL=/global/scratch/users/tbellg/kmate/control_p231
+VCF=/global/scratch/users/tbellg/kmate/arch3/chr1/merged_231_chr1_final.vcf.gz
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$CTRL/fastas_231
 SAMPLE_LIST=$CTRL/data/founders_231_order.txt

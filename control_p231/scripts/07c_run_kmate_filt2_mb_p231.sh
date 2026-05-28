@@ -27,7 +27,7 @@ WEIGHT=${3:-inv_mb}
 [[ "$CNVAR" == "atomized" || "$CNVAR" == "raw" ]] || { echo "ERROR: CNVAR must be atomized|raw" >&2; exit 1; }
 [[ "$WEIGHT" == "inv_mb" || "$WEIGHT" == "uniform" ]] || { echo "ERROR: WEIGHT must be inv_mb|uniform" >&2; exit 1; }
 
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 CTRL=$ROOT/control_p231
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 DRIVER=$ROOT/poolfreq/src/per_sample_per_chrom.py

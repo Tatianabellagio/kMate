@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-ROOT  = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT  = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 FA_DIR= Path('/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only')
 TAIR  = FA_DIR / 'TAIR10.chr.fa'
 SAMTOOLS = '/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools'

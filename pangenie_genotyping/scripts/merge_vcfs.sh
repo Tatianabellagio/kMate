@@ -19,7 +19,7 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 GT_DIR=$BASE/data/genotyped
 OUT_DIR=$BASE/data/merged
 mkdir -p $OUT_DIR
@@ -37,7 +37,7 @@ PG_GQ_MIN=${PG_GQ_MIN:-0}
 # (sample_rename.txt). The other 55 are dropped — they're not in GrENE-Net.
 # Chroms in pang are already Chr1..Chr5 (verified) — no chrom rename needed.
 PANG69_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
-SAMPLE_RENAME=/global/scratch/users/tbellg/hapfire_sv/imputation/work/sample_rename.txt
+SAMPLE_RENAME=/global/scratch/users/tbellg/kmate/imputation/work/sample_rename.txt
 KEEP_80=$OUT_DIR/cactus_overlap_80.txt
 awk '{print $2}' $SAMPLE_RENAME | sort -u > $KEEP_80
 echo "[$(date)] cactus founders to keep (1001G IDs): $(wc -l < $KEEP_80)"

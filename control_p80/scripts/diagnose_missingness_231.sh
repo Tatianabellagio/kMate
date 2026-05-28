@@ -25,8 +25,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-DATA = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data')
-OUT  = Path('/global/scratch/users/tbellg/hapfire_sv/control_p80/results')
+DATA = Path('/global/scratch/users/tbellg/kmate/poolfreq/data')
+OUT  = Path('/global/scratch/users/tbellg/kmate/control_p80/results')
 
 # Load only the meta arrays we need (skip the heavy 'ref'/'alt' object strings).
 print('Loading meta header info ...', flush=True)
@@ -44,8 +44,8 @@ assert called.shape[1] == N
 print(f'  shape={called.shape}  nnz={called.nnz:,}  density={called.nnz/(F*N)*100:.2f}%', flush=True)
 
 # Identify cactus side via the panel TSV
-panel_tsv    = '/global/scratch/users/tbellg/hapfire_sv/data/sv_panel_to_accession_id.tsv'
-exclude_list = '/global/scratch/users/tbellg/hapfire_sv/data/exclude_list.txt'
+panel_tsv    = '/global/scratch/users/tbellg/kmate/data/sv_panel_to_accession_id.tsv'
+exclude_list = '/global/scratch/users/tbellg/kmate/data/exclude_list.txt'
 with open(exclude_list) as f:
     excluded_asm = {line.strip() for line in f if line.strip()}
 sv_panel = pd.read_csv(panel_tsv, sep='\t')

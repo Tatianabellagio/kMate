@@ -35,7 +35,7 @@ from matplotlib.colors import LogNorm
 from pathlib import Path
 
 import os
-ROOT = Path(os.environ.get('HAPFIRE_ROOT', '/global/scratch/users/tbellg/hapfire_sv')) / 'control_p80'
+ROOT = Path(os.environ.get('HAPFIRE_ROOT', '/global/scratch/users/tbellg/kmate')) / 'control_p80'
 RESULTS = ROOT / 'results'
 SIMS = ROOT / 'sims'
 DATA = ROOT / 'data'

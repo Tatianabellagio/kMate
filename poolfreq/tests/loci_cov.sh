@@ -9,4 +9,4 @@
 #SBATCH --output=logs/locicov_%j.out
 #SBATCH --error=logs/locicov_%j.err
 mkdir -p logs
-/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u /global/scratch/users/tbellg/hapfire_sv/poolfreq/tests/loci_cov.py
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u /global/scratch/users/tbellg/kmate/poolfreq/tests/loci_cov.py

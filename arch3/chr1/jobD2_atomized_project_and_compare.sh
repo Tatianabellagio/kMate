@@ -14,10 +14,10 @@ set -euo pipefail
 # Re-project SEEDMIX_S1 h_v3 through the ATOMIZED cn_var, then compare to hapFIRE
 # on the 4-tuple (chrom, pos, ref, alt) join. Quantify encoding-disagreement reduction.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-H_PATH=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
+H_PATH=/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
 CN_VAR=cn_var_231_arch3_chr1_atomized.cn_var.npz
 CN_VAR_CALLED=cn_var_231_arch3_chr1_atomized.cn_var_called.npz
 CN_VAR_META=cn_var_231_arch3_chr1_atomized.meta.npz

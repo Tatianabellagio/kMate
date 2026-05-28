@@ -16,7 +16,7 @@ set -euo pipefail
 # with the deviation of h from uniform.
 # This is signal (real seed-mix composition), not a bug.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY -u <<'PYEOF'
@@ -26,14 +26,14 @@ from scipy.sparse import load_npz
 import json
 
 print('=== Load h vector + cn_var + meta ===')
-h_data = np.load('/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
+h_data = np.load('/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
 h = h_data['Chr1'].astype(np.float64)
 h_founders = list(h_data['founders'])
 F = len(h)
 print(f'h shape: {h.shape}, sum: {h.sum():.6f}, mean: {h.mean():.6f}, expected uniform: {1.0/F:.6f}')
 
 # Founder split: cactus vs PG
-with open('/global/scratch/users/tbellg/hapfire_sv/data/founder_split_cactus_pg.json') as f:
+with open('/global/scratch/users/tbellg/kmate/data/founder_split_cactus_pg.json') as f:
     split = json.load(f)
 cactus_set = set(map(str, split['cactus']))
 pg_set = set(map(str, split['PG']))

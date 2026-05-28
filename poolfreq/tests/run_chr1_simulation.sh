@@ -10,7 +10,7 @@
 #SBATCH --error=logs/chr1_sim_%j.err
 
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 mkdir -p tests/logs data/sim_chr1
 
 # Build comma-separated lists of all 82 founder Assembly_IDs and uniform weights

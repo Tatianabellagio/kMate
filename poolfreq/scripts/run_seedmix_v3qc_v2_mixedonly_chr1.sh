@@ -13,7 +13,7 @@
 # Uses the (rebuilding) cn_var_v3qc_v2 with the called mask for proper AF projection.
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 case $SLURM_ARRAY_TASK_ID in
   0) TAG=mixedloose   ;;
@@ -22,7 +22,7 @@ case $SLURM_ARRAY_TASK_ID in
   *) echo unknown; exit 1 ;;
 esac
 
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v2_${TAG}_chr1
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/v3qc_v2_${TAG}_chr1
 mkdir -p $OUT_DIR
 
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix

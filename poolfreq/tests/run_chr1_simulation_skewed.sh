@@ -10,7 +10,7 @@
 #SBATCH --error=logs/chr1_sim_skewed_%j.err
 
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 mkdir -p tests/logs data/sim_chr1_skewed
 
 # Pick 5 specific founders (use the first 5 from the seqfile for reproducibility)

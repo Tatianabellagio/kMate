@@ -4,7 +4,7 @@ same 80 founders, same GN truth) to panel_overlap_4way.ipynb.
 import json
 from pathlib import Path
 
-NB = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_4way.ipynb')
+NB = Path('/carnegie/nobackup/scratch/tbellagio/kmate/panel_overlap_4way.ipynb')
 nb = json.loads(NB.read_text())
 
 # Find bottom-line markdown to insert before it

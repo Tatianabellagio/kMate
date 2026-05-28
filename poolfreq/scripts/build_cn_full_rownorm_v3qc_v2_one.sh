@@ -17,8 +17,8 @@ set -euo pipefail
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR="Chr${SLURM_ARRAY_TASK_ID:-2}"
 
-SRC=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2
-OUT=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm
+SRC=/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2
+OUT=/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2_rownorm
 mkdir -p $OUT
 
 [ -s "$SRC/cn_${CHR}.cn.npz" ] || { echo "ERROR: missing $SRC/cn_${CHR}.cn.npz"; exit 1; }

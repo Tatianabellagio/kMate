@@ -14,10 +14,10 @@
 # Output: scratch/seedmix_v3qc_dedup/SEEDMIX_S{N}.tsv
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 S=${SLURM_ARRAY_TASK_ID:-1}
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_dedup
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/seedmix_v3qc_dedup
 mkdir -p $OUT_DIR
 
 READS_DIR=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix

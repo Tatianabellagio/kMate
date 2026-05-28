@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 def code(src):
     return {"cell_type": "code", "execution_count": None, "metadata": {},
@@ -42,7 +42,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 # Load 4 panel comparisons
 results = []

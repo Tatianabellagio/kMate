@@ -11,8 +11,8 @@
 # SEEDMIX_S1 cactus_em on v3qc_v3 mixed-conserv Chr1, NEW cn_var with called mask.
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedconserv_chr1
+cd /global/scratch/users/tbellg/kmate/poolfreq
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedconserv_chr1
 mkdir -p $OUT_DIR
 READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix
 R1=$READS/S1-1.1_P.fq.gz; R2=$READS/S1-1.2_P.fq.gz

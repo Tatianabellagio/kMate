@@ -18,7 +18,7 @@ import scipy.sparse as sp
 from pathlib import Path
 import time
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 # ----- 1. Load cn_var + meta -----
 print('[1] Load cn_var + meta')

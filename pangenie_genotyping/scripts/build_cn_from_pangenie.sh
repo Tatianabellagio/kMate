@@ -29,7 +29,7 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 MERGED_VCF=$BASE/data/merged/founders_231_chr.vcf.gz
 INDEX_PREFIX=$BASE/data/pang69_pangenie_index   # produced by build_pangenie_index.sh
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
@@ -41,7 +41,7 @@ BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
 TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-POOLFREQ_SRC=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src
+POOLFREQ_SRC=/global/scratch/users/tbellg/kmate/poolfreq/src
 
 # ---- Sanity checks on inputs --------------------------------------------------
 for f in $MERGED_VCF $REF; do

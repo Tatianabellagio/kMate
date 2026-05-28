@@ -12,10 +12,10 @@
 # cactus_em SEEDMIX_S{N} on v3qc panel — FILT2 mode (cn_full filtered to ac_k>=2).
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 S=${SLURM_ARRAY_TASK_ID:-1}
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_filt2_dedup
+OUT_DIR=/global/scratch/users/tbellg/kmate/scratch/seedmix_v3qc_filt2_dedup
 mkdir -p $OUT_DIR
 
 READS_DIR=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix

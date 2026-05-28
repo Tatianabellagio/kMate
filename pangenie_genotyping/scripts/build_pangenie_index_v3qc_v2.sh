@@ -22,7 +22,7 @@ set -euo pipefail
 eval "$(conda shell.bash hook)"
 conda activate pangenie
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 SRC_HAP=$BASE/data/v3qc_v2/founders_231_v3qc_v2.haploid.vcf.gz
 TMP=$BASE/data/v3qc_v2/idx_tmp
 mkdir -p $TMP

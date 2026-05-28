@@ -25,7 +25,7 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 MERGED=$BASE/data/merged
 V3QC=$BASE/data/v3qc
 TMP=$BASE/data/v3qc_tmp

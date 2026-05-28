@@ -10,7 +10,7 @@
 #SBATCH --error=logs/cn_var_v3qc_v3_%j.err
 mkdir -p logs
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 VCF=$BASE/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz
 OUT_PREFIX=$BASE/poolfreq/data/cn_var_231_v3qc_v3

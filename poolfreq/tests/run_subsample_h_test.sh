@@ -10,7 +10,7 @@
 #SBATCH --error=logs/subsample_h_%j.err
 
 set -euo pipefail
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 OUT_DIR=$ROOT/scratch/subsample_h_test
 mkdir -p $OUT_DIR $ROOT/poolfreq/tests/logs

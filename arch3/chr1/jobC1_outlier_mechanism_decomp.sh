@@ -18,7 +18,7 @@ set -euo pipefail
 # Then for each class, split by direction (under vs over) and check whether
 # cactus and PG founders internally agree (panel-vs-1001G) or disagree (PG-specific).
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY -u <<'PYEOF'
@@ -46,7 +46,7 @@ m_alt = meta['alt']
 founders = meta['founders']
 print(f'  cn_var: {cn.shape}, {cn.nnz:,} nnz')
 
-cactus_ids = set(open('/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
+cactus_ids = set(open('/global/scratch/users/tbellg/kmate/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
 f_is_cactus = np.array([str(f) in cactus_ids for f in founders])
 print(f'  cactus founders: {f_is_cactus.sum()},  PG founders: {(~f_is_cactus).sum()}')
 

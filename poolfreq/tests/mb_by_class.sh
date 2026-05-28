@@ -9,4 +9,4 @@
 #SBATCH --output=logs/mbclass_%j.out
 #SBATCH --error=logs/mbclass_%j.err
 mkdir -p logs
-/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u /global/scratch/users/tbellg/hapfire_sv/poolfreq/tests/mb_by_class.py
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u /global/scratch/users/tbellg/kmate/poolfreq/tests/mb_by_class.py

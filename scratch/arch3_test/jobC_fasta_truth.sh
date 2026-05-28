@@ -15,7 +15,7 @@ set -euo pipefail
 # For each position, read each founder's consensus FASTA at coord, compute "true" AC.
 # Compare to merged biallelic AC from Job B.
 
-cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/kmate/scratch/arch3_test
 
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 MERGED=merged_231_test_final.vcf.gz
@@ -25,9 +25,9 @@ MERGED=merged_231_test_final.vcf.gz
 # Try to locate per-founder consensus FASTAs
 FASTA_DIR=""
 for candidate in \
-  /global/scratch/users/tbellg/hapfire_sv/sims/visor_freqk/unimputed_fastas_v3 \
-  /global/scratch/users/tbellg/hapfire_sv/unimputed_fastas_v3 \
-  /global/scratch/users/tbellg/hapfire_sv/unimputed_fastas_v3; do
+  /global/scratch/users/tbellg/kmate/sims/visor_freqk/unimputed_fastas_v3 \
+  /global/scratch/users/tbellg/kmate/unimputed_fastas_v3 \
+  /global/scratch/users/tbellg/kmate/unimputed_fastas_v3; do
   if [ -d "$candidate" ]; then
     FASTA_DIR=$candidate
     break

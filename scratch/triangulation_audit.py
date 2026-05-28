@@ -23,7 +23,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 
-ROOT = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv'
+ROOT = '/carnegie/nobackup/scratch/tbellagio/kmate'
 SCRATCH = f'{ROOT}/scratch'
 HF = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
 

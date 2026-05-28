@@ -15,9 +15,9 @@ set -euo pipefail
 # Outputs: cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz
 # These feed cactus_em via per_sample_per_chrom.py.
 
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-BUILD_CN=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src/build_cn_var.py
+BUILD_CN=/global/scratch/users/tbellg/kmate/poolfreq/src/build_cn_var.py
 VCF=merged_231_chr1_final.vcf.gz
 OUT_PREFIX=cn_var_231_arch3_chr1
 

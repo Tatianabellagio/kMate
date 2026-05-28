@@ -25,7 +25,7 @@ case $SLURM_ARRAY_TASK_ID in
   *) echo unknown; exit 1 ;;
 esac
 
-OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_${TAG}
+OUT_DIR=/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2_${TAG}
 mkdir -p $OUT_DIR
 
 $PY << EOF
@@ -34,7 +34,7 @@ from scipy.sparse import load_npz, save_npz
 from pathlib import Path
 
 CHR = 'Chr1'
-SRC = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
+SRC = Path('/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2')
 OUT = Path('${OUT_DIR}')
 
 cn = load_npz(SRC / f'cn_{CHR}.cn.npz').tocsr()
@@ -43,7 +43,7 @@ founders = np.asarray(meta['founders']).astype(str)
 F, K = cn.shape
 print(f'cn_full input: ({F}, {K:,}) nnz={cn.nnz:,}', flush=True)
 
-with open('/global/scratch/users/tbellg/hapfire_sv/data/founder_split_cactus_pg.json') as fp:
+with open('/global/scratch/users/tbellg/kmate/data/founder_split_cactus_pg.json') as fp:
     split = json.load(fp)
 cactus_set = set(map(str, split['cactus']))
 pg_set = set(map(str, split['PG']))

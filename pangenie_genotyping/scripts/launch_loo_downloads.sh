@@ -6,7 +6,7 @@
 # subset, "1,3,7" for specific indices).
 # =============================================================================
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 
 N=$(awk 'NR>1' $BASE/data/loo_ena_manifest.tsv | wc -l)
 ARRAY="${1:-1-${N}%4}"   # default: all, max 4 concurrent (ENA-friendly)

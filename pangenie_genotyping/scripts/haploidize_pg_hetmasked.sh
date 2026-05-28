@@ -18,7 +18,7 @@
 # Diploid → haploid: 0/0 → 0, 1/1 → 1, ./. → ., else → . (paranoid fallback).
 mkdir -p logs
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 SRC=$BASE/data/v3qc_v3/pangenie_153_hetmasked_filled_bi.vcf.gz
 OUT=$BASE/data/v3qc_v3/pangenie_153_hetmasked_haploid.vcf.gz
 BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools

@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 OUT_DIR=$ROOT/scratch/shape_norm_sweep_filt2
 mkdir -p $OUT_DIR $ROOT/poolfreq/tests/logs

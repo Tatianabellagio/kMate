@@ -13,7 +13,7 @@
 
 mkdir -p logs
 set -euo pipefail
-ROOT=/global/scratch/users/tbellg/hapfire_sv
+ROOT=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 SIM_BASE=$ROOT/sims/visor_freqk/g0_sweep
 OUT_DIR=$ROOT/scratch/g0_sweep_h_test

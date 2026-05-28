@@ -10,7 +10,7 @@
 #SBATCH --error=logs/af_agree_%j.err
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv
+cd /global/scratch/users/tbellg/kmate
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/jupyter nbconvert \
   --to notebook --execute --inplace \
   AF_PANEL_AGREEMENT_v3qc_v3_filt2_S1_chr1.ipynb \

@@ -13,7 +13,7 @@ set -euo pipefail
 
 # Recreate AF_TRUTH_VS_ESTIMATE_v3qc_v3_mixedloose for Arch 3.
 # Inputs already on disk; this is light compute (sparse @ vector + pandas joins).
-cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 $PY -u af_truth_vs_estimate_arch3.py
 echo "[$(date)] DONE E1"

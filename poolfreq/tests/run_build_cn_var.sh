@@ -11,10 +11,10 @@
 
 mkdir -p logs
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 
 # Use the biallelic.norm VCF — same one used as PanGenie input
 # (one row per biallelic ALT of each top-level bubble)
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python src/build_cn_var.py \
-    --vcf /global/scratch/users/tbellg/hapfire_sv/pangenie_test/raw_vcfbub_lv0_diploid.biallelic.norm.vcf.gz \
+    --vcf /global/scratch/users/tbellg/kmate/pangenie_test/raw_vcfbub_lv0_diploid.biallelic.norm.vcf.gz \
     --out data/cn_var_82

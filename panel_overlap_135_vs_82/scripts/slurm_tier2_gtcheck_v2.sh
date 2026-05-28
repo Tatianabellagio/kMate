@@ -17,7 +17,7 @@ set -euo pipefail
 source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate sequencing_pipeline
 
-WORK=/global/scratch/users/tbellg/hapfire_sv/panel_overlap_135_vs_82
+WORK=/global/scratch/users/tbellg/kmate/panel_overlap_135_vs_82
 SNPS=$WORK/data/pang135_biallelic_snps.vcf.gz
 DIP=$WORK/data/pang135_biallelic_snps_diploid.vcf.gz
 

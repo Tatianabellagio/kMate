@@ -7,7 +7,7 @@ import numpy as np, pysam
 from scipy.sparse import load_npz
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 CN_VAR = ROOT / 'poolfreq/data/cn_var_231_v3qc.cn_var.npz'
 CN_VAR_META = ROOT / 'poolfreq/data/cn_var_231_v3qc.meta.npz'
 REFALT = ROOT / 'poolfreq/data/cn_var_231_v3qc.ref_alt.tsv.gz'

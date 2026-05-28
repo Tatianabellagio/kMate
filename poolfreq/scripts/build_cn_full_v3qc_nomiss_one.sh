@@ -13,7 +13,7 @@
 # Test: does dropping records with any missing GT fix the EM h bias?
 mkdir -p logs
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR="Chr${SLURM_ARRAY_TASK_ID:-1}"
 

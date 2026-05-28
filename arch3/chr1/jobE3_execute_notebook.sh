@@ -15,7 +15,7 @@ set -euo pipefail
 # Memory budget: cell 2 builds dense (231, 1.9M) arrays = ~1.7 GB each → 3.4 GB peak;
 # atomized cn_var load is sparse so ~80 MB; should fit easily in 96G.
 
-cd /global/scratch/users/tbellg/hapfire_sv
+cd /global/scratch/users/tbellg/kmate
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/jupyter nbconvert \
     --to notebook \
     --execute AF_TRUTH_VS_ESTIMATE_arch3_chr1.ipynb \

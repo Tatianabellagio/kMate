@@ -16,7 +16,7 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 T=${SLURM_ARRAY_TASK_ID:-1}

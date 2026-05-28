@@ -4,15 +4,15 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/logs/p82_nobub_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/logs/p82_nobub_%j.err
+#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/kmate/scratch/logs/p82_nobub_%j.out
+#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/kmate/scratch/logs/p82_nobub_%j.err
 
 # Build p82 panel using the SAME processing as v3 (no vcfbub, just bcftools norm).
 # Mirrors v3's cactus-side pipeline: subset → no vcfbub → norm -m -any → cn_var.
 # Output: scratch/p82_nobub/cn_var_p82_nobub.{cn_var,meta}.npz + ref_alt.tsv
 
 set -euo pipefail
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
+ROOT=/carnegie/nobackup/scratch/tbellagio/kmate
 SRC=/home/tbellagio/scratch/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.vcf.gz
 REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.numeric.iupacN.fa
 PANEL_TSV=$ROOT/data/sv_panel_to_accession_id.tsv

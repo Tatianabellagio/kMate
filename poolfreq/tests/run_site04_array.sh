@@ -13,7 +13,7 @@
 # Run cactus_em on one site04 sample per array task. 24-task concurrency.
 # Reads sample N (1-indexed) from data/site04_manifest.tsv.
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 mkdir -p results/site04_231_v2 tests/logs
 
 MANIFEST=data/site04_manifest.tsv

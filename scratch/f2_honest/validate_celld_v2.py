@@ -12,7 +12,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 # Load probe table (with cactus/F2-honest/hapFIRE values)
 R = pd.read_csv(ROOT / 'scratch/f2_honest/celld_validation.tsv', sep='\t')

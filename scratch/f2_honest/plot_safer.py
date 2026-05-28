@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 M = pd.read_csv(ROOT / 'scratch/f2_honest/coord_aware_safer.tsv', sep='\t')
 M['cell'] = (M['high_fmiss'].astype(int)*2 + M['is_mixed_bubble']).map({
     0:'[a] low_F pure_SNP',

@@ -11,5 +11,5 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv
+BASE=/global/scratch/users/tbellg/kmate
 bash "$BASE/panel_overlap_135_vs_82/scripts/tier1_compute_ac.sh" Chr3

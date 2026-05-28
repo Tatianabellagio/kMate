@@ -17,7 +17,7 @@ mkdir -p logs
 set -euo pipefail
 
 BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping/data
 
 CACTUS78=$BASE/v3qc_tmp/cactus_78.vcf.gz
 PG_QC=$BASE/v3qc/pangenie_153_qc.vcf.gz

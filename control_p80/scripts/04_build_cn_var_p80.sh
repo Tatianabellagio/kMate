@@ -16,8 +16,8 @@
 mkdir -p logs
 set -euo pipefail
 
-CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
-BASE=/global/scratch/users/tbellg/hapfire_sv
+CTRL=/global/scratch/users/tbellg/kmate/control_p80
+BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 VCF=$CTRL/data/pangenome_p80_chr1.vcf.gz

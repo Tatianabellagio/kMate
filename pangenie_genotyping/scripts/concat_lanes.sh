@@ -11,7 +11,7 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/raw_fastqs
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping/data/raw_fastqs
 
 for ECOTYPE in 100001 100002; do
     DIR=$BASE/$ECOTYPE

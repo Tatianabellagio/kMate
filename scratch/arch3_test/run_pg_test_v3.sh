@@ -11,14 +11,14 @@
 mkdir -p logs
 set -euo pipefail
 
-cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/kmate/scratch/arch3_test
 
 BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-CONVERT=/global/scratch/users/tbellg/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
-TRANSFER=/global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test/transfer_id_annotation.py
+CONVERT=/global/scratch/users/tbellg/kmate/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+TRANSFER=/global/scratch/users/tbellg/kmate/scratch/arch3_test/transfer_id_annotation.py
 
 CACTUS_ANNOT=full135_test_annotated.sorted.vcf.gz   # from job 63045
 BIAL_CATALOG=full135_test_annotated_biallelic.sorted.vcf.gz

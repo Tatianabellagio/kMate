@@ -29,7 +29,7 @@
 #   CHROMS       — quoted space-separated, default "Chr1 Chr2 Chr3 Chr4 Chr5"
 
 set -uo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/kmate/poolfreq
 mkdir -p tests/logs
 
 : ${MANIFEST:?Set MANIFEST to a TSV path with sample_id, reads_path[, reads_path2]}

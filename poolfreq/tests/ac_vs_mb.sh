@@ -9,4 +9,4 @@
 #SBATCH --output=logs/acmb_%j.out
 #SBATCH --error=logs/acmb_%j.err
 mkdir -p logs
-/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u /global/scratch/users/tbellg/hapfire_sv/poolfreq/tests/ac_vs_mb.py
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u /global/scratch/users/tbellg/kmate/poolfreq/tests/ac_vs_mb.py

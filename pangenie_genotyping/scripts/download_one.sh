@@ -20,7 +20,7 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 OUT_DIR=$BASE/data/raw_fastqs
 mkdir -p $OUT_DIR

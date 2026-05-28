@@ -3,7 +3,7 @@ cactus/PG class colors, 1/231 expectation, and filt2 overlay."""
 import json
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 
 def code_cell(src):
@@ -44,7 +44,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 CEM_DIR = ROOT / 'scratch/seedmix_v3_dedup'
 CEM_FILT2_DIR = ROOT / 'scratch/seedmix_v3_filt2_dedup'
 HF_DIR = Path('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix')

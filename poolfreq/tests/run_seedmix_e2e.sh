@@ -10,6 +10,6 @@
 #SBATCH --error=logs/seedmix_e2e_%j.err
 
 set -uo pipefail
-mkdir -p /global/scratch/users/tbellg/hapfire_sv/poolfreq/tests/logs
-cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
+mkdir -p /global/scratch/users/tbellg/kmate/poolfreq/tests/logs
+cd /global/scratch/users/tbellg/kmate/poolfreq
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python tests/test_seedmix_e2e.py

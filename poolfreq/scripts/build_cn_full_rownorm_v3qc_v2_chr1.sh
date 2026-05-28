@@ -22,8 +22,8 @@ import numpy as np
 from scipy.sparse import load_npz, save_npz, csr_matrix
 from pathlib import Path
 
-SRC_DIR = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
-OUT_DIR = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm')
+SRC_DIR = Path('/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2')
+OUT_DIR = Path('/global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2_rownorm')
 OUT_DIR.mkdir(exist_ok=True)
 
 chrom = 'Chr1'
@@ -57,4 +57,4 @@ shutil.copy(SRC_DIR / f'cn_{chrom}.meta.npz', OUT_DIR / f'cn_{chrom}.meta.npz')
 print(f'  saved to {OUT_DIR}/cn_{chrom}.{{cn,meta}}.npz')
 EOF
 echo "[$(date)] DONE"
-ls -lh /global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm/
+ls -lh /global/scratch/users/tbellg/kmate/poolfreq/data/cn_full_231_v3qc_v2_rownorm/

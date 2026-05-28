@@ -14,7 +14,7 @@
 
 mkdir -p logs
 set -euo pipefail
-cd /global/scratch/users/tbellg/hapfire_sv/control_p80/results
+cd /global/scratch/users/tbellg/kmate/control_p80/results
 
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 JUP=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/jupyter

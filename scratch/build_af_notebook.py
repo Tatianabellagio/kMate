@@ -2,7 +2,7 @@
 import json
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 
 def code_cell(src):
@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from scipy.sparse import load_npz
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 CEM_DIR = ROOT / 'scratch/seedmix_v3_dedup'
 CEM_FILT2_DIR = ROOT / 'scratch/seedmix_v3_filt2_dedup'
 HF_DIR = Path('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix')

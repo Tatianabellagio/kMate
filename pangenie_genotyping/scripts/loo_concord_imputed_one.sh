@@ -22,10 +22,10 @@
 mkdir -p logs
 set -eo pipefail
 
-BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/kmate/pangenie_genotyping
 MANIFEST=$BASE/data/loo_ena_manifest.tsv
 GT_DIR=$BASE/data/loo_genotyped
-TRUTH_VCF=/global/scratch/users/tbellg/hapfire_sv/imputation/work_merged/founders_231_imputed_multiallelic.vcf.gz
+TRUTH_VCF=/global/scratch/users/tbellg/kmate/imputation/work_merged/founders_231_imputed_multiallelic.vcf.gz
 OUT_DIR=$BASE/data/loo_concordance_imputed
 mkdir -p $OUT_DIR
 

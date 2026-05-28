@@ -5,12 +5,12 @@
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
 #SBATCH --array=1-8
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/logs/sm_filt2_dedup_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/logs/sm_filt2_dedup_%A_%a.err
+#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/kmate/scratch/logs/sm_filt2_dedup_%A_%a.out
+#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/kmate/scratch/logs/sm_filt2_dedup_%A_%a.err
 
 set -euo pipefail
 PYBIN=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
+ROOT=/carnegie/nobackup/scratch/tbellagio/kmate
 READS_DIR=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix_trimmed/dedup
 OUT_DIR=$ROOT/scratch/seedmix_v3_filt2_dedup
 mkdir -p $OUT_DIR $ROOT/scratch/logs

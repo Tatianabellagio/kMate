@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-J = pd.read_csv('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/hetmask_diag/joined_hetmask_chr1.tsv',
+J = pd.read_csv('/carnegie/nobackup/scratch/tbellagio/kmate/scratch/hetmask_diag/joined_hetmask_chr1.tsv',
                 sep='\t')
 print(f'rows: {len(J):,}')
 
