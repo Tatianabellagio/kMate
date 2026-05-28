@@ -162,34 +162,32 @@ def make_individuals(n_indiv, n_generations, weights_dict, rate, rng, allowed_pe
                      gen0_no_replace=False):
     """Build n_indiv recombinant haploids after n_generations.
 
-    gen0_no_replace: when True, draw gen-0 founders to maximize uniformity of
-    pool composition (SEEDMIX mimicry):
-      * n_indiv <= F: sample WITHOUT replacement (each founder ≤ 1 time);
-        truth_h = uniform 1/F for the n_indiv chosen, 0 for the rest.
-      * n_indiv >  F: BALANCED allocation — each founder gets count in
-        {floor(n/F), ceil(n/F)} as evenly as possible (avoids Poisson(n/F)
-        quantization spread). Truth_h then has only 1-2 distinct nonzero values.
-    Default False = legacy multinomial with replacement.
+    gen0_no_replace: when True AND n_indiv <= F, sample gen-0 founders WITHOUT
+    replacement (= permutation when n_indiv == F). Gives truth_h = uniform 1/F
+    instead of a Poisson(N/F)-quantized staircase. Falls back to with-replacement
+    when n_indiv > F (no other choice). Default False preserves the legacy
+    multinomial-with-replacement behavior (matches control_p80).
 
     Returns list of length n_indiv, each entry is dict {chrom: [(start,end,founder),...]}.
     """
     founders = list(weights_dict.keys())
     fweights = np.array([weights_dict[f] for f in founders], dtype=np.float64)
     fweights /= fweights.sum()
-    F = len(founders)
 
     # Generation 0: each individual is one founder.
+    F = len(founders)
     if gen0_no_replace:
         if n_indiv <= F:
             chosen = rng.choice(founders, size=n_indiv, replace=False, p=fweights)
         else:
-            base = n_indiv // F            # floor
-            extra = n_indiv - base * F     # this many founders get +1
+            # Balanced allocation: each founder gets floor(n/F) or ceil(n/F)
+            base = n_indiv // F
+            extra = n_indiv - base * F
             counts = np.full(F, base, dtype=int)
             extra_idx = rng.choice(F, size=extra, replace=False)
             counts[extra_idx] += 1
             chosen = np.repeat(founders, counts)
-            rng.shuffle(chosen)            # randomize ind_id order
+            rng.shuffle(chosen)
         pop = [{c: [(1, L, f)] for c, L in CHROM_LENGTHS.items()} for f in chosen]
     else:
         pop = []
@@ -291,10 +289,9 @@ def main():
                     help="Space-separated chroms to include (e.g. 'Chr1'). Default: all 5. "
                          "Use this for Chr1-only sims when founder FASTAs only have Chr1.")
     ap.add_argument("--gen0-no-replace", action="store_true",
-                    help="SEEDMIX mimicry: gen-0 sampling without replacement (n<=F) "
-                         "or balanced allocation (n>F) — each founder gets floor(n/F) "
-                         "or ceil(n/F) individuals. Truth_h becomes uniform 1/F or "
-                         "the closest possible. Default = legacy multinomial w/ replace.")
+                    help="When set AND n_indiv <= F, sample gen-0 founders WITHOUT "
+                         "replacement (each founder exactly once when n_indiv == F). "
+                         "Truth_h = uniform 1/F (mimics SEEDMIX). Default = with-replacement.")
     ap.add_argument("--source-weights", default=None,
                     help="Optional TSV (founder, prob) defining the source-population founder "
                          "probabilities. The gen-0 pool is then a Stage-1 multinomial draw of "

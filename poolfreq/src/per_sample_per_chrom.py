@@ -99,8 +99,12 @@ def _project_with_called_mask(cn_var_chrom, h, idx):
 
 
 def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, threads,
-                         em_max_iter=200):
-    """Global-mode (single h per chrom) EM + projection."""
+                         em_max_iter=200, kmer_weight="uniform"):
+    """Global-mode (single h per chrom) EM + projection.
+
+    kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
+    de-replication; m_b = #k-mers sharing the k-mer's bubble_id).
+    """
     t_chrom = time.time()
     cn_dense, counts, meta, cov, F, K = _count_and_load_cn_dense(
         chrom, cn_prefix, reads_input, threads)
@@ -114,8 +118,18 @@ def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     del cn_dense
     gc.collect()
 
+    # Optional per-bubble de-replication weight ω_k = 1/m_b (on nz k-mers).
+    omega = None
+    if kmer_weight == "inv_mb":
+        bid = np.asarray(meta["bubble_id"]).astype(np.int64)
+        m_b = np.bincount(bid)[bid].astype(np.float32)        # #k-mers per bubble
+        omega = (1.0 / m_b[nz]).astype(np.float32)
+        print(f"  [{chrom}] ω_k=1/m_b weighting: m_b median={np.median(m_b[nz]):.0f} "
+              f"max={m_b[nz].max():.0f}", flush=True)
+
     t = time.time()
-    h, info = solve_em(counts_em, cn_em, cov, max_iter=em_max_iter, tol=1e-7)
+    h, info = solve_em(counts_em, cn_em, cov, max_iter=em_max_iter, tol=1e-7,
+                       omega=omega)
     print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
           f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
     del cn_em, counts_em
@@ -136,7 +150,8 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
                          global_anchor_weight=0.3,
                          hmm_smooth_passes=5,
                          hmm_smooth_alpha=0.5,
-                         hmm_smooth_recomb_rate=4e-8):
+                         hmm_smooth_recomb_rate=4e-8,
+                         kmer_weight="uniform"):
     """Window-mode per-chrom EM + smooth projection (production "star2" recipe).
 
     Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
@@ -163,12 +178,21 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     kmer_block = assign_kmers_to_blocks(bubble_id, bubble_chrom,
                                         bubble_start, bubble_end, blocks)
 
+    # Optional per-bubble de-replication weight ω_k = 1/m_b for window-mode EM.
+    omega = None
+    if kmer_weight == "inv_mb":
+        m_b = np.bincount(bubble_id)[bubble_id].astype(np.float32)
+        omega = (1.0 / m_b).astype(np.float32)
+        print(f"  [{chrom}] window ω_k=1/m_b weighting: m_b median={np.median(m_b):.0f} "
+              f"max={m_b.max():.0f}", flush=True)
+
     t = time.time()
     h_blocks, status, global_h = solve_em_per_block(
         counts.astype(np.float32), cn_dense, kmer_block, n_blocks,
         cov, em_max_iter=em_max_iter, tol=1e-7,
         min_kmers_per_block=200, verbose=False,
         global_anchor_weight=global_anchor_weight,
+        omega=omega,
     )
     print(f"  [{chrom}] block-EM {time.time()-t:.0f}s "
           f"({(status==0).sum()}/{n_blocks} local fits, "
@@ -232,6 +256,10 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--chroms", nargs="+", default=["Chr1","Chr2","Chr3","Chr4","Chr5"])
+    ap.add_argument("--kmer-weight", default="uniform", choices=["uniform", "inv_mb"],
+                    help="Per-k-mer EM weight ω_k. 'uniform' = MLE; 'inv_mb' = 1/m_b "
+                         "per-bubble de-replication (removes imbalanced-design over-credit). "
+                         "Applied in both global and window modes.")
     ap.add_argument("--block-mode", default="global", choices=["global", "window"],
                     help="global: one h per chrom (selfing / inbred / F0 pools). "
                          "window: per-window h for recombinant pools (production "
@@ -297,7 +325,7 @@ def main():
         if args.block_mode == "global":
             idx, freqs, info, h, _ = run_one_chrom_global(
                 chrom, args.cn_kmer_prefix, cn_var, var_meta,
-                reads_input, args.threads)
+                reads_input, args.threads, kmer_weight=args.kmer_weight)
             if idx is None:
                 continue
             h_save[chrom] = h
@@ -310,6 +338,7 @@ def main():
                 hmm_smooth_passes=args.hmm_smooth_passes,
                 hmm_smooth_alpha=args.hmm_smooth_alpha,
                 hmm_smooth_recomb_rate=args.hmm_smooth_recomb_rate,
+                kmer_weight=args.kmer_weight,
             )
             if idx is None:
                 continue

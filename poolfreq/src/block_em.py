@@ -142,8 +142,12 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
                        coverage, em_max_iter=200, tol=1e-7,
                        min_kmers_per_block=200, verbose=False,
                        n_workers=4,
-                       global_anchor_weight: float = 0.0):
+                       global_anchor_weight: float = 0.0,
+                       omega=None):
     """Run EM independently per block.
+
+    omega: optional K-vec of per-k-mer weights ω_k (e.g. 1/m_b). Sliced per block
+    and passed to solve_em (omega=None → unweighted MLE; identical to old behavior).
 
     Args:
         counts: K-vec of observed counts (already filtered to block coverage)
@@ -180,7 +184,8 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
         print(f"  computing global-h fallback...", flush=True)
     t = time.time()
     global_h, info = solve_em(counts, cn_kmer_dense, coverage,
-                              max_iter=em_max_iter, tol=tol)
+                              max_iter=em_max_iter, tol=tol,
+                              omega=omega)
     global_h = global_h.astype(np.float32)
     if verbose:
         print(f"    global EM: {info['iterations']} iters, {time.time()-t:.0f}s",
@@ -205,14 +210,17 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
             return b, global_h, 1
         cn_b = np.ascontiguousarray(cn_kmer_dense[:, idxs_nz])
         c_b = counts[idxs_nz]
+        omega_b = None if omega is None else omega[idxs_nz]
         if global_anchor_weight > 0:
             h_b, _ = solve_em(c_b, cn_b, coverage,
                               max_iter=em_max_iter, tol=tol,
                               prior_h=global_h,
-                              prior_weight=global_anchor_weight)
+                              prior_weight=global_anchor_weight,
+                              omega=omega_b)
         else:
             h_b, _ = solve_em(c_b, cn_b, coverage,
-                              max_iter=em_max_iter, tol=tol)
+                              max_iter=em_max_iter, tol=tol,
+                              omega=omega_b)
         return b, h_b.astype(np.float32), 0
 
     # Limit per-thread BLAS to avoid oversubscription. n_workers × inner_threads

@@ -30,6 +30,18 @@ full design-space history) and `poolfreq/src/archive/` (superseded solver code).
 | `cov10_*_p231_chr1_1_0.output/` (×4) | Stray hapFIRE-format per-window `haplotype_frequencies` outputs from early p231 recomb-sim runs | Superseded by the current `sims/` + `control_p80/` sim framework. |
 | `FINAL_RESULTS_cov10_v3_arms_only.ipynb` | Arms-only (centromere-excluded) cov10 v3 eval | Superseded by the full-chromosome `notebook/FINAL_RESULTS_cov10_v3.ipynb`. |
 
+## Added 2026-05-27 — cn_full / cn_var / fasta cleanup (~101 GB)
+
+Front-runner settled (`filt2 + ω=1/m_b`, arch3 cn_var projection) ⇒ experimental zoo archived. Full verdicts in `../METHODS_TRIED_AND_RESULTS.md` §8.
+
+| Item | What it was | Why archived |
+|---|---|---|
+| `cn_full_superseded/` (56 GB, 32 dirs) | every `cn_full_231_*` except `v3qc_v3` + `v3qc_v3_filt2` | superseded builds + concluded k-mer filter/subsample experiments; front-runner kept in place |
+| `cn_var_superseded/` (3.3 GB) | `cn_var_231_{v2,v3,v3qc,v3qc_v2}*` | pre-arch3; production = `arch3/chr1/cn_var_231_arch3_chr1*`, `v3qc_v3` kept |
+| `fastas_superseded/` (42 GB) | `unimputed_fastas_v3`, `founder_fastas_231_v3`, `imputed_fastas_v2_DEPRECATED` | current = `unimputed_fastas_v3qc` / `control_p231/fastas_231` |
+
+Some `poolfreq/scripts/{build_cn_full_*,run_seedmix_*}` now reference archived dirs (concluded-experiment scripts; recoverable, kept as records).
+
 ## Recovering an archived file into git tracking
 
 ```bash

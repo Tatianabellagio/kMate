@@ -20,7 +20,8 @@ from scipy.sparse import load_npz, save_npz, csr_matrix
 
 
 def stratify_subsample(cn_csr, ac_k, bin_edges, target='median',
-                        seed=42, verbose=True, protect_bins=0):
+                        seed=42, verbose=True, protect_bins=0,
+                        founder_class=None, match_ref=None):
     """
     cn_csr:    F × K sparse binary
     ac_k:      K-vec, panel carrier count per k-mer
@@ -69,6 +70,23 @@ def stratify_subsample(cn_csr, ac_k, bin_edges, target='median',
         target_counts[:protect_bins] = np.iinfo(np.int64).max
         if verbose:
             print(f'  PROTECTING bins 0..{protect_bins-1} (keep all, no subsample)')
+
+    # Per-founder per-bin target. Default: broadcast the panel-wide target_counts.
+    BIG = np.iinfo(np.int64).max
+    per_founder_target = np.tile(target_counts, (F, 1))  # (F, n_bins)
+    if match_ref is not None:
+        # CLASS-MATCH: bring the non-reference class DOWN to the reference class's
+        # per-bin median; keep every reference-class k-mer. This removes the
+        # cactus-vs-PG data-source artifact (long-read founders carry excess
+        # low-AC tags) without touching the reference (PG) founders — making the
+        # panel balanced like a uniformly-genotyped SNP panel (hapFIRE-style).
+        is_ref = np.array([c == match_ref for c in founder_class])
+        ref_med = np.median(counts[is_ref], axis=0).astype(np.int64)  # per-bin PG median
+        per_founder_target[is_ref, :] = BIG          # keep all ref-class tags
+        per_founder_target[~is_ref, :] = ref_med[None, :]  # match others to ref median
+        if verbose:
+            print(f'  CLASS-MATCH to ref={match_ref}: ref n={is_ref.sum()}, '
+                  f'other n={(~is_ref).sum()}; per-bin ref median target = {list(ref_med)}')
     if verbose:
         print(f'  per-bin counts: panel median per founder: {list(np.median(counts,axis=0).astype(int))}')
         print(f'  TARGET per bin: {list(target_counts)}')
@@ -86,7 +104,7 @@ def stratify_subsample(cn_csr, ac_k, bin_edges, target='median',
         b = ac_bin[cols]
         for bi in range(n_bins):
             in_bin = cols[b == bi]
-            tgt = target_counts[bi]
+            tgt = per_founder_target[f, bi]
             if len(in_bin) <= tgt:
                 keep = in_bin
             else:
@@ -119,6 +137,12 @@ def main():
                     help="keep ALL k-mers in the first N (lowest-AC) bins; only "
                          "subsample higher-AC bins to target. Preserves discriminating "
                          "rare k-mers while equalizing the shared-k-mer class inflation.")
+    ap.add_argument("--class-match-json", default=None,
+                    help="founder_split_cactus_pg.json; enables CLASS-MATCH mode")
+    ap.add_argument("--match-ref", default="PG",
+                    help="reference class to keep intact; the other class is "
+                         "subsampled down to the reference class per-bin median "
+                         "(default PG: cut cactus excess down to PG level).")
     args = ap.parse_args()
 
     print(f"[subsample] in_cn={args.in_cn}", flush=True)
@@ -137,9 +161,23 @@ def main():
     else:
         bin_edges = [2, 3, 5, 11, 26, 51, 101, 201, 232]
 
+    founder_class = None
+    if args.class_match_json:
+        import json
+        split = json.load(open(args.class_match_json))
+        f2c = {}
+        for cls, ids in split.items():
+            for i in ids: f2c[str(i)] = cls
+        founders_arr = np.asarray(meta["founders"]).astype(str)
+        founder_class = [f2c.get(f, "UNK") for f in founders_arr]
+        print(f"  class-match: {founders_arr.size} founders, "
+              f"classes={ {c: founder_class.count(c) for c in set(founder_class)} }", flush=True)
+
     new_cn = stratify_subsample(cn, ac_k, bin_edges,
                                   target=args.target, seed=args.seed,
-                                  protect_bins=args.protect_bins)
+                                  protect_bins=args.protect_bins,
+                                  founder_class=founder_class,
+                                  match_ref=(args.match_ref if args.class_match_json else None))
     new_ac = np.asarray(new_cn.sum(axis=0)).flatten().astype(np.int32)
     print(f"  post-subsample ac_k: min={new_ac.min()} max={new_ac.max()}, "
           f"ac=0: {(new_ac==0).sum():,}, ac=1: {(new_ac==1).sum():,}, "

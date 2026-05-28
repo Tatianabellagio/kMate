@@ -60,7 +60,13 @@ fi
 # -----------------------------------------------------------------------------
 # STAGE 1: mosaic FASTAs
 # -----------------------------------------------------------------------------
-echo "[$(date)] STAGE 1: make mosaic FASTAs (--chroms $CHROMS)"
+# SEEDMIX mimicry: always use no-replace / balanced allocation at gen-0 so the
+# chrom-average truth_h per founder is uniform 1/min(n,F). Applies to g0 (truth
+# is uniform per-founder) and g>=1 (recomb permutes ancestry within individuals
+# but the chrom-average per-founder count is preserved by the gen-0 draw).
+GEN0_FLAG="--gen0-no-replace"
+
+echo "[$(date)] STAGE 1: make mosaic FASTAs (--chroms $CHROMS) $GEN0_FLAG"
 $PYTHON $SCRIPTS/make_recomb_mosaics_p80.py \
     --n-indiv $N_INDIV \
     --n-generations $N_GEN \
@@ -69,7 +75,8 @@ $PYTHON $SCRIPTS/make_recomb_mosaics_p80.py \
     --founders-meta $FOUNDERS_META \
     --out-dir $WORK \
     --chroms "$CHROMS" \
-    --crossovers-from-ld-blocks $HF_BLOCK_INDEX
+    --crossovers-from-ld-blocks $HF_BLOCK_INDEX \
+    $GEN0_FLAG
 
 # -----------------------------------------------------------------------------
 # STAGE 2: VISOR SHORtS at cov10x, Chr1 only

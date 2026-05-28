@@ -40,6 +40,7 @@ def solve_em(
     dirichlet_alpha: float = 0.0,  # symmetric Dirichlet prior strength on h
     prior_h: np.ndarray | None = None,    # NEW: anchor h to prior (per-window EM)
     prior_weight: float = 0.0,            # NEW: λ — strength of anchor toward prior_h
+    omega: np.ndarray | None = None,      # NEW: per-k-mer weight ω_k (e.g. 1/m_b)
 ) -> tuple[np.ndarray, dict]:
     """Run EM until h converges.
 
@@ -59,6 +60,13 @@ def solve_em(
     from prior_h. λ=0 → pure MLE; λ=1 → prior is as influential as the data;
     sweet spot is typically λ ∈ [0.05, 0.5].
 
+    With omega (K-vector of per-k-mer weights ω_k), every count is reweighted:
+    the M-step uses ω_k·c_k everywhere it used c_k, i.e.
+        h_new[f] ∝ h[f] · Σ_k cn[f,k] · (ω_k·c_k)/μ_k ,  normalized by Σ_k ω_k·c_k.
+    ω_k = 1/m_b (m_b = #k-mers in k's bubble) is per-bubble de-replication; it
+    turns "h ∝ k-mer count" into "h ∝ locus count" and removes the imbalanced-
+    design over-credit. omega=None reproduces the unweighted MLE exactly.
+
     Returns (h, info_dict).
     """
     K = counts.shape[0]
@@ -69,7 +77,9 @@ def solve_em(
 
     h = np.full(F, 1.0 / F, dtype=np.float32) if h_init is None \
         else h_init.astype(np.float32)
-    total_c = counts.sum()
+    # ω-weighted counts (omega=None → unweighted, identical to MLE)
+    wc = counts if omega is None else (omega.astype(np.float32) * counts)
+    total_c = wc.sum()
 
     # Dirichlet prior pseudo-count (added to numerator before normalization)
     prior_pseudo = np.float32(max(0.0, dirichlet_alpha - 1.0))
@@ -85,7 +95,7 @@ def solve_em(
     history = []
     for it in range(max_iter):
         denom = np.maximum(h @ cn, np.float32(1e-7))
-        cw = counts / denom
+        cw = wc / denom
         em_term = h * (cn @ cw)
         if anchor_term is not None:
             em_term = em_term + anchor_term
