@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=v3qc_pg
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=6:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_pg_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_pg_%j.err
+#SBATCH --output=logs/v3qc_pg_%j.out
+#SBATCH --error=logs/v3qc_pg_%j.err
 
 # =============================================================================
 # qc_pg_v4_filter.sh
@@ -15,17 +17,18 @@
 #   3. fill-tags (AC, AN, AC_Het, MAC)
 #   4. V4 filter: drop records where AC>0 AND AC_Het/AC >= 0.01 (xwu match)
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MERGED_DIR=$BASE/data/merged
 LOO_DIR=$BASE/data/loo_genotyped
 TMP=$BASE/data/v3qc_tmp
 OUT_DIR=$BASE/data/v3qc
 mkdir -p $TMP $OUT_DIR
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 PG151=$MERGED_DIR/pangenie_151.vcf.gz
 PG5772=$LOO_DIR/5772_genotyping.vcf.gz

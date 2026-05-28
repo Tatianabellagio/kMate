@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p231_mb
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=96G
 #SBATCH --time=6:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231/logs/07c_mb_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231/logs/07c_mb_%j.err
+#SBATCH --output=logs/07c_mb_%j.out
+#SBATCH --error=logs/07c_mb_%j.err
 
 # =============================================================================
 # control_p231 front-runner: filt2 cn_full + GLOBAL EM + ω_k=1/m_b, projected
@@ -17,6 +19,7 @@
 #   CNVAR  = atomized | raw
 #   WEIGHT = inv_mb (default, front-runner) | uniform (filt2 baseline for A/B)
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 REGIME=${1:?Usage: REGIME CNVAR [WEIGHT]}
 CNVAR=${2:?Usage: REGIME CNVAR [WEIGHT]}
@@ -24,9 +27,9 @@ WEIGHT=${3:-inv_mb}
 [[ "$CNVAR" == "atomized" || "$CNVAR" == "raw" ]] || { echo "ERROR: CNVAR must be atomized|raw" >&2; exit 1; }
 [[ "$WEIGHT" == "inv_mb" || "$WEIGHT" == "uniform" ]] || { echo "ERROR: WEIGHT must be inv_mb|uniform" >&2; exit 1; }
 
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
+ROOT=/global/scratch/users/tbellg/hapfire_sv
 CTRL=$ROOT/control_p231
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 DRIVER=$ROOT/poolfreq/src/per_sample_per_chrom.py
 COV=10; SEED=42
 

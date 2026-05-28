@@ -149,7 +149,8 @@ for line in res.stdout.strip().split('\n'):
 
 # ---------- Step 6: xwu's GrENE-Net SNP catalog at this position ----------
 print(f'\n[Step 6] xwu GrENE-Net SNP catalog at pos {POS}')
-XWU = '/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_updatedVCF/greneNet_final_v1.1_chr1.recode.vcf'
+# TODO: generate chr1 split from /global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf via "bcftools view -r 1"
+XWU = '/global/scratch/users/tbellg/hapfire_sv/data/greneNet_final_v1.1_chr1.recode.vcf'
 res = subprocess.run(['awk', '-F\t', f'!/^#/ && $1=="1" && $2=={POS}',
                       XWU], capture_output=True, text=True)
 for line in res.stdout.strip().split('\n'):
@@ -170,7 +171,7 @@ for line in res.stdout.strip().split('\n'):
     print(f'  Record: pos={pos} REF={ref} ALT={alt}  AC={ac}/{an}  →  AF={ac/max(an,1):.3f}')
 
 # ---------- Step 7: hapFIRE projection ----------
-HAPF = '/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
+HAPF = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
 res = subprocess.run(['awk', '-F\t', f'$1=="1" && $2=={POS}', HAPF],
                      capture_output=True, text=True)
 print(f'\n[Step 7] hapFIRE projection (s1_snp_frequency.txt):')

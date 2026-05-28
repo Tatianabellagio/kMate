@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv")
+ROOT = Path(__file__).resolve().parents[2]
 
 
 def load_cactus_em(path: Path) -> pd.DataFrame:
@@ -62,7 +62,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--v3", type=Path, default=ROOT / "poolfreq/results/seedmix_231_v3_perchrom/SEEDMIX_S1.tsv")
     ap.add_argument("--v2", type=Path, default=ROOT / "poolfreq/results/seedmix_231_v2_perchrom/SEEDMIX_S1.tsv")
-    ap.add_argument("--hapfire", type=Path, default=Path("/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt"))
+    ap.add_argument("--hapfire", type=Path, default=Path("/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt"))
     ap.add_argument("--restrict-chrom", default="1", help="evaluate on this chrom only ('1' for Chr1, '' for all)")
     args = ap.parse_args()
 

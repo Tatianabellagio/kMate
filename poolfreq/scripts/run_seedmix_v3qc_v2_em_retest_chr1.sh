@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=sm_retest
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=80G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/sm_retest_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/sm_retest_%A_%a.err
+#SBATCH --output=logs/sm_retest_%A_%a.out
+#SBATCH --error=logs/sm_retest_%A_%a.err
 
 # Retest all EM variants on cn_full_v3qc_v2 Chr1 with the FIXED cn_var (called-mask
 # aware projection). Each array task is a different config. After cn_var rebuild
@@ -20,12 +22,13 @@
 #   5: rownorm α=5
 #   6: filt2+rownorm  (uses pre-built data/cn_full_231_v3qc_v2_filt2_rownorm/)
 
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
 
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-SCRATCH=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch
-READS=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+SCRATCH=/global/scratch/users/tbellg/hapfire_sv/scratch
+READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix
 R1=$READS/S1-1.1_P.fq.gz
 R2=$READS/S1-1.2_P.fq.gz
 CV=data/cn_var_231_v3qc_v2.cn_var.npz

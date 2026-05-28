@@ -50,7 +50,7 @@ def main():
           f"max={cn.sum(axis=0).max()}  AC=1: {(cn.sum(axis=0)==1).sum()}")
 
     # 2. Pick a sim BAM (cov50, all 231 ecotypes uniformly, with a 1kb DEL at f=90%)
-    bam = "/carnegie/nobackup/scratch/tbellagio/visor_freqk/data/reads_var/del/rep29/cov50/var_del_1kb_n231_f90_err001/sim.srt.bam"
+    bam = "/global/scratch/users/tbellg/visor_freqk/data/reads_var/del/rep29/cov50/var_del_1kb_n231_f90_err001/sim.srt.bam"
     assert os.path.exists(bam), f"BAM not found: {bam}"
     print(f"\n[2] BAM: {bam}")
 

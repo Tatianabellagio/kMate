@@ -16,11 +16,11 @@ import argparse, os, subprocess, sys, gzip
 from pathlib import Path
 import numpy as np
 
-WGSIM = "/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/wgsim"
-SAMTOOLS = "/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools"
+WGSIM = "/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/wgsim"
+SAMTOOLS = "/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools"
 
 # Default founder FASTA dir + chromosome
-FOUNDER_DIR = "/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only"
+FOUNDER_DIR = "/global/home/users/tbellg/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only"
 
 
 def simulate_one(founder_fa: str, n_reads: int, read_len: int, out_prefix: str,

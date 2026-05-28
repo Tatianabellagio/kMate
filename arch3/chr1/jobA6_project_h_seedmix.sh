@@ -1,21 +1,24 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_proj_h
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=01:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A6_proj_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A6_proj_%j.err
+#SBATCH --output=logs/A6_proj_%j.out
+#SBATCH --error=logs/A6_proj_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Phase 2 Job A6: re-project existing SEEDMIX_S1 h vector through NEW cn_var → per-record AF.
 # Why we can do this: cn_full is unchanged → existing h is still correct.
 # Only cn_var (the projection matrix) changed in Arch 3.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-H_PATH=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
+H_PATH=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
 CN_VAR=cn_var_231_arch3_chr1.cn_var.npz
 CN_VAR_CALLED=cn_var_231_arch3_chr1.cn_var_called.npz
 CN_VAR_META=cn_var_231_arch3_chr1.meta.npz

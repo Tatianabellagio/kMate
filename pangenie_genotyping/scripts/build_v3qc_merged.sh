@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=v3qc_merge
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_merge_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_merge_%j.err
+#SBATCH --output=logs/v3qc_merge_%j.out
+#SBATCH --error=logs/v3qc_merge_%j.err
 
 # =============================================================================
 # build_v3qc_merged.sh
@@ -20,16 +22,17 @@
 #      side that also had no PG carriers — useless all-zero cn_var columns)
 # Requires: pangenie_153_qc.vcf.gz from qc_pg_v4_filter.sh
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MERGED=$BASE/data/merged
 V3QC=$BASE/data/v3qc
 TMP=$BASE/data/v3qc_tmp
 mkdir -p $V3QC $TMP
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 CACTUS80=$MERGED/cactus_pang69_1001g.vcf.gz
 PG153_QC=$V3QC/pangenie_153_qc.vcf.gz

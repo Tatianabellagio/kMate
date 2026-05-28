@@ -11,7 +11,7 @@
 # Usage: bash scripts/submit_all_p231.sh    (idempotent: stages skip if present)
 # =============================================================================
 set -euo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231
+cd /global/scratch/users/tbellg/hapfire_sv/control_p231
 S=scripts
 
 A5=$(sbatch --parsable $S/05_build_fastas_p231.sh)                          # 231 FASTAs from arch3 VCF
@@ -42,8 +42,8 @@ done
 
 # Phase D: score (after all EM).
 sbatch --dependency=afterok${CJOBS} --wrap \
-  "/home/tbellagio/miniforge3/envs/hapfm/bin/python $PWD/$S/score_p231.py" \
-  --job-name=p231_score --partition=bse --mem=32G --time=1:00:00 \
+  "/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python $PWD/$S/score_p231.py" \
+  --job-name=p231_score --account=co_moilab --partition=savio4_htc --qos=moilab_htc4_normal --mem=32G --time=1:00:00 \
   -o logs/score_%j.out -e logs/score_%j.err
 
 echo "submitted: A5=$A5 A3=$A3 A3B=$A3B sims=[$B_n50g0 $B_n231g0 $B_n50g1 $B_n231g1 $B_n50g3 $B_dom]"

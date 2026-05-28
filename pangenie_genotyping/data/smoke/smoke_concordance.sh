@@ -19,8 +19,8 @@ source $(conda info --base)/etc/profile.d/conda.sh
 conda activate pang
 set -u
 
-SMOKE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/smoke
-SCRIPT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/scripts/loo_concordance.py
+SMOKE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/smoke
+SCRIPT=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/scripts/loo_concordance.py
 mkdir -p $SMOKE
 cd $SMOKE
 

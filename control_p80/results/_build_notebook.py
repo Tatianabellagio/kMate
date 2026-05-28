@@ -1,4 +1,5 @@
 """Build FINAL_RESULTS_cov10_p80.ipynb. Run once; produces the .ipynb file."""
+from pathlib import Path
 import nbformat as nbf
 
 nb = nbf.v4.new_notebook()
@@ -33,7 +34,8 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80')
+import os
+ROOT = Path(os.environ.get('HAPFIRE_ROOT', '/global/scratch/users/tbellg/hapfire_sv')) / 'control_p80'
 RESULTS = ROOT / 'results'
 SIMS = ROOT / 'sims'
 DATA = ROOT / 'data'
@@ -759,7 +761,7 @@ cells.append(nbf.v4.new_markdown_cell("""\
 
 nb['cells'] = cells
 
-out_path = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/results/FINAL_RESULTS_cov10_p80.ipynb'
+out_path = str(Path(__file__).resolve().parent / 'FINAL_RESULTS_cov10_p80.ipynb')
 with open(out_path, 'w') as f:
     nbf.write(nb, f)
 print(f'wrote: {out_path}')

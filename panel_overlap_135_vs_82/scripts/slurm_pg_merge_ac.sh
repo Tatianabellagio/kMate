@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=overlap_pg_merge
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=12:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/logs/pg_merge_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/logs/pg_merge_%j.err
+#SBATCH --output=logs/pg_merge_%j.out
+#SBATCH --error=logs/pg_merge_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Merge the 151 PG-genotyped per-founder VCFs (from pangenie_genotyping/data/genotyped/),
@@ -23,10 +26,10 @@ set -euo pipefail
 #   which is what the question asks about ("how much information does PG provide
 #   at extras-introduced bubbles before any QC").
 
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate sequencing_pipeline
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
+BASE=/global/scratch/users/tbellg/hapfire_sv
 WORK=$BASE/panel_overlap_135_vs_82
 GENOTYPED=$BASE/pangenie_genotyping/data/genotyped
 

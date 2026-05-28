@@ -12,7 +12,7 @@ CN_VAR = ROOT / 'poolfreq/data/cn_var_231_v3qc.cn_var.npz'
 CN_VAR_META = ROOT / 'poolfreq/data/cn_var_231_v3qc.meta.npz'
 REFALT = ROOT / 'poolfreq/data/cn_var_231_v3qc.ref_alt.tsv.gz'
 OUT_NPZ = ROOT / 'scratch/v3qc_vs_gn_per_record_af.npz'
-GN_VCF = '/carnegie/nobackup/scratch/xwu/GrENE_net/greneNet_final_v1.1.recode.vcf'
+GN_VCF = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf'
 
 
 def log(*a, **kw): print(*a, **kw, flush=True)

@@ -6,7 +6,7 @@ import gzip
 import pandas as pd
 from pathlib import Path
 
-RES = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/results")
+RES = Path(__file__).resolve().parents[1] / "results"
 
 dfs = []
 for c in ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]:

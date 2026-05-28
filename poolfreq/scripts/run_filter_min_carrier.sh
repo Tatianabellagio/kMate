@@ -1,16 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=cc_filter
-#SBATCH --partition=bse
+#SBATCH --account=fc_moilab
+#SBATCH --partition=savio3_bigmem
+#SBATCH --qos=savio_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=192G
 #SBATCH --time=0:30:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/block_haplotype_cn/cc_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/block_haplotype_cn/cc_%j.err
+#SBATCH --output=logs/cc_%j.out
+#SBATCH --error=logs/cc_%j.err
 
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv
+cd /global/scratch/users/tbellg/hapfire_sv
 
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 INPUT=${1:?input npz}
 MIN_CC=${MIN_CC:-5}
 TAG="cc${MIN_CC}"

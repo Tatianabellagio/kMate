@@ -9,14 +9,15 @@ Compares whitening to filt2 baseline and subsampMedian baseline (the bar to beat
 """
 from __future__ import annotations
 import os, csv, json, glob
+from pathlib import Path
 import numpy as np
 import collections
 
-ROOT = "/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT = str(Path(__file__).resolve().parents[3])
 WDIR = os.path.join(ROOT, "scratch/h_fixes/whitening")
 CLASSES = json.load(open(os.path.join(ROOT, "data/founder_split_cactus_pg.json")))
 CACT = set(CLASSES["cactus"]); PG = set(CLASSES["PG"])
-HF_DIR = "/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix"
+HF_DIR = "/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix"
 
 G0_SIMS = ["g0_n231_rep0_rand", "g0_n200_rep0_rand",
            "g0_n50_rep0_cact", "g0_n50_rep1_bal", "g0_n50_rep2_pg"]

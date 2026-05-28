@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=pg_loo
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=80G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_%A_%a.err
+#SBATCH --output=logs/loo_%A_%a.out
+#SBATCH --error=logs/loo_%A_%a.err
 
 # =============================================================================
 # validate_loo.sh
@@ -20,13 +22,14 @@
 #
 # Indexed by SLURM_ARRAY_TASK_ID over a list of LOO targets.
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-}"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 eval "$(conda shell.bash hook)"
 conda activate pangenie
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 
 # Ecotypes to LOO-test: cactus founders that ALSO have ENA short reads.
 # (Their cactus assembly = ground truth; their short reads = test input)
@@ -41,15 +44,15 @@ echo "[$(date)] LOO test for cactus founder $ECOTYPE"
 # Run PanGenie genotype using its short reads
 PREP_R1=$BASE/data/preprocessed/${ECOTYPE}_1.dedup.fq.gz
 PREP_R2=$BASE/data/preprocessed/${ECOTYPE}_2.dedup.fq.gz
-PANG69_VCF=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
+PANG69_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
 
 OUT_VCF=$BASE/data/loo/${ECOTYPE}_pangenie.vcf
 PanGenie -i "$PREP_R1 $PREP_R2" -r $REF -v $PANG69_VCF -o $OUT_VCF -s $ECOTYPE -t 8 -j 8
 
 # Compare to cactus-derived truth
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TRUTH_VCF=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TRUTH_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
 echo "[$(date)] concordance check"
 
 bgzip -f $OUT_VCF; tabix -p vcf ${OUT_VCF}.gz

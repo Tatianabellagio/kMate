@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_hdiag
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=24G
 #SBATCH --time=00:20:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/E2_hdiag_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/E2_hdiag_%j.err
+#SBATCH --output=logs/E2_hdiag_%j.out
+#SBATCH --error=logs/E2_hdiag_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Why does arch3 AF (h_v3 @ cn_var) diverge from recipe_fixed (uniform_h @ cn_var)?
@@ -13,8 +16,8 @@ set -euo pipefail
 # with the deviation of h from uniform.
 # This is signal (real seed-mix composition), not a bug.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY -u <<'PYEOF'
 import numpy as np
@@ -23,14 +26,14 @@ from scipy.sparse import load_npz
 import json
 
 print('=== Load h vector + cn_var + meta ===')
-h_data = np.load('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
+h_data = np.load('/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
 h = h_data['Chr1'].astype(np.float64)
 h_founders = list(h_data['founders'])
 F = len(h)
 print(f'h shape: {h.shape}, sum: {h.sum():.6f}, mean: {h.mean():.6f}, expected uniform: {1.0/F:.6f}')
 
 # Founder split: cactus vs PG
-with open('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/founder_split_cactus_pg.json') as f:
+with open('/global/scratch/users/tbellg/hapfire_sv/data/founder_split_cactus_pg.json') as f:
     split = json.load(f)
 cactus_set = set(map(str, split['cactus']))
 pg_set = set(map(str, split['PG']))

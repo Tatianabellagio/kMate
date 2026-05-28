@@ -8,12 +8,13 @@ toward ~uniform), and prints a SEEDMIX score table.
 Outputs PNGs to notebook/plots/protect1_assessment/.
 """
 import csv, json, math, glob, os
+from pathlib import Path
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-ROOT = "/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT = str(Path(__file__).resolve().parents[2])
 PLOTS = f"{ROOT}/notebook/plots/protect1_assessment"; os.makedirs(PLOTS, exist_ok=True)
 split = json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))
 CAC = set(map(str, split["cactus"]))
@@ -78,7 +79,7 @@ fig.tight_layout(); fig.savefig(f"{PLOTS}/2_median_kmer_by_AC_class.png", dpi=11
 # hapFIRE 8-rep avg
 hf_reps=[]
 for s in range(1,9):
-    p=f"/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s{s}_ecotype_frequency.txt"
+    p=f"/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s{s}_ecotype_frequency.txt"
     if os.path.exists(p):
         hf={}
         for line in open(p):

@@ -1,15 +1,18 @@
 #!/bin/bash
 #SBATCH --job-name=filt2_v3qc
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=64G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/filt2_v3qc_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/filt2_v3qc_%A_%a.err
+#SBATCH --output=logs/filt2_v3qc_%A_%a.out
+#SBATCH --error=logs/filt2_v3qc_%A_%a.err
 
 # Drop k-mer columns where ac_k < 2 from cn_full_231_v3qc. One chrom per task.
+mkdir -p logs
 set -uo pipefail
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR=${SLURM_ARRAY_TASK_ID:-1}
 
 $PY << EOF
@@ -18,8 +21,8 @@ from scipy.sparse import load_npz, save_npz
 from pathlib import Path
 
 chrom = f"Chr${CHR}"
-SRC = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc')
-OUT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_filt2')
+SRC = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc')
+OUT = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_filt2')
 OUT.mkdir(exist_ok=True)
 
 cn = load_npz(SRC / f'cn_{chrom}.cn.npz')

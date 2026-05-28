@@ -18,8 +18,8 @@ from __future__ import annotations
 import os, subprocess, tempfile, shutil
 from pathlib import Path
 
-JELLYFISH = "/home/tbellagio/miniforge3/envs/pangenie/bin/jellyfish"
-SAMTOOLS = "/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools"
+JELLYFISH = "/global/home/users/tbellg/miniforge3/envs/pangenie/bin/jellyfish"
+SAMTOOLS = "/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools"
 
 
 def _write_query_fasta(kmers: list[str], path: str) -> None:

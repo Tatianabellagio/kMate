@@ -12,12 +12,13 @@ Diagnostics:
 """
 from __future__ import annotations
 import numpy as np
+from pathlib import Path
 from scipy.sparse import load_npz
 import pysam
 import sys, time, os
 
 OUT_DIR = "/tmp"
-BASE = "/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+BASE = str(Path(__file__).resolve().parents[2])
 CV   = f"{BASE}/poolfreq/data/cn_var_231_v3qc_v3.cn_var.npz"
 CVC  = f"{BASE}/poolfreq/data/cn_var_231_v3qc_v3.cn_var_called.npz"
 META = f"{BASE}/poolfreq/data/cn_var_231_v3qc_v3.meta.npz"

@@ -21,14 +21,14 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-ROOT = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv")
+ROOT = Path(__file__).resolve().parents[2]
 ARCH = ROOT / "arch3" / "chr1"
 CN_VAR     = ARCH / "cn_var_231_arch3_chr1.cn_var.npz"
 CN_CALLED  = ARCH / "cn_var_231_arch3_chr1.cn_var_called.npz"
 META       = ARCH / "cn_var_231_arch3_chr1.meta.npz"
 SEEDMIX    = ARCH / "SEEDMIX_S1_arch3_chr1.tsv"   # h_v3 @ cn_var_arch3
-HAPFIRE    = "/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt"
-HAPFIRE_VCF = "/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/greneNet_final_v1.1.recode.vcf"
+HAPFIRE    = "/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt"
+HAPFIRE_VCF = "/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf"
 
 OUT_PLOT = ROOT / "plots" / "AF_TRUTH_VS_ESTIMATE_arch3_chr1.png"
 OUT_PLOT.parent.mkdir(parents=True, exist_ok=True)

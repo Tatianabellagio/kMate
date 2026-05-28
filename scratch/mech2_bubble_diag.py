@@ -106,7 +106,7 @@ print(f'  n_nonsnp_at_pos>=1: {(snp["n_nonsnp_at_pos"]>=1).sum():,}')
 # Load greneNet VCF (Chr1) for REF/ALT lookup
 print('\n=== loading greneNet VCF (Chr1) for REF/ALT keying ===', flush=True)
 gv = []
-with open('/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_updatedVCF/greneNet_final_v1.1.recode.vcf') as fh:
+with open('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf') as fh:
     for line in fh:
         if line.startswith('#'): continue
         f = line.split('\t', 6)
@@ -116,6 +116,7 @@ gv_df = pd.DataFrame(gv, columns=['pos','ref','alt'])
 print(f'  greneNet chr1 SNPs: {len(gv_df):,}')
 
 hf = pd.read_csv(
+    # TODO: hapFIRE updated VCF run output, not present on moilab mirror — re-generate or skip if no longer needed
     '/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_updatedVCF/s1_1_density0.6_snp_frequency.txt',
     sep='\t', header=None, names=['chr','pos','hf_af'])
 hf = hf[hf['chr']==1].copy()

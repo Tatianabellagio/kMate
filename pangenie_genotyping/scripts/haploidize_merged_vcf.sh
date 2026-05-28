@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=haplo_vcf
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/haplo_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/haplo_%j.err
+#SBATCH --output=logs/haplo_%j.out
+#SBATCH --error=logs/haplo_%j.err
 
 # =============================================================================
 # haploidize_merged_vcf.sh
@@ -29,14 +31,15 @@
 # the convention build_cn_var.py already uses, so the haploid VCF makes the
 # on-disk catalog match what every downstream tool already does in memory.
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 SRC=$BASE/data/merged/founders_231_chr.vcf.gz
 OUT=$BASE/data/merged/founders_231_chr.haploid.vcf.gz
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 [ -s "$SRC" ] || { echo "ERROR: missing $SRC" >&2; exit 1; }
 [ ! -s "$OUT" ] || { echo "[$(date)] $OUT already exists — exiting (delete to rerun)"; exit 0; }
@@ -72,7 +75,7 @@ awk 'BEGIN{OFS="\t"}
         }
         print
     }' | \
-/home/tbellagio/miniforge3/envs/pang/bin/bgzip -@ 4 -c > "$OUT"
+/global/home/users/tbellg/miniforge3/envs/pang/bin/bgzip -@ 4 -c > "$OUT"
 
 $TABIX -p vcf "$OUT"
 

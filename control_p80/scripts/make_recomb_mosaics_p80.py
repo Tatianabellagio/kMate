@@ -281,7 +281,7 @@ def main():
     ap.add_argument("--founders-meta", required=True,
                     help="poolfreq cn_full meta.npz with 'founders' field")
     ap.add_argument("--out-dir", required=True)
-    ap.add_argument("--samtools", default="/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools",
+    ap.add_argument("--samtools", default="/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools",
                     help="samtools binary, used to index the mosaic FASTAs (default: shared install)")
     ap.add_argument("--crossovers-from-ld-blocks", default=None,
                     help="Path to a hapfire_block_index.npz (output of build_hapfire_block_index.py). "

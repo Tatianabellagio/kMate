@@ -1,23 +1,26 @@
 #!/bin/bash
 #SBATCH --job-name=arch3_annot135
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/annot135_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/annot135_%j.err
+#SBATCH --output=logs/annot135_%j.out
+#SBATCH --error=logs/annot135_%j.err
+mkdir -p logs
 set -euo pipefail
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
 
-BCF=/home/tbellagio/miniforge3/envs/gwas/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/gwas/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/gwas/bin/tabix
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-ANNOTATE_SCRIPT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+ANNOTATE_SCRIPT=/global/scratch/users/tbellg/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
 
-GFA=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
-FULL_135_VCF=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
+GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
+FULL_135_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
 
 echo "[$(date)] === Step 1: subset 135-sample VCF to test region ==="
 VCF_TEST=full135_test_chr1_5_14M.vcf
@@ -54,7 +57,7 @@ ls -la ${OUTPREFIX}.sorted.vcf.gz ${OUTPREFIX}_biallelic.sorted.vcf.gz
 
 echo
 echo "[$(date)] === Step 4: test bcftools annotate on PG (the failure case) ==="
-PG_RAW=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/genotyped/100001_genotyping.vcf.gz
+PG_RAW=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/genotyped/100001_genotyping.vcf.gz
 PG_TEST=pg_100001_test_chr1_5_14M.vcf.gz
 if [ ! -s $PG_TEST ]; then
   $BCF view -r Chr1:5800000-14000000 $PG_RAW -Oz -o $PG_TEST
@@ -77,7 +80,7 @@ $BCF view -H $PG_ANNOT 2>/dev/null | awk -F'\t' '
 
 echo
 echo "[$(date)] === Step 5: convert-to-biallelic on annotated PG ==="
-CONVERT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+CONVERT=/global/scratch/users/tbellg/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
 PG_BIAL=pg_100001_per_sample_biallelic_v2.vcf
 $BCF view $PG_ANNOT 2>/dev/null | $PY $CONVERT ${OUTPREFIX}_biallelic.sorted.vcf.gz > $PG_BIAL 2> pg_convert_v2.log
 echo "convert exit: $?"

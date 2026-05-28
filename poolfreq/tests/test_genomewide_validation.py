@@ -24,6 +24,7 @@ from kmer_count import count_kmers_in_fasta
 
 
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
+_PROJ_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 def metrics(h_hat, h_true):
@@ -154,12 +155,12 @@ def main():
 
     # 3) SEEDMIX_S1 (recipe-restricted truth)
     panel_map = pd.read_csv(
-        "/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/sv_panel_to_accession_id.tsv",
+        os.path.join(_PROJ_ROOT, "data/sv_panel_to_accession_id.tsv"),
         sep="\t")
     asm_to_1001g = dict(zip(panel_map.Assembly_ID.astype(str),
                             panel_map.Accession_ID.astype(str)))
     recipe = pd.read_csv(
-        "/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/seedmix_recipe_normalized.tsv",
+        os.path.join(_PROJ_ROOT, "data/seedmix_recipe_normalized.tsv"),
         sep="\t")
     recipe_dict = dict(zip(recipe.ID.astype(str), recipe.seed_prop))
     panel_1001g_ids = [asm_to_1001g.get(str(f), None) for f in founders]
@@ -171,8 +172,8 @@ def main():
     print(f"\n  recipe panel mass: {panel_total*100:.1f}%, "
           f"effective n on panel: {1/np.sum(h_true**2):.1f}", flush=True)
     evaluate_pool("SEEDMIX_S1", h_true,
-                   ["/home/tbellagio/scratch/pang/grenenet_reads/seed_mix/S1-1.1_P.fq.gz",
-                    "/home/tbellagio/scratch/pang/grenenet_reads/seed_mix/S1-1.2_P.fq.gz"],
+                   ["/global/home/users/tbellg/scratch/pang/grenenet_reads/seed_mix/S1-1.1_P.fq.gz",
+                    "/global/home/users/tbellg/scratch/pang/grenenet_reads/seed_mix/S1-1.2_P.fq.gz"],
                    cn_f32, ac, kmer_index, F, K, "seedmix_S1")
 
 

@@ -1,0 +1,1 @@
+../hapFIRE_updatedVCF/s1_density0.5_fine_genomewide_partition.txt

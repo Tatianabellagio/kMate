@@ -47,7 +47,7 @@ import matplotlib.pyplot as plt
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
 CEM_DIR = ROOT / 'scratch/seedmix_v3_dedup'
 CEM_FILT2_DIR = ROOT / 'scratch/seedmix_v3_filt2_dedup'
-HF_DIR = Path('/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix')
+HF_DIR = Path('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix')
 SAMPLES_FILE = ROOT / 'data/vcf_samples_231.txt'
 SPLIT_FILE = ROOT / 'data/founder_split_cactus_pg.json'
 

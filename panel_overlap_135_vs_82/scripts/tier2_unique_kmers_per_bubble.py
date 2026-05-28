@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BASE = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv")
+BASE = Path(__file__).resolve().parents[2]
 PG_INDEX = BASE / "pangenie_genotyping" / "data"
 WORK = BASE / "panel_overlap_135_vs_82"
 RES = WORK / "results"

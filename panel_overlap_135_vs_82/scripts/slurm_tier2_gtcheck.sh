@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=overlap_t2_gtchk
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/logs/tier2_gtcheck_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/logs/tier2_gtcheck_%j.err
+#SBATCH --output=logs/tier2_gtcheck_%j.out
+#SBATCH --error=logs/tier2_gtcheck_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Tier 2 (substitute for k-mer Jaccard): pairwise SNP-genotype identity
@@ -16,11 +19,11 @@ set -euo pipefail
 # information to the 153 PG founders. This is the same metric that caught
 # 5772/6150 originally (99.81% SNP identity).
 
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate sequencing_pipeline
 
-WORK=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82
-RAW=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.raw.vcf.gz
+WORK=/global/scratch/users/tbellg/hapfire_sv/panel_overlap_135_vs_82
+RAW=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.raw.vcf.gz
 
 echo "[$(date +%H:%M:%S)] building biallelic-SNP-only subset for gtcheck"
 SNPS=$WORK/data/pang135_biallelic_snps.vcf.gz

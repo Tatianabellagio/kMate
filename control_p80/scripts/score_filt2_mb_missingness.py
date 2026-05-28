@@ -4,8 +4,9 @@ n_called (of 80 founders) comes from the est TSV (h-independent panel QC, so the
 mask is identical across weights -> fair A/B). missing_frac = (80-n_called)/80.
 Conditions: full | miss<=0.90 | miss<=0.50. Writes summary TSV with miss_cond."""
 import os, math
+from pathlib import Path
 import numpy as np, pandas as pd
-CTRL="/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80"
+CTRL=str(Path(__file__).resolve().parents[1])
 KEYS=["chrom","pos","ref_len","alt_len"]
 REGIMES=["n50_g0","n231_g0","n50_g1","n231_g1","n50_g3","n50_g3_dom500"]
 F=80

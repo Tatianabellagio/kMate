@@ -32,7 +32,7 @@ def test_synth_fasta():
 
 def test_real_bam():
     """T2: query a few k-mers from TAIR10 against a sim BAM. Should be > 0 for valid k-mers."""
-    bam = "/carnegie/nobackup/scratch/tbellagio/visor_freqk/data/reads_var/del/rep29/cov50/var_del_1kb_n231_f90_err001/sim.srt.bam"
+    bam = "/global/scratch/users/tbellg/visor_freqk/data/reads_var/del/rep29/cov50/var_del_1kb_n231_f90_err001/sim.srt.bam"
     if not os.path.exists(bam):
         print("  T2 SKIPPED: BAM not found")
         return
@@ -55,7 +55,7 @@ def test_real_bam():
 
 def test_coverage_estimate():
     """T3: estimate coverage on a cov50 sim BAM."""
-    bam = "/carnegie/nobackup/scratch/tbellagio/visor_freqk/data/reads_var/del/rep29/cov50/var_del_1kb_n231_f90_err001/sim.srt.bam"
+    bam = "/global/scratch/users/tbellg/visor_freqk/data/reads_var/del/rep29/cov50/var_del_1kb_n231_f90_err001/sim.srt.bam"
     if not os.path.exists(bam):
         print("  T3 SKIPPED")
         return

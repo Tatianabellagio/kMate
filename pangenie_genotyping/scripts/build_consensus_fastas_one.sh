@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=fasta_v3
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/fasta_v3_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/fasta_v3_%A_%a.err
+#SBATCH --output=logs/fasta_v3_%A_%a.out
+#SBATCH --error=logs/fasta_v3_%A_%a.err
 
 # =============================================================================
 # build_consensus_fastas_one.sh
@@ -22,12 +24,12 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-SAMTOOLS=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools
+BASE=/global/scratch/users/tbellg/hapfire_sv
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+SAMTOOLS=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools
 
 VCF=$BASE/pangenie_genotyping/data/merged/founders_231_chr.haploid.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 ECO_LIST=$BASE/pangenie_genotyping/data/v3/pangenie_151.txt
 OUT_DIR=$BASE/sims/visor_freqk/founder_fastas_231_v3
 mkdir -p $OUT_DIR $BASE/pangenie_genotyping/logs

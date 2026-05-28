@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p231_a3_cn
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=8:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231/logs/03_cn_full_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231/logs/03_cn_full_%j.err
+#SBATCH --output=logs/03_cn_full_%j.out
+#SBATCH --error=logs/03_cn_full_%j.err
 
 # =============================================================================
 # control_p231 Phase A3 -- cn_full k-mer index from the ARCH3 canonical VCF
@@ -19,13 +21,14 @@
 # this should reproduce the production cn_full nearly exactly (validated by
 # 03c_compare). bubble_id comes from the pang_135 dictionary (for ω=1/m_b).
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BASE=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR=Chr1
 KMERS=$BASE/pangenie_genotyping/data/pang_135_pangenie_index_${CHR}_kmers.tsv.gz
 VCF=$BASE/arch3/chr1/merged_231_chr1_final.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$BASE/control_p231/data/cn_full_p231
 mkdir -p $OUT_DIR
 OUT_PREFIX=$OUT_DIR/cn_${CHR}

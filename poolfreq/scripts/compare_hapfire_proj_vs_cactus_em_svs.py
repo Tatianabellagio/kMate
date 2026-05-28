@@ -36,14 +36,15 @@ def metrics(t, p, label=''):
 
 
 def main():
+    _root = Path(__file__).resolve().parents[2]
     ap = argparse.ArgumentParser()
-    ap.add_argument('--cn-var', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_231_v2.cn_var.npz')
-    ap.add_argument('--cn-var-meta', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_231_v2.meta.npz')
-    ap.add_argument('--hapfire-ecotype-dir', default='/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/samples/ecotype_frequency')
-    ap.add_argument('--cactus-em-dir', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/results/site04_231_v2')
+    ap.add_argument('--cn-var', default=str(_root / 'poolfreq/data/cn_var_231_v2.cn_var.npz'))
+    ap.add_argument('--cn-var-meta', default=str(_root / 'poolfreq/data/cn_var_231_v2.meta.npz'))
+    ap.add_argument('--hapfire-ecotype-dir', default='/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/samples/ecotype_frequency')
+    ap.add_argument('--cactus-em-dir', default=str(_root / 'poolfreq/results/site04_231_v2'))
     ap.add_argument('--samples', nargs='*', default=None,
                     help='sample IDs; default = all MLFH04* present in both dirs')
-    ap.add_argument('--out', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/results/hapfire_proj_vs_cem_svs_summary.tsv')
+    ap.add_argument('--out', default=str(_root / 'results/hapfire_proj_vs_cem_svs_summary.tsv'))
     args = ap.parse_args()
 
     # Load panel

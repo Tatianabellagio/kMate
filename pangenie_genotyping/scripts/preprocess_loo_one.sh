@@ -1,16 +1,20 @@
 #!/bin/bash
 #SBATCH --job-name=loo_prep
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=5
 #SBATCH --mem=32G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_prep_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_prep_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/loo_prep_%A_%a.out
+#SBATCH --error=logs/loo_prep_%A_%a.err
 
 # =============================================================================
 # preprocess_loo_one.sh
 # Trimmomatic PE + Clumpify dedup for one LOO sample. Threshold-matched to
 # xwu's 1001G individual-accession pipeline at
+# TODO: preprocessing history file, not migrating — see PIPELINE_FASTQ_PREPROCESSING.md
 # /carnegie/nobackup/scratch/xwu/GrENE_net/vcf/sra/commands.sh:
 #   - TruSeq3-PE-2.fa adapter
 #   - ILLUMINACLIP 2:30:10:2:True (minAdapterLength=2, keepBothReads=True)
@@ -25,6 +29,7 @@
 #
 # Reads from data/loo_ena_manifest.tsv, writes to data/loo_preprocessed/.
 # =============================================================================
+mkdir -p logs
 set -eo pipefail
 # Activate conda *before* `set -u`: the `pang` env's activation hook
 # (cactus_env_vars.sh) does `export PYTHONPATH=...:$PYTHONPATH`, which trips
@@ -33,14 +38,14 @@ source $(conda info --base)/etc/profile.d/conda.sh
 conda activate pang
 set -u
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/loo_ena_manifest.tsv
 RAW_DIR=$BASE/data/loo_raw_fastqs
 PREP_DIR=$BASE/data/loo_preprocessed
 mkdir -p $PREP_DIR
 
-ADAPT_PE=/home/tbellagio/miniforge3/envs/pang/share/trimmomatic-0.40-0/adapters/TruSeq3-PE-2.fa
-ADAPT_SE=/home/tbellagio/miniforge3/envs/pang/share/trimmomatic-0.40-0/adapters/TruSeq3-SE.fa
+ADAPT_PE=/global/home/users/tbellg/miniforge3/envs/pang/share/trimmomatic-0.40-0/adapters/TruSeq3-PE-2.fa
+ADAPT_SE=/global/home/users/tbellg/miniforge3/envs/pang/share/trimmomatic-0.40-0/adapters/TruSeq3-SE.fa
 
 IDX=${SLURM_ARRAY_TASK_ID:-1}
 LINE=$(sed -n "$((IDX+1))p" $MANIFEST)

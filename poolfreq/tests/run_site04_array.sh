@@ -1,17 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=site04_cem
-#SBATCH --partition=bse
+#SBATCH --account=fc_moilab
+#SBATCH --partition=savio3_bigmem
+#SBATCH --qos=savio_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=200G
 #SBATCH --time=4:00:00
 #SBATCH --array=1-57%12
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/site04_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/site04_%A_%a.err
+#SBATCH --output=logs/site04_%A_%a.out
+#SBATCH --error=logs/site04_%A_%a.err
 
 # Run cactus_em on one site04 sample per array task. 24-task concurrency.
 # Reads sample N (1-indexed) from data/site04_manifest.tsv.
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
 mkdir -p results/site04_231_v2 tests/logs
 
 MANIFEST=data/site04_manifest.tsv
@@ -31,7 +33,7 @@ echo "[$(date)] task=${SLURM_ARRAY_TASK_ID}  sample=${SAMPLE}"
 echo "  R1: $R1"
 echo "  R2: $R2"
 
-/home/tbellagio/miniforge3/envs/hapfm/bin/python -u src/per_sample_driver.py \
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/per_sample_driver.py \
     --cn-kmer-prefix data/cn_full_231_v2/cn \
     --cn-var data/cn_var_231_v2.cn_var.npz \
     --cn-var-meta data/cn_var_231_v2.meta.npz \

@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p80_a1_bial
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=3:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/01_biallelic_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/01_biallelic_%j.err
+#SBATCH --output=logs/01_biallelic_%j.out
+#SBATCH --error=logs/01_biallelic_%j.err
 
 # =============================================================================
 # Phase A (arch decomposition) -- canonical p80 biallelic VCF for Chr1.
@@ -35,13 +37,13 @@
 # =============================================================================
 set -euo pipefail
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+BASE=/global/scratch/users/tbellg/hapfire_sv
 
-BCF=/home/tbellagio/miniforge3/envs/gwas/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/gwas/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/gwas/bin/tabix
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CONVERT=$BASE/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
 
 # Shared prerequisite: arch3 Chr1 A1 outputs (135-asm annotated + biallelic catalog)
@@ -49,7 +51,7 @@ A1_ANNOT=$BASE/arch3/chr1/chr1_135_annotated.sorted.vcf.gz
 A1_BIAL=$BASE/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz
 
 # 82-acc source VCF (used only to get the canonical 82 Asm_ID list)
-SRC_82=/home/tbellagio/scratch/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.vcf.gz
+SRC_82=/global/scratch/users/tbellg/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.vcf.gz
 
 PANEL_TSV=$BASE/data/sv_panel_to_accession_id.tsv
 EXCLUDE_LIST=$BASE/data/exclude_list.txt

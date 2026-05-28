@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=haplo_pg_hm
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/haplo_pg_hm_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/haplo_pg_hm_%j.err
+#SBATCH --output=logs/haplo_pg_hm_%j.out
+#SBATCH --error=logs/haplo_pg_hm_%j.err
 
 # Pre-haploidize pangenie_153_hetmasked_filled_bi.vcf.gz BEFORE the cactus merge.
 # Reason: bcftools merge of diploid PG + haploid cactus_78 has a context-dependent
@@ -14,13 +16,14 @@
 # ploidy mismatch, so merge sees haploid+haploid uniformly.
 #
 # Diploid → haploid: 0/0 → 0, 1/1 → 1, ./. → ., else → . (paranoid fallback).
+mkdir -p logs
 set -euo pipefail
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 SRC=$BASE/data/v3qc_v3/pangenie_153_hetmasked_filled_bi.vcf.gz
 OUT=$BASE/data/v3qc_v3/pangenie_153_hetmasked_haploid.vcf.gz
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/pang/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/pang/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 [ -s "$SRC" ] || { echo "ERROR: missing $SRC"; exit 1; }
 [ ! -s "$OUT" ] || { echo "[$(date)] $OUT exists — exiting"; exit 0; }

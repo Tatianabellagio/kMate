@@ -1,19 +1,22 @@
 #!/bin/bash
 #SBATCH --job-name=v3qc_diff
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_diff_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_diff_%j.err
+#SBATCH --output=logs/v3qc_diff_%j.out
+#SBATCH --error=logs/v3qc_diff_%j.err
 
 # 1. Build cn_var_231_v3qc.ref_alt.tsv.gz (matches cn_var_v3qc record order)
 # 2. Compute v3qc-vs-GN per-record AF diff → scratch/v3qc_vs_gn_per_record_af.npz
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BASE=/global/scratch/users/tbellg/hapfire_sv
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 VCF=$BASE/pangenie_genotyping/data/v3qc/founders_231_v3qc.haploid.vcf.gz
 REFALT=$BASE/poolfreq/data/cn_var_231_v3qc.ref_alt.tsv.gz

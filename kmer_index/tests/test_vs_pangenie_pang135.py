@@ -17,8 +17,9 @@ import gzip
 import sys
 from pathlib import Path
 
-PG_DIR  = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data")
-OUR_DIR = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/kmer_index/pang_135_diploid")
+_ROOT = Path(__file__).resolve().parents[2]
+PG_DIR  = _ROOT / "pangenie_genotyping/data"
+OUR_DIR = _ROOT / "kmer_index/pang_135_diploid"
 
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 

@@ -1,23 +1,26 @@
 #!/bin/bash
 #SBATCH --job-name=nomiss_vcf
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/nomiss_vcf_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/nomiss_vcf_%j.err
+#SBATCH --output=logs/nomiss_vcf_%j.out
+#SBATCH --error=logs/nomiss_vcf_%j.err
 
 # Build founders_231_v3qc.nomiss.haploid.vcf.gz by dropping records with ANY missing GT.
 # Goal: avoid haplotype reconstruction errors in build_kmer_cn.py at records where
 # some founders show ./. (because of PG-MAC<2 merge effect).
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 SRC=$BASE/data/v3qc/founders_231_v3qc.haploid.vcf.gz
 OUT=$BASE/data/v3qc/founders_231_v3qc.nomiss.haploid.vcf.gz
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 [ -s "$SRC" ] || { echo "ERROR: missing $SRC"; exit 1; }
 [ ! -s "$OUT" ] || { echo "[$(date)] $OUT exists — exiting"; exit 0; }

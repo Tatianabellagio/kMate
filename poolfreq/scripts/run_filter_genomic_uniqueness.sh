@@ -1,16 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=genuniq_filter
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=64G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/block_haplotype_cn/genuniq_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/block_haplotype_cn/genuniq_%j.err
+#SBATCH --output=logs/genuniq_%j.out
+#SBATCH --error=logs/genuniq_%j.err
 
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv
+cd /global/scratch/users/tbellg/hapfire_sv
 
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 INPUT=${1:-poolfreq/data/block_haplotype_cn/chr1_full.npz}
 # Output: <input_stem>_genuniq.npz
 OUTPUT=$(echo $INPUT | sed 's/.npz$/_genuniq.npz/')

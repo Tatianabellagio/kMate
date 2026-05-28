@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=v3_on_p80
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/08_v3_on_p80_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/08_v3_on_p80_%j.err
+#SBATCH --output=logs/08_v3_on_p80_%j.out
+#SBATCH --error=logs/08_v3_on_p80_%j.err
 
 # =============================================================================
 # Run cactus_em with the V3 panel artifacts against the P80 simulation reads.
@@ -19,14 +21,15 @@
 # Usage:
 #   sbatch 08_run_v3panel_on_p80reads.sh REGIME METHOD
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
 REGIME=${1:?Usage: REGIME METHOD}
 METHOD=${2:?Usage: REGIME METHOD}
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+ROOT=/global/scratch/users/tbellg/hapfire_sv
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 DRIVER=$ROOT/poolfreq/src/per_sample_per_chrom.py
 
 case "$REGIME" in

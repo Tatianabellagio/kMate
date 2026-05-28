@@ -23,7 +23,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-WORK = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82")
+WORK = Path(__file__).resolve().parents[1]
 RES = WORK / "results"
 
 def categorize(df):

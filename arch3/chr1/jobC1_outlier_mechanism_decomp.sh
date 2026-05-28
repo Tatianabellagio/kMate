@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=outl_decomp
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=24G
 #SBATCH --time=00:45:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/C1_decomp_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/C1_decomp_%j.err
+#SBATCH --output=logs/C1_decomp_%j.out
+#SBATCH --error=logs/C1_decomp_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Decompose the 3,344 outliers (|Δ|>0.10) from A7 into mechanism classes:
@@ -15,8 +18,8 @@ set -euo pipefail
 # Then for each class, split by direction (under vs over) and check whether
 # cactus and PG founders internally agree (panel-vs-1001G) or disagree (PG-specific).
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY -u <<'PYEOF'
 import pandas as pd
@@ -43,7 +46,7 @@ m_alt = meta['alt']
 founders = meta['founders']
 print(f'  cn_var: {cn.shape}, {cn.nnz:,} nnz')
 
-cactus_ids = set(open('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
+cactus_ids = set(open('/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
 f_is_cactus = np.array([str(f) in cactus_ids for f in founders])
 print(f'  cactus founders: {f_is_cactus.sum()},  PG founders: {(~f_is_cactus).sum()}')
 

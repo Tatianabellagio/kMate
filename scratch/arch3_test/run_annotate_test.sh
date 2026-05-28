@@ -1,19 +1,22 @@
 #!/bin/bash
 #SBATCH --job-name=arch3_annot
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/annotate_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/annotate_%j.err
+#SBATCH --output=logs/annotate_%j.out
+#SBATCH --error=logs/annotate_%j.err
 
+mkdir -p logs
 set -euo pipefail
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
 
-GFA=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
-SCRIPT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
+SCRIPT=/global/scratch/users/tbellg/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 VCF=cactus_78_test_chr1_5_14M.vcf
 OUTPREFIX=cactus_78_test_annotated

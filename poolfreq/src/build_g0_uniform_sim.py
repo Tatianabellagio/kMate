@@ -14,10 +14,10 @@ import argparse, json, os, subprocess, sys
 from pathlib import Path
 import numpy as np
 
-WGSIM = '/home/tbellagio/miniforge3/envs/pang/bin/wgsim'
-SAMTOOLS = '/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools'
-FOUNDER_DIR = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/sims/visor_freqk/founder_fastas_231_v3')
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
+WGSIM = '/global/home/users/tbellg/miniforge3/envs/pang/bin/wgsim'
+SAMTOOLS = '/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools'
+ROOT = Path(__file__).resolve().parents[2]
+FOUNDER_DIR = ROOT / 'sims/visor_freqk/founder_fastas_231_v3'
 
 
 def sample_founders(panel: list[str], side_map: dict[str,str],

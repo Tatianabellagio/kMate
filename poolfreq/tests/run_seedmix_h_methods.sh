@@ -1,17 +1,21 @@
 #!/bin/bash
 #SBATCH --job-name=sm_h
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=80G
 #SBATCH --time=2:00:00
 #SBATCH --array=0-23
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/sm_h_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/sm_h_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/sm_h_%A_%a.out
+#SBATCH --error=logs/sm_h_%A_%a.err
+mkdir -p logs
 set -euo pipefail
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+ROOT=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 export PYTHONPATH=$ROOT/poolfreq/src:${PYTHONPATH:-}
-READS=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix_trimdedup
+READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup
 OUT=$ROOT/scratch/seedmix_h_test; mkdir -p $OUT
 
 CNS=(cn_full_231_v3qc_v3_filt2 cn_full_231_v3qc_v3_subsampMedian_refilt2 cn_full_231_v3qc_v3_subsampProtect1_refilt2)

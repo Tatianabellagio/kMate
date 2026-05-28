@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=loo_pg
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=80G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_pg_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_pg_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/loo_pg_%A_%a.out
+#SBATCH --error=logs/loo_pg_%A_%a.err
 
 # =============================================================================
 # pangenie_loo_one.sh
@@ -18,13 +21,14 @@
 #
 # Indexed by SLURM_ARRAY_TASK_ID over loo_ena_manifest rows (1..78).
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-}"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 eval "$(conda shell.bash hook)"
 conda activate pangenie
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/loo_ena_manifest.tsv
 PREP_DIR=$BASE/data/loo_preprocessed
 GT_DIR=$BASE/data/loo_genotyped
@@ -41,11 +45,11 @@ INDEX_PREFIX=$BASE/data/pang_135_pangenie_index
 TRUTH_VCF=$BASE/data/pang_1001gplus_all.dipl.vcf.gz
 
 # Absolute paths to bgzip/tabix because the pangenie env doesn't ship them.
-BGZIP=/home/tbellagio/miniforge3/envs/pang/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/pang/bin/tabix
+BGZIP=/global/home/users/tbellg/miniforge3/envs/pang/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/pang/bin/tabix
 
 # Cactus assembly-ID → 1001G ID rename map (col 1 = assembly_id, col 2 = ecotype_id)
-SAMPLE_RENAME=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/imputation/work/sample_rename.txt
+SAMPLE_RENAME=/global/scratch/users/tbellg/hapfire_sv/imputation/work/sample_rename.txt
 
 IDX=${SLURM_ARRAY_TASK_ID:-1}
 LINE=$(sed -n "$((IDX+1))p" $MANIFEST)
@@ -93,7 +97,7 @@ if [ -z "$TRUTH_SAMPLE" ]; then
 fi
 echo "[$(date)] $ECOTYPE: concordance against cactus truth (assembly=$TRUTH_SAMPLE)"
 
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 $PYTHON $BASE/scripts/loo_concordance.py \
     --pangenie-vcf ${OUT_VCF}.gz \
     --truth-vcf    $TRUTH_VCF \

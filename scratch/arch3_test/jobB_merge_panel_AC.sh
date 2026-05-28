@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=archB_merge
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=02:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/jobB_merge_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/jobB_merge_%j.err
+#SBATCH --output=logs/jobB_merge_%j.out
+#SBATCH --error=logs/jobB_merge_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Job B v2: convert cactus_78 to biallelic using 135-catalog, merge with PG_153 from Job A,
@@ -14,16 +17,16 @@ set -euo pipefail
 # because 135-VCF has original cactus assembly names). Instead, use cactus_78.vcf.gz
 # (already in 1001G IDs) and transfer INFO/ID from the 135-catalog.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
 
-BCF=/home/tbellagio/miniforge3/envs/gwas/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/gwas/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/gwas/bin/tabix
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-CONVERT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
-TRANSFER=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/transfer_id_annotation.py
+BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+CONVERT=/global/scratch/users/tbellg/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+TRANSFER=/global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test/transfer_id_annotation.py
 
-CACTUS78_RAW=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz
+CACTUS78_RAW=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz
 CACTUS_ANNOT_135=full135_test_annotated.sorted.vcf.gz
 BIAL_CATALOG=full135_test_annotated_biallelic.sorted.vcf.gz
 PG_HAP_FROM_A=pg_153_test_haploid.vcf.gz

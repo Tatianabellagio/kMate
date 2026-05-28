@@ -25,7 +25,7 @@ import scipy.sparse as sp
 
 ROOT = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv'
 SCRATCH = f'{ROOT}/scratch'
-HF = '/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
+HF = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
 
 # --- load cn_var v3qc_v3 + called mask + meta ---
 meta = np.load(f'{ROOT}/poolfreq/data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)

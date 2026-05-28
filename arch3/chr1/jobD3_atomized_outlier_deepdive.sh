@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_atomdd
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=48G
 #SBATCH --time=00:45:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/D3_deepdive_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/D3_deepdive_%j.err
+#SBATCH --output=logs/D3_deepdive_%j.out
+#SBATCH --error=logs/D3_deepdive_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Deep dive on the ~8,900 remaining outliers in arch3 ATOMIZED vs hapFIRE.
@@ -18,8 +21,8 @@ set -euo pipefail
 #  - vs raw arch3 / vs v3qc_v3 — were they outliers there too?
 # Plus spot-checks: top 15 outliers in each class.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY -u <<'PYEOF'
 import numpy as np
@@ -39,12 +42,12 @@ meta_a = np.load('cn_var_231_arch3_chr1_atomized.meta.npz', allow_pickle=True)
 m_pos = meta_a['pos']; m_ref = meta_a['ref']; m_alt = meta_a['alt']
 founders = meta_a['founders']
 
-cactus_ids = set(open('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
+cactus_ids = set(open('/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
 f_is_cactus = np.array([str(f) in cactus_ids for f in founders])
 print(f'  cactus founders: {f_is_cactus.sum()}, PG founders: {(~f_is_cactus).sum()}')
 
 # hapFIRE with REF/ALT
-hf = pd.read_csv('/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt',
+hf = pd.read_csv('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt',
                  sep='\t', header=None, names=['chrom_num','pos','af_hapfire'])
 hf = hf[hf.chrom_num == 1].copy()
 ra = pd.read_csv('hapfire_chr1_refalt.tsv', sep='\t').rename(columns={'chrom':'chrom_num'})

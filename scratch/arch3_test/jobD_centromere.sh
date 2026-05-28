@@ -1,31 +1,34 @@
 #!/bin/bash
 #SBATCH --job-name=archD_centro
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=03:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/jobD_centro_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/jobD_centro_%j.err
+#SBATCH --output=logs/jobD_centro_%j.out
+#SBATCH --error=logs/jobD_centro_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Job D v2: full Arch 3 pipeline on centromere region Chr1:14M-17M.
 # FIX vs v1: for cactus side, use cactus_78.vcf.gz (1001G IDs) + transfer_id from centromere catalog
 # instead of bcftools view -S on the 135-VCF (which has different sample names).
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
 
-BCF=/home/tbellagio/miniforge3/envs/gwas/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/gwas/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/gwas/bin/tabix
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-ANNOTATE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
-CONVERT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
-TRANSFER=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/transfer_id_annotation.py
+BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+ANNOTATE=/global/scratch/users/tbellg/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+CONVERT=/global/scratch/users/tbellg/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+TRANSFER=/global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test/transfer_id_annotation.py
 
-GFA=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
-FULL_135_VCF=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
-PG_RAW=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
-CACTUS78_RAW=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz
+GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
+FULL_135_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
+PG_RAW=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
+CACTUS78_RAW=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz
 
 REGION="Chr1:14000000-17000000"
 OUTDIR=centromere

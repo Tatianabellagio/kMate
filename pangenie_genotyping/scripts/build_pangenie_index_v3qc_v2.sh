@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=pg_index_v3qc_v2
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=12:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/pg_index_v3qc_v2_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/pg_index_v3qc_v2_%j.err
+#SBATCH --output=logs/pg_index_v3qc_v2_%j.out
+#SBATCH --error=logs/pg_index_v3qc_v2_%j.err
 
 # Build a fresh PanGenie-index from the v3qc-v2 VCF (the paper-quality, methodologically
 # self-consistent version). Workflow:
@@ -15,19 +17,20 @@
 #
 # Output prefix: pang_v3qc_v2_pangenie_index
 # Mirrors the v3 build at /pangenie_genotyping/data/pang_135_pangenie_index_*.
+mkdir -p logs
 set -euo pipefail
 eval "$(conda shell.bash hook)"
 conda activate pangenie
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 SRC_HAP=$BASE/data/v3qc_v2/founders_231_v3qc_v2.haploid.vcf.gz
 TMP=$BASE/data/v3qc_v2/idx_tmp
 mkdir -p $TMP
 OUT_PREFIX=$BASE/data/pang_v3qc_v2_pangenie_index
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
-PG_INDEX=/home/tbellagio/miniforge3/envs/pangenie/bin/PanGenie-index
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+PG_INDEX=/global/home/users/tbellg/miniforge3/envs/pangenie/bin/PanGenie-index
 
 [ -s "$SRC_HAP" ] || { echo "ERROR: missing $SRC_HAP (haploidize_v3qc_v2 must run first)"; exit 1; }
 [ -s "$REF" ] || { echo "ERROR: missing $REF"; exit 1; }

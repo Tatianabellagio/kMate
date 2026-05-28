@@ -1,12 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=poolfreq_batch
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
 #SBATCH --array=0-49%10            # 50 array tasks, max 10 concurrent (adjust)
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/batch_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/batch_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/batch_%A_%a.out
+#SBATCH --error=logs/batch_%A_%a.err
 
 # SLURM array template for processing N samples in parallel.
 # Each array task processes a chunk of samples from the manifest.
@@ -37,8 +40,8 @@
 #     sbatch --array=0-48%10 tests/run_batch_template.sh
 
 set -uo pipefail
-mkdir -p /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+mkdir -p /global/scratch/users/tbellg/hapfire_sv/poolfreq/logs
+cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
 
 MANIFEST="${MANIFEST:-data/sample_manifest.tsv}"
 OUT_DIR="${OUT_DIR:-results/per_sample}"
@@ -59,7 +62,7 @@ mkdir -p "$(dirname $CHUNK_MANIFEST)"
 head -1 $MANIFEST > $CHUNK_MANIFEST
 sed -n "${START},${END}p" $MANIFEST >> $CHUNK_MANIFEST
 
-/home/tbellagio/miniforge3/envs/hapfm/bin/python src/batch_runner.py \
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python src/batch_runner.py \
     --manifest $CHUNK_MANIFEST \
     --out-dir $OUT_DIR \
     --cn-kmer-prefix $CN_KMER_PREFIX \

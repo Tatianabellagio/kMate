@@ -20,7 +20,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80')
+ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / 'results'
 SIMS = ROOT / 'sims'
 DATA = ROOT / 'data'

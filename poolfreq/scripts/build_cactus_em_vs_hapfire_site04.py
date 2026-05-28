@@ -12,9 +12,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/results/site04_231_v2')
-HAPFIRE_DIR = Path('/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/samples/snp_frequency')
-FREQK_CORR = Path('/carnegie/nobackup/scratch/tbellagio/freqk_gr/results/hapfire_vs_freqk_AF_per_sample_corr.tsv')
+ROOT = Path(__file__).resolve().parents[2] / 'poolfreq/results/site04_231_v2'
+HAPFIRE_DIR = Path('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/samples/snp_frequency')
+FREQK_CORR = Path('/global/scratch/users/tbellg/freqk_gr/results/hapfire_vs_freqk_AF_per_sample_corr.tsv')
 
 
 def main():

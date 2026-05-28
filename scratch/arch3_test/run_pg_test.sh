@@ -1,22 +1,25 @@
 #!/bin/bash
 #SBATCH --job-name=arch3_pg
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --time=01:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/pg_test_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/pg_test_%j.err
+#SBATCH --output=logs/pg_test_%j.out
+#SBATCH --error=logs/pg_test_%j.err
+mkdir -p logs
 set -euo pipefail
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
 
-BCF=/home/tbellagio/miniforge3/envs/gwas/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/gwas/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/gwas/bin/tabix
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-CONVERT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+CONVERT=/global/scratch/users/tbellg/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
 
-PG_RAW=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/genotyped/100001_genotyping.vcf.gz
+PG_RAW=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/genotyped/100001_genotyping.vcf.gz
 CACTUS_ANNOT=cactus_78_test_annotated.sorted.vcf
 BIAL_CATALOG=cactus_78_test_annotated_biallelic.sorted.vcf.gz
 

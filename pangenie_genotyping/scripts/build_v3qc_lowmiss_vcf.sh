@@ -1,23 +1,26 @@
 #!/bin/bash
 #SBATCH --job-name=lowmiss_vcf
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/lowmiss_vcf_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/lowmiss_vcf_%j.err
+#SBATCH --output=logs/lowmiss_vcf_%j.out
+#SBATCH --error=logs/lowmiss_vcf_%j.err
 
 # Lenient version of the no-missing test: drop records with F_MISSING > 0.5.
 # Catches the PG-MAC merge artifact (F_MISSING = 0.66) but keeps records with a few GQ-masked cells.
 # Expected: keeps ~32% of records (vs 18% for strict F_MISSING==0).
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 SRC=$BASE/data/v3qc/founders_231_v3qc.haploid.vcf.gz
 OUT=$BASE/data/v3qc/founders_231_v3qc.lowmiss.haploid.vcf.gz
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 [ -s "$SRC" ] || { echo "ERROR: missing $SRC"; exit 1; }
 [ ! -s "$OUT" ] || { echo "[$(date)] $OUT exists — exiting"; exit 0; }

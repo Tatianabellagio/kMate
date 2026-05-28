@@ -1,25 +1,28 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_filt2cmp
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=24G
 #SBATCH --time=00:30:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/F1_filt2cmp_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/F1_filt2cmp_%j.err
+#SBATCH --output=logs/F1_filt2cmp_%j.out
+#SBATCH --error=logs/F1_filt2cmp_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Project SEEDMIX_S1 h_filt2 through arch3 atomized cn_var, compare to hapFIRE,
 # and do a 3-way head-to-head: mixedloose vs filt2 vs hapFIRE.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-H_FILT2=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_filt2_chr1/SEEDMIX_S1.h_per_chrom.npz
-H_OLD=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
+H_FILT2=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_filt2_chr1/SEEDMIX_S1.h_per_chrom.npz
+H_OLD=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
 CN_VAR=cn_var_231_arch3_chr1_atomized.cn_var.npz
 CN_VAR_CALLED=cn_var_231_arch3_chr1_atomized.cn_var_called.npz
 CN_VAR_META=cn_var_231_arch3_chr1_atomized.meta.npz
-HAPFIRE=/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
+HAPFIRE=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
 HAPFIRE_REFALT=hapfire_chr1_refalt.tsv   # built by D2
 
 for f in $H_FILT2 $H_OLD $CN_VAR $CN_VAR_CALLED $CN_VAR_META $HAPFIRE $HAPFIRE_REFALT; do
@@ -34,9 +37,9 @@ import time
 
 t0 = time.time()
 
-H_FILT2  = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_filt2_chr1/SEEDMIX_S1.h_per_chrom.npz'
-H_OLD    = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz'
-HAPFIRE  = '/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
+H_FILT2  = '/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_filt2_chr1/SEEDMIX_S1.h_per_chrom.npz'
+H_OLD    = '/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz'
+HAPFIRE  = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
 HAPFIRE_REFALT = 'hapfire_chr1_refalt.tsv'
 
 print('=== Load cn_var (atomized) ===')
@@ -128,7 +131,7 @@ print(f'  mixedloose CV: {h_old.std()/h_old.mean():.4f}')
 print(f'  filt2      CV: {h_filt2.std()/h_filt2.mean():.4f}')
 # cactus vs PG h-bias
 import json
-with open('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/founder_split_cactus_pg.json') as f:
+with open('/global/scratch/users/tbellg/hapfire_sv/data/founder_split_cactus_pg.json') as f:
     split = json.load(f)
 is_cactus = np.array([str(s) in set(map(str, split['cactus'])) for s in cn_founders])
 for label, h in [('mixedloose', h_old), ('filt2', h_filt2)]:

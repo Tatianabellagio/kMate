@@ -11,10 +11,10 @@
 # Deletes old truth files + result TSVs so the dependency chain re-runs cleanly.
 # =============================================================================
 set -euo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
+cd /global/scratch/users/tbellg/hapfire_sv/control_p80
 
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-TRUTH_SCRIPT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/sims/visor_freqk/scripts/compute_recomb_truth.py
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+TRUTH_SCRIPT=/global/scratch/users/tbellg/hapfire_sv/sims/visor_freqk/scripts/compute_recomb_truth.py
 
 CN_VAR=$PWD/data/cn_var_p80.cn_var.npz
 CN_VAR_META=$PWD/data/cn_var_p80.meta.npz

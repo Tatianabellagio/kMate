@@ -31,7 +31,7 @@ t0 = time.time()
 
 # 1. Load GN
 log('Loading GN Chr1 SNP carriers...')
-gn = pysam.VariantFile('/carnegie/nobackup/scratch/xwu/GrENE_net/greneNet_final_v1.1.recode.vcf')
+gn = pysam.VariantFile('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf')
 gn_samples = list(gn.header.samples)
 F_gn = len(gn_samples)
 keys = []; mats = []

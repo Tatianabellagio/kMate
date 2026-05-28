@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=sm_kfa
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=80G
 #SBATCH --time=1:30:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/sm_kfa_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/sm_kfa_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/sm_kfa_%A_%a.out
+#SBATCH --error=logs/sm_kfa_%A_%a.err
 
 # Sweep --kf-correction-alpha on cn_full_v3qc_v2 Chr1 (no rownorm-prebuilt).
 # Loads original (unnormalized) cn_full_v3qc_v2 and applies --row-normalize-cn
@@ -14,23 +17,24 @@
 #
 # IMPORTANT: We must use cn_full_v3qc_v2 (NOT _rownorm), because --row-normalize-cn
 # inside the EM driver captures K_f from the original cn rows.
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
 
 # Map SLURM_ARRAY_TASK_ID -> alpha value
 ALPHAS=(0.0 1.0 2.0 3.0 5.0)
 ALPHA=${ALPHAS[$SLURM_ARRAY_TASK_ID]}
 ALPHA_TAG=${ALPHA//./p}
 
-OUT_DIR=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/seedmix_v3qc_v2_kfalpha${ALPHA_TAG}_chr1
+OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_v2_kfalpha${ALPHA_TAG}_chr1
 mkdir -p $OUT_DIR
 
-READS=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix
+READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix
 R1=$READS/S1-1.1_P.fq.gz
 R2=$READS/S1-1.2_P.fq.gz
 
 echo "[$(date)] SEEDMIX_S1 cactus_em on v3qc_v2 Chr1 --row-normalize-cn --kf-correction-alpha=$ALPHA"
-/usr/bin/time -v /home/tbellagio/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
+/usr/bin/time -v /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
     --cn-kmer-prefix data/cn_full_231_v3qc_v2/cn \
     --cn-var       data/cn_var_231_v3qc_v2.cn_var.npz \
     --cn-var-meta  data/cn_var_231_v3qc_v2.meta.npz \

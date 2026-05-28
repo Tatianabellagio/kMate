@@ -1,19 +1,22 @@
 #!/bin/bash
 #SBATCH --job-name=miss_231
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=96G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/miss_231_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/miss_231_%j.err
+#SBATCH --output=logs/miss_231_%j.out
+#SBATCH --error=logs/miss_231_%j.err
 
 # Compute missingness distribution on the production 231-panel (v3qc_v3)
 # stratified by variant class + cactus/PG side. Output a PNG into
 # control_p80/results/ (next to the p80 version for side-by-side reference).
 
+mkdir -p logs
 set -euo pipefail
 
-/home/tbellagio/miniforge3/envs/hapfm/bin/python <<'PYEOF'
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python <<'PYEOF'
 import numpy as np
 import pandas as pd
 import scipy.sparse as sp
@@ -22,8 +25,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-DATA = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data')
-OUT  = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/results')
+DATA = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data')
+OUT  = Path('/global/scratch/users/tbellg/hapfire_sv/control_p80/results')
 
 # Load only the meta arrays we need (skip the heavy 'ref'/'alt' object strings).
 print('Loading meta header info ...', flush=True)
@@ -41,8 +44,8 @@ assert called.shape[1] == N
 print(f'  shape={called.shape}  nnz={called.nnz:,}  density={called.nnz/(F*N)*100:.2f}%', flush=True)
 
 # Identify cactus side via the panel TSV
-panel_tsv    = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/sv_panel_to_accession_id.tsv'
-exclude_list = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/exclude_list.txt'
+panel_tsv    = '/global/scratch/users/tbellg/hapfire_sv/data/sv_panel_to_accession_id.tsv'
+exclude_list = '/global/scratch/users/tbellg/hapfire_sv/data/exclude_list.txt'
 with open(exclude_list) as f:
     excluded_asm = {line.strip() for line in f if line.strip()}
 sv_panel = pd.read_csv(panel_tsv, sep='\t')

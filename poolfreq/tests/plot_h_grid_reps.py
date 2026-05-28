@@ -3,8 +3,9 @@
 For each (method,regime): average per-founder h and per-founder truth over the 5 seeds,
 then plot sorted by avg-truth; gray=truth, blue=cactus est, orange=PG est."""
 import numpy as np, json, glob, os, math
+from pathlib import Path
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"; HDIR=f"{ROOT}/scratch/h_fixes/replicates/h"
+ROOT=str(Path(__file__).resolve().parents[2]); HDIR=f"{ROOT}/scratch/h_fixes/replicates/h"
 REPS=f"{ROOT}/sims/visor_freqk/g0_reps"
 CAC=set(map(str,json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))["cactus"]))
 SEEDS=[101,102,103,104,105]

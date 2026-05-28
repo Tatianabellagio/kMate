@@ -11,11 +11,11 @@
 #   chrom  pos  ref_len  n_alt  alt_idx  alt_len  ac_82  an_82  ac_53  an_53
 set -euo pipefail
 
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate sequencing_pipeline
 
-WORK=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82
-RAW=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.raw.vcf.gz
+WORK=/global/scratch/users/tbellg/hapfire_sv/panel_overlap_135_vs_82
+RAW=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.raw.vcf.gz
 GROUP82=$WORK/data/grenenet_82_in_pang135.txt
 GROUP53=$WORK/data/extras_53.txt
 OUTDIR=$WORK/results

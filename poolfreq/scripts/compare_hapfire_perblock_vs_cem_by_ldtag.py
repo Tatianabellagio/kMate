@@ -42,13 +42,14 @@ def metrics(t, p, label=''):
 
 
 def main():
+    _root = Path(__file__).resolve().parents[2]
     ap = argparse.ArgumentParser()
-    ap.add_argument('--hapfire-proj-dir', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/results/site04_hapfire_perblock_proj')
-    ap.add_argument('--cactus-em-dir', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/results/site04_231_v2')
-    ap.add_argument('--ld-table', default='/carnegie/nobackup/scratch/tbellagio/freqk_gr/ld_sv_snp/data/ld_sv_vs_xwu_snps_per_sv.tsv.gz')
+    ap.add_argument('--hapfire-proj-dir', default=str(_root / 'poolfreq/results/site04_hapfire_perblock_proj'))
+    ap.add_argument('--cactus-em-dir', default=str(_root / 'poolfreq/results/site04_231_v2'))
+    ap.add_argument('--ld-table', default='/global/scratch/users/tbellg/freqk_gr/ld_sv_snp/data/ld_sv_vs_xwu_snps_per_sv.tsv.gz')
     ap.add_argument('--samples', nargs='*', default=None,
                     help='sample IDs (default: all present in both dirs)')
-    ap.add_argument('--out', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/results/hapfire_perblock_vs_cem_by_ldtag.tsv')
+    ap.add_argument('--out', default=str(_root / 'results/hapfire_perblock_vs_cem_by_ldtag.tsv'))
     args = ap.parse_args()
 
     print(f'Loading LD-tagging table from {args.ld_table}')

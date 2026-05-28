@@ -1,29 +1,32 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_pg
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=04:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A2_pg_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A2_pg_%j.err
+#SBATCH --output=logs/A2_pg_%j.out
+#SBATCH --error=logs/A2_pg_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Phase 2 Job A2: PG-side full pipeline on full Chr1 (depends on A1).
 # Steps: subset → transfer_id → convert-to-biallelic → fill-tags → haploidize (het→.)
 # No V4 record filter; per-cell het→missing only.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
 
-BCF=/home/tbellagio/miniforge3/envs/gwas/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/gwas/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/gwas/bin/tabix
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-CONVERT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
-TRANSFER=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/transfer_id_annotation.py
+BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+CONVERT=/global/scratch/users/tbellg/hapfire_sv/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+TRANSFER=/global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test/transfer_id_annotation.py
 
 CHR1_ANNOT=chr1_135_annotated.sorted.vcf.gz
 BIAL_CATALOG=chr1_135_annotated_biallelic.sorted.vcf.gz
-PG_RAW=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
+PG_RAW=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
 
 [ -s $CHR1_ANNOT ] || { echo "ERROR: missing $CHR1_ANNOT (A1 not done)"; exit 1; }
 

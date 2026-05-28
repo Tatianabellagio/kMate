@@ -12,15 +12,16 @@ existing filt2/subsamp baselines in scratch/{g0_sweep_h_test,seedmix_h_test}/.
 """
 import csv, json, math, os
 from collections import defaultdict
+from pathlib import Path
 import numpy as np
 
-ROOT = "/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT = str(Path(__file__).resolve().parents[3])
 CORR = f"{ROOT}/scratch/h_fixes/correlation"
 G0_OUT = f"{ROOT}/scratch/g0_sweep_h_test"
 SM_OUT = f"{ROOT}/scratch/seedmix_h_test"
 PF = f"{ROOT}/scratch/g0_sweep_per_founder.tsv"
 SPLIT = f"{ROOT}/data/founder_split_cactus_pg.json"
-HAPFIRE = "/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix"
+HAPFIRE = "/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix"
 
 G0_SIMS = ["g0_n231_rep0_rand", "g0_n200_rep0_rand",
            "g0_n50_rep0_cact", "g0_n50_rep1_bal", "g0_n50_rep2_pg"]

@@ -25,8 +25,9 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--perblock-h', required=True,
                     help='per-sample npz from derive_hapfire_perblock_h.py')
-    ap.add_argument('--cn-var', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_231_v2.cn_var.npz')
-    ap.add_argument('--cn-var-meta', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_231_v2.meta.npz')
+    _root = Path(__file__).resolve().parents[2]
+    ap.add_argument('--cn-var', default=str(_root / 'poolfreq/data/cn_var_231_v2.cn_var.npz'))
+    ap.add_argument('--cn-var-meta', default=str(_root / 'poolfreq/data/cn_var_231_v2.meta.npz'))
     ap.add_argument('--out', required=True)
     args = ap.parse_args()
 

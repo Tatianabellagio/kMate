@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-WORK = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82")
+WORK = Path(__file__).resolve().parents[1]
 SNPS = WORK / "data" / "pang135_biallelic_snps.vcf.gz"   # haploid biallelic SNPs (already built)
 SAMPLES_135 = WORK / "data" / "pang_135_samples.txt"
 GROUP82 = WORK / "data" / "grenenet_82_in_pang135.txt"

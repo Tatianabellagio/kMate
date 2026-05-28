@@ -1,17 +1,20 @@
 #!/bin/bash
 #SBATCH --job-name=per_sample_smoke
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/per_sample_smoke_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/per_sample_smoke_%j.err
+#SBATCH --output=logs/per_sample_smoke_%j.out
+#SBATCH --error=logs/per_sample_smoke_%j.err
 
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
 mkdir -p results/smoke
 
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 # Run per-sample driver on skewed5 simulation (clean known truth)
 echo "[$(date)] === skewed5 simulation ==="
@@ -31,8 +34,8 @@ $PYTHON src/per_sample_driver.py \
     --cn-kmer-prefix data/cn_full \
     --cn-var data/cn_var_82.cn_var.npz \
     --cn-var-meta data/cn_var_82.meta.npz \
-    --reads /home/tbellagio/scratch/pang/grenenet_reads/seed_mix/S1-1.1_P.fq.gz \
-            /home/tbellagio/scratch/pang/grenenet_reads/seed_mix/S1-1.2_P.fq.gz \
+    --reads /global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S1-1.1_P.fq.gz \
+            /global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S1-1.2_P.fq.gz \
     --sample SEEDMIX_S1 \
     --out results/smoke/SEEDMIX_S1.tsv \
     --threads 8

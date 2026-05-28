@@ -1,19 +1,22 @@
 #!/bin/bash
 #SBATCH --job-name=mixonly
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=48G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/mixonly_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/mixonly_%A_%a.err
+#SBATCH --output=logs/mixonly_%A_%a.out
+#SBATCH --error=logs/mixonly_%A_%a.err
 
 # Build cn_full subsets filtered to "both-sides-represented" k-mers.
 # Array task -> threshold variant:
 #   0: mixed-loose   ac_cactus>=1 AND ac_pg>=1 AND ac>=2 (~4.6M Chr1 k-mers)
 #   1: mixed-strict  ac_cactus>=5 AND ac_pg>=5            (~1.9M)
 #   2: mixed-conserv ac_cactus>=10 AND ac_pg>=10          (~1.6M)
+mkdir -p logs
 set -euo pipefail
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 case $SLURM_ARRAY_TASK_ID in
   0) TAG=mixedloose;   THRESH_C=1;  THRESH_P=1  ;;
@@ -22,7 +25,7 @@ case $SLURM_ARRAY_TASK_ID in
   *) echo unknown; exit 1 ;;
 esac
 
-OUT_DIR=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_${TAG}
+OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_${TAG}
 mkdir -p $OUT_DIR
 
 $PY << EOF
@@ -31,7 +34,7 @@ from scipy.sparse import load_npz, save_npz
 from pathlib import Path
 
 CHR = 'Chr1'
-SRC = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
+SRC = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
 OUT = Path('${OUT_DIR}')
 
 cn = load_npz(SRC / f'cn_{CHR}.cn.npz').tocsr()
@@ -40,7 +43,7 @@ founders = np.asarray(meta['founders']).astype(str)
 F, K = cn.shape
 print(f'cn_full input: ({F}, {K:,}) nnz={cn.nnz:,}', flush=True)
 
-with open('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/founder_split_cactus_pg.json') as fp:
+with open('/global/scratch/users/tbellg/hapfire_sv/data/founder_split_cactus_pg.json') as fp:
     split = json.load(fp)
 cactus_set = set(map(str, split['cactus']))
 pg_set = set(map(str, split['PG']))

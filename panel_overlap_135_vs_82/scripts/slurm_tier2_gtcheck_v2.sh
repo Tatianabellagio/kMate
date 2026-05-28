@@ -1,20 +1,23 @@
 #!/bin/bash
 #SBATCH --job-name=overlap_t2_gtchk2
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/logs/tier2_gtcheck_v2_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/logs/tier2_gtcheck_v2_%j.err
+#SBATCH --output=logs/tier2_gtcheck_v2_%j.out
+#SBATCH --error=logs/tier2_gtcheck_v2_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Tier 2 v2: convert haploid cactus GT to diploid (0 → 0/0, 1 → 1/1, . → ./.),
 # write a new VCF, then run bcftools gtcheck.
 
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate sequencing_pipeline
 
-WORK=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82
+WORK=/global/scratch/users/tbellg/hapfire_sv/panel_overlap_135_vs_82
 SNPS=$WORK/data/pang135_biallelic_snps.vcf.gz
 DIP=$WORK/data/pang135_biallelic_snps_diploid.vcf.gz
 

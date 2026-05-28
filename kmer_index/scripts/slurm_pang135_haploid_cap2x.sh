@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=kmidx135h2x
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=80G
 #SBATCH --time=10:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/kmer_index/logs/pang_135_haploid_cap2x_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/kmer_index/logs/pang_135_haploid_cap2x_%j.err
+#SBATCH --output=logs/pang_135_haploid_cap2x_%j.out
+#SBATCH --error=logs/pang_135_haploid_cap2x_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Raised-cap variant of the haploid index (for the cn_full h-equivalence test).
@@ -15,12 +18,12 @@ set -euo pipefail
 # N-allele (classify multiallelic, cap 32). This variant tests whether emitting
 # MORE k-mers per allele improves the EM h estimate.
 
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate pangenie
 
-WORK=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/kmer_index
-VCF=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
+WORK=/global/scratch/users/tbellg/hapfire_sv/kmer_index
+VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
 OUT_DIR=$WORK/pang_135_haploid_cap2x
 OUT_PREFIX=$OUT_DIR/ours
 

@@ -6,7 +6,7 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 
 # Count ENA rows
@@ -21,7 +21,7 @@ JOB=$(sbatch --parsable \
 echo "Submitted job array $JOB (1..$N, max 8 concurrent)"
 echo ""
 echo "Watch progress:"
-echo "  squeue -u tbellagio | grep ena_dl"
+echo "  squeue -u tbellg | grep ena_dl"
 echo "  tail -f $BASE/logs/dl_${JOB}_*.out"
 echo ""
 echo "After all done:"

@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=cn_pg
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH --time=12:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/cn_pg_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/cn_pg_%j.err
+#SBATCH --output=logs/cn_pg_%j.out
+#SBATCH --error=logs/cn_pg_%j.err
 
 # =============================================================================
 # build_cn_from_pangenie.sh
@@ -24,21 +26,22 @@
 # Mirrors imputation/06_build_231_cn_matrices.sh but plugged into the
 # PanGenie-genotyping panel (no Beagle imputation in the chain).
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MERGED_VCF=$BASE/data/merged/founders_231_chr.vcf.gz
 INDEX_PREFIX=$BASE/data/pang69_pangenie_index   # produced by build_pangenie_index.sh
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
 
 OUT_DIR=$BASE/data/cn
 mkdir -p $OUT_DIR
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-POOLFREQ_SRC=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/src
+POOLFREQ_SRC=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src
 
 # ---- Sanity checks on inputs --------------------------------------------------
 for f in $MERGED_VCF $REF; do

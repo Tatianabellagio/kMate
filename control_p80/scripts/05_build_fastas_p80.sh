@@ -1,12 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=p80_a5_fa
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --time=4:00:00
 #SBATCH --array=1-80
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/05_fa_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/05_fa_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/05_fa_%A_%a.out
+#SBATCH --error=logs/05_fa_%A_%a.err
 
 # =============================================================================
 # Phase A5 -- Build per-founder consensus FASTAs from the canonical p80 VCF.
@@ -18,16 +21,17 @@
 # DO NOT replace these by symlinks to v3's unimputed_fastas_v3/ or to raw cactus
 # assemblies -- variant-set mismatch would recreate the v3 simulation bug.
 # =============================================================================
+mkdir -p logs
 set -uo pipefail
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
 VCF=$CTRL/data/pangenome_p80_chr1.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$CTRL/fastas_80
 SAMPLE_LIST=$CTRL/data/samples_80_acc_order.txt
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-SAMTOOLS=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+SAMTOOLS=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools
 
 mkdir -p $OUT_DIR
 

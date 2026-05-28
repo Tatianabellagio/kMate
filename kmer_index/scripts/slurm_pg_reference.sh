@@ -1,17 +1,20 @@
 #!/bin/bash
 #SBATCH --job-name=kmidx_pgref
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/kmer_index/logs/pg_reference_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/kmer_index/logs/pg_reference_%j.err
+#SBATCH --output=logs/pg_reference_%j.out
+#SBATCH --error=logs/pg_reference_%j.err
+mkdir -p logs
 set -euo pipefail
 
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate pangenie
 
-WORK=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/kmer_index
+WORK=/global/scratch/users/tbellg/hapfire_sv/kmer_index
 
 PanGenie-index \
     -r $WORK/data/test_ref_chr1.fa \

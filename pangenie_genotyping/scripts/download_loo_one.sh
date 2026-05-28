@@ -1,20 +1,24 @@
 #!/bin/bash
 #SBATCH --job-name=loo_dl
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=4G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_dl_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_dl_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/loo_dl_%A_%a.out
+#SBATCH --error=logs/loo_dl_%A_%a.err
 
 # =============================================================================
 # download_loo_one.sh
 # Same logic as download_one.sh but reads from loo_ena_manifest.tsv and writes
 # to data/loo_raw_fastqs/<ecotype>/. Indexed 1..N over manifest data rows.
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/loo_ena_manifest.tsv
 OUT_DIR=$BASE/data/loo_raw_fastqs
 mkdir -p $OUT_DIR

@@ -6,8 +6,9 @@ has 4.6% dup keys; atomized 231 has 38%) -> a key-merge mis-joins multiallelic A
 We assert identical (pos,ref_len,alt_len) row order then compare by position.
 Class from ref_len/alt_len. Writes filt2_mb_vs_uniform_summary.tsv."""
 import os, math
+from pathlib import Path
 import numpy as np, pandas as pd
-CTRL="/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80"
+CTRL=str(Path(__file__).resolve().parents[1])
 REGIMES=["n50_g0","n80_g0","n50_g1","n80_g1","n50_g3","n50_g3_dom500"]
 def subdir(reg):
     if reg=="n50_g3_dom500": return "cov10_n50_g3_s42_hotspots_dom500_p80_chr1"

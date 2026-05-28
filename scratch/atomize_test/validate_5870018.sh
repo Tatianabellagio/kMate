@@ -5,11 +5,11 @@
 # Use minimap2 to align a 1kb window from TAIR10 to each founder genome
 # and read the projected base.
 set -e
-MINIMAP=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/minimap2
-SAMTOOLS=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools
-FA_DIR=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only
+MINIMAP=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/minimap2
+SAMTOOLS=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools
+FA_DIR=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only
 TAIR=$FA_DIR/TAIR10.chr.fa
-OUT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/atomize_test
+OUT=/global/scratch/users/tbellg/hapfire_sv/scratch/atomize_test
 mkdir -p $OUT/validation
 
 POS=5870018

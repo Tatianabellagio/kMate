@@ -7,10 +7,11 @@ Reports:
     have AC_Hom >= 1 (i.e., some real hom-alt evidence)?
 """
 import subprocess, sys
+from pathlib import Path
 import numpy as np
 
-BCF = '/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools'
-VCF = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/v3qc_v2/pangenie_153_qc_v2.vcf.gz'
+BCF = '/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools'
+VCF = str(Path(__file__).resolve().parents[2] / 'pangenie_genotyping/data/v3qc_v2/pangenie_153_qc_v2.vcf.gz')
 
 CHROMS = sys.argv[1:] if len(sys.argv) > 1 else ['Chr1']
 

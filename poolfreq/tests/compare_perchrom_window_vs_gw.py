@@ -13,7 +13,7 @@ import pandas as pd
 
 
 def main():
-    base = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/results")
+    base = Path(__file__).resolve().parents[1] / "results"
     gw = base / "site04_231_v2" / "MLFH040120180306.tsv"
     pc = base / "site04_231_v2_perchrom" / "MLFH040120180306.tsv"
     if not gw.exists():

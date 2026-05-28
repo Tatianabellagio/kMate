@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=pangenie
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=80G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/pg_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/pg_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/pg_%A_%a.out
+#SBATCH --error=logs/pg_%A_%a.err
 
 # =============================================================================
 # pangenie_one.sh
@@ -17,13 +20,14 @@
 #
 # Prerequisites: pang_69 finished + PanGenie-indexed (genotype_index.cereal etc.)
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-}"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 eval "$(conda shell.bash hook)"
 conda activate pangenie
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 PREP_DIR=$BASE/data/preprocessed
 GT_DIR=$BASE/data/genotyped
@@ -66,8 +70,8 @@ PanGenie -f $INDEX_PREFIX -i $TMP_FQ -o $OUT_PREFIX -s $ECOTYPE -t 8 -j 8
 
 # PanGenie writes <prefix>_genotyping.vcf — compress + index it. The pangenie
 # conda env doesn't ship bgzip/tabix, so reach into the pang env directly.
-BGZIP=/home/tbellagio/miniforge3/envs/pang/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/pang/bin/tabix
+BGZIP=/global/home/users/tbellg/miniforge3/envs/pang/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/pang/bin/tabix
 $BGZIP -f $OUT_VCF
 $TABIX -p vcf ${OUT_VCF}.gz
 

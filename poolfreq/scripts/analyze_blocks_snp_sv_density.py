@@ -10,14 +10,16 @@ where direct SV evidence in cactus_em could be load-bearing.
 """
 from __future__ import annotations
 import sys, time
+from pathlib import Path
 import numpy as np
 import pandas as pd
 
-BLOCK_INDEX = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/hapfire_block_index.npz'
-XWU_POS     = '/home/tbellagio/scratch/freqk_gr/panel_overlap_test/data/xwu231_positions.tsv'   # chrom='1','2',...
-CACTUS_POS  = '/home/tbellagio/scratch/freqk_gr/panel_overlap_test/data/our82_snp_positions.tsv' # chrom='Chr1',...
-CN_VAR_META = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_231_v2.meta.npz'  # production 231-founder panel
-OUT_TSV     = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/results/blocks_snp_sv_density.tsv.gz'
+_ROOT = Path(__file__).resolve().parents[2]
+BLOCK_INDEX = str(_ROOT / 'poolfreq/data/hapfire_block_index.npz')
+XWU_POS     = '/global/home/users/tbellg/scratch/freqk_gr/panel_overlap_test/data/xwu231_positions.tsv'   # chrom='1','2',...
+CACTUS_POS  = '/global/home/users/tbellg/scratch/freqk_gr/panel_overlap_test/data/our82_snp_positions.tsv' # chrom='Chr1',...
+CN_VAR_META = str(_ROOT / 'poolfreq/data/cn_var_231_v2.meta.npz')  # production 231-founder panel
+OUT_TSV     = str(_ROOT / 'results/blocks_snp_sv_density.tsv.gz')
 SV_MIN_SIZE_CHANGE = 50  # standard SV definition
 
 # Chromosome name normalization: block index uses '1','2',... — map to 'Chr1',...

@@ -1,16 +1,19 @@
 #!/bin/bash
 #SBATCH --job-name=build_cnvar
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=96G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/block_haplotype_cn/build_cnvar_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/block_haplotype_cn/build_cnvar_%j.err
+#SBATCH --output=logs/build_cnvar_%j.out
+#SBATCH --error=logs/build_cnvar_%j.err
 
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv
+cd /global/scratch/users/tbellg/hapfire_sv
 
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 MAX_BLOCKS=${MAX_BLOCKS:-0}
 VARIANT_ANCHORED=${VARIANT_ANCHORED:-0}
 ALLELE_SPECIFIC_CC1=${ALLELE_SPECIFIC_CC1:-0}

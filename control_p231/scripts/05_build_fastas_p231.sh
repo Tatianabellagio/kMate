@@ -1,12 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=p231_a5_fa
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --time=4:00:00
 #SBATCH --array=1-231
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231/logs/05_fa_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231/logs/05_fa_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/05_fa_%A_%a.out
+#SBATCH --error=logs/05_fa_%A_%a.err
 
 # =============================================================================
 # control_p231 Phase A5 -- per-founder consensus FASTAs from the ARCH3 canonical
@@ -20,16 +23,17 @@
 # DO NOT symlink to v3/v3qc unimputed_fastas_* -- variant-set mismatch would
 # recreate the v3 simulation bug (memory/project_v3_singleton_kmer_bug).
 # =============================================================================
+mkdir -p logs
 set -uo pipefail
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231
-VCF=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/merged_231_chr1_final.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p231
+VCF=/global/scratch/users/tbellg/hapfire_sv/arch3/chr1/merged_231_chr1_final.vcf.gz
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$CTRL/fastas_231
 SAMPLE_LIST=$CTRL/data/founders_231_order.txt
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-SAMTOOLS=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+SAMTOOLS=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools
 
 mkdir -p $OUT_DIR
 

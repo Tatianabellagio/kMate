@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=cn_full_v3qc
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=8:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/cn_full_v3qc_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/cn_full_v3qc_%A_%a.err
+#SBATCH --output=logs/cn_full_v3qc_%A_%a.out
+#SBATCH --error=logs/cn_full_v3qc_%A_%a.err
 
 # =============================================================================
 # build_cn_full_v3qc_one.sh
@@ -14,15 +16,15 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BASE=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 T=${SLURM_ARRAY_TASK_ID:-1}
 CHR="Chr${T}"
 
 KMERS=$BASE/pangenie_genotyping/data/pang_135_pangenie_index_${CHR}_kmers.tsv.gz
 VCF=$BASE/pangenie_genotyping/data/v3qc/founders_231_v3qc.haploid.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$BASE/poolfreq/data/cn_full_231_v3qc
 OUT_PREFIX=$OUT_DIR/cn_${CHR}
 mkdir -p $OUT_DIR $BASE/poolfreq/logs

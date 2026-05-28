@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p80_c_em_filt2
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/07b_em_filt2_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/07b_em_filt2_%j.err
+#SBATCH --output=logs/07b_em_filt2_%j.out
+#SBATCH --error=logs/07b_em_filt2_%j.err
 
 # =============================================================================
 # Phase C (filt2 A/B) -- run cactus_em on p80 sim regime with FILT2 cn_full.
@@ -19,6 +21,7 @@
 # where REGIME = n50_g1 | n50_g3 | n80_g1
 #       METHOD = global | star2
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
 REGIME=${1:?Usage: sbatch 07b_run_cactus_em_p80_filt2.sh REGIME METHOD}
@@ -29,9 +32,9 @@ if [[ "$METHOD" != "global" && "$METHOD" != "star2" ]]; then
     exit 1
 fi
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-DRIVER=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/src/per_sample_per_chrom.py
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+DRIVER=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src/per_sample_per_chrom.py
 
 # Sim work dir (built by 06_run_sim_p80.sh). Seed 42 by convention.
 COV=10

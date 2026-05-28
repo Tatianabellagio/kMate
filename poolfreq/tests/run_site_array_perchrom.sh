@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=cem_perchrom
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/cem_perchrom_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/cem_perchrom_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/cem_perchrom_%A_%a.out
+#SBATCH --error=logs/cem_perchrom_%A_%a.err
 
 # Production cactus_em runner — per-chromosome driver, window-mode EM.
 # Replaces run_site04_array.sh. Uses 64 GB allocation (vs 200 GB) so it fits
@@ -26,7 +29,7 @@
 #   CHROMS       — quoted space-separated, default "Chr1 Chr2 Chr3 Chr4 Chr5"
 
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
 mkdir -p tests/logs
 
 : ${MANIFEST:?Set MANIFEST to a TSV path with sample_id, reads_path[, reads_path2]}
@@ -69,7 +72,7 @@ if [ "$BLOCK_MODE" = "window" ]; then
     WINDOW_ARGS="--window-bp $WINDOW_BP"
 fi
 
-/usr/bin/time -v /home/tbellagio/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
+/usr/bin/time -v /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
     --cn-kmer-prefix $CN_PREFIX \
     --cn-var $CN_VAR \
     --cn-var-meta $CN_VAR_META \

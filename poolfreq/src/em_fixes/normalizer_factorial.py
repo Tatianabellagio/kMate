@@ -4,16 +4,17 @@ weight in {uniform omega=1, per-bubble omega=1/m_b} x normalizer in
 {global total, per-founder denom_f=sum_k omega_k cn_fk}. 4 conditions x regimes.
 Reuses existing filt2 counts (no jellyfish)."""
 import numpy as np, csv, json, math, glob, os
+from pathlib import Path
 from scipy.sparse import load_npz
 
-ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT=str(Path(__file__).resolve().parents[3])
 CAC=set(map(str,json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))["cactus"]))
 truth={}
 for d in csv.DictReader(open(f"{ROOT}/scratch/g0_sweep_per_founder.tsv"),delimiter="\t"):
     truth.setdefault(d["sim"],{})[d["founder"]]=float(d["truth"])
 hf_reps=[]
 for s in range(1,9):
-    p=f"/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s{s}_ecotype_frequency.txt"
+    p=f"/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s{s}_ecotype_frequency.txt"
     if os.path.exists(p):
         hd={}
         for ln in open(p):

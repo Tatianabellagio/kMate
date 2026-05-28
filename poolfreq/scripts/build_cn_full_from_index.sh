@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=cnfull_idx
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=10:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/cnfull_idx_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/cnfull_idx_%j.err
+#SBATCH --output=logs/cnfull_idx_%j.out
+#SBATCH --error=logs/cnfull_idx_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Build cn_full Chr1 from a given kmers.tsv.gz index, against the 231 haploid panel.
@@ -19,11 +22,11 @@ set -euo pipefail
 KMERS=$1
 OUT_DIR=$2
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BASE=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR=Chr1
 VCF=$BASE/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 
 mkdir -p $OUT_DIR
 OUT_PREFIX=$OUT_DIR/cn_${CHR}

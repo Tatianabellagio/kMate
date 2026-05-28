@@ -1,20 +1,23 @@
 #!/bin/bash
 #SBATCH --job-name=archC_fasta
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --time=02:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/jobC_fasta_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test/jobC_fasta_%j.err
+#SBATCH --output=logs/jobC_fasta_%j.out
+#SBATCH --error=logs/jobC_fasta_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Job C: open-loop FASTA-truth validation at 50 random positions in test region.
 # For each position, read each founder's consensus FASTA at coord, compute "true" AC.
 # Compare to merged biallelic AC from Job B.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/arch3_test
+cd /global/scratch/users/tbellg/hapfire_sv/scratch/arch3_test
 
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 MERGED=merged_231_test_final.vcf.gz
 
 [ -s $MERGED ] || { echo "ERROR: missing $MERGED from Job B"; exit 1; }
@@ -22,9 +25,9 @@ MERGED=merged_231_test_final.vcf.gz
 # Try to locate per-founder consensus FASTAs
 FASTA_DIR=""
 for candidate in \
-  /carnegie/nobackup/scratch/tbellagio/hapfire_sv/sims/visor_freqk/unimputed_fastas_v3 \
-  /carnegie/nobackup/scratch/tbellagio/hapfire_sv/unimputed_fastas_v3 \
-  /home/tbellagio/scratch/hapfire_sv/unimputed_fastas_v3; do
+  /global/scratch/users/tbellg/hapfire_sv/sims/visor_freqk/unimputed_fastas_v3 \
+  /global/scratch/users/tbellg/hapfire_sv/unimputed_fastas_v3 \
+  /global/scratch/users/tbellg/hapfire_sv/unimputed_fastas_v3; do
   if [ -d "$candidate" ]; then
     FASTA_DIR=$candidate
     break
@@ -82,7 +85,7 @@ try:
 except ImportError:
     print("ERROR: pyfaidx not installed; trying samtools faidx fallback")
     import subprocess
-    SAMTOOLS = "/home/tbellagio/miniforge3/envs/BIOS424/bin/samtools"
+    SAMTOOLS = "/global/home/users/tbellg/miniforge3/envs/BIOS424/bin/samtools"
     Fasta = None
 
 # Open all founder FASTAs (lazy)
@@ -105,7 +108,7 @@ for i, idx in enumerate(sample_idx):
         fa_path = candidates[0]
         # Use samtools faidx to extract base
         try:
-            out = subprocess.check_output(["${BIOS424_SAMTOOLS:-/home/tbellagio/miniforge3/envs/BIOS424/bin/samtools}",
+            out = subprocess.check_output(["${BIOS424_SAMTOOLS:-/global/home/users/tbellg/miniforge3/envs/BIOS424/bin/samtools}",
                                             "faidx", str(fa_path), f"Chr1:{pos}-{pos}"],
                                             stderr=subprocess.DEVNULL).decode().strip().split("\n")
             base = out[1].upper() if len(out) > 1 else "N"

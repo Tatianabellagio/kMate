@@ -1,21 +1,24 @@
 #!/bin/bash
 #SBATCH --job-name=seedmix_82
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH --time=12:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/seedmix_82_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/seedmix_82_%j.err
+#SBATCH --output=logs/seedmix_82_%j.out
+#SBATCH --error=logs/seedmix_82_%j.err
 
 # Run per_sample_driver on all 8 SEEDMIX replicates with the 82-founder cn.
 # Outputs go to results/seedmix_82/. Restartable: skips samples whose output
 # already exists.
 
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
 mkdir -p results/seedmix_82
 
-/home/tbellagio/miniforge3/envs/hapfm/bin/python -u src/batch_runner.py \
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/batch_runner.py \
     --manifest data/seedmix_manifest.tsv \
     --out-dir results/seedmix_82 \
     --cn-kmer-prefix data/cn_full \

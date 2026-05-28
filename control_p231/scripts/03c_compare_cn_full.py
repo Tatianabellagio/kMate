@@ -4,8 +4,9 @@ If cn_full is representation-invariant (consensus-derived from the same panel), 
 two should be nearly identical. Reports: founder-axis match, k-mer set overlap,
 per-founder k-mer-count correlation, and carrier-pattern agreement on shared k-mers."""
 import numpy as np
+from pathlib import Path
 from scipy.sparse import load_npz
-ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT=str(Path(__file__).resolve().parents[2])
 P231=f"{ROOT}/control_p231/data/cn_full_p231_filt2"
 PROD=f"{ROOT}/poolfreq/data/cn_full_231_v3qc_v3_filt2"
 

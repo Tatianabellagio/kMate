@@ -1,21 +1,24 @@
 #!/bin/bash
 #SBATCH --job-name=p80_a4_cnvar
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=32G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/04_cn_var_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/04_cn_var_%j.err
+#SBATCH --output=logs/04_cn_var_%j.out
+#SBATCH --error=logs/04_cn_var_%j.err
 
 # =============================================================================
 # Phase A4 -- Build cn_var_p80.{cn_var,meta}.npz
 # Wraps poolfreq/src/build_cn_var.py with the canonical p80 VCF.
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+BASE=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 VCF=$CTRL/data/pangenome_p80_chr1.vcf.gz
 OUT_PREFIX=$CTRL/data/cn_var_p80

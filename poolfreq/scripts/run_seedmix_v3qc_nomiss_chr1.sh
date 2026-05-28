@@ -1,26 +1,29 @@
 #!/bin/bash
 #SBATCH --job-name=sm_nomiss_test
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=80G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/sm_nomiss_test_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/sm_nomiss_test_%j.err
+#SBATCH --output=logs/sm_nomiss_test_%j.out
+#SBATCH --error=logs/sm_nomiss_test_%j.err
 
 # TEST: run SEEDMIX_S1 with no-missing cn_full + existing v3qc cn_var on Chr1 only.
 # Checks if the h vector is balanced (cactus ~ PG instead of 30x bias).
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq
+cd /global/scratch/users/tbellg/hapfire_sv/poolfreq
 
-OUT_DIR=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/seedmix_v3qc_nomiss_test
+OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/scratch/seedmix_v3qc_nomiss_test
 mkdir -p $OUT_DIR
 
-READS=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix
+READS=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix
 R1=$READS/S1-1.1_P.fq.gz
 R2=$READS/S1-1.2_P.fq.gz
 
 echo "[$(date)] SEEDMIX_S1 test: cn_full_v3qc_nomiss + cn_var_v3qc (Chr1 only)"
-/usr/bin/time -v /home/tbellagio/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
+/usr/bin/time -v /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
     --cn-kmer-prefix data/cn_full_231_v3qc_nomiss/cn \
     --cn-var       data/cn_var_231_v3qc.cn_var.npz \
     --cn-var-meta  data/cn_var_231_v3qc.meta.npz \

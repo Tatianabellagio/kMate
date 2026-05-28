@@ -19,8 +19,8 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 
-WORK = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82")
-RAW = "/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.raw.vcf.gz"
+WORK = Path(__file__).resolve().parents[1]
+RAW = "/global/home/users/tbellg/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.raw.vcf.gz"
 SAMPLES_135 = WORK / "data" / "pang_135_samples.txt"
 GROUP82 = WORK / "data" / "grenenet_82_in_pang135.txt"
 GROUP53 = WORK / "data" / "extras_53.txt"

@@ -4,12 +4,13 @@ For one cn base (filt2 or subsamp): load cn once, then for each sim count reads
 against the base kmer_index and run EM with w in {1, 1/m_b}. Append scored rows.
 Methods: filt2 / fact-w=1/m_b-global (base=filt2); subsampMedian / subsamp+1/m_b-global (base=subsamp)."""
 import sys, os, glob, csv, json, math, time
+from pathlib import Path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))+"/../src")
 import numpy as np
 from scipy.sparse import load_npz
 from kmer_count import count_kmers_in_fasta
 
-ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT=str(Path(__file__).resolve().parents[2])
 base=sys.argv[1]                       # filt2 | subsamp
 sims=sorted(glob.glob(sys.argv[2]))    # sim dirs
 out_tsv=sys.argv[3]

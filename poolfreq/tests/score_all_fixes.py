@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Unified scorer across all h-fix methods + baselines. Handles each method's npz format."""
 import csv, json, math, glob, os
+from pathlib import Path
 import numpy as np
 
-ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT=str(Path(__file__).resolve().parents[2])
 HF=f"{ROOT}/scratch/h_fixes"
 split=json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json")); CAC=set(map(str,split["cactus"]))
 G0=["g0_n231_rep0_rand","g0_n50_rep0_cact","g0_n50_rep1_bal","g0_n50_rep2_pg","g0_n200_rep0_rand"]
@@ -15,7 +16,7 @@ for d in csv.DictReader(open(f"{ROOT}/scratch/g0_sweep_per_founder.tsv"),delimit
 # hapFIRE 8-rep avg + uniform
 hf_reps=[]
 for s in range(1,9):
-    p=f"/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s{s}_ecotype_frequency.txt"
+    p=f"/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s{s}_ecotype_frequency.txt"
     if os.path.exists(p):
         hd={}
         for ln in open(p):

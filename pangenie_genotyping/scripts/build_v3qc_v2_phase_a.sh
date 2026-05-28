@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=v3qc_v2_A
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=6:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_v2_A_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_v2_A_%j.err
+#SBATCH --output=logs/v3qc_v2_A_%j.out
+#SBATCH --error=logs/v3qc_v2_A_%j.err
 
 # Phase A: rebuild v3qc with decompose-first ordering.
 # Order: GQ mask (already done) → norm-decompose → fill-tags → V4 filter.
@@ -14,12 +16,13 @@
 # Output:
 #   cactus_78_bi.vcf.gz                — biallelic cactus_78 (78 cactus founders)
 #   pangenie_153_qc_v2.vcf.gz          — biallelic PG, GQ+V4 only (no MAC)
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 
 CACTUS78=$BASE/v3qc_tmp/cactus_78.vcf.gz
 PG_RAW=$BASE/v3qc_tmp/pangenie_153_raw.vcf.gz   # post-GQ-mask + post-merge PG, pre-V4

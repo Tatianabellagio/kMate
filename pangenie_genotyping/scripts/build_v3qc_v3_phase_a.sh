@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=v3qc_v3_A
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=6:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_v3_A_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_v3_A_%j.err
+#SBATCH --output=logs/v3qc_v3_A_%j.out
+#SBATCH --error=logs/v3qc_v3_A_%j.err
 
 # v3qc-v3 Phase A: replace V4 record-drop with per-cell het mask.
 # Why: V4 dropped 27% of PG records (most with valid 1/1 carriers + one 0/1 noise call).
@@ -40,11 +42,12 @@
 #   4. Re-fill-tags (AC, AN change after mask)    →  pangenie_153_hetmasked_filled_bi
 #      ↑↑↑ THIS is the file that feeds the rest of the pipeline (via haploidize) ↑↑↑
 #   5. Drop AC=0 records                          →  pangenie_153_qc_v3 (DEAD-END, NOT USED)
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 CACTUS78_BI=$BASE/v3qc_v2/cactus_78_bi.vcf.gz       # reused
 PG_FILLED=$BASE/v3qc_v2/pangenie_153_filled_bi.vcf.gz  # reused

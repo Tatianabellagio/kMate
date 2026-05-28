@@ -1,7 +1,8 @@
 import numpy as np, json
+from pathlib import Path
 from scipy.sparse import load_npz
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT=str(Path(__file__).resolve().parents[2])
 CAC=set(map(str,json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))["cactus"]))
 cn=load_npz(f"{ROOT}/poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.cn.npz").tocsr()
 meta=np.load(f"{ROOT}/poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz",allow_pickle=True)

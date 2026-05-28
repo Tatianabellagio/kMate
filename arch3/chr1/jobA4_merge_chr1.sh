@@ -1,21 +1,24 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_merge
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A4_merge_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A4_merge_%j.err
+#SBATCH --output=logs/A4_merge_%j.out
+#SBATCH --error=logs/A4_merge_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Phase 2 Job A4: merge cactus_78 + PG_153 (both Chr1 haploid biallelic) + post-merge AN=0 filter.
 # Outputs the final 231-panel for Chr1.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
 
-BCF=/home/tbellagio/miniforge3/envs/gwas/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/gwas/bin/tabix
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 CACTUS_HAP=cactus_78_chr1_haploid.vcf.gz
 PG_HAP=pg_153_chr1_haploid.vcf.gz

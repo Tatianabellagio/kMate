@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=g0_n50_build
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=32G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/g0_n50_build_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/g0_n50_build_%j.err
+#SBATCH --output=logs/g0_n50_build_%j.out
+#SBATCH --error=logs/g0_n50_build_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # g0 SUBSET pool: pick 50 of the 231 founders (seeded), equal reads each.
@@ -13,9 +16,9 @@ set -euo pipefail
 # discriminating of cn_full identifiability than the perfect 1/231 mix: the EM
 # must put mass on the RIGHT 50 and zero elsewhere.
 
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-WGSIM=/home/tbellagio/miniforge3/envs/pang/bin/wgsim
-SAMTOOLS=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/samtools
+ROOT=/global/scratch/users/tbellg/hapfire_sv
+WGSIM=/global/home/users/tbellg/miniforge3/envs/pang/bin/wgsim
+SAMTOOLS=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools
 FOUNDER_DIR=$ROOT/sims/visor_freqk/founder_fastas_231_v3
 SIM_DIR=$ROOT/sims/visor_freqk/g0_n50/cov10_g0_n50_chr1
 PERFOUNDER=$SIM_DIR/per_founder

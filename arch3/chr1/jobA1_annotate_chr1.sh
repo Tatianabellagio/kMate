@@ -1,27 +1,30 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_annot
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=03:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A1_annot_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A1_annot_%j.err
+#SBATCH --output=logs/A1_annot_%j.out
+#SBATCH --error=logs/A1_annot_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Phase 2 Job A1: run annotate_vcf on FULL Chr1 (135-sample input).
 # Produces the annotated multi-allelic VCF + biallelic catalog for Chr1.
 # These outputs feed both PG (A2) and cactus (A3) downstream jobs.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
 
-BCF=/home/tbellagio/miniforge3/envs/gwas/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/gwas/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/gwas/bin/tabix
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-ANNOTATE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+ANNOTATE=/global/scratch/users/tbellg/hapfire_sv/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
 
-GFA=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
-FULL_135_VCF=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
+GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
+FULL_135_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
 
 REGION="Chr1"   # full Chr1
 OUTPREFIX=chr1_135_annotated

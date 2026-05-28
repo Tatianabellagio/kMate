@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p231_b_sim_skew
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH --time=16:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231/logs/06b_sim_skew_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p231/logs/06b_sim_skew_%j.err
+#SBATCH --output=logs/06b_sim_skew_%j.out
+#SBATCH --error=logs/06b_sim_skew_%j.err
 
 # =============================================================================
 # control_p231 Phase B' (skewed) -- cov10 sim on the 231 panel with ONE DOMINANT
@@ -25,10 +27,10 @@ SEED=${3:-42}
 DOMINANT_FRAC=${4:-50.0}
 COVERAGE=10; CHROMS="Chr1"
 
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
+ROOT=/global/scratch/users/tbellg/hapfire_sv
 CTRL=$ROOT/control_p231
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 SCRIPTS=$CTRL/scripts
 
 DOM_TAG="dom$(echo $DOMINANT_FRAC | tr -d '.')"

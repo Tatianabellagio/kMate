@@ -19,7 +19,7 @@ import pandas as pd
 
 
 def main():
-    base = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/results")
+    base = Path(__file__).resolve().parents[1] / "results"
     gw = base / "seedmix_231_v2" / "SEEDMIX_S1.tsv"
     pc = base / "seedmix_231_v2_perchrom" / "SEEDMIX_S1.tsv"
     if not gw.exists():

@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=build_bldhap_grp
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=96G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/block_haplotype_cn/build_chr1_mxdiv%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/block_haplotype_cn/build_chr1_mxdiv%j.err
+#SBATCH --output=logs/build_chr1_mxdiv%j.out
+#SBATCH --error=logs/build_chr1_mxdiv%j.err
 
 # Build per-block haplotype-level cn matrix for Chr1 with PHG-style allele
 # grouping (k-mer Jaccard distance threshold). Pass MXDIV via --export, or
@@ -14,8 +16,9 @@
 # Usage:
 #   sbatch --export=ALL,MXDIV=0.05 run_build_block_haplotype_cn_grouped.sh
 #   sbatch --export=ALL,MXDIV=0.05,MAX_BLOCKS=50 ...   # for quick smoke
+mkdir -p logs
 set -uo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv
+cd /global/scratch/users/tbellg/hapfire_sv
 
 MXDIV=${MXDIV:-0.0}
 MAF=${MAF:-0.0}
@@ -33,7 +36,7 @@ else
     TAG=$(IFS=_; echo "${TAG_PARTS[*]}")
 fi
 
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 EXTRA=""
 if [[ "$MAX_BLOCKS" -gt 0 ]]; then
     EXTRA="--max-blocks $MAX_BLOCKS"

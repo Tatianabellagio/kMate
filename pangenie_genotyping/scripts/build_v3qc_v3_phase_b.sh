@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=v3qc_v3_B
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_v3_B_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/v3qc_v3_B_%j.err
+#SBATCH --output=logs/v3qc_v3_B_%j.out
+#SBATCH --error=logs/v3qc_v3_B_%j.err
 
 # v3qc-v3 Phase B: merge cactus_78_bi (haploid) + pangenie_153_hetmasked_haploid → re-decompose → AC=0 cleanup.
 # Same logic as v3qc_v2 Phase B but on the het-masked PG side.
@@ -17,12 +19,13 @@
 # cactus-private variants. The AC=0 cleanup is properly done POST-MERGE (Step 4 below).
 # See header comment in build_v3qc_v3_phase_a.sh for full data-flow diagram.
 # ============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 
 CACTUS78_BI=$BASE/v3qc_v3/cactus_78_bi.vcf.gz
 # PG-side input: the haploidized het-masked PG file.
@@ -88,7 +91,7 @@ echo "  records after AC=0:  $N_FINAL"
 echo ""
 echo "=== F_MISSING distribution on founders_231_v3qc_v3 (Chr1) ==="
 $BCF query -r Chr1 -f '%INFO/F_MISSING\n' $FINAL | \
-/home/tbellagio/miniforge3/envs/hapfm/bin/python -c "
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -c "
 import sys, numpy as np
 fm = np.array([float(x.strip()) for x in sys.stdin if x.strip()])
 N = len(fm)

@@ -1,20 +1,23 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_cnvar
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=128G
 #SBATCH --time=02:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A5_cnvar_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A5_cnvar_%j.err
+#SBATCH --output=logs/A5_cnvar_%j.out
+#SBATCH --error=logs/A5_cnvar_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Phase 2 Job A5: build cn_var matrices from the NEW Chr1 merged panel.
 # Outputs: cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz
 # These feed cactus_em via per_sample_per_chrom.py.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-BUILD_CN=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/src/build_cn_var.py
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+BUILD_CN=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src/build_cn_var.py
 VCF=merged_231_chr1_final.vcf.gz
 OUT_PREFIX=cn_var_231_arch3_chr1
 

@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=loo_imp_concord
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_imp_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/loo_imp_%A_%a.err
+#SBATCH --output=logs/loo_imp_%A_%a.out
+#SBATCH --error=logs/loo_imp_%A_%a.err
 
 # =============================================================================
 # loo_concord_imputed_one.sh — re-run LOO concordance on imputed merged VCF
@@ -17,12 +19,13 @@
 # Output: data/loo_concordance_imputed/<eco>_summary.tsv (same schema as the
 # pre-imputation loo_concordance/ TSVs).
 # =============================================================================
+mkdir -p logs
 set -eo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/loo_ena_manifest.tsv
 GT_DIR=$BASE/data/loo_genotyped
-TRUTH_VCF=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/imputation/work_merged/founders_231_imputed_multiallelic.vcf.gz
+TRUTH_VCF=/global/scratch/users/tbellg/hapfire_sv/imputation/work_merged/founders_231_imputed_multiallelic.vcf.gz
 OUT_DIR=$BASE/data/loo_concordance_imputed
 mkdir -p $OUT_DIR
 
@@ -42,7 +45,7 @@ fi
 
 # In the imputed merged VCF, sample names are 1001G ecotype IDs (renamed in
 # merge_vcfs.sh Step A). So truth-sample == sample.
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 echo "[$(date)] $ECOTYPE: loo_concordance vs imputed truth"
 $PYTHON $BASE/scripts/loo_concordance.py \
     --pangenie-vcf $PG_VCF \

@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_atomize
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=128G
 #SBATCH --time=02:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/D1_atomize_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/D1_atomize_%j.err
+#SBATCH --output=logs/D1_atomize_%j.out
+#SBATCH --error=logs/D1_atomize_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Build atomized cn_var from the merged Arch 3 chr1 biallelic VCF.
@@ -13,8 +16,8 @@ set -euo pipefail
 # carriers UNIONed across all source records that imply it. MNPs and overlapping
 # region of INS/DEL contribute; pure INS/DEL beyond the alignment overlap do not.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 VCF=merged_231_chr1_final.vcf.gz
 OUT_PREFIX=cn_var_231_arch3_chr1_atomized
 

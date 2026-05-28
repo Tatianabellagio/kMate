@@ -26,6 +26,9 @@ from block_solver import solve_block_irls, solve_block_wls
 from kmer_count import count_kmers_in_fasta
 
 
+_PROJ_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+
 def main():
     DATA = os.path.join(os.path.dirname(__file__), "..", "data")
     print("="*70)
@@ -43,18 +46,18 @@ def main():
 
     # 2. Map our 82 panel founders to 1001G IDs and check GrENE-overlap
     panel_map = pd.read_csv(
-        "/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/sv_panel_to_accession_id.tsv",
+        os.path.join(_PROJ_ROOT, "data/sv_panel_to_accession_id.tsv"),
         sep="\t",
     )
     asm_to_1001g = dict(zip(panel_map.Assembly_ID.astype(str), panel_map.Accession_ID.astype(str)))
     panel_1001g_ids = [asm_to_1001g.get(str(f), None) for f in founders]
-    grenenet = set(open("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/vcf_samples_231.txt").read().split())
+    grenenet = set(open(os.path.join(_PROJ_ROOT, "data/vcf_samples_231.txt")).read().split())
     is_grenenet = np.array([fid in grenenet if fid else False for fid in panel_1001g_ids])
     print(f"    {is_grenenet.sum()} of {F} panel founders are GrENE-Net 231 members")
 
     # 3. SEEDMIX recipe
     recipe = pd.read_csv(
-        "/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/seedmix_recipe_normalized.tsv",
+        os.path.join(_PROJ_ROOT, "data/seedmix_recipe_normalized.tsv"),
         sep="\t",
     )
     recipe_dict = dict(zip(recipe.ID.astype(str), recipe.seed_prop))
@@ -70,7 +73,7 @@ def main():
     print(f"    expected effective n founders (1/Σh²): {1/np.sum(expected_h**2):.1f}")
 
     # 4. Find SEEDMIX_S1 fastq pair
-    SEED_DIR = "/home/tbellagio/scratch/pang/grenenet_reads/seed_mix"
+    SEED_DIR = "/global/home/users/tbellg/scratch/pang/grenenet_reads/seed_mix"
     fq1 = os.path.join(SEED_DIR, "S1-1.1_P.fq.gz")
     fq2 = os.path.join(SEED_DIR, "S1-1.2_P.fq.gz")
     assert os.path.exists(fq1) and os.path.exists(fq2)

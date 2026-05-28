@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-RES = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/results")
+RES = Path(__file__).resolve().parents[1] / "results"
 
 def load_chrom(chrom):
     ac_f = RES / f"ac_split_{chrom}.tsv.gz"

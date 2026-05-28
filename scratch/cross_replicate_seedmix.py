@@ -7,7 +7,7 @@ real methodological bias.
 
 Inputs:
   cactus_em h: scratch/seedmix_v3_dedup/SEEDMIX_S{1..8}.h_per_chrom.npz (Chr1-5 each)
-  hapFIRE h:   /carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s{1..8}_ecotype_frequency.txt
+  hapFIRE h:   /global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s{1..8}_ecotype_frequency.txt
   panel split: data/founder_split_cactus_pg.json
   founder order: data/vcf_samples_231.txt
 
@@ -31,7 +31,7 @@ ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
 SAMPLES_FILE = ROOT / 'data/vcf_samples_231.txt'
 SPLIT_FILE = ROOT / 'data/founder_split_cactus_pg.json'
 CEM_DIR = ROOT / 'scratch/seedmix_v3_dedup'
-HF_DIR = Path('/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix')
+HF_DIR = Path('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix')
 OUT_DIR = ROOT / 'scratch/cross_replicate_plots'
 OUT_DIR.mkdir(exist_ok=True)
 TRUTH = 1.0 / 231

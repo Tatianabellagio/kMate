@@ -6,8 +6,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv')
-HF_DIR = Path('/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix')
+ROOT = Path(__file__).resolve().parent
+HF_DIR = Path('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix')
 cactus_set = set(json.load(open(ROOT / 'data/founder_split_cactus_pg.json'))['cactus']) - {'5772', '9947'}
 
 def load_cem_h(d, s):

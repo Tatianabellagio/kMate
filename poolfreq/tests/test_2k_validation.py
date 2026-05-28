@@ -17,6 +17,7 @@ from kmer_count import count_kmers_in_fasta
 
 
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
+_PROJ_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
 def solve_wls(counts, cn, coverage):
@@ -85,13 +86,13 @@ def main():
 
     # Helpers for truth lookup
     panel_map = pd.read_csv(
-        "/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/sv_panel_to_accession_id.tsv",
+        os.path.join(_PROJ_ROOT, "data/sv_panel_to_accession_id.tsv"),
         sep="\t",
     )
     asm_to_1001g = dict(zip(panel_map.Assembly_ID.astype(str), panel_map.Accession_ID.astype(str)))
-    grenenet = set(open("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/vcf_samples_231.txt").read().split())
+    grenenet = set(open(os.path.join(_PROJ_ROOT, "data/vcf_samples_231.txt")).read().split())
     recipe = pd.read_csv(
-        "/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/seedmix_recipe_normalized.tsv", sep="\t"
+        os.path.join(_PROJ_ROOT, "data/seedmix_recipe_normalized.tsv"), sep="\t"
     )
     recipe_dict = dict(zip(recipe.ID.astype(str), recipe.seed_prop))
 
@@ -152,8 +153,8 @@ def main():
     print(f"  recipe panel mass: {panel_total*100:.1f}%, expected effective n: {1/np.sum(h_true**2):.1f}")
 
     counts = get_or_count("seedmix_S1",
-                           ["/home/tbellagio/scratch/pang/grenenet_reads/seed_mix/S1-1.1_P.fq.gz",
-                            "/home/tbellagio/scratch/pang/grenenet_reads/seed_mix/S1-1.2_P.fq.gz"],
+                           ["/global/home/users/tbellg/scratch/pang/grenenet_reads/seed_mix/S1-1.1_P.fq.gz",
+                            "/global/home/users/tbellg/scratch/pang/grenenet_reads/seed_mix/S1-1.2_P.fq.gz"],
                            kmer_index)
     cov = counts.sum() * F / ac.sum()
     print(f"  cov={cov:.1f}×, nonzero kmers: {(counts>0).sum():,}")

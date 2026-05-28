@@ -1,21 +1,24 @@
 #!/bin/bash
 #SBATCH --job-name=rn_v3qc_v2
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=64G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/rn_v3qc_v2_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/rn_v3qc_v2_%A_%a.err
+#SBATCH --output=logs/rn_v3qc_v2_%A_%a.out
+#SBATCH --error=logs/rn_v3qc_v2_%A_%a.err
 
 # Row-normalize cn_full_231_v3qc_v2 → cn_full_231_v3qc_v2_rownorm (per-chrom array)
 # Each founder's row sums to 1.0 → equal "evidence budget" per founder.
 # Chr1 already built by build_cn_full_rownorm_v3qc_v2_chr1.sh — this generalizes.
+mkdir -p logs
 set -euo pipefail
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR="Chr${SLURM_ARRAY_TASK_ID:-2}"
 
-SRC=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2
-OUT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm
+SRC=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2
+OUT=/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm
 mkdir -p $OUT
 
 [ -s "$SRC/cn_${CHR}.cn.npz" ] || { echo "ERROR: missing $SRC/cn_${CHR}.cn.npz"; exit 1; }

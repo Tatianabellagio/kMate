@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-RES = Path("/carnegie/nobackup/scratch/tbellagio/hapfire_sv/panel_overlap_135_vs_82/results")
+RES = Path(__file__).resolve().parents[1] / "results"
 
 ac = pd.read_csv(RES / "ac_split_Chr1.tsv.gz", sep="\t")
 pg = pd.read_csv(RES / "ac_pg151_Chr1.tsv.gz", sep="\t")

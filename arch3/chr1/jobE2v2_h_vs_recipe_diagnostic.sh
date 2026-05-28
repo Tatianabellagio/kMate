@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_hdiag2
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=24G
 #SBATCH --time=00:20:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/E2v2_hdiag_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/E2v2_hdiag_%j.err
+#SBATCH --output=logs/E2v2_hdiag_%j.out
+#SBATCH --error=logs/E2v2_hdiag_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Fast version of the h-vs-recipe diagnostic — fully vectorized.
@@ -13,8 +16,8 @@ set -euo pipefail
 # carrier_hbias[r] = mean_h(carriers) / mean(h) - 1
 # Then correlate carrier_hbias with (arch3_af - recipe_af) at outlier records.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY -u <<'PYEOF'
 import numpy as np
@@ -22,12 +25,12 @@ from scipy.sparse import load_npz
 import json
 
 print('=== Load h + cn_var ===')
-h_data = np.load('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
+h_data = np.load('/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
 h = h_data['Chr1'].astype(np.float64)
 h_founders = list(h_data['founders'])
 F = len(h)
 
-with open('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/data/founder_split_cactus_pg.json') as f:
+with open('/global/scratch/users/tbellg/hapfire_sv/data/founder_split_cactus_pg.json') as f:
     split = json.load(f)
 is_cactus = np.array([str(s) in set(map(str, split['cactus'])) for s in h_founders])
 is_pg = np.array([str(s) in set(map(str, split['PG'])) for s in h_founders])

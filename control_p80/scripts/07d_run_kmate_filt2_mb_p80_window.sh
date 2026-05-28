@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p80_mbw
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=96G
 #SBATCH --time=6:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/07d_mbw_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/07d_mbw_%j.err
+#SBATCH --output=logs/07d_mbw_%j.out
+#SBATCH --error=logs/07d_mbw_%j.err
 
 # =============================================================================
 # Front-runner test, WINDOW (10 kb / star2) mode + ω=1/m_b weighting on p80.
@@ -17,6 +19,7 @@
 #   REGIME = n50_g0 n200_g0 n231_g0 n50_g1 n200_g1 n231_g1 n50_g3 n50_g3_dom500
 #   WEIGHT = inv_mb (default) | uniform
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 REGIME=${1:?Usage: REGIME [WEIGHT]}
 WEIGHT=${2:-inv_mb}
@@ -24,9 +27,9 @@ WEIGHT=${2:-inv_mb}
 [[ "$WEIGHT" == "inv_mb" ]] && WTAG="filt2mbW" || WTAG="filt2uW"
 [[ "$WEIGHT" == "inv_mb" ]] && ODIR="cactus_em_window_filt2_mb" || ODIR="cactus_em_window_filt2_uniform"
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-DRIVER=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/src/per_sample_per_chrom.py
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+DRIVER=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src/per_sample_per_chrom.py
 COV=10; SEED=42
 
 case "$REGIME" in

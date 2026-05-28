@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p80_a3_cnfull
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=8:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/03_cn_full_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/03_cn_full_%j.err
+#SBATCH --output=logs/03_cn_full_%j.out
+#SBATCH --error=logs/03_cn_full_%j.err
 
 # =============================================================================
 # Phase A3 -- Build cn_full_p80/cn_Chr1.{cn,meta}.npz
@@ -17,15 +19,16 @@
 # index) would mismatch bubble topology and silently produce wrong cn_full
 # reconstructions.
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+BASE=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 KMERS=$BASE/pangenie_genotyping/data/pang_135_pangenie_index_Chr1_kmers.tsv.gz
 VCF=$CTRL/data/pangenome_p80_chr1.vcf.gz
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$CTRL/data/cn_full_p80
 OUT_PREFIX=$OUT_DIR/cn_Chr1
 mkdir -p $OUT_DIR

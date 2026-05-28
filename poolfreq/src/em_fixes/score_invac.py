@@ -5,13 +5,14 @@ Outputs a per-gamma table for the 5 g0 sims + SEEDMIX 8-rep average.
 """
 from __future__ import annotations
 import csv, collections, glob, json, os
+from pathlib import Path
 import numpy as np
 
-REPO = "/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+REPO = str(Path(__file__).resolve().parents[3])
 INVAC = f"{REPO}/scratch/h_fixes/invac"
 SPLIT = json.load(open(f"{REPO}/data/founder_split_cactus_pg.json"))
 CACT = set(map(str, SPLIT["cactus"]))
-HAPFIRE = "/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix"
+HAPFIRE = "/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix"
 
 GAMMAS = ["0", "0.25", "0.5", "0.75", "1"]
 G0_SIMS = ["g0_n231_rep0_rand", "g0_n200_rep0_rand",

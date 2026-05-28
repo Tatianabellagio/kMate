@@ -1,22 +1,24 @@
 #!/bin/bash
 #SBATCH --job-name=subsample_h
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=3:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/subsample_h_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/subsample_h_%j.err
+#SBATCH --output=logs/subsample_h_%j.out
+#SBATCH --error=logs/subsample_h_%j.err
 
 set -euo pipefail
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+ROOT=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 OUT_DIR=$ROOT/scratch/subsample_h_test
 mkdir -p $OUT_DIR $ROOT/poolfreq/tests/logs
 mkdir -p $ROOT/poolfreq/data/cn_full_231_v3qc_v3_subsampMedian_refilt2
 mkdir -p $ROOT/poolfreq/data/cn_full_231_v3qc_v3_filt2_subsampMedian
 
-READS1=/carnegie/nobackup/scratch/tbellagio/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_1.dedup.fq.gz
-READS2=/carnegie/nobackup/scratch/tbellagio/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_2.dedup.fq.gz
+READS1=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_1.dedup.fq.gz
+READS2=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_2.dedup.fq.gz
 
 echo "=== 1. Subsample raw v3qc_v3 → median-per-stratum + refilt2 ==="
 $PY -u $ROOT/poolfreq/src/build_subsampled_cn.py \

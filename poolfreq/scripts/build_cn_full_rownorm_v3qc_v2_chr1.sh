@@ -1,26 +1,29 @@
 #!/bin/bash
 #SBATCH --job-name=rownorm_v3qc_v2
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=64G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/rownorm_v3qc_v2_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/rownorm_v3qc_v2_%j.err
+#SBATCH --output=logs/rownorm_v3qc_v2_%j.out
+#SBATCH --error=logs/rownorm_v3qc_v2_%j.err
 
 # Build a row-normalized cn_full from cn_full_231_v3qc_v2 — each founder's row
 # sums to 1. Saved as float32. Then EM with this cn_full uses equal per-founder
 # "evidence budget" so PG founders aren't penalized for lower K_f.
 #
 # Test on Chr1 only first to see if it rebalances h.
+mkdir -p logs
 set -euo pipefail
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 $PY << 'EOF'
 import numpy as np
 from scipy.sparse import load_npz, save_npz, csr_matrix
 from pathlib import Path
 
-SRC_DIR = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
-OUT_DIR = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm')
+SRC_DIR = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
+OUT_DIR = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm')
 OUT_DIR.mkdir(exist_ok=True)
 
 chrom = 'Chr1'
@@ -54,4 +57,4 @@ shutil.copy(SRC_DIR / f'cn_{chrom}.meta.npz', OUT_DIR / f'cn_{chrom}.meta.npz')
 print(f'  saved to {OUT_DIR}/cn_{chrom}.{{cn,meta}}.npz')
 EOF
 echo "[$(date)] DONE"
-ls -lh /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm/
+ls -lh /global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_rownorm/

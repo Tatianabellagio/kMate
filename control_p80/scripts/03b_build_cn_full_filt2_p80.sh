@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p80_a3b_filt2
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=32G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/03b_filt2_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/03b_filt2_%j.err
+#SBATCH --output=logs/03b_filt2_%j.out
+#SBATCH --error=logs/03b_filt2_%j.err
 
 # =============================================================================
 # Phase A3b -- Build cn_full_p80_filt2 by post-filtering cn_full_p80.
@@ -13,10 +15,11 @@
 # meta arrays whose first dim equals K are subset by the same mask.
 # Idempotent: skips if outputs already exist.
 # =============================================================================
+mkdir -p logs
 set -uo pipefail
 
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
 SRC=$CTRL/data/cn_full_p80
 OUT=$CTRL/data/cn_full_p80_filt2
 mkdir -p $OUT

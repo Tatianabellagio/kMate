@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=audit_cnvar
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=96G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/audit_cnvar_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/audit_cnvar_%j.err
+#SBATCH --output=logs/audit_cnvar_%j.out
+#SBATCH --error=logs/audit_cnvar_%j.err
+mkdir -p logs
 set -euo pipefail
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-$PY -u /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/scripts/audit_cn_var_v3qc_v3.py
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+$PY -u /global/scratch/users/tbellg/hapfire_sv/poolfreq/scripts/audit_cn_var_v3qc_v3.py

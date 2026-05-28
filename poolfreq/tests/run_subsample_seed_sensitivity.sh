@@ -1,18 +1,21 @@
 #!/bin/bash
 #SBATCH --job-name=subsamp_seeds
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/subsamp_seeds_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/subsamp_seeds_%j.err
+#SBATCH --output=logs/subsamp_seeds_%j.out
+#SBATCH --error=logs/subsamp_seeds_%j.err
 
+mkdir -p logs
 set -euo pipefail
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+ROOT=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 OUT_DIR=$ROOT/scratch/subsample_h_test
-READS1=/carnegie/nobackup/scratch/tbellagio/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_1.dedup.fq.gz
-READS2=/carnegie/nobackup/scratch/tbellagio/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_2.dedup.fq.gz
+READS1=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_1.dedup.fq.gz
+READS2=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_2.dedup.fq.gz
 
 for SEED in 1 7 100; do
     echo "=== Seed $SEED: subsample raw v3qc_v3 → refilt2 → EM ==="

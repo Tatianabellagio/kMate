@@ -12,9 +12,10 @@ Usage: score_g0_sweep.py [tag1 tag2 ...]   (default: filt2 subsamp protect1 prot
 """
 import csv, math, sys, glob, os
 from collections import defaultdict
+from pathlib import Path
 import numpy as np
 
-ROOT = "/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT = str(Path(__file__).resolve().parents[2])
 OUT_DIR = f"{ROOT}/scratch/g0_sweep_h_test"
 PF = f"{ROOT}/scratch/g0_sweep_per_founder.tsv"
 

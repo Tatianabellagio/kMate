@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=pg_missing
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/pg_missing_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/pg_missing_%j.err
+#SBATCH --output=logs/pg_missing_%j.out
+#SBATCH --error=logs/pg_missing_%j.err
 
 # Quantify missingness in pangenie_153_qc_v2 across:
 #  - global F_MISSING distribution
@@ -18,10 +20,11 @@
 # If PG missing rate <5%, then k-mer imbalance comes mostly from long-read vs
 # short-read modality (not from ./.), and Beagle won't fix the bias.
 
+mkdir -p logs
 set -euo pipefail
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/v3qc_v2
-OUT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/v3qc_v2/missingness_report
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/v3qc_v2
+OUT=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data/v3qc_v2/missingness_report
 
 PG=$BASE/pangenie_153_qc_v2.vcf.gz
 CACTUS=$BASE/cactus_78_bi.vcf.gz

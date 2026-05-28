@@ -7,7 +7,7 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 
 N=$(awk -F'\t' 'NR>1' "$MANIFEST" | wc -l)
@@ -19,7 +19,7 @@ JOB=$(sbatch --parsable \
 echo "Submitted job array $JOB (1..$N, max 8 concurrent)"
 echo ""
 echo "Watch progress:"
-echo "  squeue -u tbellagio | grep preprocess"
+echo "  squeue -u tbellg | grep preprocess"
 echo "  tail -f $BASE/logs/prep_${JOB}_*.out"
 echo ""
 echo "After all done, launch PanGenie (Stage 3) — but only after pang_69 + indexing finish:"

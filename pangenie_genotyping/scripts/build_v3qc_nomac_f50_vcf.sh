@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=nomac_f50
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=3:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/nomac_f50_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/nomac_f50_%j.err
+#SBATCH --output=logs/nomac_f50_%j.out
+#SBATCH --error=logs/nomac_f50_%j.err
 
 # Build a v3qc-style merged + haploid VCF SKIPPING PG-MAC step and applying F_MISSING<=0.5.
 # Pipeline:
@@ -14,12 +16,13 @@
 #   drop records where AC=0 OR F_MISSING > 0.5
 #   norm -m -any + haploidize (same convention as v3 / v3qc)
 # Output: founders_231_v3qc_noMAC_F50.haploid.vcf.gz
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-BGZIP=/home/tbellagio/miniforge3/envs/pang/bin/bgzip
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+BGZIP=/global/home/users/tbellg/miniforge3/envs/pang/bin/bgzip
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 CACTUS78=$BASE/data/v3qc_tmp/cactus_78.vcf.gz
 PG_QC=$BASE/data/v3qc/pangenie_153_qc.vcf.gz

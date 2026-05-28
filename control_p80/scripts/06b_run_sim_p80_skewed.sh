@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p80_b_sim_skew
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=128G
 #SBATCH --time=12:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/06b_sim_skew_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/06b_sim_skew_%j.err
+#SBATCH --output=logs/06b_sim_skew_%j.out
+#SBATCH --error=logs/06b_sim_skew_%j.err
 
 # =============================================================================
 # Phase B' (skewed) -- recombinant cov10 sim on p80 with ONE DOMINANT individual.
@@ -32,9 +34,9 @@ DOMINANT_FRAC=${4:-50.0}
 COVERAGE=10
 CHROMS="Chr1"
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
-REF=/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 SCRIPTS=$CTRL/scripts
 
 DOM_TAG="dom$(echo $DOMINANT_FRAC | tr -d '.')"
@@ -45,7 +47,7 @@ CACTUS_DIR=$CTRL/fastas_80
 FOUNDERS_META=$CTRL/data/cn_full_p80/cn_Chr1.meta.npz
 CN_VAR=$CTRL/data/cn_var_p80.cn_var.npz
 CN_VAR_META=$CTRL/data/cn_var_p80.meta.npz
-HF_BLOCK_INDEX=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/sims/visor_freqk/chr1_only_panel/hapfire_block_index_chr1.npz
+HF_BLOCK_INDEX=/global/scratch/users/tbellg/hapfire_sv/sims/visor_freqk/chr1_only_panel/hapfire_block_index_chr1.npz
 
 for f in "$CACTUS_DIR" "$FOUNDERS_META" "$CN_VAR" "$CN_VAR_META" "$HF_BLOCK_INDEX"; do
     [ -e "$f" ] || { echo "ERROR: missing $f" >&2; exit 1; }
@@ -146,7 +148,7 @@ echo "[$(date)] reads: $(du -h ${READS_DIR}/r1.fq ${READS_DIR}/r2.fq | tail -2)"
 # -----------------------------------------------------------------------------
 echo
 echo "[$(date)] STAGE 3: per-record truth (skewed visor fractions)"
-$PYTHON /carnegie/nobackup/scratch/tbellagio/hapfire_sv/sims/visor_freqk/scripts/compute_recomb_truth.py \
+$PYTHON /global/scratch/users/tbellg/hapfire_sv/sims/visor_freqk/scripts/compute_recomb_truth.py \
     --ancestry $WORK/ancestry.tsv \
     --weights  $WORK/visor_pool_fractions.tsv \
     --cn-var   $CN_VAR \

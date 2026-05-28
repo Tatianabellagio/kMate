@@ -5,17 +5,19 @@ Cactus founders without a 1001G counterpart are dropped. Output cn_var has
 a subset of cactus founders that DO map to 1001G IDs.
 """
 import argparse
+from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.sparse import load_npz, save_npz
 
 
 def main():
+    _root = Path(__file__).resolve().parents[2]
     ap = argparse.ArgumentParser()
-    ap.add_argument('--cn-var', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_82.cn_var.npz')
-    ap.add_argument('--cn-var-meta', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_82.meta.npz')
-    ap.add_argument('--rename-map', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/imputation/work/sample_rename.txt')
-    ap.add_argument('--out-prefix', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_82_renamed_to_1001g')
+    ap.add_argument('--cn-var', default=str(_root / 'poolfreq/data/cn_var_82.cn_var.npz'))
+    ap.add_argument('--cn-var-meta', default=str(_root / 'poolfreq/data/cn_var_82.meta.npz'))
+    ap.add_argument('--rename-map', default=str(_root / 'imputation/work/sample_rename.txt'))
+    ap.add_argument('--out-prefix', default=str(_root / 'poolfreq/data/cn_var_82_renamed_to_1001g'))
     args = ap.parse_args()
 
     cn = load_npz(args.cn_var)        # F × N

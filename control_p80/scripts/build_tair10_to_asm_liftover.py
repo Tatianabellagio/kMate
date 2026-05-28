@@ -55,8 +55,8 @@ def main():
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--preset", default="asm5", help="minimap2 -x preset (asm5/asm10/asm20)")
     ap.add_argument("--threads", type=int, default=8)
-    ap.add_argument("--minimap2", default="/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/minimap2")
-    ap.add_argument("--samtools", default="/home/tbellagio/miniforge3/envs/pang/bin/samtools")
+    ap.add_argument("--minimap2", default="/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/minimap2")
+    ap.add_argument("--samtools", default="/global/home/users/tbellg/miniforge3/envs/pang/bin/samtools")
     ap.add_argument("--asm-id", default=None, help="process only this asm_id (SLURM array)")
     args = ap.parse_args()
 

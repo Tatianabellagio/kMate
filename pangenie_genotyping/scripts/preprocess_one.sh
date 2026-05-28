@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=preprocess
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/prep_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/prep_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/prep_%A_%a.out
+#SBATCH --error=logs/prep_%A_%a.err
 
 # =============================================================================
 # preprocess_one.sh
@@ -20,10 +23,11 @@
 #
 # Indexed by SLURM_ARRAY_TASK_ID over manifest rows (any source_type).
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-}"
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 RAW_DIR=$BASE/data/raw_fastqs
 PREP_DIR=$BASE/data/preprocessed
@@ -84,9 +88,9 @@ fi
 #   ILLUMINACLIP:TruSeq3-PE-2.fa:2:30:10:8:TRUE  (paired) or
 #   ILLUMINACLIP:TruSeq3-SE.fa:2:30:10            (single)
 #   SLIDINGWINDOW:4:20  LEADING:5  TRAILING:5  MINLEN:36
-TRIM=/home/tbellagio/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/trimmomatic.jar
-ADAPT_PE=/home/tbellagio/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/adapters/TruSeq3-PE-2.fa
-ADAPT_SE=/home/tbellagio/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/adapters/TruSeq3-SE.fa
+TRIM=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/trimmomatic.jar
+ADAPT_PE=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/adapters/TruSeq3-PE-2.fa
+ADAPT_SE=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/adapters/TruSeq3-SE.fa
 TRIMMED_DIR=$PREP_DIR/${ECOTYPE}_trim
 mkdir -p $TRIMMED_DIR
 TRIM_R1=$TRIMMED_DIR/${ECOTYPE}_1P.fq.gz
@@ -95,6 +99,7 @@ TRIM_U1=$TRIMMED_DIR/${ECOTYPE}_1U.fq.gz
 TRIM_U2=$TRIMMED_DIR/${ECOTYPE}_2U.fq.gz
 
 # Trimmomatic — exact thresholds from xwu's 1001G command at
+# TODO: preprocessing history file, not migrating — see PIPELINE_FASTQ_PREPROCESSING.md
 # /carnegie/nobackup/scratch/xwu/GrENE_net/vcf/sra/commands.sh
 # (lighter trim than the GrENE Pool-seq pipeline: minAdapterLength=2 and no
 # SLIDINGWINDOW; 1001G data was already lower quality at the ends and
@@ -115,7 +120,7 @@ fi
 
 # Step C: Clumpify dedup (same as GrENE-Net)
 # Note: sequencing_pipeline env doesn't have clumpify; use pang env's BBTools install
-CLUMPIFY=/home/tbellagio/miniforge3/envs/pang/bin/clumpify.sh
+CLUMPIFY=/global/home/users/tbellg/miniforge3/envs/pang/bin/clumpify.sh
 if [ -n "$RAW_R2" ]; then
     $CLUMPIFY in=$TRIM_R1 in2=$TRIM_R2 \
         out=$OUT_R1 out2=$OUT_R2 \

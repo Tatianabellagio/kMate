@@ -1,25 +1,28 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_atomcmp
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=24G
 #SBATCH --time=00:30:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/D2_atomcmp_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/D2_atomcmp_%j.err
+#SBATCH --output=logs/D2_atomcmp_%j.out
+#SBATCH --error=logs/D2_atomcmp_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Re-project SEEDMIX_S1 h_v3 through the ATOMIZED cn_var, then compare to hapFIRE
 # on the 4-tuple (chrom, pos, ref, alt) join. Quantify encoding-disagreement reduction.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-H_PATH=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
+H_PATH=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
 CN_VAR=cn_var_231_arch3_chr1_atomized.cn_var.npz
 CN_VAR_CALLED=cn_var_231_arch3_chr1_atomized.cn_var_called.npz
 CN_VAR_META=cn_var_231_arch3_chr1_atomized.meta.npz
-HAPFIRE=/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
-HAPFIRE_VCF=/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/greneNet_final_v1.1.recode.vcf
+HAPFIRE=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
+HAPFIRE_VCF=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf
 
 for f in $H_PATH $CN_VAR $CN_VAR_CALLED $CN_VAR_META $HAPFIRE $HAPFIRE_VCF; do
   [ -s "$f" ] || { echo "ERROR: missing $f"; exit 1; }

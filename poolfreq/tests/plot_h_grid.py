@@ -4,9 +4,10 @@ x = founder rank sorted by truth h ascending (hapFIRE for SEEDMIX); gray=truth, 
 orange=PG est, dashed=present-founder truth level. Title: regime/method + MAE, spurious_h(absent),
 cact_sum truth->est."""
 import numpy as np, csv, json, math, glob, os
+from pathlib import Path
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 
-ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"; HF=f"{ROOT}/scratch/h_fixes"
+ROOT=str(Path(__file__).resolve().parents[2]); HF=f"{ROOT}/scratch/h_fixes"
 G0S="g0_sweep_h_test"; SMD="seedmix_h_test"
 CAC=set(map(str,json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))["cactus"]))
 truth={}
@@ -14,7 +15,7 @@ for d in csv.DictReader(open(f"{ROOT}/scratch/g0_sweep_per_founder.tsv"),delimit
     truth.setdefault(d["sim"],{})[d["founder"]]=float(d["truth"])
 hf_reps=[]
 for s in range(1,9):
-    p=f"/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s{s}_ecotype_frequency.txt"
+    p=f"/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s{s}_ecotype_frequency.txt"
     if os.path.exists(p):
         hd={}
         for ln in open(p):

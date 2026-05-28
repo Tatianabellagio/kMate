@@ -1,20 +1,23 @@
 #!/bin/bash
 #SBATCH --job-name=count_nomac
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=1:30:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/count_nomac_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/count_nomac_%j.err
+#SBATCH --output=logs/count_nomac_%j.out
+#SBATCH --error=logs/count_nomac_%j.err
 
 # Compute F_MISSING distribution if we drop PG-MAC<2:
 #   merge cactus_78 (5.2M records) + pangenie_153_qc (3.5M, post-V4 only) → ~5.2M merged
 #   +fill-tags F_MISSING on merged
 #   Count records by F_MISSING bucket (Chr1 only for speed)
+mkdir -p logs
 set -euo pipefail
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping/data
 
 CACTUS78=$BASE/v3qc_tmp/cactus_78.vcf.gz
 PG_QC=$BASE/v3qc/pangenie_153_qc.vcf.gz
@@ -32,7 +35,7 @@ $BCF merge $CACTUS78 $PG_QC -r Chr1 --threads 4 2>/dev/null | \
 echo "[$(date)] DONE: $(wc -l < $OUT_TSV) records → $OUT_TSV"
 
 # Summarize
-/home/tbellagio/miniforge3/envs/hapfm/bin/python << EOF
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python << EOF
 import numpy as np
 data = np.loadtxt("$OUT_TSV", dtype=str)
 fm = data[:,0].astype(float)

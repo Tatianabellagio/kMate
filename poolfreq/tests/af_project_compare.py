@@ -3,8 +3,9 @@
 compare est vs truth. For the 2 finalist methods on the g0 replicate sims.
 AF_r = (h . cn_var)_r / (h . cn_var_called)_r   (MAR projection)."""
 import numpy as np, glob, os, math
+from pathlib import Path
 from scipy.sparse import load_npz
-ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+ROOT=str(Path(__file__).resolve().parents[2])
 CV=f"{ROOT}/arch3/chr1/cn_var_231_arch3_chr1"
 print("loading cn_var ...",flush=True)
 cn_var=load_npz(f"{CV}.cn_var.npz").tocsc()

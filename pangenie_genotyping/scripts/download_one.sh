@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=ena_dl
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=4G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/dl_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/dl_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/dl_%A_%a.out
+#SBATCH --error=logs/dl_%A_%a.err
 
 # =============================================================================
 # Download one ecotype's fastq(s) from ENA, indexed by SLURM_ARRAY_TASK_ID.
@@ -14,9 +17,10 @@
 # The array index 1..N maps to the N-th ENA-source row in the manifest
 # (xwu_BAM rows are skipped — those don't need downloading).
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
 OUT_DIR=$BASE/data/raw_fastqs
 mkdir -p $OUT_DIR

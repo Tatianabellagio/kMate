@@ -1,11 +1,14 @@
 #!/bin/bash
 #SBATCH --job-name=chr1_a7_cmp
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=16G
 #SBATCH --time=00:30:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A7_cmp_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/A7_cmp_%j.err
+#SBATCH --output=logs/A7_cmp_%j.out
+#SBATCH --error=logs/A7_cmp_%j.err
+mkdir -p logs
 set -euo pipefail
 
 # Phase 2 Job A7: compare per-SNP AF on Chr1
@@ -21,13 +24,13 @@ set -euo pipefail
 #         joining on pos only manufactures off-diagonal scatter (per notebook L268).
 # Per memory feedback_use_mae_not_r2.md: lead with MAE.
 
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv/arch3/chr1
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 NEW=SEEDMIX_S1_arch3_chr1.tsv
-OLD=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.tsv
-HAPFIRE=/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
-HAPFIRE_VCF=/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/greneNet_final_v1.1.recode.vcf
+OLD=/global/scratch/users/tbellg/hapfire_sv/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.tsv
+HAPFIRE=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
+HAPFIRE_VCF=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf
 
 [ -s "$NEW" ] || { echo "ERROR: missing $NEW (A6 not done)"; exit 1; }
 [ -s "$OLD" ] || { echo "ERROR: missing $OLD"; exit 1; }
@@ -93,7 +96,7 @@ print(f'  NEW SNP records w/ REF/ALT: {len(new_snp):,}')
 
 # OLD: meta is at /poolfreq/data/cn_var_231_v3qc_v3.meta.npz
 print('=== Re-attach REF/ALT bases to OLD ===')
-old_meta_path = '/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_var_231_v3qc_v3.meta.npz'
+old_meta_path = '/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_var_231_v3qc_v3.meta.npz'
 try:
     om = np.load(old_meta_path, allow_pickle=True)
     om_ref_len = om['ref_len']; om_alt_len = om['alt_len']

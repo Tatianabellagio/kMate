@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=p80_mb
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/07c_mb_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80/logs/07c_mb_%j.err
+#SBATCH --output=logs/07c_mb_%j.out
+#SBATCH --error=logs/07c_mb_%j.err
 
 # =============================================================================
 # Front-runner test: filt2 cn_full + GLOBAL EM + ω_k=1/m_b weighting.
@@ -18,6 +20,7 @@
 #   REGIME = n50_g0 n200_g0 n231_g0 n50_g1 n200_g1 n231_g1 n50_g3 n50_g3_dom500
 #   WEIGHT = inv_mb (default, front-runner) | uniform (filt2 baseline for A/B)
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
 REGIME=${1:?Usage: sbatch 07c_run_kmate_filt2_mb_p80.sh REGIME [WEIGHT]}
@@ -28,9 +31,9 @@ fi
 [[ "$WEIGHT" == "inv_mb" ]] && WTAG="filt2mb" || WTAG="filt2u"
 [[ "$WEIGHT" == "inv_mb" ]] && ODIR="cactus_em_global_filt2_mb" || ODIR="cactus_em_global_filt2_uniform"
 
-CTRL=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/control_p80
-PYTHON=/home/tbellagio/miniforge3/envs/hapfm/bin/python
-DRIVER=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/src/per_sample_per_chrom.py
+CTRL=/global/scratch/users/tbellg/hapfire_sv/control_p80
+PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+DRIVER=/global/scratch/users/tbellg/hapfire_sv/poolfreq/src/per_sample_per_chrom.py
 
 COV=10
 SEED=42

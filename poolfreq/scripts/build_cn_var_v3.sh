@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=cn_var_v3
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=32G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/cn_var_v3_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/cn_var_v3_%j.err
+#SBATCH --output=logs/cn_var_v3_%j.out
+#SBATCH --error=logs/cn_var_v3_%j.err
 
 # =============================================================================
 # build_cn_var_v3.sh
@@ -26,8 +28,8 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BASE=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 mkdir -p $BASE/poolfreq/logs
 
 VCF=$BASE/pangenie_genotyping/data/merged/founders_231_chr.haploid.vcf.gz

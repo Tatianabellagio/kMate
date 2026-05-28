@@ -14,7 +14,7 @@ out by variant size class:
 Usage:
   python loo_concordance.py \\
     --pangenie-vcf data/loo_genotyped/9947.vcf.gz \\
-    --truth-vcf    /home/tbellagio/scratch/pang/.../pang_1001gplus_all.vcf.gz \\
+    --truth-vcf    /global/home/users/tbellg/scratch/pang/.../pang_1001gplus_all.vcf.gz \\
     --sample       9947 \\
     --truth-sample 100612 \\
     --out          data/loo_concordance/9947

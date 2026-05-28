@@ -1,17 +1,20 @@
 #!/bin/bash
 #SBATCH --job-name=f2rn_chr1
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=64G
 #SBATCH --time=1:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/f2rn_chr1_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/logs/f2rn_chr1_%j.err
+#SBATCH --output=logs/f2rn_chr1_%j.out
+#SBATCH --error=logs/f2rn_chr1_%j.err
 
 # filt2 + row-norm on cn_full_v3qc_v2 Chr1.
 # Order: filt2 (drop ac_k<2 columns) FIRST, then row-norm (so post-filter rows sum to 1).
 # This kills per-founder private-kmer uniqueness asymmetry AND total-budget asymmetry.
+mkdir -p logs
 set -euo pipefail
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 $PY << 'EOF'
 import numpy as np
@@ -19,8 +22,8 @@ from scipy.sparse import load_npz, save_npz, diags
 from pathlib import Path
 import shutil
 
-SRC = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
-OUT = Path('/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_filt2_rownorm')
+SRC = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2')
+OUT = Path('/global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_filt2_rownorm')
 OUT.mkdir(exist_ok=True)
 
 chrom = 'Chr1'
@@ -65,4 +68,4 @@ print(f'[{chrom}] DONE, saved to {OUT}', flush=True)
 EOF
 
 echo "[$(date)] DONE"
-ls -lh /carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_filt2_rownorm/
+ls -lh /global/scratch/users/tbellg/hapfire_sv/poolfreq/data/cn_full_231_v3qc_v2_filt2_rownorm/

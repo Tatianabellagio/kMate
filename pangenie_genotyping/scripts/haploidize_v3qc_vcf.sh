@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=haplo_v3qc
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/haplo_v3qc_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/haplo_v3qc_%j.err
+#SBATCH --output=logs/haplo_v3qc_%j.out
+#SBATCH --error=logs/haplo_v3qc_%j.err
 
 # =============================================================================
 # haploidize_v3qc_vcf.sh
@@ -13,14 +15,15 @@
 # Carrier-status haploid: 0/0 → 0, ./. → ., any-ALT → 1.
 # Mirrors haploidize_merged_vcf.sh for the v3qc input.
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 SRC=$BASE/data/v3qc/founders_231_v3qc.vcf.gz
 OUT=$BASE/data/v3qc/founders_231_v3qc.haploid.vcf.gz
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 [ -s "$SRC" ] || { echo "ERROR: missing $SRC" >&2; exit 1; }
 [ ! -s "$OUT" ] || { echo "[$(date)] $OUT exists — exiting (delete to rerun)"; exit 0; }
@@ -47,7 +50,7 @@ awk 'BEGIN{OFS="\t"}
         }
         print
     }' | \
-/home/tbellagio/miniforge3/envs/pang/bin/bgzip -@ 4 -c > "$OUT"
+/global/home/users/tbellg/miniforge3/envs/pang/bin/bgzip -@ 4 -c > "$OUT"
 
 $TABIX -p vcf "$OUT"
 

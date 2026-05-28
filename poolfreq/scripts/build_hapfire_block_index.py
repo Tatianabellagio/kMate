@@ -119,9 +119,9 @@ def haplotype_index_block(block_d1, block_d2):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--vcf', default='/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/greneNet_final_v1.1.recode.vcf')
-    ap.add_argument('--blocks', default='/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/greneNet_final_v1.1_density0.5_genomewide_partition.txt')
-    ap.add_argument('--out', default='/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/data/hapfire_block_index.npz')
+    ap.add_argument('--vcf', default='/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf')
+    ap.add_argument('--blocks', default=str(Path(__file__).resolve().parents[2] / 'data/greneNet_final_v1.1_density0.5_genomewide_partition.txt'))
+    ap.add_argument('--out', default=str(Path(__file__).resolve().parents[2] / 'poolfreq/data/hapfire_block_index.npz'))
     args = ap.parse_args()
 
     chroms, positions, ecotypes, hap_d1, hap_d2 = parse_vcf(args.vcf)

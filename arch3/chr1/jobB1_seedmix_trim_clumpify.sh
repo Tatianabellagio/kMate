@@ -1,12 +1,16 @@
 #!/bin/bash
 #SBATCH --job-name=sm_dedup
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=03:00:00
 #SBATCH --array=1-8
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/B1_dedup_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/arch3/chr1/B1_dedup_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/B1_dedup_%A_%a.out
+#SBATCH --error=logs/B1_dedup_%A_%a.err
+mkdir -p logs
 set -euo pipefail
 
 # Re-process SEEDMIX_S{1..8}: add clumpify dedup to xwu's already-pool-seq-trimmed FASTQs.
@@ -19,20 +23,20 @@ set -euo pipefail
 # trim step (already done by xwu), just add clumpify dedup (matches preprocess_one.sh
 # for founder consistency).
 #
-# Input  (trimmed-only, no dedup): /home/tbellagio/scratch/pang/grenenet_reads/seed_mix/S{N}-1.{1,2}_P.fq.gz
+# Input  (trimmed-only, no dedup): /global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S{N}-1.{1,2}_P.fq.gz
 #   (verified byte-identical to xwu's re-trimmed/S{N}-1.{1,2}_P.fq.gz via md5)
-# Output (trim + clumpify dedup):  /home/tbellagio/scratch/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S{N}_{1,2}.dedup.fq.gz
+# Output (trim + clumpify dedup):  /global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S{N}_{1,2}.dedup.fq.gz
 #
 # Expected ~35% read reduction post-clumpify (measured on seeds-1: 2.9 GB → 1.9 GB
 # in the existing seed_mix_trimmed/dedup/ samples).
 
 S=${SLURM_ARRAY_TASK_ID:?array task id required}
 
-IN_DIR=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix
+IN_DIR=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix
 IN_R1=$IN_DIR/S${S}-1.1_P.fq.gz
 IN_R2=$IN_DIR/S${S}-1.2_P.fq.gz
 
-OUT_DIR=/home/tbellagio/scratch/pang/grenenet_reads/seed_mix_trimdedup
+OUT_DIR=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup
 mkdir -p $OUT_DIR
 OUT_R1=$OUT_DIR/SEEDMIX_S${S}_1.dedup.fq.gz
 OUT_R2=$OUT_DIR/SEEDMIX_S${S}_2.dedup.fq.gz
@@ -47,7 +51,7 @@ fi
 [ -s "$IN_R1" ] || { echo "ERROR: missing $IN_R1"; exit 1; }
 [ -s "$IN_R2" ] || { echo "ERROR: missing $IN_R2"; exit 1; }
 
-CLUMPIFY=/home/tbellagio/miniforge3/envs/pang/bin/clumpify.sh
+CLUMPIFY=/global/home/users/tbellg/miniforge3/envs/pang/bin/clumpify.sh
 
 # Pre-dedup read counts
 echo "[$(date)] === SEEDMIX_S${S}: pre-dedup ==="

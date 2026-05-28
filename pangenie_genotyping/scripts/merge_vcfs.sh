@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=merge_pg
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/merge_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/logs/merge_%j.err
+#SBATCH --output=logs/merge_%j.out
+#SBATCH --error=logs/merge_%j.err
 
 # =============================================================================
 # merge_vcfs.sh
@@ -14,15 +16,16 @@
 #   151 short-read founders → from per-sample PanGenie VCFs
 # bcftools merge → 231-founder catalog → ready for cn_kmer / cn_var build.
 # =============================================================================
+mkdir -p logs
 set -euo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping
+BASE=/global/scratch/users/tbellg/hapfire_sv/pangenie_genotyping
 GT_DIR=$BASE/data/genotyped
 OUT_DIR=$BASE/data/merged
 mkdir -p $OUT_DIR
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-TABIX=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/tabix
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 
 # Optional GQ filter on PanGenie cells. PanGenie reports GQ per genotype call;
 # cells below this are masked to ./. so they don't pollute the merged catalog.
@@ -33,8 +36,8 @@ PG_GQ_MIN=${PG_GQ_MIN:-0}
 # pang_all has 135 cactus founders. Of those, 80 map to GrENE-Net 231 ecotype IDs
 # (sample_rename.txt). The other 55 are dropped — they're not in GrENE-Net.
 # Chroms in pang are already Chr1..Chr5 (verified) — no chrom rename needed.
-PANG69_VCF=/home/tbellagio/scratch/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
-SAMPLE_RENAME=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/imputation/work/sample_rename.txt
+PANG69_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
+SAMPLE_RENAME=/global/scratch/users/tbellg/hapfire_sv/imputation/work/sample_rename.txt
 KEEP_80=$OUT_DIR/cactus_overlap_80.txt
 awk '{print $2}' $SAMPLE_RENAME | sort -u > $KEEP_80
 echo "[$(date)] cactus founders to keep (1001G IDs): $(wc -l < $KEEP_80)"

@@ -1,16 +1,20 @@
 #!/bin/bash
 #SBATCH --job-name=g0_sweep
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
 #SBATCH --time=3:00:00
 #SBATCH --array=0-17
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/g0_sweep_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/poolfreq/tests/logs/g0_sweep_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/g0_sweep_%A_%a.out
+#SBATCH --error=logs/g0_sweep_%A_%a.err
 
+mkdir -p logs
 set -euo pipefail
-ROOT=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+ROOT=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 SIM_BASE=$ROOT/sims/visor_freqk/g0_sweep
 OUT_DIR=$ROOT/scratch/g0_sweep_h_test
 mkdir -p $SIM_BASE $OUT_DIR
