@@ -1,19 +1,19 @@
-# Session handoff — hapFIRE-SV
+# Session handoff — kMate
 
-**Last updated:** 2026-05-22
-**Project root:** `/carnegie/nobackup/scratch/tbellagio/hapfire_sv/`
+**Last updated:** 2026-05-27
+**Project root:** `/global/scratch/users/tbellg/kmate/`
 
 ## TL;DR
 
-`kMate` end-to-end: per-sample k-mer Poisson EM on the 231-founder simplex, projected through `cn_var` to per-record AF (SNPs + indels + SVs in one pass). Production panel uses the **arch decomposition** (annotate_vcf + convert-to-biallelic). MAR-aware projection is now the recipe in both `global` and `★★` window modes. K-mer filter is **undecided** (testing `filt2`; `mixed-loose` is NOT production despite earlier docs claiming otherwise).
+`kMate` end-to-end: per-sample **weighted** k-mer Poisson EM on the 231-founder simplex (production weight $\omega_k = 1/m_b$, per-bubble de-replication; see `ALGORITHM.md` §4.2), projected through `cn_var` to per-record AF (SNPs + indels + SVs in one pass). Production panel uses the **arch decomposition** (annotate_vcf + convert-to-biallelic). MAR-aware projection is the recipe in both `global` and `★★` window modes. **K-mer filter resolved 2026-05-27: `cn_full_231_v3qc_v3_filt2` (drop ac=1 singletons) + EM weighting $\omega_k = 1/m_b$.** See `METHODS_TRIED_AND_RESULTS.md` §0/§3 for the full sweep history and the panel-conditional caveat (1/m_b is opt-in via `--kmer-weight {uniform,inv_mb}` for users on balanced panels).
 
-**Naming:** the method is **kMate** (see `ALGORITHM.md`). Legacy code, result-dir paths (`*/cactus_em_*`), and the `sims/visor_freqk` sub-repo still carry the prior name `cactus_em`; the full path/code rename is deferred until the in-flight k-mer-filter experiment (`protect_sweep`) concludes.
+**Naming:** the method is **kMate** (see `ALGORITHM.md`). Legacy code, result-dir paths (`*/cactus_em_*`), and the `sims/visor_freqk` sub-repo still carry the prior name `cactus_em`; with the k-mer-filter decision now closed (2026-05-27), the path/code rename is unblocked but not yet executed.
 
 ## Authoritative source on current state
 
 **`PIPELINE_STATE_2026-05-22.md`** is the single source of truth for what's production vs in-evaluation vs deprecated. Read it before making decisions about the panel, projection, or filters.
 
-## Production recipe (2026-05-22)
+## Production recipe (2026-05-27)
 
 | component | choice |
 |---|---|
@@ -21,7 +21,8 @@
 | Decomposition | **arch3** (annotate_vcf + convert-to-biallelic), NOT `bcftools norm -m -any` |
 | cn_var (SV-level) | `arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` |
 | cn_var (SNP-level) | `arch3/chr1/cn_var_231_arch3_chr1_atomized.*` (per-base atomized) |
-| cn_full | `poolfreq/data/cn_full_231_v3qc_v3/cn_Chr1.{cn,meta}.npz` (k-mer filter still TBD) |
+| cn_full | **`poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.{cn,meta}.npz`** (filt2: drop ac=1 singletons) |
+| EM weighting | **`--kmer-weight inv_mb`** (ω_k = 1/m_b per-bubble de-replication, `ALGORITHM.md` §4.2) |
 | Projection | MAR: `(h @ cn_var) / (h @ cn_var_called)`, both `global` and window modes |
 | Chrom scope | **Chr1 only currently — Chr2–5 build is the open production task** |
 
@@ -30,13 +31,14 @@ Two output modes, both production-supported:
 ```bash
 # global — default for SEEDMIX / F0 pools
 python poolfreq/src/per_sample_per_chrom.py \
-    --cn-kmer-prefix poolfreq/data/cn_full_231_v3qc_v3/cn \
+    --cn-kmer-prefix poolfreq/data/cn_full_231_v3qc_v3_filt2/cn \
     --cn-var       arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \
     --cn-var-called arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \
     --cn-var-meta  arch3/chr1/cn_var_231_arch3_chr1.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
     --threads 8 --chroms Chr1 \
-    --block-mode global
+    --block-mode global \
+    --kmer-weight inv_mb
 
 # window ("★★") — for high-recomb regimes (evolved pools with multi-gen mosaic
 # ancestry). The window-mode DEFAULTS are this recipe (window-bp 10000,
@@ -44,13 +46,17 @@ python poolfreq/src/per_sample_per_chrom.py \
 # flag alone reproduces it — pass those flags only to override.
 python poolfreq/src/per_sample_per_chrom.py \
     [same inputs as global] \
-    --block-mode window
+    --block-mode window \
+    --kmer-weight inv_mb
 ```
 
 **Estimator code (2026-05-26 cleanup):** two modes only — `global` and `window`.
-LD-block modes, overlapping windows, k-mer rebalancing, carrier-weighting and
-contamination-ω were archived to `poolfreq/src/archive/`. The authoritative file
-list + invocation recipes are in **`poolfreq/src/INVENTORY.md`**.
+LD-block modes, overlapping windows, the older k-mer-budget rebalancing
+(`--row-normalize-cn`), carrier-weighting and contamination-ω were archived to
+`poolfreq/src/archive/`. The current production EM weighting is the cleaner
+$\omega_k = 1/m_b$ composite-likelihood form, still wired into the active
+driver (`--kmer-weight inv_mb`); see `ALGORITHM.md` §4.2. The authoritative
+file list + invocation recipes are in **`poolfreq/src/INVENTORY.md`**.
 
 Output TSV (post-2026-05-21 patch) has 8 columns:
 
@@ -63,10 +69,10 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 ## What's pending
 
 1. **Arch 3 Chr2–5 panel build** — run A1→A5 for remaining chroms. Chr1 is validated; whole-genome needed for downstream GEA.
-2. **Choose production k-mer filter** — testing `filt2` (AC≥2). `mixed-loose` is NOT production despite earlier docs. Other candidates: raw cn_full (no filter), `rownorm` (rejected per memory).
-3. **Re-validate SEEDMIX baselines under MAR + arch cn_var** — prior numbers used `bcftools norm -m -any` cn_var AND the (now-patched) "star2 treats `.` as REF" projection. All star2 result TSVs without `info`/`n_called`/`se` columns are stale.
+2. ~~**Choose production k-mer filter**~~ — **RESOLVED 2026-05-27**: `filt2` (drop ac=1) + EM weighting $\omega_k=1/m_b$ (`--kmer-weight inv_mb`). See `METHODS_TRIED_AND_RESULTS.md` §0/§3.
+3. **Re-validate SEEDMIX baselines under MAR + arch cn_var + production weighting** — prior numbers used `bcftools norm -m -any` cn_var, the (now-patched) "star2 treats `.` as REF" projection, AND unweighted EM. All star2 result TSVs without `info`/`n_called`/`se` columns are stale, as are all results that predate the `--kmer-weight inv_mb` switch.
 4. **Production scale-out on ~2,500 evolved GrENE-Net samples** — SLURM template at `poolfreq/tests/run_site_array_perchrom.sh`. Blocked on (1).
-5. **Subprojects**: `control_p80/` (homogeneous 80-cactus-founder control, all 6 regimes done — see `control_p80/results/FINAL_RESULTS_cov10_p80.ipynb`).
+5. **Subprojects**: `control_p80/` (homogeneous 80-cactus-founder control, all 6 regimes done; established the $\omega_k=1/m_b$ panel-conditional caveat — see `control_p80/results/FINAL_RESULTS_cov10_p80.ipynb`).
 
 ## Companion docs (still current)
 
