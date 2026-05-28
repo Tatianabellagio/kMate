@@ -110,7 +110,8 @@ panel/pangenie_genotyping/data/tmp_loo_genotype/
 sims/visor_freqk/
 
 # --- bulky reference/external dirs (not our code) ---
-external/HapFIRE/
+# HapFIRE: bulky vendored tool — ignore wherever it lives (external/, archive/, …)
+HapFIRE/
 papers/
 external/
 
