@@ -86,7 +86,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 - `INVESTIGATION_CN_VAR_DECOMPOSITION.md` — context for the arch decomposition switch
 - `MISSINGNESS_231PANEL.md` — F_MISSING characterization on the production panel
 - `PIPELINE_FASTQ_PREPROCESSING.md` — read-side preprocessing pipeline (trim, dedup)
-- `panel_overlap_135_vs_82/RESULTS.md` — panel composition analysis
+- `archive/exploration/panel_overlap_135_vs_82/RESULTS.md` — panel composition analysis
 - `RESULTS_LOG.md` — chronological numerical record (large file; useful historical reference, not authoritative for current state)
 
 ## 6. Subprojects (own subfolder READMEs)

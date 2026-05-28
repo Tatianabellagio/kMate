@@ -87,7 +87,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 | `docs/MISSINGNESS_231PANEL.md` | F_MISSING characterization on the production panel |
 | `docs/PIPELINE_FASTQ_PREPROCESSING.md` | Read-side preprocessing pipeline |
 | `docs/SIMULATIONS_METHODS.md` | Methods-ready description of the pool-seq simulation framework (regime matrix, parameters, citations) |
-| `panel_overlap_135_vs_82/RESULTS.md` | Panel composition analysis |
+| `archive/exploration/panel_overlap_135_vs_82/RESULTS.md` | Panel composition analysis |
 | `docs/RESULTS_LOG.md` | Chronological numerical record (large file; historical reference, not authoritative) |
 | `data/exclude_list.txt` | Assembly_IDs dropped from cactus panel (101003 + 100852) |
 | `data/flag_list.tsv` | Per-Assembly_ID flag status |
