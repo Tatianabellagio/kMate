@@ -99,7 +99,7 @@ TRIM_U1=$TRIMMED_DIR/${ECOTYPE}_1U.fq.gz
 TRIM_U2=$TRIMMED_DIR/${ECOTYPE}_2U.fq.gz
 
 # Trimmomatic — exact thresholds from xwu's 1001G command at
-# TODO: preprocessing history file, not migrating — see PIPELINE_FASTQ_PREPROCESSING.md
+# TODO: preprocessing history file, not migrating — see docs/PIPELINE_FASTQ_PREPROCESSING.md
 # /carnegie/nobackup/scratch/xwu/GrENE_net/vcf/sra/commands.sh
 # (lighter trim than the GrENE Pool-seq pipeline: minAdapterLength=2 and no
 # SLIDINGWINDOW; 1001G data was already lower quality at the ends and

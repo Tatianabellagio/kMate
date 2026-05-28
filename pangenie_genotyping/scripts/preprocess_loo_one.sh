@@ -14,7 +14,7 @@
 # preprocess_loo_one.sh
 # Trimmomatic PE + Clumpify dedup for one LOO sample. Threshold-matched to
 # xwu's 1001G individual-accession pipeline at
-# TODO: preprocessing history file, not migrating — see PIPELINE_FASTQ_PREPROCESSING.md
+# TODO: preprocessing history file, not migrating — see docs/PIPELINE_FASTQ_PREPROCESSING.md
 # /carnegie/nobackup/scratch/xwu/GrENE_net/vcf/sra/commands.sh:
 #   - TruSeq3-PE-2.fa adapter
 #   - ILLUMINACLIP 2:30:10:2:True (minAdapterLength=2, keepBothReads=True)

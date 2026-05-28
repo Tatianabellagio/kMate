@@ -5,13 +5,13 @@
 
 ## TL;DR
 
-`kMate` end-to-end: per-sample **weighted** k-mer Poisson EM on the 231-founder simplex (production weight $\omega_k = 1/m_b$, per-bubble de-replication; see `ALGORITHM.md` §4.2), projected through `cn_var` to per-record AF (SNPs + indels + SVs in one pass). Production panel uses the **arch decomposition** (annotate_vcf + convert-to-biallelic). MAR-aware projection is the recipe in both `global` and `★★` window modes. **K-mer filter resolved 2026-05-27: `cn_full_231_v3qc_v3_filt2` (drop ac=1 singletons) + EM weighting $\omega_k = 1/m_b$.** See `METHODS_TRIED_AND_RESULTS.md` §0/§3 for the full sweep history and the panel-conditional caveat (1/m_b is opt-in via `--kmer-weight {uniform,inv_mb}` for users on balanced panels).
+`kMate` end-to-end: per-sample **weighted** k-mer Poisson EM on the 231-founder simplex (production weight $\omega_k = 1/m_b$, per-bubble de-replication; see `ALGORITHM.md` §4.2), projected through `cn_var` to per-record AF (SNPs + indels + SVs in one pass). Production panel uses the **arch decomposition** (annotate_vcf + convert-to-biallelic). MAR-aware projection is the recipe in both `global` and `★★` window modes. **K-mer filter resolved 2026-05-27: `cn_full_231_v3qc_v3_filt2` (drop ac=1 singletons) + EM weighting $\omega_k = 1/m_b$.** See `docs/METHODS_TRIED_AND_RESULTS.md` §0/§3 for the full sweep history and the panel-conditional caveat (1/m_b is opt-in via `--kmer-weight {uniform,inv_mb}` for users on balanced panels).
 
 **Naming:** the method is **kMate** (see `ALGORITHM.md`). Legacy code, result-dir paths (`*/cactus_em_*`), and the `sims/visor_freqk` sub-repo still carry the prior name `cactus_em`; with the k-mer-filter decision now closed (2026-05-27), the path/code rename is unblocked but not yet executed.
 
 ## Authoritative source on current state
 
-**`PIPELINE_STATE_2026-05-22.md`** is the single source of truth for what's production vs in-evaluation vs deprecated. Read it before making decisions about the panel, projection, or filters.
+**`docs/PIPELINE_STATE.md`** is the single source of truth for what's production vs in-evaluation vs deprecated. Read it before making decisions about the panel, projection, or filters.
 
 ## Production recipe (2026-05-27)
 
@@ -64,12 +64,12 @@ Output TSV (post-2026-05-21 patch) has 8 columns:
 chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 ```
 
-`info` (h-weighted observed mass), `n_called` (h-independent panel count), `se` (Wald SE) are new per-record uncertainty metrics — see `PIPELINE_STATE_2026-05-22.md` §2.
+`info` (h-weighted observed mass), `n_called` (h-independent panel count), `se` (Wald SE) are new per-record uncertainty metrics — see `docs/PIPELINE_STATE.md` §2.
 
 ## What's pending
 
 1. **Arch 3 Chr2–5 panel build** — run A1→A5 for remaining chroms. Chr1 is validated; whole-genome needed for downstream GEA.
-2. ~~**Choose production k-mer filter**~~ — **RESOLVED 2026-05-27**: `filt2` (drop ac=1) + EM weighting $\omega_k=1/m_b$ (`--kmer-weight inv_mb`). See `METHODS_TRIED_AND_RESULTS.md` §0/§3.
+2. ~~**Choose production k-mer filter**~~ — **RESOLVED 2026-05-27**: `filt2` (drop ac=1) + EM weighting $\omega_k=1/m_b$ (`--kmer-weight inv_mb`). See `docs/METHODS_TRIED_AND_RESULTS.md` §0/§3.
 3. **Re-validate SEEDMIX baselines under MAR + arch cn_var + production weighting** — prior numbers used `bcftools norm -m -any` cn_var, the (now-patched) "star2 treats `.` as REF" projection, AND unweighted EM. All star2 result TSVs without `info`/`n_called`/`se` columns are stale, as are all results that predate the `--kmer-weight inv_mb` switch.
 4. **Production scale-out on ~2,500 evolved GrENE-Net samples** — SLURM template at `poolfreq/tests/run_site_array_perchrom.sh`. Blocked on (1).
 5. **Subprojects**: `control_p80/` (homogeneous 80-cactus-founder control, all 6 regimes done; established the $\omega_k=1/m_b$ panel-conditional caveat — see `control_p80/results/FINAL_RESULTS_cov10_p80.ipynb`).
@@ -78,17 +78,17 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 
 | File | Purpose |
 |---|---|
-| `PIPELINE_STATE_2026-05-22.md` | Production-state SoT |
+| `docs/PIPELINE_STATE.md` | Production-state SoT |
 | `BACKGROUND.md` | Project framing |
 | `ALGORITHM.md` | kMate algorithm, math & wiring (code-verified single source of truth) |
 | `poolfreq/src/INVENTORY.md` | Estimator source inventory — active files, two recipes, what was archived (2026-05-26) |
 | `old_docs/CACTUS_EM_MATH.md` | Formal math (superseded; folded into `ALGORITHM.md`) |
-| `INVESTIGATION_2026-05-19_CN_VAR_DECOMPOSITION.md` | Why we switched to arch decomposition |
-| `MISSINGNESS_231PANEL.md` | F_MISSING characterization on the production panel |
-| `PIPELINE_FASTQ_PREPROCESSING.md` | Read-side preprocessing pipeline |
-| `SIMULATIONS_METHODS.md` | Methods-ready description of the pool-seq simulation framework (regime matrix, parameters, citations) |
+| `docs/INVESTIGATION_CN_VAR_DECOMPOSITION.md` | Why we switched to arch decomposition |
+| `docs/MISSINGNESS_231PANEL.md` | F_MISSING characterization on the production panel |
+| `docs/PIPELINE_FASTQ_PREPROCESSING.md` | Read-side preprocessing pipeline |
+| `docs/SIMULATIONS_METHODS.md` | Methods-ready description of the pool-seq simulation framework (regime matrix, parameters, citations) |
 | `panel_overlap_135_vs_82/RESULTS.md` | Panel composition analysis |
-| `RESULTS_LOG.md` | Chronological numerical record (large file; historical reference, not authoritative) |
+| `docs/RESULTS_LOG.md` | Chronological numerical record (large file; historical reference, not authoritative) |
 | `data/exclude_list.txt` | Assembly_IDs dropped from cactus panel (101003 + 100852) |
 | `data/flag_list.tsv` | Per-Assembly_ID flag status |
 | `sims/visor_freqk/README.md`, `RECOMB_SIM.md` | Pool-seq sim framework |

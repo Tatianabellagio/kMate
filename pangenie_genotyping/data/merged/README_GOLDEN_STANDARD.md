@@ -28,7 +28,7 @@ Tested Beagle 5.5 imputation (xwu's pattern) on this VCF in 2026-05-03. Result:
 
 Confirmed by literature (cattle pangenome paper, French dairy SV imputation study, PanGenie original): SV imputation under-performs direct PanGenie genotyping at coverage ≥10×. Production workflows in similar projects keep PanGenie SV calls unimputed.
 
-See `RESULTS_LOG.md` 2026-05-06 entry for full literature backing.
+See `docs/RESULTS_LOG.md` 2026-05-06 entry for full literature backing.
 
 ## How downstream tools should consume this
 
@@ -126,5 +126,5 @@ See `sims/visor_freqk/chr1_only_panel_v3/README.md` for the full processing writ
 ## Audit trail
 
 - 2026-05-08 — Haploid sibling built from `founders_231_chr.vcf.gz` (5,214,959 records, 231 samples). After `bcftools norm -m -any`, ALT count differs because multi-allelic records split.
-- Het analysis underlying the carrier-status decision: `RESULTS_LOG.md` 2026-05-03 entry ("PanGenie het rate is mostly artifact, not biology") + 2026-05-08 confirmation count above.
-- Imputation rejection: `RESULTS_LOG.md` 2026-05-06 entry (literature lock-in).
+- Het analysis underlying the carrier-status decision: `docs/RESULTS_LOG.md` 2026-05-03 entry ("PanGenie het rate is mostly artifact, not biology") + 2026-05-08 confirmation count above.
+- Imputation rejection: `docs/RESULTS_LOG.md` 2026-05-06 entry (literature lock-in).

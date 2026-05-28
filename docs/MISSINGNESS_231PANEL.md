@@ -56,7 +56,7 @@ A strict `F_MISSING ≤ 0.05` filter (~max 11 missing out of 231) **would discar
 
 4. **p80 doesn't probe this failure mode.** p80 is cactus-only, where missingness is ~4% across all classes. The interesting pathology lives entirely on the PG-SV intersection that p80 excludes by design. Numbers from p80 about SV inference quality (especially the "SVs better than SNPs" result) **do not transfer** to production.
 
-5. **~23% of production SV records sit at F_MISSING > 50/231.** At very high missingness, AF estimator variance grows independently of which convention you use. Either propagate per-record uncertainty downstream, or acknowledge that the high-F_MISSING SV slice is unreliable. See `PIPELINE_STATE_2026-05-22.md` for production-state context.
+5. **~23% of production SV records sit at F_MISSING > 50/231.** At very high missingness, AF estimator variance grows independently of which convention you use. Either propagate per-record uncertainty downstream, or acknowledge that the high-F_MISSING SV slice is unreliable. See `PIPELINE_STATE.md` for production-state context.
 
 ## Methodology notes
 

@@ -137,7 +137,7 @@ recomb_truth.tsv.gz        chrom, pos, ref_len, alt_len, truth_af, info[, source
 region.bed                 VISOR genomic-region definition
 ```
 
-The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `info`, `n_called`, `se` from `per_sample_per_chrom.py` — see `PIPELINE_STATE_2026-05-22.md`).
+The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `info`, `n_called`, `se` from `per_sample_per_chrom.py` — see `PIPELINE_STATE.md`).
 
 ## 7. Parameter defaults and configurable knobs
 
@@ -178,4 +178,4 @@ The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `
 
 ---
 
-For results, evaluation methodology, and the regime-by-method MAE tables, see `control_p80/results/FINAL_RESULTS_cov10_p80.ipynb` (notebook) and the `control_p80/results/plots/` figure set. The 231-panel regime sweep on the production cn_var/cn_full is the next planned step (see `PIPELINE_STATE_2026-05-22.md` §3).
+For results, evaluation methodology, and the regime-by-method MAE tables, see `control_p80/results/FINAL_RESULTS_cov10_p80.ipynb` (notebook) and the `control_p80/results/plots/` figure set. The 231-panel regime sweep on the production cn_var/cn_full is the next planned step (see `PIPELINE_STATE.md` §3).

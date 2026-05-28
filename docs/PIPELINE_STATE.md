@@ -83,7 +83,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 - `ALGORITHM.md` — kMate algorithm, math & production wiring (code-verified single source of truth; supersedes the old prose doc and `CACTUS_EM_MATH.md`)
 - `old_docs/CACTUS_EM_MATH.md` — superseded formal-math doc (folded into `ALGORITHM.md`)
 - `SIMULATIONS_METHODS.md` — methods-ready description of the pool-seq simulation framework
-- `INVESTIGATION_2026-05-19_CN_VAR_DECOMPOSITION.md` — context for the arch decomposition switch
+- `INVESTIGATION_CN_VAR_DECOMPOSITION.md` — context for the arch decomposition switch
 - `MISSINGNESS_231PANEL.md` — F_MISSING characterization on the production panel
 - `PIPELINE_FASTQ_PREPROCESSING.md` — read-side preprocessing pipeline (trim, dedup)
 - `panel_overlap_135_vs_82/RESULTS.md` — panel composition analysis
