@@ -91,7 +91,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 
 ## 6. Subprojects (own subfolder READMEs)
 
-- `control_p80/` — homogeneous 80-cactus-founder control experiment. See `control_p80/README.md`.
+- `benchmarks/p80/` — homogeneous 80-cactus-founder control experiment. See `benchmarks/p80/README.md`.
 - `sims/visor_freqk/` — pool-seq simulation framework. See `sims/visor_freqk/README.md` and `RECOMB_SIM.md`.
 
 ## 7. Historical record

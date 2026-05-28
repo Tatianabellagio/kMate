@@ -7,7 +7,7 @@ The code lives in two places:
 - **Production sim driver and helpers** — `sims/visor_freqk/scripts/`
   - `make_recomb_mosaics.py` — mosaic founder FASTA generator
   - `compute_recomb_truth.py` — per-record AF truth from ancestry tracks
-- **Active regime sweep** — `control_p80/scripts/`
+- **Active regime sweep** — `benchmarks/p80/scripts/`
   - `06_run_sim_p80.sh` — uniform-fraction pool driver
   - `06b_run_sim_p80_skewed.sh` — dominant-individual ("selection-like") variant
   - `make_recomb_mosaics_p80.py` — local clone of the mosaic builder with `--source-weights` support
@@ -72,9 +72,9 @@ Reads in this framework are simulated from **VCF-consensus** founder FASTAs — 
 
 **The risk (read-side closed loop).** Consensus reads contain only the variants the panel VCF encoded, and `cn_full` (the EM's k-mer dictionary) is built from that same VCF. So the simulated read substrate is a guaranteed subset of the estimator's k-mers: no read carries a k-mer `cn_full` hasn't seen. Real pool-seq reads do — real genomes carry variation and repeat content the pangenome graph never captured. If that off-panel k-mer mass degraded the EM, a consensus-only simulation would hide it.
 
-**The validation (g0).** We tested this on the two non-recombinant regimes by re-simulating reads **straight from the raw assemblies** (`…/pang_1001gplus/…/chr_only/<asm_id>.chr.fa`, via `pywgsim`, bypassing the VCF→consensus→VISOR path entirely; `control_p80/scripts/sim_from_raw_assemblies.py`) and re-running `kMate global` against the *same* `cn_full`, `cn_var`, and truth. Only the read source differs. Both substrates used the same 10× read budget (verified: 9.95× consensus / 10.00× raw of TAIR10 Chr1). Raw reads carry extra off-panel k-mer mass relative to consensus — the EM's λ̂ coverage estimate read ~7.2× for raw vs ~7.6× for consensus from the *identical* budget (λ̂ counts only k-mers present in `cn_full`; the ~7.x value is itself a uniform-h / partly-represented-panel artifact seen for both substrates, not missing depth).
+**The validation (g0).** We tested this on the two non-recombinant regimes by re-simulating reads **straight from the raw assemblies** (`…/pang_1001gplus/…/chr_only/<asm_id>.chr.fa`, via `pywgsim`, bypassing the VCF→consensus→VISOR path entirely; `benchmarks/p80/scripts/sim_from_raw_assemblies.py`) and re-running `kMate global` against the *same* `cn_full`, `cn_var`, and truth. Only the read source differs. Both substrates used the same 10× read budget (verified: 9.95× consensus / 10.00× raw of TAIR10 Chr1). Raw reads carry extra off-panel k-mer mass relative to consensus — the EM's λ̂ coverage estimate read ~7.2× for raw vs ~7.6× for consensus from the *identical* budget (λ̂ counts only k-mers present in `cn_full`; the ~7.x value is itself a uniform-h / partly-represented-panel artifact seen for both substrates, not missing depth).
 
-Per-record AF error vs the same realized-pool truth (`control_p80/scripts/compare_af_vs_truth.py`):
+Per-record AF error vs the same realized-pool truth (`benchmarks/p80/scripts/compare_af_vs_truth.py`):
 
 | regime | class | MAE consensus | MAE raw | R² consensus | R² raw | \|d\|>0.1 raw |
 |---|---|---|---|---|---|---|
@@ -109,7 +109,7 @@ Optionally (when `source_weights.tsv` is present), a second truth column `source
 
 ## 5. Regime matrix
 
-The current canonical regime sweep (control_p80, Chr1, 10× coverage):
+The current canonical regime sweep (benchmarks/p80, Chr1, 10× coverage):
 
 | Regime | N | G | Pool fractions | What it tests |
 |---|---|---|---|---|
@@ -178,4 +178,4 @@ The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `
 
 ---
 
-For results, evaluation methodology, and the regime-by-method MAE tables, see `control_p80/results/FINAL_RESULTS_cov10_p80.ipynb` (notebook) and the `control_p80/results/plots/` figure set. The 231-panel regime sweep on the production cn_var/cn_full is the next planned step (see `PIPELINE_STATE.md` §3).
+For results, evaluation methodology, and the regime-by-method MAE tables, see `benchmarks/p80/results/FINAL_RESULTS_cov10_p80.ipynb` (notebook) and the `benchmarks/p80/results/plots/` figure set. The 231-panel regime sweep on the production cn_var/cn_full is the next planned step (see `PIPELINE_STATE.md` §3).

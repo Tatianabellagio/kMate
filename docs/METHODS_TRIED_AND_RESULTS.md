@@ -64,7 +64,7 @@ rare/discriminating k-mers). See [[project_h_imbalance_rootcause]].
 **filt2 + ω_k=1/m_b global** wins AF MAE in every regime on the heterogeneous 231 panel
 (g0 sims, replicate-validated). DECISIVE result.
 
-**BUT — control_p80 (homogeneous 80-cactus panel, 2026-05-27):** with no cactus-vs-PG
+**BUT — benchmarks/p80 (homogeneous 80-cactus panel, 2026-05-27):** with no cactus-vs-PG
 imbalance, `filt2 + 1/m_b` LOSES to plain `filt2` in every regime (+2% to +41% MAE).
 ⇒ 1/m_b is NOT a clean de-replication correction; it's a cactus-suppression that only
 helps when the over-credit exists to cancel. It down-weights large-bubble k-mers that
@@ -103,7 +103,7 @@ Never use Beagle imputation ([[feedback_no_beagle_solutions]]).
 ## 6. Recombination model (sims)
 
 - **OLD:** crossovers forced at hapFIRE BigLD block boundaries (`--crossovers-from-ld-blocks`). ✗ **circular** for benchmarking the block-based method.
-- **NEW (control_p231):** RANDOM crossovers at the A. thaliana rate (4 cM/Mb, Poisson, uniform positions). ★ unbiased. Implementation: drop the LD-block flag.
+- **NEW (benchmarks/p231):** RANDOM crossovers at the A. thaliana rate (4 cM/Mb, Poisson, uniform positions). ★ unbiased. Implementation: drop the LD-block flag.
 
 ## 6b. Gen-0 founder sampling — **multinomial-w/-replace is BANNED for g0 sims**
 
@@ -123,8 +123,8 @@ See [[feedback_gen0_no_replace_required]] for the full rationale and do-not-revi
 
 ## 7. Benchmarks
 
-- `control_p80/` — homogeneous-panel control. filt2 vs filt2+1/m_b A/B, 6 regimes. DONE; results in `control_p80/results/filt2_mb_vs_uniform_summary.tsv` + notebook.
-- `control_p231/` — ⋯ **headline 231 benchmark, in progress** (random crossovers; both cn_var arms; cn_full rebuilt from arch3 for single-source). See `control_p231/README.md`.
+- `benchmarks/p80/` — homogeneous-panel control. filt2 vs filt2+1/m_b A/B, 6 regimes. DONE; results in `benchmarks/p80/results/filt2_mb_vs_uniform_summary.tsv` + notebook.
+- `benchmarks/p231/` — ⋯ **headline 231 benchmark, in progress** (random crossovers; both cn_var arms; cn_full rebuilt from arch3 for single-source). See `benchmarks/p231/README.md`.
 - Prior eval notebooks: `notebook/FINAL_RESULTS_cov10*.ipynb`, `panel/arch3/chr1/AF_TRUTH_VS_ESTIMATE_arch3_chr1.ipynb`.
 
 ---
@@ -146,10 +146,10 @@ production `panel/arch3/chr1/cn_var_231_arch3_chr1*`.
 
 **`archive/fastas_superseded/` (42 GB):** `unimputed_fastas_v3` (pre-QC),
 `founder_fastas_231_v3`, `imputed_fastas_v2_DEPRECATED`. Kept: `unimputed_fastas_v3qc`
-(current) + `control_p231/fastas_231` (rebuilt from arch3).
+(current) + `benchmarks/p231/fastas_231` (rebuilt from arch3).
 
 **Held (not archived):** old `pool_sweep_82_recomb*` p231 sims — archive only after
-`control_p231` sims validate (they supersede these). The earlier 65 GB of
+`benchmarks/p231` sims validate (they supersede these). The earlier 65 GB of
 `*.v2_imputed_BACKUP / OLD_BUGGY / DELETE_ME / macbad` dirs were DELETED 2026-05-27
 (explicitly stale-marked, current counterparts verified).
 

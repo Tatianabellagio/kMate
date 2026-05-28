@@ -155,7 +155,7 @@ scratch/**/*.tsv
 scratch/**/*.tsv.gz
 panel/arch3/**/*.tsv
 panel/arch3/**/*.tsv.gz
-control_p80/results/**/*.tsv
+benchmarks/p80/results/**/*.tsv
 panel_overlap_v3_grenenet/data/*.tsv
 panel_overlap_135_vs_82/results/*.tsv.gz
 # sim truth tables (regeneratable from ancestry tracks + cn_var)
@@ -176,23 +176,23 @@ archive/**/*.txt
 archive/**/*.gz
 
 # --- benchmark result TSVs (per-record AF, MB-scale per file; regeneratable) ---
-control_p80/results/cactus_em_*/
-control_p231/results/kmate_global_*/
+benchmarks/p80/results/cactus_em_*/
+benchmarks/p231/results/kmate_global_*/
 # kept-on-disk OLD npz-mask snapshots
 *.OLD_no_called_mask
 
 # --- sim outputs (large + regeneratable from sim scripts) ---
-control_p231/sims/
-control_p80/sims/*/recomb_truth*.tsv.gz
-control_p80/sims/*/ancestry.tsv
-control_p80/sims/*/visor_pool_fractions.tsv
-control_p80/sims/*/source_weights.tsv
-control_p80/sims/*/pool_weights.tsv
-control_p80/sims/*/region.bed
-control_p80/sims/*/haps/
-control_p80/sims/*/reads/
-control_p80/sims/*/bam/
-control_p231/scripts/__pycache__/
+benchmarks/p231/sims/
+benchmarks/p80/sims/*/recomb_truth*.tsv.gz
+benchmarks/p80/sims/*/ancestry.tsv
+benchmarks/p80/sims/*/visor_pool_fractions.tsv
+benchmarks/p80/sims/*/source_weights.tsv
+benchmarks/p80/sims/*/pool_weights.tsv
+benchmarks/p80/sims/*/region.bed
+benchmarks/p80/sims/*/haps/
+benchmarks/p80/sims/*/reads/
+benchmarks/p80/sims/*/bam/
+benchmarks/p231/scripts/__pycache__/
 
 # --- scratch/work dirs (transient h_fixes investigation outputs) ---
 scratch/

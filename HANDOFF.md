@@ -72,7 +72,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 2. ~~**Choose production k-mer filter**~~ — **RESOLVED 2026-05-27**: `filt2` (drop ac=1) + EM weighting $\omega_k=1/m_b$ (`--kmer-weight inv_mb`). See `docs/METHODS_TRIED_AND_RESULTS.md` §0/§3.
 3. **Re-validate SEEDMIX baselines under MAR + arch cn_var + production weighting** — prior numbers used `bcftools norm -m -any` cn_var, the (now-patched) "star2 treats `.` as REF" projection, AND unweighted EM. All star2 result TSVs without `info`/`n_called`/`se` columns are stale, as are all results that predate the `--kmer-weight inv_mb` switch.
 4. **Production scale-out on ~2,500 evolved GrENE-Net samples** — SLURM template at `tests/run_site_array_perchrom.sh`. Blocked on (1).
-5. **Subprojects**: `control_p80/` (homogeneous 80-cactus-founder control, all 6 regimes done; established the $\omega_k=1/m_b$ panel-conditional caveat — see `control_p80/results/FINAL_RESULTS_cov10_p80.ipynb`).
+5. **Subprojects**: `benchmarks/p80/` (homogeneous 80-cactus-founder control, all 6 regimes done; established the $\omega_k=1/m_b$ panel-conditional caveat — see `benchmarks/p80/results/FINAL_RESULTS_cov10_p80.ipynb`).
 
 ## Companion docs (still current)
 
@@ -92,7 +92,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 | `data/exclude_list.txt` | Assembly_IDs dropped from cactus panel (101003 + 100852) |
 | `data/flag_list.tsv` | Per-Assembly_ID flag status |
 | `sims/visor_freqk/README.md`, `RECOMB_SIM.md` | Pool-seq sim framework |
-| `control_p80/README.md` | 80-founder homogeneous control |
+| `benchmarks/p80/README.md` | 80-founder homogeneous control |
 
 Historical / superseded docs are preserved under `old_docs/`. Useful for archaeology; do not treat as authoritative.
 

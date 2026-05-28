@@ -31,7 +31,7 @@ python per_sample_per_chrom.py \
 #   --window-bp 10000 --global-anchor-weight 0.3 --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5
 python per_sample_per_chrom.py [same inputs] --block-mode window
 ```
-(Recipe source: `control_p80/scripts/07_run_cactus_em_p80.sh`, method `star2`.)
+(Recipe source: `benchmarks/p80/scripts/07_run_cactus_em_p80.sh`, method `star2`.)
 
 ## Active — panel / matrix / sim prep (inputs to the estimator, not h itself)
 

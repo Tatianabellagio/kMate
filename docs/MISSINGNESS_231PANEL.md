@@ -2,8 +2,8 @@
 
 **Generated**: 2026-05-21
 **Source data**: `data/cn_var_231_v3qc_v3.cn_var_called.npz` + `cn_var_231_v3qc_v3.meta.npz`
-**Plot**: `control_p80/results/missingness_by_var_class_231panel.png`
-**SLURM log**: `control_p80/logs/miss_231_63224.out`
+**Plot**: `benchmarks/p80/results/missingness_by_var_class_231panel.png`
+**SLURM log**: `benchmarks/p80/logs/miss_231_63224.out`
 
 ## TL;DR
 

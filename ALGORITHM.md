@@ -284,7 +284,7 @@ $c_k \leftarrow \omega_k c_k$ pre-EM. Implementation matches: `solve_em` does
 across k-mers and is decoupled from $\lambda$.
 
 **Panel-conditional caveat (do not propagate into the paper).** On a
-homogeneous all-long-read control panel (`control_p80`, 2026-05-27) without
+homogeneous all-long-read control panel (`benchmarks/p80`, 2026-05-27) without
 the cactus/PG imbalance, $\omega_k = 1/m_b$ slightly *under-performs* plain
 $\omega_k=1$ (per-record AF MAE +2% to +41% across regimes). $\omega_k = 1/m_b$
 is therefore an imbalance-canceling correction rather than a universal
@@ -526,7 +526,7 @@ The following are issues / assumptions worth knowing about. Severity tags:
 | M3 | MEDIUM | `--treat-missing-as-n` flag in `build_kmer_cn.py`. Production v3qc-v3 was built with this **OFF** (./. → REF). The v3qc-v2 build with the flag ON inflated K_f ratios and is archived. State which build the paper uses. |
 | M4 | MEDIUM | `denom = max(h @ cn, 1e-7)` numerical floor in EM (`em_solver.py:87`). Kicks in only at simplex boundaries; mention if you want to be precise. |
 | M5 | MEDIUM | `samtools fastq -F 0x900` filters secondary+supplementary but **not** PCR duplicates (`kmer_count.py:72`). SEEDMIX is PCR-free (memory: `seedmix_is_pcr_free`) so no dedup needed. **Evolved GrENE-Net samples are not PCR-free and require an upstream dedup step** (clumpify or equivalent) before kMate; otherwise PCR-duplicate reads inflate k-mer counts and bias the EM. State the preprocessing distinction in the paper's per-sample pipeline section. |
-| M6 | MEDIUM | Production weighting $\omega_k = 1/m_b$ (§4.2) is **panel-conditional**: it wins per-record AF MAE on the heterogeneous 231 panel (where it cancels the cactus/PG imbalance) but slightly under-performs $\omega_k=1$ on the homogeneous 80-cactus control panel (+2% to +41% MAE, `control_p80/results/filt2_mb_vs_uniform_summary.tsv`). For the GrENE-Net 231 application the win is decisive; the paper treats $\omega_k=1/m_b$ as the method default. Code preserves both via `--kmer-weight {uniform,inv_mb}` so balanced-panel users can opt out. See `docs/METHODS_TRIED_AND_RESULTS.md` §3. |
+| M6 | MEDIUM | Production weighting $\omega_k = 1/m_b$ (§4.2) is **panel-conditional**: it wins per-record AF MAE on the heterogeneous 231 panel (where it cancels the cactus/PG imbalance) but slightly under-performs $\omega_k=1$ on the homogeneous 80-cactus control panel (+2% to +41% MAE, `benchmarks/p80/results/filt2_mb_vs_uniform_summary.tsv`). For the GrENE-Net 231 application the win is decisive; the paper treats $\omega_k=1/m_b$ as the method default. Code preserves both via `--kmer-weight {uniform,inv_mb}` so balanced-panel users can opt out. See `docs/METHODS_TRIED_AND_RESULTS.md` §3. |
 | L1 | LOW | `cn_full` is conceptually genome-wide but physically per-chromosome (`build_kmer_cn.build_cn_for_chrom`). Cosmetic. |
 | L2 | LOW | `solve_em_with_omega` (contamination) exists in code but is unused in production runs. |
 | L3 | LOW | `freqk` reports `VCF_pos - 2`; add 2 before joining freqk output to any VCF or cn_var (memory: `freqk_pos_offset`). |
