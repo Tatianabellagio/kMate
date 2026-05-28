@@ -5,7 +5,7 @@ Produces (1) per-ecotype k-mer count redistribution plots (filt2 vs protect1 vs
 subsampMedian), (2) h-accuracy plots on g0 sims and real SEEDMIX (8-rep average
 toward ~uniform), and prints a SEEDMIX score table.
 
-Outputs PNGs to notebook/plots/protect1_assessment/.
+Outputs PNGs to notebooks/plots/protect1_assessment/.
 """
 import csv, json, math, glob, os
 from pathlib import Path
@@ -15,7 +15,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = str(Path(__file__).resolve().parents[2])
-PLOTS = f"{ROOT}/notebook/plots/protect1_assessment"; os.makedirs(PLOTS, exist_ok=True)
+PLOTS = f"{ROOT}/notebooks/plots/protect1_assessment"; os.makedirs(PLOTS, exist_ok=True)
 split = json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))
 CAC = set(map(str, split["cactus"]))
 

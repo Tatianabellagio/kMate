@@ -17,7 +17,7 @@ BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-ANNOTATE_SCRIPT=/global/scratch/users/tbellg/kmate/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+ANNOTATE_SCRIPT=/global/scratch/users/tbellg/kmate/external/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
 
 GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
 FULL_135_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
@@ -80,7 +80,7 @@ $BCF view -H $PG_ANNOT 2>/dev/null | awk -F'\t' '
 
 echo
 echo "[$(date)] === Step 5: convert-to-biallelic on annotated PG ==="
-CONVERT=/global/scratch/users/tbellg/kmate/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+CONVERT=/global/scratch/users/tbellg/kmate/external/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
 PG_BIAL=pg_100001_per_sample_biallelic_v2.vcf
 $BCF view $PG_ANNOT 2>/dev/null | $PY $CONVERT ${OUTPREFIX}_biallelic.sorted.vcf.gz > $PG_BIAL 2> pg_convert_v2.log
 echo "convert exit: $?"

@@ -110,9 +110,9 @@ panel/pangenie_genotyping/data/tmp_loo_genotype/
 sims/visor_freqk/
 
 # --- bulky reference/external dirs (not our code) ---
-HapFIRE/
+external/HapFIRE/
 papers/
-external_tools/
+external/
 
 # --- OS / editor ---
 .DS_Store

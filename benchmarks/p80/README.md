@@ -119,7 +119,7 @@ sbatch --dependency=afterok:$B3 scripts/07_run_cactus_em_p80.sh n50_g3 star2
 
 ## External tools / paths
 
-- **convert-to-biallelic**: `../external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py`
+- **convert-to-biallelic**: `../external/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py`
 - **A1 shared catalog (annotated 135-asm Chr1)**: `../panel/arch3/chr1/chr1_135_annotated.sorted.vcf.gz`
 - **A1 shared biallelic catalog**: `../panel/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz`
 - **82-acc source VCF (Asm_ID list reference)**: `/home/tbellagio/scratch/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.vcf.gz`

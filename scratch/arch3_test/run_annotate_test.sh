@@ -15,7 +15,7 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate/scratch/arch3_test
 
 GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
-SCRIPT=/global/scratch/users/tbellg/kmate/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+SCRIPT=/global/scratch/users/tbellg/kmate/external/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 VCF=cactus_78_test_chr1_5_14M.vcf

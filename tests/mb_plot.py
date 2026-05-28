@@ -25,6 +25,6 @@ ax[1].hist(np.clip(m_b[pg_car],0,300),bins=b,histtype="step",lw=2,density=True,c
            label=f"PG-carried (med m_b={np.median(m_b[pg_car]):.0f})")
 ax[1].set_title("bubble size m_b of k-mers carried by each class\n(density-normalized)")
 ax[1].set_xlabel("m_b (clipped 300)"); ax[1].set_ylabel("density"); ax[1].legend()
-fig.tight_layout(); out=f"{ROOT}/notebook/plots/kmers_per_bubble_class.png"
+fig.tight_layout(); out=f"{ROOT}/notebooks/plots/kmers_per_bubble_class.png"
 fig.savefig(out,dpi=110); print("wrote",out)
 print(f"per-bubble m_b: median={np.median(mb_per_bubble):.0f} mean={mb_per_bubble.mean():.1f} max={mb_per_bubble.max()}")

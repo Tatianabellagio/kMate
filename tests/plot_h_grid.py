@@ -100,5 +100,5 @@ for ri,(name,g0f,smg,kind) in enumerate(M):
         a.set_ylabel("h",fontsize=8)
 for ci in range(len(COLS)): ax[-1,ci].set_xlabel("founder (sorted by truth h asc)")
 fig.tight_layout()
-out=f"{ROOT}/notebook/plots/H_VECTOR_grid_methods.png"
+out=f"{ROOT}/notebooks/plots/H_VECTOR_grid_methods.png"
 fig.savefig(out,dpi=105,bbox_inches="tight"); print("wrote",out)

@@ -44,7 +44,7 @@ BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-CONVERT=$BASE/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+CONVERT=$BASE/external/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
 
 # Shared prerequisite: arch3 Chr1 A1 outputs (135-asm annotated + biallelic catalog)
 A1_ANNOT=$BASE/panel/arch3/chr1/chr1_135_annotated.sorted.vcf.gz

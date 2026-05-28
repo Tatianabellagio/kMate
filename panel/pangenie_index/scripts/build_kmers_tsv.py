@@ -17,7 +17,7 @@ bug — our output is semantically more correct.
 
 Reference: Ebler et al. 2022, Nat Genet — "Pangenome-based genome inference
 allows efficient and accurate genotyping across a wide spectrum of variant
-classes". Algorithm reproduced from `external_tools/pangenie-tools/src/`
+classes". Algorithm reproduced from `external/pangenie-tools/src/`
 under MIT License.
 
 Algorithm (mirrors PanGenie-index):

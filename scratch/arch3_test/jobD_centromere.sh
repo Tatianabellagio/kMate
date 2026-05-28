@@ -21,8 +21,8 @@ BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-ANNOTATE=/global/scratch/users/tbellg/kmate/external_tools/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
-CONVERT=/global/scratch/users/tbellg/kmate/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+ANNOTATE=/global/scratch/users/tbellg/kmate/external/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+CONVERT=/global/scratch/users/tbellg/kmate/external/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
 TRANSFER=/global/scratch/users/tbellg/kmate/scratch/arch3_test/transfer_id_annotation.py
 
 GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz

@@ -30,5 +30,5 @@ for ci,(rlab,sim) in enumerate(COLS):
         a.plot([0,1],[0,1],"r--",lw=1)
         a.set_xlim(0,1); a.set_ylim(0,1); a.set_xlabel("truth AF"); a.set_ylabel("estimated AF")
         a.set_title(f"{rlab} — {mlab}\nAF MAE={mae:.5f}  R2={r2:.4f}  n={m.sum():,}",fontsize=9)
-fig.tight_layout(); out=f"{ROOT}/notebook/plots/af_true_vs_est.png"
+fig.tight_layout(); out=f"{ROOT}/notebooks/plots/af_true_vs_est.png"
 fig.savefig(out,dpi=110,bbox_inches="tight"); print("wrote",out)

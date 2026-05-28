@@ -53,5 +53,5 @@ for ri,(mlab,tag) in enumerate(M):
         a.set_ylabel("avg h",fontsize=8)
         if ri==0 and ci==0: a.legend(fontsize=7,markerscale=1.5,loc="upper left")
 for ci in range(len(R)): ax[-1,ci].set_xlabel("founder (sorted by avg truth h)")
-fig.tight_layout(); out=f"{ROOT}/notebook/plots/H_VECTOR_grid_reps.png"
+fig.tight_layout(); out=f"{ROOT}/notebooks/plots/H_VECTOR_grid_reps.png"
 fig.savefig(out,dpi=110,bbox_inches="tight"); print("wrote",out)
