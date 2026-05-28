@@ -1,0 +1,14 @@
+import numpy as np, json
+from scipy.sparse import load_npz
+ROOT="/carnegie/nobackup/scratch/tbellagio/hapfire_sv"
+CAC=set(map(str,json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))["cactus"]))
+cn=load_npz(f"{ROOT}/poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.cn.npz").tocsr()
+meta=np.load(f"{ROOT}/poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz",allow_pickle=True)
+fo=np.asarray(meta["founders"]).astype(str); bid=np.asarray(meta["bubble_id"]).astype(np.int64)
+ac=np.asarray(cn.sum(0)).flatten()             # AC per k-mer
+m_b=np.bincount(bid)[bid].astype(float)        # bubble size per k-mer
+cac=np.array([x in CAC for x in fo])
+# mean m_b and mean AC of the k-mers each class CARRIES (averaged over carried entries)
+for lab,m in [("cactus",cac),("PG",~cac)]:
+    rows=np.where(m)[0]; cols=np.concatenate([cn.indices[cn.indptr[f]:cn.indptr[f+1]] for f in rows])
+    print(f"{lab}: carried-kmer mean m_b={m_b[cols].mean():.2f} median m_b={np.median(m_b[cols]):.0f} | mean AC={ac[cols].mean():.2f} frac ac=2:{(ac[cols]==2).mean():.3f}")

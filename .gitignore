@@ -183,3 +183,7 @@ control_p231/scripts/__pycache__/
 
 # --- scratch/work dirs (transient h_fixes investigation outputs) ---
 scratch/
+
+# --- python venv (test fixtures, site-packages, no business in git) ---
+.venv/
+venv/
