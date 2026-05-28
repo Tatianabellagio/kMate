@@ -12,7 +12,7 @@ Pipeline:
   5. Write TSV: chrom, pos, ref, alt, alt_freq
 
 Input prerequisites (precomputed once):
-  - cn_kmer matrix  (poolfreq/data/cn_full_<chrom>.cn.npz)  — F × K_kmer
+  - cn_kmer matrix  (data/cn_full_<chrom>.cn.npz)  — F × K_kmer
   - cn_var matrix   (built from the biallelic.norm VCF + sample list) — F × N_records
 """
 from __future__ import annotations
@@ -216,7 +216,7 @@ def run_one_sample(
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--cn-kmer-prefix", required=True,
-                    help="prefix used by build_kmer_cn (e.g., poolfreq/data/cn_full)")
+                    help="prefix used by build_kmer_cn (e.g., data/cn_full)")
     ap.add_argument("--cn-var", required=True, help="path to cn_var .npz file")
     ap.add_argument("--cn-var-meta", required=True, help="path to cn_var meta .npz")
     ap.add_argument("--reads", required=True, nargs="+", help="BAM or list of FASTQs")
