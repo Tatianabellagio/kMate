@@ -15,6 +15,13 @@ Code-verified against:
 
 Last verified: 2026-05-22.
 
+> **Note (2026-05-26 cleanup):** the estimator was reduced to two modes,
+> `global` and `window`; LD-block modes, overlapping windows, k-mer rebalancing,
+> carrier-weighting and contamination-ω were archived to `poolfreq/src/archive/`.
+> §7–§8 below are updated, but the inline `file:line` references elsewhere
+> predate the cleanup and may have shifted. The authoritative file list and
+> invocation recipes now live in `poolfreq/src/INVENTORY.md`.
+
 ---
 
 ## 1. Problem statement
@@ -291,16 +298,17 @@ $$\widehat{\mathrm{AF}}_r \;=\; \frac{\hat{\mathbf{h}}_{w(r)}^{\!\top} \, \mathr
 
 where $w(r)$ is the window containing record $r$.
 
-**Partitioning schemes** (`per_sample_per_chrom.py:255-344`, selected via
-`--block-mode`):
+**Partitioning schemes** (selected via `--block-mode`; two modes only after the
+2026-05-26 cleanup):
 - `global` (default): one $\hat{\mathbf{h}}_c$ per chromosome — for selfers /
   inbreds / F0 pools (SEEDMIX).
-- `window` (fixed-bp): hard cuts every `--window-bp` (default 200 kb), optional
-  `--window-step` for overlapping windows + inverse-distance projection.
-- `ld_gabriel`, `ld_complete`: Gabriel-style or hapFIRE-style LD blocks
-  derived from `cn_var` (founder-genotype correlation).
-- `bigld_panel`: pre-computed BigLD blocks from the panel
-  (`hapfire_block_index.npz`) — strictest apples-to-apples with hapFIRE.
+- `window` (fixed-bp): hard cuts every `--window-bp` (production default 10 kb).
+  Per-window EM is anchored to the chromosome-wide $\hat{\mathbf{h}}_c$ and
+  smoothed across windows (§8); each record takes the $\hat{\mathbf{h}}$ of its
+  window (hard assignment).
+
+The earlier `ld_gabriel`, `ld_complete`, `bigld_panel` modes and the
+overlapping-window variant were archived to `poolfreq/src/archive/`.
 
 **Anchoring** (`--global-anchor-weight`): per-window EM can be anchored to
 the chromosome-wide $\hat{\mathbf{h}}_c$ via the Dirichlet anchor of §4.1 with
@@ -315,12 +323,20 @@ was unaffected (it doesn't form discrete classes). See
 
 ---
 
-## 8. Experimental flags (off by default — not part of the paper algorithm)
+## 8. EM variants — production status (updated 2026-05-26)
 
-The production driver exposes several flags that wire in alternative EM
-variants. **All are off by default; none of them are part of the algorithm
-described in the paper.** Documented here for code-archaeology purposes only —
-these are under active testing.
+After the 2026-05-26 cleanup:
+- **Global anchor (`--global-anchor-weight`) and HMM smoothing
+  (`--hmm-smooth-*`, §8.3) are part of the production *window* recipe** — they
+  are the window-mode defaults (anchor 0.3, passes 5, α 0.5; see §7), not
+  experimental.
+- **K-mer-budget balancing (§8.1), carrier-weighted counts (§8.2) and
+  contamination-ω (§8.4) were removed** from the active driver and archived to
+  `poolfreq/src/archive/`. They never beat plain EM and are not part of the
+  paper's algorithm.
+
+The subsections below remain as archaeology for the archived variants; only the
+anchor and HMM smoothing are still wired into the active code.
 
 ### 8.1 K-mer-budget balancing (`--row-normalize-cn`, `--kf-correction-alpha`)
 

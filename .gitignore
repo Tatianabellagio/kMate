@@ -161,3 +161,25 @@ archive/**/*.tsv
 archive/**/*.tsv.gz
 archive/**/*.txt
 archive/**/*.gz
+
+# --- benchmark result TSVs (per-record AF, MB-scale per file; regeneratable) ---
+control_p80/results/cactus_em_*/
+control_p231/results/kmate_global_*/
+# kept-on-disk OLD npz-mask snapshots
+*.OLD_no_called_mask
+
+# --- sim outputs (large + regeneratable from sim scripts) ---
+control_p231/sims/
+control_p80/sims/*/recomb_truth*.tsv.gz
+control_p80/sims/*/ancestry.tsv
+control_p80/sims/*/visor_pool_fractions.tsv
+control_p80/sims/*/source_weights.tsv
+control_p80/sims/*/pool_weights.tsv
+control_p80/sims/*/region.bed
+control_p80/sims/*/haps/
+control_p80/sims/*/reads/
+control_p80/sims/*/bam/
+control_p231/scripts/__pycache__/
+
+# --- scratch/work dirs (transient h_fixes investigation outputs) ---
+scratch/

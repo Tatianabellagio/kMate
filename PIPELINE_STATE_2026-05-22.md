@@ -47,7 +47,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 - `n_called` = integer count of called founders at record r (h-independent panel QC)
 - `se` = Wald SE using `n_called` as effective sample size
 
-Both `--block-mode global` and `--block-mode window --window-bp 10000 --global-anchor-weight 0.3 --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5` (the `★★` recipe) use the same projection semantics now.
+Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use the same projection semantics. **After the 2026-05-26 cleanup the window-mode defaults *are* the ★★ recipe** (window-bp 10000, global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5), so `--block-mode window` alone reproduces it. The LD-block modes, overlapping windows, and the k-mer-rebalancing / carrier-weighting / contamination-ω variants were archived to `poolfreq/src/archive/`; the authoritative file list + recipes are in `poolfreq/src/INVENTORY.md`.
 
 ## 3. Outstanding production work
 

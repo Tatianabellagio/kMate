@@ -75,6 +75,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 | `PIPELINE_STATE_2026-05-22.md` | Production-state SoT |
 | `BACKGROUND.md` | Project framing |
 | `ALGORITHM.md` | kMate algorithm, math & wiring (code-verified single source of truth) |
+| `poolfreq/src/INVENTORY.md` | Estimator source inventory — active files, two recipes, what was archived (2026-05-26) |
 | `old_docs/CACTUS_EM_MATH.md` | Formal math (superseded; folded into `ALGORITHM.md`) |
 | `INVESTIGATION_2026-05-19_CN_VAR_DECOMPOSITION.md` | Why we switched to arch decomposition |
 | `MISSINGNESS_231PANEL.md` | F_MISSING characterization on the production panel |
