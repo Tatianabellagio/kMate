@@ -39,10 +39,10 @@ mkdir -p $WORK $CTRL/logs
 
 CACTUS_DIR=$CTRL/fastas_231
 FOUNDERS_META=$ROOT/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz
-CN_VAR_ATOM=$ROOT/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz
-CN_VAR_ATOM_META=$ROOT/arch3/chr1/cn_var_231_arch3_chr1_atomized.meta.npz
-CN_VAR_RAW=$ROOT/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz
-CN_VAR_RAW_META=$ROOT/arch3/chr1/cn_var_231_arch3_chr1.meta.npz
+CN_VAR_ATOM=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz
+CN_VAR_ATOM_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.meta.npz
+CN_VAR_RAW=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz
+CN_VAR_RAW_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz
 TRUTH=$ROOT/sims/visor_freqk/scripts/compute_recomb_truth.py
 
 for f in "$CACTUS_DIR" "$FOUNDERS_META" "$CN_VAR_ATOM" "$CN_VAR_RAW" "$TRUTH"; do

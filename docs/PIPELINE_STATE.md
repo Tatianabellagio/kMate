@@ -41,8 +41,8 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 | Matrix | Path | Shape (Chr1) | Purpose | Build script |
 |---|---|---|---|---|
 | `cn_full` | **`data/cn_full_231_v3qc_v3_filt2/cn_Chr1.{cn,meta}.npz`** (filt2, drop ac=1) | (231, ~22.7M raw → filt2 subset) | founder × k-mer (k=31, from PanGenie-index) | `build_cn_full_filt2_v3qc_v3_chr1.sh` |
-| `cn_var` | `arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` | (231, ~6.3M) | founder × biallelic-record carriers + called-mask | `arch3/chr1/jobA5_build_cnvar.sh` |
-| `cn_var_atomized` | `arch3/chr1/cn_var_231_arch3_chr1_atomized.{cn_var,cn_var_called,meta}.npz` | (231, ~7.5M) | founder × per-base SNP (atomized) | `arch3/chr1/jobD1_atomize_cnvar.sh` |
+| `cn_var` | `panel/arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` | (231, ~6.3M) | founder × biallelic-record carriers + called-mask | `panel/arch3/chr1/jobA5_build_cnvar.sh` |
+| `cn_var_atomized` | `panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.{cn_var,cn_var_called,meta}.npz` | (231, ~7.5M) | founder × per-base SNP (atomized) | `panel/arch3/chr1/jobD1_atomize_cnvar.sh` |
 
 The k-mer dictionary is the **pang_135 PanGenie-index** (built once on the full 135-assembly pangenome). Not rebuilt per panel; reused across v3, v3qc, v3qc_v3.
 

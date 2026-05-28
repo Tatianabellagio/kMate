@@ -1,7 +1,7 @@
 import numpy as np
 from pathlib import Path
 from scipy.sparse import load_npz
-ROOT=str(Path(__file__).resolve().parents[2]); CV=f"{ROOT}/arch3/chr1/cn_var_231_arch3_chr1"
+ROOT=str(Path(__file__).resolve().parents[2]); CV=f"{ROOT}/panel/arch3/chr1/cn_var_231_arch3_chr1"
 cn_var=load_npz(f"{CV}.cn_var.npz").tocsc(); cn_called=load_npz(f"{CV}.cn_var_called.npz").tocsc()
 fo=np.asarray(np.load(f"{CV}.meta.npz",allow_pickle=True)["founders"]).astype(str); F=len(fo)
 fidx={f:i for i,f in enumerate(fo)}

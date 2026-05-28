@@ -81,7 +81,7 @@ for line in mult:
 # ---------- Step 4: cn_var records at this position ----------
 print(f'\n[Step 4] cn_var records on the merged 231-panel haploid VCF')
 print(f'  File: founders_231_v3qc_v3.haploid.vcf.gz')
-merged = ROOT / 'pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz'
+merged = ROOT / 'panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz'
 res = subprocess.run([BCF, 'query', '-r', f'Chr1:{POS}-{POS}',
                       '-f', '%CHROM\t%POS\t%REF\t%ALT\t%INFO/AC\t%INFO/AN\t%INFO/F_MISSING\n',
                       str(merged)], capture_output=True, text=True)

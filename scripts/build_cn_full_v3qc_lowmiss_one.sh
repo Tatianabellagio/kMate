@@ -16,8 +16,8 @@ BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR="Chr${SLURM_ARRAY_TASK_ID:-1}"
 
-KMERS=$BASE/pangenie_genotyping/data/pang_135_pangenie_index_${CHR}_kmers.tsv.gz
-VCF=$BASE/pangenie_genotyping/data/v3qc/founders_231_v3qc.lowmiss.haploid.vcf.gz
+KMERS=$BASE/panel/pangenie_genotyping/data/pang_135_pangenie_index_${CHR}_kmers.tsv.gz
+VCF=$BASE/panel/pangenie_genotyping/data/v3qc/founders_231_v3qc.lowmiss.haploid.vcf.gz
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$BASE/data/cn_full_231_v3qc_lowmiss
 OUT_PREFIX=$OUT_DIR/cn_${CHR}

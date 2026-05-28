@@ -15,9 +15,9 @@ float32 for 80M k-mers × 231 founders), we process one chromosome at a time
 Usage:
     python per_sample_per_chrom.py \\
         --cn-kmer-prefix data/cn_full_231/cn \\
-        --cn-var       arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \\
-        --cn-var-called arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \\
-        --cn-var-meta  arch3/chr1/cn_var_231_arch3_chr1.meta.npz \\
+        --cn-var       panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \\
+        --cn-var-called panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \\
+        --cn-var-meta  panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz \\
         --reads R1.fq R2.fq --sample <name> --out <name>.tsv \\
         --threads 8 --chroms Chr1 --block-mode global
 

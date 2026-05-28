@@ -22,7 +22,7 @@
 
 **Critical hygiene point**: Clumpify dedup was **missing** from prior SEEDMIX cactus_em runs. Adding it removes ~35% PCR-duplicate k-mer inflation. This is the **principal fix**, not the Trimmomatic params (which were already correct for SEEDMIX via xwu's re-trim).
 
-The 151 founder side already gets clumpify via `pangenie_genotyping/scripts/preprocess_one.sh`.
+The 151 founder side already gets clumpify via `panel/pangenie_genotyping/scripts/preprocess_one.sh`.
 
 ---
 
@@ -50,7 +50,7 @@ TRAILING:5
 MINLEN:36
 ```
 
-This matches `pangenie_genotyping/scripts/preprocess_one.sh`.
+This matches `panel/pangenie_genotyping/scripts/preprocess_one.sh`.
 
 **Why different params for pool-seq vs ecotype**: xwu's deliberate choice; the 1001G data has lower-quality 3' tails, and SLIDINGWINDOW drops too many reads (4.7% empirically) → loses coverage at edges. Pool-seq data (PCRfreeLucigen) is higher quality, can afford stricter trimming.
 
@@ -67,7 +67,7 @@ This matches `pangenie_genotyping/scripts/preprocess_one.sh`.
 
 ## 2. Clumpify — exact config to use
 
-Match `pangenie_genotyping/scripts/preprocess_one.sh:118-125`:
+Match `panel/pangenie_genotyping/scripts/preprocess_one.sh:118-125`:
 
 ```bash
 clumpify.sh in=$TRIM_R1 in2=$TRIM_R2 \
@@ -106,7 +106,7 @@ clumpify.sh in=$TRIM_R1 in2=$TRIM_R2 \
 
 **If cn_full DOES need rebuilding** — example: new founder substituted into PG_153:
 1. Re-process that founder's raw FASTQs through `preprocess_one.sh` (ecotype Trimmomatic + clumpify).
-2. Re-run PanGenie genotyping (`pangenie_genotyping/scripts/pangenie_one.sh`) → new per-sample VCF.
+2. Re-run PanGenie genotyping (`panel/pangenie_genotyping/scripts/pangenie_one.sh`) → new per-sample VCF.
 3. Re-merge into the 153-sample PG-panel VCF, then re-merge with cactus_78 (see `scratch/arch3_chr1/jobA1-A4` for current Arch 3 merge pipeline).
 4. Re-run `build_kmer_cn.py` (founder k-mer matrix from VCF + TAIR10 ref) → new cn_full.
 5. Re-run `build_cn_var.py` (founder × variant carrier matrix from biallelic VCF) → new cn_var.
@@ -192,8 +192,8 @@ Since the Carnegie-DPB raw share is invisible to compute nodes, our jobB1 (`scra
 
 | Tier | Path on disk | Trimmomatic? | Clumpify? | Compute-node accessible? | Status |
 |---|---|---|---|---|---|
-| **Raw** (ENA-downloaded or xwu_BAM-derived) | `pangenie_genotyping/data/raw_fastqs/{ECOTYPE}/{RUN}_{1,2}.fastq.gz` (ENA), or `pangenie_genotyping/data/raw_fastqs/{ECOTYPE}/{ECOTYPE}_{1,2}.fastq.gz` (xwu_BAM, lane-concat'd) | NO | NO | YES | Source for `preprocess_one.sh` |
-| **Trim + clumpify-dedup** | `pangenie_genotyping/data/preprocessed/{ECOTYPE}_{1,2}.dedup.fq.gz` | YES (xwu's 1001G config, NO SLIDINGWINDOW) | YES (`dedupe=t dupesubs=0 optical=f`) | YES | What PanGenie consumes via `pangenie_one.sh`; what built the 151-PG-founder VCFs that feed cn_full |
+| **Raw** (ENA-downloaded or xwu_BAM-derived) | `panel/pangenie_genotyping/data/raw_fastqs/{ECOTYPE}/{RUN}_{1,2}.fastq.gz` (ENA), or `panel/pangenie_genotyping/data/raw_fastqs/{ECOTYPE}/{ECOTYPE}_{1,2}.fastq.gz` (xwu_BAM, lane-concat'd) | NO | NO | YES | Source for `preprocess_one.sh` |
+| **Trim + clumpify-dedup** | `panel/pangenie_genotyping/data/preprocessed/{ECOTYPE}_{1,2}.dedup.fq.gz` | YES (xwu's 1001G config, NO SLIDINGWINDOW) | YES (`dedupe=t dupesubs=0 optical=f`) | YES | What PanGenie consumes via `pangenie_one.sh`; what built the 151-PG-founder VCFs that feed cn_full |
 
 The founder pipeline already does trim + clumpify correctly — no fix needed there.
 

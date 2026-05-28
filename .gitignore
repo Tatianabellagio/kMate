@@ -28,11 +28,11 @@ data/*.tsv.gz
 # poolfreq/results merged into root results/
 results/seedmix_231*
 results/*aggregate*.tsv
-imputation/work/
-imputation/logs/
+panel/imputation/work/
+panel/imputation/logs/
 pangenie_test/
-pangenie_genotyping/data/raw_fastqs/
-pangenie_genotyping/logs/
+panel/pangenie_genotyping/data/raw_fastqs/
+panel/pangenie_genotyping/logs/
 cactus_panel_overlap/data/*.vcf*
 cactus_panel_overlap/data/*.fastq*
 cactus_panel_overlap/data/*.fq*
@@ -74,7 +74,7 @@ logs/
 *.zip
 *.cereal
 # PanGenie panel kmer table (heavy, regeneratable from PanGenie-index)
-pangenie_genotyping/data/pang_*_pangenie_index_*kmers.tsv.gz
+panel/pangenie_genotyping/data/pang_*_pangenie_index_*kmers.tsv.gz
 
 # --- per-record TSVs in results dirs (one per sample, MB-scale) ---
 results/**/per_sample_*/
@@ -86,21 +86,21 @@ preprocess_qc/output/genotyped_qc/
 preprocess_qc/output/grenenet_concordance/
 preprocess_qc/output/merged_stats/
 contamination_test/results/SEEDMIX_*_chr*/
-pangenie_genotyping/data/genotyped/
-pangenie_genotyping/data/loo_genotyped/
-pangenie_genotyping/data/loo_concordance/
-pangenie_genotyping/data/loo_concordance_imputed/
-pangenie_genotyping/data/preprocessed/
-pangenie_genotyping/data/loo_preprocessed/
-pangenie_genotyping/data/loo_raw_fastqs/
-pangenie_genotyping/data/raw_fastqs/
-pangenie_genotyping/data/smoke/
-pangenie_genotyping/data/tmp_genotype/
-pangenie_genotyping/data/tmp_loo_genotype/
+panel/pangenie_genotyping/data/genotyped/
+panel/pangenie_genotyping/data/loo_genotyped/
+panel/pangenie_genotyping/data/loo_concordance/
+panel/pangenie_genotyping/data/loo_concordance_imputed/
+panel/pangenie_genotyping/data/preprocessed/
+panel/pangenie_genotyping/data/loo_preprocessed/
+panel/pangenie_genotyping/data/loo_raw_fastqs/
+panel/pangenie_genotyping/data/raw_fastqs/
+panel/pangenie_genotyping/data/smoke/
+panel/pangenie_genotyping/data/tmp_genotype/
+panel/pangenie_genotyping/data/tmp_loo_genotype/
 # but keep the small auxiliary id lists + READMEs
-!pangenie_genotyping/data/v3/
-!pangenie_genotyping/data/merged/cactus_overlap_80.txt
-!pangenie_genotyping/data/merged/README*.md
+!panel/pangenie_genotyping/data/v3/
+!panel/pangenie_genotyping/data/merged/cactus_overlap_80.txt
+!panel/pangenie_genotyping/data/merged/README*.md
 # keep per-SV summary tsv.gz outputs (small, useful)
 !preprocess_qc/output/ld/per_sv_max_r2_*.tsv.gz
 !preprocess_qc/output/ld/ld_summary*.tsv
@@ -147,22 +147,22 @@ Thumbs.db
 # jellyfish dumps (~28 GB)
 *.jf
 # in-house k-mer index tables (large; regeneratable from PanGenie-index)
-kmer_index/**/*.tsv.gz
+panel/pangenie_index/**/*.tsv.gz
 # per-sample AF result TSVs + analysis intermediates (regeneratable)
 scratch/*.tsv
 scratch/*.tsv.gz
 scratch/**/*.tsv
 scratch/**/*.tsv.gz
-arch3/**/*.tsv
-arch3/**/*.tsv.gz
+panel/arch3/**/*.tsv
+panel/arch3/**/*.tsv.gz
 control_p80/results/**/*.tsv
 panel_overlap_v3_grenenet/data/*.tsv
 panel_overlap_135_vs_82/results/*.tsv.gz
 # sim truth tables (regeneratable from ancestry tracks + cn_var)
 **/recomb_truth.tsv.gz
 # pangenie per-class / missingness reports (multi-GB)
-pangenie_genotyping/data/v3qc*/**/*.tsv
-pangenie_genotyping/data/v3qc*/**/*.txt
+panel/pangenie_genotyping/data/v3qc*/**/*.tsv
+panel/pangenie_genotyping/data/v3qc*/**/*.txt
 # editor/OS sidecars & notebook backups
 *.ipynb.bak*
 ._*

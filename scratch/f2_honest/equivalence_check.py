@@ -22,8 +22,8 @@ import numpy as np
 from pathlib import Path
 
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
-PRE  = ROOT / 'pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz'
-POST = ROOT / 'pangenie_genotyping/data/v3qc_v2/cactus_78_bi.vcf.gz'
+PRE  = ROOT / 'panel/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz'
+POST = ROOT / 'panel/pangenie_genotyping/data/v3qc_v2/cactus_78_bi.vcf.gz'
 
 vpre  = pysam.VariantFile(str(PRE))
 vpost = pysam.VariantFile(str(POST))

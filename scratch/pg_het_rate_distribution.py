@@ -10,7 +10,7 @@ import numpy as np
 import pysam
 
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
-SRC_VCF = ROOT / 'pangenie_genotyping/data/merged/founders_231_chr.vcf.gz'
+SRC_VCF = ROOT / 'panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz'
 SAMPLES_FILE = ROOT / 'data/vcf_samples_231.txt'
 SPLIT_FILE = ROOT / 'data/founder_split_cactus_pg.json'
 

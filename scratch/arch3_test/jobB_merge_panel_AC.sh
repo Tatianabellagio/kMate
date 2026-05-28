@@ -26,7 +26,7 @@ PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CONVERT=/global/scratch/users/tbellg/kmate/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
 TRANSFER=/global/scratch/users/tbellg/kmate/scratch/arch3_test/transfer_id_annotation.py
 
-CACTUS78_RAW=/global/scratch/users/tbellg/kmate/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz
+CACTUS78_RAW=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz
 CACTUS_ANNOT_135=full135_test_annotated.sorted.vcf.gz
 BIAL_CATALOG=full135_test_annotated_biallelic.sorted.vcf.gz
 PG_HAP_FROM_A=pg_153_test_haploid.vcf.gz

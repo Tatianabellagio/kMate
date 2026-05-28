@@ -23,7 +23,7 @@ Net cactus panel: **80 founders.** The 4 untriaged-tail founders (Hau-0/7164, Mt
 
 p82 used `vcfbub -l 0 -r 100000 | bcftools norm -m -any`. p80 follows the production arch3 chr1 cactus-side procedure:
 
-**Shared prerequisite (already built in `../arch3/chr1/`):**
+**Shared prerequisite (already built in `../panel/arch3/chr1/`):**
 - `chr1_135_annotated.sorted.vcf.gz` — full 135-assembly pangenome, Chr1, with symbolic `INFO/ID` from `annotate_vcf.py -gfa pang_1001gplus_all.gfa.gz` (the production A1 step).
 - `chr1_135_annotated_biallelic.sorted.vcf.gz` — biallelic catalog from the same annotate step.
 
@@ -32,7 +32,7 @@ p82 used `vcfbub -l 0 -r 100000 | bcftools norm -m -any`. p80 follows the produc
 2. `convert-to-biallelic.py <biallelic catalog>` (the PanGenie helper) → one biallelic row per atomic variant ID; carrier GT derived from each sample's GT against `INFO/ID`'s per-ALT IDs.
 3. sort + bgzip + fill-tags AC/AN/F_MISSING + drop AC=0 + reheader Asm_ID → Acc_ID.
 
-No `transfer_id` step (unlike `arch3/chr1/jobA3_*.sh`): production needed it because `cactus_78.vcf.gz` came from a different source (`cactus_pang69_1001g.vcf.gz`) than the 135-asm annotation catalog. Here we subset the annotated 135-asm VCF directly, so `INFO/ID` is already present.
+No `transfer_id` step (unlike `panel/arch3/chr1/jobA3_*.sh`): production needed it because `cactus_78.vcf.gz` came from a different source (`cactus_pang69_1001g.vcf.gz`) than the 135-asm annotation catalog. Here we subset the annotated 135-asm VCF directly, so `INFO/ID` is already present.
 
 ### PanGenie-index: pang_135 (production), not p82's
 
@@ -100,7 +100,7 @@ bash scripts/submit_all_p80.sh
 Or step-by-step:
 
 ```bash
-# Phase A: panel artifacts (arch decomposition; A1 already built in arch3/chr1/)
+# Phase A: panel artifacts (arch decomposition; A1 already built in panel/arch3/chr1/)
 A1=$(sbatch --parsable scripts/01_build_biallelic_p80.sh)
 A3=$(sbatch --dependency=afterok:$A1 --parsable scripts/03_build_cn_full_p80.sh)
 A4=$(sbatch --dependency=afterok:$A1 --parsable scripts/04_build_cn_var_p80.sh)
@@ -120,11 +120,11 @@ sbatch --dependency=afterok:$B3 scripts/07_run_cactus_em_p80.sh n50_g3 star2
 ## External tools / paths
 
 - **convert-to-biallelic**: `../external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py`
-- **A1 shared catalog (annotated 135-asm Chr1)**: `../arch3/chr1/chr1_135_annotated.sorted.vcf.gz`
-- **A1 shared biallelic catalog**: `../arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz`
+- **A1 shared catalog (annotated 135-asm Chr1)**: `../panel/arch3/chr1/chr1_135_annotated.sorted.vcf.gz`
+- **A1 shared biallelic catalog**: `../panel/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz`
 - **82-acc source VCF (Asm_ID list reference)**: `/home/tbellagio/scratch/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.vcf.gz`
 - **Reference FASTA**: `/home/tbellagio/scratch/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa`
-- **PG-index (reused)**: `../pangenie_genotyping/data/pang_135_pangenie_index_Chr1_kmers.tsv.gz` (production, 135-asm)
+- **PG-index (reused)**: `../panel/pangenie_genotyping/data/pang_135_pangenie_index_Chr1_kmers.tsv.gz` (production, 135-asm)
 
 ## Consistency invariant
 

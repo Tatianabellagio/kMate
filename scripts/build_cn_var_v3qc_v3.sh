@@ -12,7 +12,7 @@ mkdir -p logs
 set -euo pipefail
 BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-VCF=$BASE/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz
+VCF=$BASE/panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz
 OUT_PREFIX=$BASE/data/cn_var_231_v3qc_v3
 [ -s "$VCF" ] || { echo "ERROR: missing $VCF"; exit 1; }
 [ ! -s "${OUT_PREFIX}.cn_var.npz" ] || exit 0

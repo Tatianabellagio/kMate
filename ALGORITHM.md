@@ -75,7 +75,7 @@ PanGenie bubble:
    canonical k-mer set.
 
 **Haploid panel input.** The panel VCF that feeds both `cn` and `cn_var` is
-*pre-haploidized* (e.g. `pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz`):
+*pre-haploidized* (e.g. `panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz`):
 each GT field contains a single allele, `0`, `1`, ..., or `.`. PanGenie outputs
 diploid GTs for the 153 short-read–genotyped founders, which we haploidize
 before merging with the 78 long-read–assembled cactus founders, so the resulting

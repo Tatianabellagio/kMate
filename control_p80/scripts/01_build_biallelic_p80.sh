@@ -12,19 +12,19 @@
 # =============================================================================
 # Phase A (arch decomposition) -- canonical p80 biallelic VCF for Chr1.
 #
-# Shared prerequisite: arch3/chr1's A1 outputs. A1 took the FULL 135-assembly
+# Shared prerequisite: panel/arch3/chr1's A1 outputs. A1 took the FULL 135-assembly
 # pangenome VCF (pang_1001gplus_all.vcf.gz) + the 135-asm GFA, ran annotate_vcf,
 # and produced the symbolic INFO/ID annotation + biallelic catalog. Built once;
 # we reuse those files here so this script is just the cactus-side conversion.
 #
-# Why no transfer_id (cf. arch3/chr1/jobA3): production cactus_78 came from a
+# Why no transfer_id (cf. panel/arch3/chr1/jobA3): production cactus_78 came from a
 # different source (cactus_pang69_1001g) than the 135-asm annotated catalog,
 # so transfer_id was needed to propagate INFO/ID. Here we subset the 135-asm
 # annotated VCF DIRECTLY -- INFO/ID is already present.
 #
 # Pipeline:
 #   1. Build 80-Asm_ID inclusion list = (82-acc samples) − (data/exclude_list.txt)
-#   2. bcftools view -S 80-list arch3/chr1/chr1_135_annotated.sorted.vcf.gz
+#   2. bcftools view -S 80-list panel/arch3/chr1/chr1_135_annotated.sorted.vcf.gz
 #      -> 80-sample annotated multi-allelic VCF
 #   3. convert-to-biallelic.py against arch3 biallelic catalog
 #      -> biallelic VCF (one row per atomic variant ID; carrier GT per sample)
@@ -47,8 +47,8 @@ PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CONVERT=$BASE/external_tools/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
 
 # Shared prerequisite: arch3 Chr1 A1 outputs (135-asm annotated + biallelic catalog)
-A1_ANNOT=$BASE/arch3/chr1/chr1_135_annotated.sorted.vcf.gz
-A1_BIAL=$BASE/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz
+A1_ANNOT=$BASE/panel/arch3/chr1/chr1_135_annotated.sorted.vcf.gz
+A1_BIAL=$BASE/panel/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz
 
 # 82-acc source VCF (used only to get the canonical 82 Asm_ID list)
 SRC_82=/global/scratch/users/tbellg/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.vcf.gz

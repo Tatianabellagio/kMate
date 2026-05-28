@@ -9,7 +9,7 @@ imbalance effect). Method under test: **filt2 + ω_k=1/m_b global** (the front-r
 
 Everything traces to the current **v3qc + arch3** lineage; nothing stale is forced in.
 
-- **Canonical VCF** `arch3/chr1/merged_231_chr1_final.vcf.gz`: v3qc QC (cactus side
+- **Canonical VCF** `panel/arch3/chr1/merged_231_chr1_final.vcf.gz`: v3qc QC (cactus side
   `view -s ^5772,9947` drops the 2 flagged assemblies; PG side `setGT GQ>=20`),
   arch biallelic decomposition + merge + AN=0 filter, **unimputed**, het→missing
   masked. 1.90M SNP / 637K indel / 84K SV. This is the latest QC'd arch panel.
@@ -20,7 +20,7 @@ Everything traces to the current **v3qc + arch3** lineage; nothing stale is forc
   merged_231's annotation topology), `--treat-missing-as-n`. Validated against the
   production `cn_full_231_v3qc_v3_filt2` by `03c_compare_cn_full.py` (cn_full is
   consensus-derived ⇒ representation-invariant ⇒ expected ~identical).
-- **cn_var** (projection + truth target): REUSED `arch3/chr1/cn_var_231_arch3_chr1`
+- **cn_var** (projection + truth target): REUSED `panel/arch3/chr1/cn_var_231_arch3_chr1`
   in TWO arms — `_atomized` (7.46M per-base records, SNP-level GEA benchmark) and
   raw (2.62M records, SNP/indel/SV classes). Both built from the canonical VCF.
 - **het handling**: both cn_full and cn_var mask het→missing (Arouisse-2020

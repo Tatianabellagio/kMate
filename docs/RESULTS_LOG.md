@@ -331,7 +331,7 @@ already have direct PanGenie genotype calls.**
 **THE GOLDEN-STANDARD VCF:**
 
 ```
-pangenie_genotyping/data/merged/founders_231_chr.vcf.gz
+panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz
   - 231 founder samples (80 cactus assembly genotypes + 151 PanGenie short-read calls)
   - 5,214,959 records
   - SVs + small indels + SNPs in one multi-allelic catalog
@@ -340,7 +340,7 @@ pangenie_genotyping/data/merged/founders_231_chr.vcf.gz
   - downstream cn-builder treats missing as carrier=False (correct interpretation)
 ```
 
-The Beagle-imputed VCFs (`imputation/work_merged/founders_231_imputed*.vcf.gz`)
+The Beagle-imputed VCFs (`panel/imputation/work_merged/founders_231_imputed*.vcf.gz`)
 remain on disk for reference but are NOT used for production downstream.
 
 **Sources:**
@@ -424,7 +424,7 @@ used here. See memory file `project_cn_var_231_v2_is_beagle_imputed.md`.
 
 > **Scope note (added 2026-05-03 evening)**: this entry concerns the
 > PanGenie 226-eco genotyping panel deliverable
-> (`pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`) and its derived
+> (`panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`) and its derived
 > cn_var. It does NOT apply to `data/cn_var_231_v2.cn_var.npz`,
 > which IS Beagle-imputed (verified: 64.5% of SV records have imputed-founder
 > carriers in cn_var_231_v2; pre-imputation would show ~0). The recomb sims
@@ -483,7 +483,7 @@ with Beagle's LD-based guess at SVs loses information rather than recovers
 it.
 
 **Decision: revert to using the pre-imputation merged VCF as the production
-deliverable.** `pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`
+deliverable.** `panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`
 (231 samples, 5.21M records, 18.5% records with cactus-side haploid `.`).
 The cn-builder (`build_cn_var.py`) treats missing as carrier=False, which is
 biologically correct for haploid `.` (the assembly didn't carry alt at this
@@ -498,10 +498,10 @@ is harder for the HMM, and the haplotype reference panel here only contains
 treats no differently from the cactus side).
 
 **Files:**
-  - `pangenie_genotyping/data/loo_concordance/`           pre-imputation LOO concord
-  - `pangenie_genotyping/data/loo_concordance_imputed/`   post-imputation LOO concord (this entry)
-  - `imputation/work_merged/founders_231_imputed.vcf.gz`  Beagle output (kept for reference; NOT used in production)
-  - `imputation/work_merged/founders_231_imputed_multiallelic.vcf.gz`  bcftools norm -m + version
+  - `panel/pangenie_genotyping/data/loo_concordance/`           pre-imputation LOO concord
+  - `panel/pangenie_genotyping/data/loo_concordance_imputed/`   post-imputation LOO concord (this entry)
+  - `panel/imputation/work_merged/founders_231_imputed.vcf.gz`  Beagle output (kept for reference; NOT used in production)
+  - `panel/imputation/work_merged/founders_231_imputed_multiallelic.vcf.gz`  bcftools norm -m + version
 
 ---
 
@@ -604,7 +604,7 @@ others (fewer ALT alternatives competing in the bubbles).
 **Files:**
   - `preprocess_qc/output/grenenet_concordance_aggregate.tsv` — per-ecotype × panel
   - `preprocess_qc/output/concordance_combined.tsv` — joined cactus + GrENE-Net per ecotype
-  - `pangenie_genotyping/data/loo_concordance/<eco>_{summary,records}.tsv*` — per-ecotype size_class breakdown vs cactus
+  - `panel/pangenie_genotyping/data/loo_concordance/<eco>_{summary,records}.tsv*` — per-ecotype size_class breakdown vs cactus
 
 **Pipeline timings:**
   - PanGenie-index on pang_135 (5.21M bubbles): 36 min, 34.7 GB peak RSS
@@ -724,7 +724,7 @@ be private to specific founders and Beagle imputation is conservative.
 `bcftools merge ref_80.vcf.gz imputed_151.vcf.gz`, where `ref_80` already
 contains the 80 cactus founders' SNP genotypes (from `grene_80.vcf.gz`,
 used as Beagle's reference panel input). The `ref_80.vcf.gz` already
-exists at `/carnegie/nobackup/scratch/tbellagio/kmate/imputation/work/`.
+exists at `/carnegie/nobackup/scratch/tbellagio/kmate/panel/imputation/work/`.
 Estimated rebuild cost: cn_kmer ~9h + cn_var ~30 min, single SLURM job.
 
 **Workaround (current)**: post-hoc 1.43× calibration recovers R² 0.68→0.97

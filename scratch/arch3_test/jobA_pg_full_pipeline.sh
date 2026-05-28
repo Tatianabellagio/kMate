@@ -25,7 +25,7 @@ TRANSFER=/global/scratch/users/tbellg/kmate/scratch/arch3_test/transfer_id_annot
 
 CACTUS_ANNOT=full135_test_annotated.sorted.vcf.gz       # from job 63045
 BIAL_CATALOG=full135_test_annotated_biallelic.sorted.vcf.gz
-PG_RAW=/global/scratch/users/tbellg/kmate/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
+PG_RAW=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
 
 [ -s $CACTUS_ANNOT ] || { echo "ERROR: missing $CACTUS_ANNOT"; exit 1; }
 

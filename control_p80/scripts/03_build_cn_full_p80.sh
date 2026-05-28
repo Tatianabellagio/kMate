@@ -26,7 +26,7 @@ CTRL=/global/scratch/users/tbellg/kmate/control_p80
 BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-KMERS=$BASE/pangenie_genotyping/data/pang_135_pangenie_index_Chr1_kmers.tsv.gz
+KMERS=$BASE/panel/pangenie_genotyping/data/pang_135_pangenie_index_Chr1_kmers.tsv.gz
 VCF=$CTRL/data/pangenome_p80_chr1.vcf.gz
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$CTRL/data/cn_full_p80

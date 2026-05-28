@@ -57,7 +57,7 @@ ls -la ${OUTPREFIX}.sorted.vcf.gz ${OUTPREFIX}_biallelic.sorted.vcf.gz
 
 echo
 echo "[$(date)] === Step 4: test bcftools annotate on PG (the failure case) ==="
-PG_RAW=/global/scratch/users/tbellg/kmate/pangenie_genotyping/data/genotyped/100001_genotyping.vcf.gz
+PG_RAW=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/genotyped/100001_genotyping.vcf.gz
 PG_TEST=pg_100001_test_chr1_5_14M.vcf.gz
 if [ ! -s $PG_TEST ]; then
   $BCF view -r Chr1:5800000-14000000 $PG_RAW -Oz -o $PG_TEST

@@ -14,8 +14,8 @@
 # (merged_231_chr1_final.vcf.gz), for single-source provenance.
 #
 # Identical recipe to scripts/build_cn_full_v3qc_v3_chr1.sh EXCEPT
-# --vcf points at arch3/chr1/merged_231_chr1_final.vcf.gz instead of
-# pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz.
+# --vcf points at panel/arch3/chr1/merged_231_chr1_final.vcf.gz instead of
+# panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz.
 # Same pang_135 k-mer dictionary (135-asm graph, matches merged_231's annotation
 # topology), same ref, same --treat-missing-as-n. cn_full is consensus-derived so
 # this should reproduce the production cn_full nearly exactly (validated by
@@ -26,8 +26,8 @@ set -euo pipefail
 BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CHR=Chr1
-KMERS=$BASE/pangenie_genotyping/data/pang_135_pangenie_index_${CHR}_kmers.tsv.gz
-VCF=$BASE/arch3/chr1/merged_231_chr1_final.vcf.gz
+KMERS=$BASE/panel/pangenie_genotyping/data/pang_135_pangenie_index_${CHR}_kmers.tsv.gz
+VCF=$BASE/panel/arch3/chr1/merged_231_chr1_final.vcf.gz
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
 OUT_DIR=$BASE/control_p231/data/cn_full_p231
 mkdir -p $OUT_DIR

@@ -20,7 +20,7 @@ BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 mkdir -p $BASE/logs
 
-VCF=$BASE/pangenie_genotyping/data/v3qc/founders_231_v3qc.haploid.vcf.gz
+VCF=$BASE/panel/pangenie_genotyping/data/v3qc/founders_231_v3qc.haploid.vcf.gz
 OUT_PREFIX=$BASE/data/cn_var_231_v3qc
 
 [ -s "$VCF" ] || { echo "ERROR: missing $VCF" >&2; exit 1; }

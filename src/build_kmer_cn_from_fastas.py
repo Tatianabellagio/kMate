@@ -7,7 +7,7 @@ list), but instead of reconstructing each founder's bubble sequence on the fly
 from TAIR10 + VCF GTs, this builder reads the founder's bubble slice straight
 out of their pre-built consensus FASTA. The FASTAs are produced upstream by
 `bcftools consensus -H A -s <eco> -f TAIR10 founders_231_chr.haploid.vcf.gz`
-(see pangenie_genotyping/scripts/build_consensus_fastas_one.sh).
+(see panel/pangenie_genotyping/scripts/build_consensus_fastas_one.sh).
 
 Why path A: making the founder sequences explicit on disk makes the build
 deterministic and inspectable — no compound-variant edge cases in custom code,

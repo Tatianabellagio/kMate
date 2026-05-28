@@ -19,8 +19,8 @@
 |---|---|
 | Panel | `founders_231_v3qc_v3` (78 cactus + 153 PG) |
 | Decomposition | **arch3** (annotate_vcf + convert-to-biallelic), NOT `bcftools norm -m -any` |
-| cn_var (SV-level) | `arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` |
-| cn_var (SNP-level) | `arch3/chr1/cn_var_231_arch3_chr1_atomized.*` (per-base atomized) |
+| cn_var (SV-level) | `panel/arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` |
+| cn_var (SNP-level) | `panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.*` (per-base atomized) |
 | cn_full | **`data/cn_full_231_v3qc_v3_filt2/cn_Chr1.{cn,meta}.npz`** (filt2: drop ac=1 singletons) |
 | EM weighting | **`--kmer-weight inv_mb`** (ω_k = 1/m_b per-bubble de-replication, `ALGORITHM.md` §4.2) |
 | Projection | MAR: `(h @ cn_var) / (h @ cn_var_called)`, both `global` and window modes |
@@ -32,9 +32,9 @@ Two output modes, both production-supported:
 # global — default for SEEDMIX / F0 pools
 python src/per_sample_per_chrom.py \
     --cn-kmer-prefix data/cn_full_231_v3qc_v3_filt2/cn \
-    --cn-var       arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \
-    --cn-var-called arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \
-    --cn-var-meta  arch3/chr1/cn_var_231_arch3_chr1.meta.npz \
+    --cn-var       panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \
+    --cn-var-called panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \
+    --cn-var-meta  panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
     --threads 8 --chroms Chr1 \
     --block-mode global \

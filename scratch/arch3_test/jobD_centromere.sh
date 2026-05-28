@@ -27,8 +27,8 @@ TRANSFER=/global/scratch/users/tbellg/kmate/scratch/arch3_test/transfer_id_annot
 
 GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
 FULL_135_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
-PG_RAW=/global/scratch/users/tbellg/kmate/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
-CACTUS78_RAW=/global/scratch/users/tbellg/kmate/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz
+PG_RAW=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
+CACTUS78_RAW=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/v3qc_tmp/cactus_78.vcf.gz
 
 REGION="Chr1:14000000-17000000"
 OUTDIR=centromere

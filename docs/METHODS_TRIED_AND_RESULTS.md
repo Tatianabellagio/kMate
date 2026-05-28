@@ -15,7 +15,7 @@ kMate (legacy name `cactus_em`): per-sample Poisson k-mer EM on the 231-founder 
 - **EM cn_full (k-mer index):** `cn_full_231_v3qc_v3_filt2` (drop ac=1 singletons). ★
 - **EM weighting:** `--kmer-weight inv_mb` (ω_k = 1/m_b, per-bubble de-replication), GLOBAL mode. ★ for the heterogeneous 231 panel — but **panel-conditional** (see §3).
 - **Projection cn_var:** arch3 — `cn_var_231_arch3_chr1_atomized` (SNP-level GEA) + raw `cn_var_231_arch3_chr1` (SNP/indel/SV). ★
-- **Canonical VCF:** `arch3/chr1/merged_231_chr1_final.vcf.gz` (v3qc QC: GQ≥20 + 5772/9947 dropped; arch biallelic; unimputed; het→missing).
+- **Canonical VCF:** `panel/arch3/chr1/merged_231_chr1_final.vcf.gz` (v3qc QC: GQ≥20 + 5772/9947 dropped; arch biallelic; unimputed; het→missing).
 - **Driver:** `src/per_sample_per_chrom.py` (`--block-mode global --kmer-weight inv_mb`); solver `src/em_solver.py` (`solve_em(omega=)`).
 
 ---
@@ -81,7 +81,7 @@ byte-identical to the old MLE solver).
 |---|---|
 | `cn_var_231_v2` | ✗ Beagle-IMPUTED (incl. SVs) — rejected ([[cn_var_231_v2_is_beagle_imputed]]) |
 | `cn_var_231_v3`, `_v3qc`, `_v3qc_v2` (+OLD_no_called_mask) | ✗ superseded; pre-arch decomposition |
-| **`arch3/chr1/cn_var_231_arch3_chr1`** (raw) | ★ SNP/indel/SV classes (2.62M records) |
+| **`panel/arch3/chr1/cn_var_231_arch3_chr1`** (raw) | ★ SNP/indel/SV classes (2.62M records) |
 | **`…_arch3_chr1_atomized`** | ★ per-base SNP-level (7.46M); use for SNP GEA |
 
 Arch3 = graph-annotated + `convert-to-biallelic` decomposition; lifted hapFIRE SNP
@@ -125,7 +125,7 @@ See [[feedback_gen0_no_replace_required]] for the full rationale and do-not-revi
 
 - `control_p80/` — homogeneous-panel control. filt2 vs filt2+1/m_b A/B, 6 regimes. DONE; results in `control_p80/results/filt2_mb_vs_uniform_summary.tsv` + notebook.
 - `control_p231/` — ⋯ **headline 231 benchmark, in progress** (random crossovers; both cn_var arms; cn_full rebuilt from arch3 for single-source). See `control_p231/README.md`.
-- Prior eval notebooks: `notebook/FINAL_RESULTS_cov10*.ipynb`, `arch3/chr1/AF_TRUTH_VS_ESTIMATE_arch3_chr1.ipynb`.
+- Prior eval notebooks: `notebook/FINAL_RESULTS_cov10*.ipynb`, `panel/arch3/chr1/AF_TRUTH_VS_ESTIMATE_arch3_chr1.ipynb`.
 
 ---
 
@@ -142,7 +142,7 @@ subsampProtect1/2(+seeds)}. Verdicts in §1–2.
 
 **`archive/cn_var_superseded/` (3.3 GB):** `cn_var_231_{v2,v3,v3qc,v3qc_v2}*`
 (+ `.OLD_no_called_mask`). Kept: `cn_var_231_v3qc_v3` (data) and the
-production `arch3/chr1/cn_var_231_arch3_chr1*`.
+production `panel/arch3/chr1/cn_var_231_arch3_chr1*`.
 
 **`archive/fastas_superseded/` (42 GB):** `unimputed_fastas_v3` (pre-QC),
 `founder_fastas_231_v3`, `imputed_fastas_v2_DEPRECATED`. Kept: `unimputed_fastas_v3qc`

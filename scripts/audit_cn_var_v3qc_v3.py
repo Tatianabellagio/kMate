@@ -22,7 +22,7 @@ BASE = str(Path(__file__).resolve().parents[2])
 CV   = f"{BASE}/data/cn_var_231_v3qc_v3.cn_var.npz"
 CVC  = f"{BASE}/data/cn_var_231_v3qc_v3.cn_var_called.npz"
 META = f"{BASE}/data/cn_var_231_v3qc_v3.meta.npz"
-VCF  = f"{BASE}/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz"
+VCF  = f"{BASE}/panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz"
 
 t0 = time.time()
 

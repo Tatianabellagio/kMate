@@ -16,7 +16,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--cn-var', default=str(_root / 'data/cn_var_82.cn_var.npz'))
     ap.add_argument('--cn-var-meta', default=str(_root / 'data/cn_var_82.meta.npz'))
-    ap.add_argument('--rename-map', default=str(_root / 'imputation/work/sample_rename.txt'))
+    ap.add_argument('--rename-map', default=str(_root / 'panel/imputation/work/sample_rename.txt'))
     ap.add_argument('--out-prefix', default=str(_root / 'data/cn_var_82_renamed_to_1001g'))
     args = ap.parse_args()
 

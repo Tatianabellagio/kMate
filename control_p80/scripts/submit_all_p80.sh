@@ -4,7 +4,7 @@
 # dependencies. Idempotent: each step skips if its outputs already exist.
 #
 # Pipeline (arch decomposition):
-#   Shared prerequisite (NOT in this submit chain): arch3/chr1/jobA1_*.sh
+#   Shared prerequisite (NOT in this submit chain): panel/arch3/chr1/jobA1_*.sh
 #     -> chr1_135_annotated.sorted.vcf.gz + chr1_135_annotated_biallelic.sorted.vcf.gz
 #     Built once on the full 135-asm pangenome + GFA. Already present.
 #
@@ -12,7 +12,7 @@
 #         convert-to-biallelic against arch3 biallelic catalog, fill-tags,
 #         drop AC=0, reheader Asm_ID -> Acc_ID
 #         -> canonical pangenome_p80_chr1.vcf.gz (biallelic, 80 samples)
-#   03 -- cn_full_p80 (uses pang_135 PG-index from pangenie_genotyping/data/)
+#   03 -- cn_full_p80 (uses pang_135 PG-index from panel/pangenie_genotyping/data/)
 #   04 -- cn_var_p80
 #   05 -- 80 founder consensus FASTAs
 #   06 -- recomb sims for {n50_g1, n50_g3}
@@ -25,8 +25,8 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate/control_p80
 
 # Verify the shared arch3 A1 prerequisite exists
-A1_ANNOT=/global/scratch/users/tbellg/kmate/arch3/chr1/chr1_135_annotated.sorted.vcf.gz
-A1_BIAL=/global/scratch/users/tbellg/kmate/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz
+A1_ANNOT=/global/scratch/users/tbellg/kmate/panel/arch3/chr1/chr1_135_annotated.sorted.vcf.gz
+A1_BIAL=/global/scratch/users/tbellg/kmate/panel/arch3/chr1/chr1_135_annotated_biallelic.sorted.vcf.gz
 for f in $A1_ANNOT $A1_BIAL; do
     [ -s "$f" ] || { echo "ERROR: missing arch3 A1 output $f" >&2; exit 1; }
 done
@@ -52,7 +52,7 @@ C3S=$(sbatch --dependency=afterok:$B3 --parsable scripts/07_run_cactus_em_p80.sh
 # V3S3=$(sbatch --dependency=afterok:$B3 --parsable scripts/08_run_v3panel_on_p80reads.sh n50_g3 star2)
 
 cat <<EOF
-Submitted job chain (arch decomposition; A1 reused from arch3/chr1/):
+Submitted job chain (arch decomposition; A1 reused from panel/arch3/chr1/):
   A1   = $A1     -- subset to 80, convert-to-biallelic, fill-tags, drop AC=0, reheader
   A3   = $A3     -- cn_full_p80 (uses pang_135 PG-index)
   A4   = $A4     -- cn_var_p80

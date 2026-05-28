@@ -14,7 +14,7 @@ import numpy as np
 import pysam
 
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
-SRC = ROOT / 'pangenie_genotyping/data/merged/founders_231_chr.vcf.gz'
+SRC = ROOT / 'panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz'
 SPLIT = json.load(open(ROOT/'data/founder_split_cactus_pg.json'))
 pg_set = set(SPLIT['PG'])
 

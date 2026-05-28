@@ -18,7 +18,7 @@ ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 t0 = time.time()
 print('=== reading F_MISSING + LV for Chr1 from merged panel VCF ===', flush=True)
-VCF = ROOT/'pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz'
+VCF = ROOT/'panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz'
 
 # We need F_MISSING + LV for every Chr1 record, in the SAME order as cn_var meta
 # (build_cn_var iterates the VCF top-to-bottom, no filter). So row index of Chr1

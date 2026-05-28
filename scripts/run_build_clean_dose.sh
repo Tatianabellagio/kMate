@@ -21,7 +21,7 @@ $PYTHON -u scripts/build_block_haplotype_cn_clean.py \
     --block-index sims/visor_freqk/chr1_only_panel/hapfire_block_index_chr1.npz \
     --cn-var data/cn_var_231_v2.cn_var.npz \
     --cn-var-meta data/cn_var_231_v2.meta.npz \
-    --vcf imputation/work/test_fix/merged_v2_chr.vcf.gz \
+    --vcf panel/imputation/work/test_fix/merged_v2_chr.vcf.gz \
     --ref /global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa \
     --out $OUT \
     --chrom-filter Chr1 --threads 8 \

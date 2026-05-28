@@ -53,11 +53,11 @@ CN_KMER_PREFIX=$CTRL/data/cn_full_p231_filt2/cn
 [ -s "${CN_KMER_PREFIX}_Chr1.cn.npz" ] || CN_KMER_PREFIX=$ROOT/data/cn_full_231_v3qc_v3_filt2/cn
 
 if [ "$CNVAR" = "atomized" ]; then
-    CN_VAR=$ROOT/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz
-    CN_VAR_META=$ROOT/arch3/chr1/cn_var_231_arch3_chr1_atomized.meta.npz
+    CN_VAR=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz
+    CN_VAR_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.meta.npz
 else
-    CN_VAR=$ROOT/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz
-    CN_VAR_META=$ROOT/arch3/chr1/cn_var_231_arch3_chr1.meta.npz
+    CN_VAR=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz
+    CN_VAR_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz
 fi
 
 WTAG=$([[ "$WEIGHT" == "inv_mb" ]] && echo filt2mb || echo filt2u)

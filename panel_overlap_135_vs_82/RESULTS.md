@@ -13,11 +13,11 @@ Confirmed from the pang_135 raw VCF sample list (135 columns):
 - **82 numeric Assembly_IDs** (e.g. `100042`, `100313`) — the GrENE-Net cactus side. Maps to 81 unique Accession_IDs (one is a dedup-pair), of which 78 overlap `cactus_80_ecotypes.txt` (v3qc-v3 drops 2 more for QC).
 - **53 non-numeric names** (e.g. `Tul-0`, `Yo-0`, `Est-0`) — the diversity extras from the Exposito-Alonso 2026 batch.
 
-Lookup table: `pangenie_genotyping/data/cactus_80_ecotypes.txt`, `data/sv_panel_to_accession_id.tsv`.
+Lookup table: `panel/pangenie_genotyping/data/cactus_80_ecotypes.txt`, `data/sv_panel_to_accession_id.tsv`.
 
 PanGenie was built against `pang_1001gplus_all.vcf.gz` (vcfbub-decomposed, top-level only, 1 GB), **not** the raw nested VCF (`pang_1001gplus_all.raw.vcf.gz`, 2.86 GB). This matters: ~30% of pang_135 raw per-ALT records are nested-only bubbles that PG never processes.
 
-The 151 PG-genotyped short-read founders' per-founder VCFs live in `pangenie_genotyping/data/genotyped/*_genotyping.vcf.gz`. We use these PRE-het-mask, PRE-V4-filter — the raw PG signal, since QC is a separate question.
+The 151 PG-genotyped short-read founders' per-founder VCFs live in `panel/pangenie_genotyping/data/genotyped/*_genotyping.vcf.gz`. We use these PRE-het-mask, PRE-V4-filter — the raw PG signal, since QC is a separate question.
 
 ---
 

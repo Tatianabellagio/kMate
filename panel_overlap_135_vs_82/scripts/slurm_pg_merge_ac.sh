@@ -11,7 +11,7 @@
 mkdir -p logs
 set -euo pipefail
 
-# Merge the 151 PG-genotyped per-founder VCFs (from pangenie_genotyping/data/genotyped/),
+# Merge the 151 PG-genotyped per-founder VCFs (from panel/pangenie_genotyping/data/genotyped/),
 # fill AC/AN over the 151, then emit per-ALT AC at the same alt-idx granularity
 # as Tier 1 ac_82 / ac_53 tables.
 #
@@ -19,7 +19,7 @@ set -euo pipefail
 #  (schema matches ac_82 / ac_53 tables: chrom pos ref_len n_alt alt_idx alt_len ac an)
 #
 # Notes:
-# - 151 sources: pangenie_genotyping/data/genotyped/*_genotyping.vcf.gz
+# - 151 sources: panel/pangenie_genotyping/data/genotyped/*_genotyping.vcf.gz
 #   (matches missing_151_ecotypes.txt exactly; these are the GrENE-Net founders
 #   that lack long-read assemblies and were genotyped via PanGenie against pang_135).
 # - We do NOT apply v3qc het-mask or V4 filter here: this is the raw PG signal,
@@ -31,7 +31,7 @@ conda activate sequencing_pipeline
 
 BASE=/global/scratch/users/tbellg/kmate
 WORK=$BASE/panel_overlap_135_vs_82
-GENOTYPED=$BASE/pangenie_genotyping/data/genotyped
+GENOTYPED=$BASE/panel/pangenie_genotyping/data/genotyped
 
 echo "[$(date +%H:%M:%S)] discovering input PG VCFs"
 

@@ -21,7 +21,7 @@
 #   data/cn_var_231_v3.meta.npz     (founders, chrom, pos, ref_len, alt_len)
 #
 # Source VCF is the new haploid sibling of the production catalog:
-#   pangenie_genotyping/data/merged/founders_231_chr.haploid.vcf.gz
+#   panel/pangenie_genotyping/data/merged/founders_231_chr.haploid.vcf.gz
 # (multi-allelics already decomposed; cells uniform {0, 1, .}; no Beagle).
 #
 # v3 vs v2: same builder, new VCF input.
@@ -32,7 +32,7 @@ BASE=/global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 mkdir -p $BASE/logs
 
-VCF=$BASE/pangenie_genotyping/data/merged/founders_231_chr.haploid.vcf.gz
+VCF=$BASE/panel/pangenie_genotyping/data/merged/founders_231_chr.haploid.vcf.gz
 OUT_PREFIX=$BASE/data/cn_var_231_v3
 
 [ -s "$VCF" ] || { echo "ERROR: missing $VCF" >&2; exit 1; }
