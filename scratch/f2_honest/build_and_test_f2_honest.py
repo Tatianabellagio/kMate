@@ -36,7 +36,7 @@ print(f'    loaded {len(asm_to_acc):,} Assembly_ID → Accession_ID rows')
 
 # ---------- 2) Load cn_var meta + raw VCF sample header ----------
 print('[2] Load cn_var meta + raw VCF sample list')
-m = np.load(ROOT / 'poolfreq/data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)
+m = np.load(ROOT / 'data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)
 founders = list(m['founders'])
 chrom_arr = m['chrom']; pos_arr = m['pos']
 ref_arr   = m['ref'];   alt_arr = m['alt']
@@ -124,7 +124,7 @@ print(f'    elapsed: {time.time()-t0:.1f}s')
 
 # ---------- 4) Load existing cn_var; identify Chr1 SNP records at mixed bubbles ----------
 print('[4] Load cn_var; identify Chr1 SNP records')
-cv = sp.load_npz(ROOT / 'poolfreq/data/cn_var_231_v3qc_v3.cn_var.npz')
+cv = sp.load_npz(ROOT / 'data/cn_var_231_v3qc_v3.cn_var.npz')
 cv_csc = cv.tocsc()
 print(f'    cn_var: {cv.shape}, {cv.nnz:,} nnz')
 

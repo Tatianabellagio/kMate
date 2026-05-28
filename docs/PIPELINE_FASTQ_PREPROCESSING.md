@@ -128,7 +128,7 @@ clumpify.sh in=$TRIM_R1 in2=$TRIM_R2 \
    R1=$READS/SEEDMIX_S${S}_1.dedup.fq.gz
    R2=$READS/SEEDMIX_S${S}_2.dedup.fq.gz
    ```
-   Already done for `poolfreq/scripts/run_seedmix_v3qc_v3_mixedloose_chr1.sh` on 2026-05-20.
+   Already done for `scripts/run_seedmix_v3qc_v3_mixedloose_chr1.sh` on 2026-05-20.
    For genome-wide runs, update the corresponding `_genomewide.sh` scripts.
 
 2. Submit cactus_em per-sample, per-chrom (one SLURM array task per (sample, chrom)):

@@ -92,10 +92,10 @@ After Route 1 alone (λ=0.3 anchor) hit R²=0.963 SNP / 0.934 big-SV on n50_g3 a
 
 **Production recipe (final, replaces 2026-05-06 morning recipe):**
 ```bash
-python poolfreq/src/per_sample_per_chrom.py \
-    --cn-kmer-prefix poolfreq/data/cn_full_231_v2/cn \
-    --cn-var       poolfreq/data/cn_var_231_v2.cn_var.npz \
-    --cn-var-meta  poolfreq/data/cn_var_231_v2.meta.npz \
+python src/per_sample_per_chrom.py \
+    --cn-kmer-prefix data/cn_full_231_v2/cn \
+    --cn-var       data/cn_var_231_v2.cn_var.npz \
+    --cn-var-meta  data/cn_var_231_v2.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
     --threads 8 --chroms Chr1 Chr2 Chr3 Chr4 Chr5 \
     --block-mode window --window-bp 10000 \
@@ -176,10 +176,10 @@ gives back ~0.4 pp. Sweet spot is λ ∈ [0.3, 0.5]; default for production is
 
 **Production recipe** (replaces the previous 200 kb default):
 ```bash
-python poolfreq/src/per_sample_per_chrom.py \
-    --cn-kmer-prefix poolfreq/data/cn_full_231_v2/cn \
-    --cn-var       poolfreq/data/cn_var_231_v2.cn_var.npz \
-    --cn-var-meta  poolfreq/data/cn_var_231_v2.meta.npz \
+python src/per_sample_per_chrom.py \
+    --cn-kmer-prefix data/cn_full_231_v2/cn \
+    --cn-var       data/cn_var_231_v2.cn_var.npz \
+    --cn-var-meta  data/cn_var_231_v2.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
     --threads 8 --chroms Chr1 Chr2 Chr3 Chr4 Chr5 \
     --block-mode window --window-bp 10000 \
@@ -188,9 +188,9 @@ python poolfreq/src/per_sample_per_chrom.py \
 Wall: ~25 min on Chr1 cov50 (single 8-core node). Memory: ~40 GB peak.
 
 **Files / artifacts:**
-- Driver mods: `poolfreq/src/em_solver.py` (added `prior_h`, `prior_weight`),
-  `poolfreq/src/block_em.py` (threading), `poolfreq/src/per_sample_driver.py`
-  + `poolfreq/src/per_sample_per_chrom.py` (`--global-anchor-weight` flag)
+- Driver mods: `src/em_solver.py` (added `prior_h`, `prior_weight`),
+  `src/block_em.py` (threading), `src/per_sample_driver.py`
+  + `src/per_sample_per_chrom.py` (`--global-anchor-weight` flag)
 - Sweep script: `sims/visor_freqk/scripts/run_cem_window_anchor_sweep.sh`
 - Output TSVs: `sims/visor_freqk/pool_sweep_82_recomb/cov50_n50_g3_s42_hotspots_p231_chr1/cactus_em_recomb_window_10kb_anchor{0.1,0.3,1.0}.tsv`
 - Notebook: RECOMB_SWEEP_RESULTS_slim.ipynb Tier 9.6 cell with R² vs λ plot
@@ -281,10 +281,10 @@ as the fine-scale baseline until a positive result appears. Route 3 as
 implemented is not a win at full cov50 on n50_g3 at 10 kb resolution.
 
 **Files / artifacts**:
-- Driver: `poolfreq/src/per_sample_kallisto_em.py`
-- Helper: `poolfreq/scripts/precompute_panel_u64_index.py` (one-time uint64
-  panel cache; current: `poolfreq/data/cn_full_231_v2/cn_Chr1_kmers_u64.npz`)
-- Eval: `poolfreq/scripts/eval_kallisto_em.py`
+- Driver: `src/per_sample_kallisto_em.py`
+- Helper: `scripts/precompute_panel_u64_index.py` (one-time uint64
+  panel cache; current: `data/cn_full_231_v2/cn_Chr1_kmers_u64.npz`)
+- Eval: `scripts/eval_kallisto_em.py`
 - Output TSV (full cov, anchor=0): `/tmp/kallisto_em_full.tsv`
 - Wall: 40 min on 1 core (5 min could become ~6 min on 8 cores via
   multiprocessing — pseudoalignment is the bottleneck; per-window EM is fast).
@@ -406,9 +406,9 @@ which is what unlocks robust EM at fine-block resolution.
 **Status**: builder + driver written; full Chr1 build + sim re-runs pending.
 
 **Files**:
-- `poolfreq/scripts/build_block_haplotype_cn.py` — Chr-wide builder
-- `poolfreq/src/block_haplotype_em.py` — per-chrom EM driver
-- `poolfreq/src/per_sample_bigld_haplotype.py` — per-sample driver
+- `scripts/build_block_haplotype_cn.py` — Chr-wide builder
+- `src/block_haplotype_em.py` — per-chrom EM driver
+- `src/per_sample_bigld_haplotype.py` — per-sample driver
 - `sims/visor_freqk/scripts/run_cem_bigld_haplotype.sh` — SLURM wrapper
 - `compare_recomb_stratified.py` — already includes `bigld_haplotype` in
   the methods set
@@ -425,7 +425,7 @@ used here. See memory file `project_cn_var_231_v2_is_beagle_imputed.md`.
 > **Scope note (added 2026-05-03 evening)**: this entry concerns the
 > PanGenie 226-eco genotyping panel deliverable
 > (`pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`) and its derived
-> cn_var. It does NOT apply to `poolfreq/data/cn_var_231_v2.cn_var.npz`,
+> cn_var. It does NOT apply to `data/cn_var_231_v2.cn_var.npz`,
 > which IS Beagle-imputed (verified: 64.5% of SV records have imputed-founder
 > carriers in cn_var_231_v2; pre-imputation would show ~0). The recomb sims
 > and the new `bigld_haplotype` mode use cn_var_231_v2 (Beagle-imputed) and

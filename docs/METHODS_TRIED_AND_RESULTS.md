@@ -16,7 +16,7 @@ kMate (legacy name `cactus_em`): per-sample Poisson k-mer EM on the 231-founder 
 - **EM weighting:** `--kmer-weight inv_mb` (ω_k = 1/m_b, per-bubble de-replication), GLOBAL mode. ★ for the heterogeneous 231 panel — but **panel-conditional** (see §3).
 - **Projection cn_var:** arch3 — `cn_var_231_arch3_chr1_atomized` (SNP-level GEA) + raw `cn_var_231_arch3_chr1` (SNP/indel/SV). ★
 - **Canonical VCF:** `arch3/chr1/merged_231_chr1_final.vcf.gz` (v3qc QC: GQ≥20 + 5772/9947 dropped; arch biallelic; unimputed; het→missing).
-- **Driver:** `poolfreq/src/per_sample_per_chrom.py` (`--block-mode global --kmer-weight inv_mb`); solver `poolfreq/src/em_solver.py` (`solve_em(omega=)`).
+- **Driver:** `src/per_sample_per_chrom.py` (`--block-mode global --kmer-weight inv_mb`); solver `src/em_solver.py` (`solve_em(omega=)`).
 
 ---
 
@@ -141,7 +141,7 @@ v3qc_v3_{classmatchPG, filt2_subsampMedian, mixed*, subsampMedian(+seeds),
 subsampProtect1/2(+seeds)}. Verdicts in §1–2.
 
 **`archive/cn_var_superseded/` (3.3 GB):** `cn_var_231_{v2,v3,v3qc,v3qc_v2}*`
-(+ `.OLD_no_called_mask`). Kept: `cn_var_231_v3qc_v3` (poolfreq/data) and the
+(+ `.OLD_no_called_mask`). Kept: `cn_var_231_v3qc_v3` (data) and the
 production `arch3/chr1/cn_var_231_arch3_chr1*`.
 
 **`archive/fastas_superseded/` (42 GB):** `unimputed_fastas_v3` (pre-QC),
@@ -153,6 +153,6 @@ production `arch3/chr1/cn_var_231_arch3_chr1*`.
 `*.v2_imputed_BACKUP / OLD_BUGGY / DELETE_ME / macbad` dirs were DELETED 2026-05-27
 (explicitly stale-marked, current counterparts verified).
 
-**Dangling refs (recoverable):** `poolfreq/scripts/{build_cn_full_*,run_seedmix_*}`
+**Dangling refs (recoverable):** `scripts/{build_cn_full_*,run_seedmix_*}`
 for the archived variants now point at archived dirs — they are the build/run scripts of
 the concluded experiments; not archived (kept as records), will fail only if re-run.

@@ -19,7 +19,7 @@ BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 VCF=$BASE/pangenie_genotyping/data/v3qc/founders_231_v3qc.haploid.vcf.gz
-REFALT=$BASE/poolfreq/data/cn_var_231_v3qc.ref_alt.tsv.gz
+REFALT=$BASE/data/cn_var_231_v3qc.ref_alt.tsv.gz
 
 if [ ! -s "$REFALT" ]; then
     echo "[$(date)] Step 1: build $REFALT"

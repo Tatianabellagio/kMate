@@ -30,7 +30,7 @@ WEIGHT=${3:-inv_mb}
 ROOT=/global/scratch/users/tbellg/kmate
 CTRL=$ROOT/control_p231
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-DRIVER=$ROOT/poolfreq/src/per_sample_per_chrom.py
+DRIVER=$ROOT/src/per_sample_per_chrom.py
 COV=10; SEED=42
 
 case "$REGIME" in
@@ -50,7 +50,7 @@ READS_DIR=$WORK/reads
 # Front-runner cn_full: REBUILT-from-arch3 filt2 (single-source). Falls back to
 # production v3qc_v3 filt2 if the rebuilt one is absent.
 CN_KMER_PREFIX=$CTRL/data/cn_full_p231_filt2/cn
-[ -s "${CN_KMER_PREFIX}_Chr1.cn.npz" ] || CN_KMER_PREFIX=$ROOT/poolfreq/data/cn_full_231_v3qc_v3_filt2/cn
+[ -s "${CN_KMER_PREFIX}_Chr1.cn.npz" ] || CN_KMER_PREFIX=$ROOT/data/cn_full_231_v3qc_v3_filt2/cn
 
 if [ "$CNVAR" = "atomized" ]; then
     CN_VAR=$ROOT/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz

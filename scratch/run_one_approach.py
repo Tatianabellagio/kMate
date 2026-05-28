@@ -19,12 +19,12 @@ import numpy as np
 from scipy.sparse import load_npz
 
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
-sys.path.insert(0, str(ROOT / 'poolfreq/src'))
+sys.path.insert(0, str(ROOT / 'src'))
 from em_solver import solve_em
 from kmer_count import count_kmers_in_fasta
 
 SIM = ROOT / 'sims/visor_freqk/pool_sweep_82_recomb' / 'cov10_n200_g1_s42_hotspots_p231_chr1'
-CN_PREFIX = ROOT / 'poolfreq/data/cn_full_231_v3/cn'
+CN_PREFIX = ROOT / 'data/cn_full_231_v3/cn'
 SCRATCH = ROOT / 'scratch'
 OUT_DIR = SCRATCH / 'three_approaches'
 OUT_DIR.mkdir(exist_ok=True)

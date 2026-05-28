@@ -12,9 +12,22 @@ __pycache__/
 .pytest_cache/
 
 # --- per-tool large outputs (heavy data dirs) ---
-poolfreq/data/
-poolfreq/results/
-poolfreq/tests/logs/
+# (poolfreq/ promoted to project root 2026-05-28: src/ scripts/ tests/ data/)
+tests/logs/
+# heavy cn matrices & sim/result artifacts merged from poolfreq/data into root data/
+# (*.npz already covered globally below; these catch the non-.npz siblings + dirs)
+data/cn_full_*/
+data/cn_var_*
+data/block_haplotype_cn/
+data/sim_chr1/
+data/sim_chr1_skewed/
+data/calibration_*.json
+data/*_manifest.tsv
+data/seedmix_S1_*
+data/*.tsv.gz
+# poolfreq/results merged into root results/
+results/seedmix_231*
+results/*aggregate*.tsv
 imputation/work/
 imputation/logs/
 pangenie_test/
@@ -65,7 +78,7 @@ pangenie_genotyping/data/pang_*_pangenie_index_*kmers.tsv.gz
 
 # --- per-record TSVs in results dirs (one per sample, MB-scale) ---
 results/**/per_sample_*/
-poolfreq/results/**/*.tsv
+results/**/*.tsv
 
 # --- analysis output dirs producing >GB intermediate text files ---
 preprocess_qc/output/ld/*_chr*.tsv
@@ -187,3 +200,8 @@ scratch/
 # --- python venv (test fixtures, site-packages, no business in git) ---
 .venv/
 venv/
+
+# --- re-ignore data artifacts merged from poolfreq/data that the broad
+#     !data/*.tsv keep above would otherwise expose (2026-05-28) ---
+data/*_manifest.tsv
+data/seedmix_S1_h_wls_*.tsv

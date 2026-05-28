@@ -41,7 +41,7 @@ BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
 TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
-POOLFREQ_SRC=/global/scratch/users/tbellg/kmate/poolfreq/src
+POOLFREQ_SRC=/global/scratch/users/tbellg/kmate/src
 
 # ---- Sanity checks on inputs --------------------------------------------------
 for f in $MERGED_VCF $REF; do

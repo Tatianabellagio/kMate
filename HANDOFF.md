@@ -21,7 +21,7 @@
 | Decomposition | **arch3** (annotate_vcf + convert-to-biallelic), NOT `bcftools norm -m -any` |
 | cn_var (SV-level) | `arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` |
 | cn_var (SNP-level) | `arch3/chr1/cn_var_231_arch3_chr1_atomized.*` (per-base atomized) |
-| cn_full | **`poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.{cn,meta}.npz`** (filt2: drop ac=1 singletons) |
+| cn_full | **`data/cn_full_231_v3qc_v3_filt2/cn_Chr1.{cn,meta}.npz`** (filt2: drop ac=1 singletons) |
 | EM weighting | **`--kmer-weight inv_mb`** (ω_k = 1/m_b per-bubble de-replication, `ALGORITHM.md` §4.2) |
 | Projection | MAR: `(h @ cn_var) / (h @ cn_var_called)`, both `global` and window modes |
 | Chrom scope | **Chr1 only currently — Chr2–5 build is the open production task** |
@@ -30,8 +30,8 @@ Two output modes, both production-supported:
 
 ```bash
 # global — default for SEEDMIX / F0 pools
-python poolfreq/src/per_sample_per_chrom.py \
-    --cn-kmer-prefix poolfreq/data/cn_full_231_v3qc_v3_filt2/cn \
+python src/per_sample_per_chrom.py \
+    --cn-kmer-prefix data/cn_full_231_v3qc_v3_filt2/cn \
     --cn-var       arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \
     --cn-var-called arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \
     --cn-var-meta  arch3/chr1/cn_var_231_arch3_chr1.meta.npz \
@@ -44,7 +44,7 @@ python poolfreq/src/per_sample_per_chrom.py \
 # ancestry). The window-mode DEFAULTS are this recipe (window-bp 10000,
 # global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5), so the
 # flag alone reproduces it — pass those flags only to override.
-python poolfreq/src/per_sample_per_chrom.py \
+python src/per_sample_per_chrom.py \
     [same inputs as global] \
     --block-mode window \
     --kmer-weight inv_mb
@@ -53,10 +53,10 @@ python poolfreq/src/per_sample_per_chrom.py \
 **Estimator code (2026-05-26 cleanup):** two modes only — `global` and `window`.
 LD-block modes, overlapping windows, the older k-mer-budget rebalancing
 (`--row-normalize-cn`), carrier-weighting and contamination-ω were archived to
-`poolfreq/src/archive/`. The current production EM weighting is the cleaner
+`src/archive/`. The current production EM weighting is the cleaner
 $\omega_k = 1/m_b$ composite-likelihood form, still wired into the active
 driver (`--kmer-weight inv_mb`); see `ALGORITHM.md` §4.2. The authoritative
-file list + invocation recipes are in **`poolfreq/src/INVENTORY.md`**.
+file list + invocation recipes are in **`src/README.md`**.
 
 Output TSV (post-2026-05-21 patch) has 8 columns:
 
@@ -71,7 +71,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 1. **Arch 3 Chr2–5 panel build** — run A1→A5 for remaining chroms. Chr1 is validated; whole-genome needed for downstream GEA.
 2. ~~**Choose production k-mer filter**~~ — **RESOLVED 2026-05-27**: `filt2` (drop ac=1) + EM weighting $\omega_k=1/m_b$ (`--kmer-weight inv_mb`). See `docs/METHODS_TRIED_AND_RESULTS.md` §0/§3.
 3. **Re-validate SEEDMIX baselines under MAR + arch cn_var + production weighting** — prior numbers used `bcftools norm -m -any` cn_var, the (now-patched) "star2 treats `.` as REF" projection, AND unweighted EM. All star2 result TSVs without `info`/`n_called`/`se` columns are stale, as are all results that predate the `--kmer-weight inv_mb` switch.
-4. **Production scale-out on ~2,500 evolved GrENE-Net samples** — SLURM template at `poolfreq/tests/run_site_array_perchrom.sh`. Blocked on (1).
+4. **Production scale-out on ~2,500 evolved GrENE-Net samples** — SLURM template at `tests/run_site_array_perchrom.sh`. Blocked on (1).
 5. **Subprojects**: `control_p80/` (homogeneous 80-cactus-founder control, all 6 regimes done; established the $\omega_k=1/m_b$ panel-conditional caveat — see `control_p80/results/FINAL_RESULTS_cov10_p80.ipynb`).
 
 ## Companion docs (still current)
@@ -81,7 +81,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 | `docs/PIPELINE_STATE.md` | Production-state SoT |
 | `BACKGROUND.md` | Project framing |
 | `ALGORITHM.md` | kMate algorithm, math & wiring (code-verified single source of truth) |
-| `poolfreq/src/INVENTORY.md` | Estimator source inventory — active files, two recipes, what was archived (2026-05-26) |
+| `src/README.md` | Estimator source inventory — active files, two recipes, what was archived (2026-05-26) |
 | `old_docs/CACTUS_EM_MATH.md` | Formal math (superseded; folded into `ALGORITHM.md`) |
 | `docs/INVESTIGATION_CN_VAR_DECOMPOSITION.md` | Why we switched to arch decomposition |
 | `docs/MISSINGNESS_231PANEL.md` | F_MISSING characterization on the production panel |

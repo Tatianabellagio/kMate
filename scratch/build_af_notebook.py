@@ -39,8 +39,8 @@ ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 CEM_DIR = ROOT / 'scratch/seedmix_v3_dedup'
 CEM_FILT2_DIR = ROOT / 'scratch/seedmix_v3_filt2_dedup'
 HF_DIR = Path('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix')
-CN_VAR = ROOT / 'poolfreq/data/cn_var_231_v3.cn_var.npz'
-CN_VAR_META = ROOT / 'poolfreq/data/cn_var_231_v3.meta.npz'
+CN_VAR = ROOT / 'data/cn_var_231_v3.cn_var.npz'
+CN_VAR_META = ROOT / 'data/cn_var_231_v3.meta.npz'
 
 meta = np.load(CN_VAR_META, allow_pickle=True)
 rec_chrom = np.asarray(meta['chrom']).astype(str)

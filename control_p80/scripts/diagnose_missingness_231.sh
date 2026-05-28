@@ -25,7 +25,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from pathlib import Path
 
-DATA = Path('/global/scratch/users/tbellg/kmate/poolfreq/data')
+DATA = Path('/global/scratch/users/tbellg/kmate/data')
 OUT  = Path('/global/scratch/users/tbellg/kmate/control_p80/results')
 
 # Load only the meta arrays we need (skip the heavy 'ref'/'alt' object strings).

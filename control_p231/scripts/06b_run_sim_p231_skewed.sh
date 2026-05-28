@@ -38,7 +38,7 @@ WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}_hotspots_${DOM_TAG
 mkdir -p $WORK $CTRL/logs
 
 CACTUS_DIR=$CTRL/fastas_231
-FOUNDERS_META=$ROOT/poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz
+FOUNDERS_META=$ROOT/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz
 CN_VAR_ATOM=$ROOT/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz
 CN_VAR_ATOM_META=$ROOT/arch3/chr1/cn_var_231_arch3_chr1_atomized.meta.npz
 CN_VAR_RAW=$ROOT/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz

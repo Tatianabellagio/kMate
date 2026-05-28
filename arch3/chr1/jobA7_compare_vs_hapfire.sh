@@ -94,9 +94,9 @@ new_snp['alt'] = [str(x) for x in np.asarray(meta['alt'])[snp_mask]]
 new_snp['chrom_num'] = new_snp['chrom'].astype(str).str.replace('Chr','',regex=False).astype(int)
 print(f'  NEW SNP records w/ REF/ALT: {len(new_snp):,}')
 
-# OLD: meta is at /poolfreq/data/cn_var_231_v3qc_v3.meta.npz
+# OLD: meta is at /data/cn_var_231_v3qc_v3.meta.npz
 print('=== Re-attach REF/ALT bases to OLD ===')
-old_meta_path = '/global/scratch/users/tbellg/kmate/poolfreq/data/cn_var_231_v3qc_v3.meta.npz'
+old_meta_path = '/global/scratch/users/tbellg/kmate/data/cn_var_231_v3qc_v3.meta.npz'
 try:
     om = np.load(old_meta_path, allow_pickle=True)
     om_ref_len = om['ref_len']; om_alt_len = om['alt_len']

@@ -277,7 +277,7 @@ def main():
     ap.add_argument("--cactus-dir", required=True,
                     help="dir holding <founder>.chr.fa[.fai]")
     ap.add_argument("--founders-meta", required=True,
-                    help="poolfreq cn_full meta.npz with 'founders' field")
+                    help="cn_full meta.npz with 'founders' field")
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--samtools", default="/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools",
                     help="samtools binary, used to index the mosaic FASTAs (default: shared install)")

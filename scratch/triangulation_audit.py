@@ -28,7 +28,7 @@ SCRATCH = f'{ROOT}/scratch'
 HF = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
 
 # --- load cn_var v3qc_v3 + called mask + meta ---
-meta = np.load(f'{ROOT}/poolfreq/data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)
+meta = np.load(f'{ROOT}/data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)
 founders = list(np.asarray(meta['founders']).astype(str))
 F = len(founders)
 chrom = np.asarray(meta['chrom']).astype(str)
@@ -41,8 +41,8 @@ chr1_snp_idx = np.where(chr1_snp)[0]
 chr1_snp_pos = pos[chr1_snp_idx]
 print(f'Chr1 SNP records: {len(chr1_snp_idx):,}')
 
-cn_var = sp.load_npz(f'{ROOT}/poolfreq/data/cn_var_231_v3qc_v3.cn_var.npz')
-cn_var_called = sp.load_npz(f'{ROOT}/poolfreq/data/cn_var_231_v3qc_v3.cn_var_called.npz')
+cn_var = sp.load_npz(f'{ROOT}/data/cn_var_231_v3qc_v3.cn_var.npz')
+cn_var_called = sp.load_npz(f'{ROOT}/data/cn_var_231_v3qc_v3.cn_var_called.npz')
 
 cv = cn_var[:, chr1_snp_idx].toarray().astype(np.float32)         # (F, N_chr1_snp)
 cvc = cn_var_called[:, chr1_snp_idx].toarray().astype(np.float32) # (F, N_chr1_snp)

@@ -20,9 +20,9 @@ from scipy.sparse import load_npz
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 SRC_VCF = ROOT / 'pangenie_genotyping/data/merged/founders_231_chr.haploid.vcf.gz'
 GN_VCF  = Path('/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf')
-CN_VAR  = ROOT / 'poolfreq/data/cn_var_231_v3.cn_var.npz'
-CN_VAR_META = ROOT / 'poolfreq/data/cn_var_231_v3.meta.npz'
-REFALT  = ROOT / 'poolfreq/data/cn_var_231_v3.ref_alt.tsv.gz'
+CN_VAR  = ROOT / 'data/cn_var_231_v3.cn_var.npz'
+CN_VAR_META = ROOT / 'data/cn_var_231_v3.meta.npz'
+REFALT  = ROOT / 'data/cn_var_231_v3.ref_alt.tsv.gz'
 SPLIT_FILE = ROOT / 'data/founder_split_cactus_pg.json'
 OUT_TSV = ROOT / 'scratch/disagreement_directionality.tsv'
 

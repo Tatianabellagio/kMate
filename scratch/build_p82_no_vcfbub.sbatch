@@ -48,7 +48,7 @@ echo "  samples: $($BCF query -l $WORK/p82_nobub_chr1.vcf.gz | wc -l)"
 
 echo ""
 echo "[$(date)] Step 4: build cn_var"
-$PYBIN -u $ROOT/poolfreq/src/build_cn_var.py \
+$PYBIN -u $ROOT/src/build_cn_var.py \
     --vcf $WORK/p82_nobub_chr1.vcf.gz --out $WORK/cn_var_p82_nobub --chrom Chr1
 
 echo ""

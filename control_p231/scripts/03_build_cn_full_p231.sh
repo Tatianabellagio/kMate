@@ -13,7 +13,7 @@
 # control_p231 Phase A3 -- cn_full k-mer index from the ARCH3 canonical VCF
 # (merged_231_chr1_final.vcf.gz), for single-source provenance.
 #
-# Identical recipe to poolfreq/scripts/build_cn_full_v3qc_v3_chr1.sh EXCEPT
+# Identical recipe to scripts/build_cn_full_v3qc_v3_chr1.sh EXCEPT
 # --vcf points at arch3/chr1/merged_231_chr1_final.vcf.gz instead of
 # pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz.
 # Same pang_135 k-mer dictionary (135-asm graph, matches merged_231's annotation
@@ -38,7 +38,7 @@ OUT_PREFIX=$OUT_DIR/cn_${CHR}
 [ ! -s "${OUT_PREFIX}.cn.npz" ] || { echo "exists, skipping"; exit 0; }
 
 echo "[$(date)] $CHR cn_full p231 from arch3 merged_231 (--treat-missing-as-n)"
-$PY -u $BASE/poolfreq/src/build_kmer_cn.py \
+$PY -u $BASE/src/build_kmer_cn.py \
     --kmers "$KMERS" --vcf "$VCF" --ref "$REF" \
     --chrom "$CHR" --out "$OUT_PREFIX" \
     --treat-missing-as-n

@@ -1,7 +1,7 @@
 # 231-panel missingness by variant class
 
 **Generated**: 2026-05-21
-**Source data**: `poolfreq/data/cn_var_231_v3qc_v3.cn_var_called.npz` + `cn_var_231_v3qc_v3.meta.npz`
+**Source data**: `data/cn_var_231_v3qc_v3.cn_var_called.npz` + `cn_var_231_v3qc_v3.meta.npz`
 **Plot**: `control_p80/results/missingness_by_var_class_231panel.png`
 **SLURM log**: `control_p80/logs/miss_231_63224.out`
 

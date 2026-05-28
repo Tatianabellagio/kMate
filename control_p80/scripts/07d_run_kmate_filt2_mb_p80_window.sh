@@ -29,7 +29,7 @@ WEIGHT=${2:-inv_mb}
 
 CTRL=/global/scratch/users/tbellg/kmate/control_p80
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-DRIVER=/global/scratch/users/tbellg/kmate/poolfreq/src/per_sample_per_chrom.py
+DRIVER=/global/scratch/users/tbellg/kmate/src/per_sample_per_chrom.py
 COV=10; SEED=42
 
 case "$REGIME" in

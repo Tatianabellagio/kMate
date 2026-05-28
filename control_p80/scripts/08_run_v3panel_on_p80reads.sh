@@ -30,7 +30,7 @@ METHOD=${2:?Usage: REGIME METHOD}
 CTRL=/global/scratch/users/tbellg/kmate/control_p80
 ROOT=/global/scratch/users/tbellg/kmate
 PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-DRIVER=$ROOT/poolfreq/src/per_sample_per_chrom.py
+DRIVER=$ROOT/src/per_sample_per_chrom.py
 
 case "$REGIME" in
     n50_g1) N=50; G=1 ;;
@@ -43,9 +43,9 @@ READS_DIR=$WORK/reads
 [ -s "$READS_DIR/r1.fq" ] || { echo "ERROR: missing reads -- run 06_run_sim_p80.sh first" >&2; exit 1; }
 
 # V3 panel pointers (unchanged -- 231-founder production panel)
-CN_KMER_PREFIX=$ROOT/poolfreq/data/cn_full_231_v3/cn
-CN_VAR=$ROOT/poolfreq/data/cn_var_231_v3.cn_var.npz
-CN_VAR_META=$ROOT/poolfreq/data/cn_var_231_v3.meta.npz
+CN_KMER_PREFIX=$ROOT/data/cn_full_231_v3/cn
+CN_VAR=$ROOT/data/cn_var_231_v3.cn_var.npz
+CN_VAR_META=$ROOT/data/cn_var_231_v3.meta.npz
 
 OUT_DIR=$CTRL/results/v3_panel_on_p80_reads/cactus_em_${METHOD}/${REGIME}
 mkdir -p $OUT_DIR

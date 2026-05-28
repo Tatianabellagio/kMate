@@ -10,7 +10,7 @@ from pathlib import Path
 
 chrom_num = int(sys.argv[1])
 chrom = f'Chr{chrom_num}'
-ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate/poolfreq/data')
+ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate/data')
 SRC_DIR = ROOT / 'cn_full_231_v3'
 OUT_DIR = ROOT / 'cn_full_231_v3_filt2'
 OUT_DIR.mkdir(exist_ok=True)

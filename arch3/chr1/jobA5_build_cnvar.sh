@@ -17,7 +17,7 @@ set -euo pipefail
 
 cd /global/scratch/users/tbellg/kmate/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-BUILD_CN=/global/scratch/users/tbellg/kmate/poolfreq/src/build_cn_var.py
+BUILD_CN=/global/scratch/users/tbellg/kmate/src/build_cn_var.py
 VCF=merged_231_chr1_final.vcf.gz
 OUT_PREFIX=cn_var_231_arch3_chr1
 

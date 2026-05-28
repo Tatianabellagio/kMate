@@ -31,10 +31,10 @@ echo "Out: $OUT"
 [[ -f $R1 ]] || { echo "MISSING $R1"; exit 1; }
 [[ -f $R2 ]] || { echo "MISSING $R2"; exit 1; }
 
-/usr/bin/time -v $PYBIN -u $ROOT/poolfreq/src/per_sample_per_chrom.py \
-    --cn-kmer-prefix $ROOT/poolfreq/data/cn_full_231_v3/cn \
-    --cn-var $ROOT/poolfreq/data/cn_var_231_v3.cn_var.npz \
-    --cn-var-meta $ROOT/poolfreq/data/cn_var_231_v3.meta.npz \
+/usr/bin/time -v $PYBIN -u $ROOT/src/per_sample_per_chrom.py \
+    --cn-kmer-prefix $ROOT/data/cn_full_231_v3/cn \
+    --cn-var $ROOT/data/cn_var_231_v3.cn_var.npz \
+    --cn-var-meta $ROOT/data/cn_var_231_v3.meta.npz \
     --reads $R1 $R2 \
     --sample SEEDMIX_S${S} \
     --out $OUT \

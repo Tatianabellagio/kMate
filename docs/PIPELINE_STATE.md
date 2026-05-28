@@ -40,13 +40,13 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 
 | Matrix | Path | Shape (Chr1) | Purpose | Build script |
 |---|---|---|---|---|
-| `cn_full` | **`poolfreq/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.{cn,meta}.npz`** (filt2, drop ac=1) | (231, ~22.7M raw → filt2 subset) | founder × k-mer (k=31, from PanGenie-index) | `build_cn_full_filt2_v3qc_v3_chr1.sh` |
+| `cn_full` | **`data/cn_full_231_v3qc_v3_filt2/cn_Chr1.{cn,meta}.npz`** (filt2, drop ac=1) | (231, ~22.7M raw → filt2 subset) | founder × k-mer (k=31, from PanGenie-index) | `build_cn_full_filt2_v3qc_v3_chr1.sh` |
 | `cn_var` | `arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` | (231, ~6.3M) | founder × biallelic-record carriers + called-mask | `arch3/chr1/jobA5_build_cnvar.sh` |
 | `cn_var_atomized` | `arch3/chr1/cn_var_231_arch3_chr1_atomized.{cn_var,cn_var_called,meta}.npz` | (231, ~7.5M) | founder × per-base SNP (atomized) | `arch3/chr1/jobD1_atomize_cnvar.sh` |
 
 The k-mer dictionary is the **pang_135 PanGenie-index** (built once on the full 135-assembly pangenome). Not rebuilt per panel; reused across v3, v3qc, v3qc_v3.
 
-## 2. Driver — `poolfreq/src/per_sample_per_chrom.py`
+## 2. Driver — `src/per_sample_per_chrom.py`
 
 Reads FASTQs, runs k-mer Poisson EM on the simplex, projects through cn_var. Output TSV schema (post 2026-05-21 patch):
 
@@ -59,7 +59,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 - `n_called` = integer count of called founders at record r (h-independent panel QC)
 - `se` = Wald SE using `n_called` as effective sample size
 
-Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use the same projection semantics. **After the 2026-05-26 cleanup the window-mode defaults *are* the ★★ recipe** (window-bp 10000, global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5), so `--block-mode window` alone reproduces it. **Pass `--kmer-weight inv_mb` in both modes** (production EM weighting; see §0 and `ALGORITHM.md` §4.2). The LD-block modes, overlapping windows, and the older k-mer-budget rebalancing / carrier-weighting / contamination-ω variants were archived to `poolfreq/src/archive/`; the authoritative file list + recipes are in `poolfreq/src/INVENTORY.md`.
+Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use the same projection semantics. **After the 2026-05-26 cleanup the window-mode defaults *are* the ★★ recipe** (window-bp 10000, global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5), so `--block-mode window` alone reproduces it. **Pass `--kmer-weight inv_mb` in both modes** (production EM weighting; see §0 and `ALGORITHM.md` §4.2). The LD-block modes, overlapping windows, and the older k-mer-budget rebalancing / carrier-weighting / contamination-ω variants were archived to `src/archive/`; the authoritative file list + recipes are in `src/README.md`.
 
 ## 3. Outstanding production work
 
@@ -68,7 +68,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 | Build `cn_var_231_arch3` for Chr2-5 | Current Chr1-only build is enough to validate; whole-genome is needed for downstream GEA |
 | ~~Choose production k-mer filter~~ | **DONE 2026-05-27**: `filt2` + `--kmer-weight inv_mb`. See §0 and `METHODS_TRIED_AND_RESULTS.md` §0/§3. |
 | Re-run SEEDMIX baselines under MAR star2 + arch cn_var + `--kmer-weight inv_mb` | Prior numbers used `norm -m -any` cn_var, the buggy "star2 treats `.` as REF" projection, AND unweighted EM; need fresh validation under the full production recipe. |
-| Production scale-out on 2,415 evolved GrENE-Net samples | SLURM template in `poolfreq/tests/`; ~1.5–5 days at cluster-wide concurrency |
+| Production scale-out on 2,415 evolved GrENE-Net samples | SLURM template in `tests/`; ~1.5–5 days at cluster-wide concurrency |
 
 ## 4. What's deprecated (do not use)
 

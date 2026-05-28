@@ -17,8 +17,8 @@ from scipy.stats import pearsonr
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 print('[1] Load cn_var + meta')
-cv = sp.load_npz(ROOT / 'poolfreq/data/cn_var_231_v3qc_v3.cn_var.npz')   # (231, 6.29M) CSR
-m  = np.load(ROOT / 'poolfreq/data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)
+cv = sp.load_npz(ROOT / 'data/cn_var_231_v3qc_v3.cn_var.npz')   # (231, 6.29M) CSR
+m  = np.load(ROOT / 'data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)
 chrom_arr   = m['chrom']
 pos_arr     = m['pos']
 ref_len_arr = m['ref_len']

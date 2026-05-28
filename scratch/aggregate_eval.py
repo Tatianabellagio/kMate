@@ -24,8 +24,8 @@ from scipy.sparse import load_npz
 
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 SIM = ROOT / 'sims/visor_freqk/pool_sweep_82_recomb' / 'cov10_n200_g1_s42_hotspots_p231_chr1'
-CN_VAR = ROOT / 'poolfreq/data/cn_var_231_v3.cn_var.npz'
-CN_VAR_META = ROOT / 'poolfreq/data/cn_var_231_v3.meta.npz'
+CN_VAR = ROOT / 'data/cn_var_231_v3.cn_var.npz'
+CN_VAR_META = ROOT / 'data/cn_var_231_v3.meta.npz'
 SCRATCH = ROOT / 'scratch'
 H_DIR = SCRATCH / 'three_approaches'
 SAMPLES_FILE = ROOT / 'data/vcf_samples_231.txt'

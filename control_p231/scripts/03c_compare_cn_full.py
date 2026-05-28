@@ -8,7 +8,7 @@ from pathlib import Path
 from scipy.sparse import load_npz
 ROOT=str(Path(__file__).resolve().parents[2])
 P231=f"{ROOT}/control_p231/data/cn_full_p231_filt2"
-PROD=f"{ROOT}/poolfreq/data/cn_full_231_v3qc_v3_filt2"
+PROD=f"{ROOT}/data/cn_full_231_v3qc_v3_filt2"
 
 def load(d):
     cn=load_npz(f"{d}/cn_Chr1.cn.npz").tocsc()

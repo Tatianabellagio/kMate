@@ -17,7 +17,7 @@ import pandas as pd
 from pathlib import Path
 
 ROOT   = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
-META   = ROOT / 'poolfreq/data/cn_var_231_v3qc_v3.meta.npz'
+META   = ROOT / 'data/cn_var_231_v3qc_v3.meta.npz'
 CEMTSV = ROOT / 'scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.tsv'
 HAPF   = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
 PGPRE  = ROOT / 'scratch/hetmask_diag/pg_premask_chr1_snps.tsv'

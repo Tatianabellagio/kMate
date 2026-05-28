@@ -11,7 +11,7 @@
 
 # =============================================================================
 # Phase A4 -- Build cn_var_p80.{cn_var,meta}.npz
-# Wraps poolfreq/src/build_cn_var.py with the canonical p80 VCF.
+# Wraps src/build_cn_var.py with the canonical p80 VCF.
 # =============================================================================
 mkdir -p logs
 set -euo pipefail
@@ -36,7 +36,7 @@ echo "[$(date)] build cn_var_p80"
 echo "  vcf: $VCF"
 echo "  out: ${OUT_PREFIX}.{cn_var,meta}.npz"
 
-$PY -u $BASE/poolfreq/src/build_cn_var.py --vcf "$VCF" --out "$OUT_PREFIX"
+$PY -u $BASE/src/build_cn_var.py --vcf "$VCF" --out "$OUT_PREFIX"
 
 echo ""
 echo "=== sanity check ==="

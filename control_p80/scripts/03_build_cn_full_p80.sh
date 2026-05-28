@@ -49,7 +49,7 @@ echo "  vcf:   $VCF"
 echo "  ref:   $REF"
 echo "  out:   ${OUT_PREFIX}.{cn,meta}.npz"
 
-$PY -u $BASE/poolfreq/src/build_kmer_cn.py \
+$PY -u $BASE/src/build_kmer_cn.py \
     --kmers "$KMERS" \
     --vcf   "$VCF" \
     --ref   "$REF" \

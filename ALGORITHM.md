@@ -6,22 +6,22 @@ below has been cross-checked against the production code; references are
 `file:line` so they stay traceable.
 
 Code-verified against:
-- `poolfreq/src/em_solver.py` — EM core
-- `poolfreq/src/build_kmer_cn.py` — cn_full builder
-- `poolfreq/src/build_cn_var.py` — cn_var + cn_var_called builder
-- `poolfreq/src/per_sample_per_chrom.py` — production per-sample driver
-- `poolfreq/src/block_em.py` — per-window / per-block EM
-- `poolfreq/src/kmer_count.py` — jellyfish wrapper
+- `src/em_solver.py` — EM core
+- `src/build_kmer_cn.py` — cn_full builder
+- `src/build_cn_var.py` — cn_var + cn_var_called builder
+- `src/per_sample_per_chrom.py` — production per-sample driver
+- `src/block_em.py` — per-window / per-block EM
+- `src/kmer_count.py` — jellyfish wrapper
 
 Last verified: 2026-05-27.
 
 > **Note (2026-05-26 cleanup):** the estimator was reduced to two modes,
 > `global` and `window`; LD-block modes, overlapping windows, the older k-mer
 > rebalancing (`--row-normalize-cn`, see §8.1), carrier-weighting (§8.2) and
-> contamination-ω (§8.4) were archived to `poolfreq/src/archive/`. §7–§8 below
+> contamination-ω (§8.4) were archived to `src/archive/`. §7–§8 below
 > are updated, but the inline `file:line` references elsewhere predate the
 > cleanup and may have shifted. The authoritative file list and invocation
-> recipes now live in `poolfreq/src/INVENTORY.md`.
+> recipes now live in `src/README.md`.
 >
 > **Note (2026-05-27 production decision):** the cn_full singleton filter
 > `filt2` (drop k-mers with column-sum < 2; §2.1) and the per-k-mer EM weight
@@ -403,7 +403,7 @@ where $w(r)$ is the window containing record $r$.
   window (hard assignment).
 
 The earlier `ld_gabriel`, `ld_complete`, `bigld_panel` modes and the
-overlapping-window variant were archived to `poolfreq/src/archive/`.
+overlapping-window variant were archived to `src/archive/`.
 
 **Anchoring** (`--global-anchor-weight`): per-window EM can be anchored to
 the chromosome-wide $\hat{\mathbf{h}}_c$ via the Dirichlet anchor of §4.1 with
@@ -434,7 +434,7 @@ Removed / archived (do not use):
 - **K-mer-budget balancing (§8.1)** — earlier row-normalization +
   $K_f^\alpha$ post-correction rebalancing approach. Superseded by $\omega_k =
   1/m_b$, which targets the same imbalance via the cleaner composite-likelihood
-  route (§4.2). Archived to `poolfreq/src/archive/`.
+  route (§4.2). Archived to `src/archive/`.
 - **Carrier-weighted counts (§8.2)** and **contamination-ω (§8.4)** —
   archived; never beat plain EM and are not part of the paper's algorithm.
 

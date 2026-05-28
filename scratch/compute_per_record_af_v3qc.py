@@ -8,9 +8,9 @@ from scipy.sparse import load_npz
 from pathlib import Path
 
 ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
-CN_VAR = ROOT / 'poolfreq/data/cn_var_231_v3qc.cn_var.npz'
-CN_VAR_META = ROOT / 'poolfreq/data/cn_var_231_v3qc.meta.npz'
-REFALT = ROOT / 'poolfreq/data/cn_var_231_v3qc.ref_alt.tsv.gz'
+CN_VAR = ROOT / 'data/cn_var_231_v3qc.cn_var.npz'
+CN_VAR_META = ROOT / 'data/cn_var_231_v3qc.meta.npz'
+REFALT = ROOT / 'data/cn_var_231_v3qc.ref_alt.tsv.gz'
 OUT_NPZ = ROOT / 'scratch/v3qc_vs_gn_per_record_af.npz'
 GN_VCF = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf'
 

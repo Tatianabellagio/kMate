@@ -4,7 +4,7 @@ enriched at positions where the cactus pangenome bubble contains non-SNP alleles
 
 Inputs:
 - cactus_em AF: scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.tsv (1:1 with cn_var meta rows)
-- cn_var meta: poolfreq/data/cn_var_231_v3qc_v3.meta.npz (chrom, pos, ref, alt, ref_len, alt_len)
+- cn_var meta: data/cn_var_231_v3qc_v3.meta.npz (chrom, pos, ref, alt, ref_len, alt_len)
 - hapfire SNP AF: /carnegie/.../GrENE_net/hapFIRE_updatedVCF/s1_1_density0.6_snp_frequency.txt (Chr1)
 - greneNet VCF: gives REF/ALT for hapfire SNPs
 - merged panel VCF: founders_231_v3qc_v3.haploid.vcf.gz -> for LV + F_MISSING per record
@@ -30,7 +30,7 @@ ROOT = Path('/carnegie/nobackup/scratch/tbellagio/kmate')
 
 t0 = time.time()
 print('=== loading cactus_em + meta ===', flush=True)
-meta = np.load(ROOT/'poolfreq/data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)
+meta = np.load(ROOT/'data/cn_var_231_v3qc_v3.meta.npz', allow_pickle=True)
 chrom_arr  = meta['chrom']
 pos_arr    = meta['pos']
 ref_arr    = meta['ref']
