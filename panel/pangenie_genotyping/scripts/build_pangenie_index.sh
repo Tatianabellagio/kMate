@@ -11,8 +11,8 @@
 
 # =============================================================================
 # build_pangenie_index.sh
-# Build the PanGenie graph index from pang_69's vcfbub-filtered VCF + ref.
-# Run once after pang_69 (job 56180) finishes.
+# Build the PanGenie graph index from the pang_1001gplus 'all' (135-assembly) vcfbub-filtered VCF + ref.
+# Writes the pang_135_pangenie_index graph (run after the pang_all build).
 # =============================================================================
 mkdir -p logs
 set -euo pipefail

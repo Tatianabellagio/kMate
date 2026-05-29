@@ -109,7 +109,7 @@ $BCF view -e 'INFO/AC=0' $MERGED_FILLED --threads 8 -Oz -o $FINAL
 $TABIX -p vcf $FINAL
 
 N_REC_FINAL=$($BCF index -n $FINAL)
-echo "  records after MAC<2 filter: $N_REC_FINAL"
+echo "  records after AC=0 drop: $N_REC_FINAL"
 echo "  dropped: $((N_REC_RAW - N_REC_FINAL)) ($(awk -v b=$N_REC_RAW -v a=$N_REC_FINAL 'BEGIN{printf "%.2f%%", 100*(b-a)/b}'))"
 
 echo "[$(date)] DONE — founders_231_v3qc.vcf.gz built"

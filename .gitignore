@@ -206,3 +206,7 @@ venv/
 #     !data/*.tsv keep above would otherwise expose (2026-05-28) ---
 data/*_manifest.tsv
 data/seedmix_S1_h_wls_*.tsv
+
+# --- macOS AppleDouble + Jupyter checkpoints (junk, never tracked) ---
+._*
+.ipynb_checkpoints/
