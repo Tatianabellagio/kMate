@@ -60,7 +60,7 @@ production estimator.
 | `block_haplotype_bigld.py` | BigLD per-block-haplotype EM driver, moved out of `block_haplotype_em.py` (which now keeps only `smooth_h_across_blocks` for window mode) |
 | `build_kmer_cn_from_fastas.py` | alt cn builder from founder FASTAs; no production caller (production cn uses `build_kmer_cn.py` from the PanGenie index) |
 | `em_fixes/` | experimental H-estimation variant sweep (combined/balanced/balancedbubble/perbubble/whitening/invac/correlation/normalizer_factorial + score_*/run_* drivers); tried, documented in `docs/METHODS_TRIED_AND_RESULTS.md` |
-| `build_subsampled_cn.py` | cn k-mer-balancing transform (per-stratum subsample / cactus-vs-PG class-match); **prototyped but not yet run end-to-end** — a planned method, see `docs/METHODS_TRIED_AND_RESULTS.md` "Open threads" |
+| `build_subsampled_cn.py` | cn k-mer-balancing transform (per-stratum subsample / cactus-vs-PG class-match). **Tested and rejected** — all subsample variants lost to plain `filt2` on AF MAE (`docs/METHODS_TRIED_AND_RESULTS.md` §1–2). Production filter is **filt2 only** (drop ac=1). Kept for provenance. |
 | `validate_seedmix_recipe.py` | recipe-validation helper |
 | `block_solver.py`, `joint_solver.py`, `hapfire_solver.py` | earlier solver prototypes |
 | `sweep_shape_norm_h_only.py` | a one-off k-mer-rebalancing sweep |
