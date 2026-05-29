@@ -40,7 +40,6 @@ python per_sample_per_chrom.py [same inputs] --block-mode window
 |---|---|
 | `build_kmer_cn.py` | builds `cn` (founder × k-mer membership matrix) |
 | `build_cn_var.py` | builds `cn_var` / `cn_var_called` (founder × variant carrier + called mask) |
-| `build_kmer_cn_from_fastas.py` | alt cn builder from founder FASTAs |
 | `build_g0_uniform_sim.py`, `build_subsampled_cn.py` | simulation / subsampling helpers |
 | `aggregate_results.py`, `aggregate_seedmix_validation.py`, `validate_seedmix_recipe.py` | downstream aggregation / validation |
 
@@ -55,6 +54,9 @@ production estimator.
 | `ld_blocks.py` | LD-block partitioning — only used by the removed `ld_gabriel`/`ld_complete` modes |
 | `batch_runner.py`, `calibrate_alt_freqs.py` | helpers that depended on `per_sample_driver.py` (which itself now lives in active `src/`, see above) |
 | `per_sample_bigld_haplotype.py` | BigLD per-haplotype estimator (hapFIRE comparison) |
+| `block_haplotype_bigld.py` | BigLD per-block-haplotype EM driver, moved out of `block_haplotype_em.py` (which now keeps only `smooth_h_across_blocks` for window mode) |
+| `build_kmer_cn_from_fastas.py` | alt cn builder from founder FASTAs; no production caller (production cn uses `build_kmer_cn.py` from the PanGenie index) |
+| `em_fixes/` | experimental H-estimation variant sweep (combined/balanced/balancedbubble/perbubble/whitening/invac/correlation/normalizer_factorial + score_*/run_* drivers); tried, documented in `docs/METHODS_TRIED_AND_RESULTS.md` |
 | `block_solver.py`, `joint_solver.py`, `hapfire_solver.py` | earlier solver prototypes |
 | `sweep_shape_norm_h_only.py` | a one-off k-mer-rebalancing sweep |
 
