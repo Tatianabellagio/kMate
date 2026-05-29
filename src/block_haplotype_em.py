@@ -349,7 +349,8 @@ def run_chrom_bigld_haplotype(
         h_founder_per_block[b] = h_founder
 
     # Optional confidence-weighted blend with chrom-global h.
-    # Compute global h from ALL blocks' counts (sum over blocks → single EM).
+    # global h = unweighted mean of the converged per-block h_founder vectors
+    # (a cheap proxy, NOT a true aggregate re-EM over summed counts).
     if fallback_to_global and len(h_founder_per_block) > 0:
         t = time.time()
         # Aggregate global counts per kmer (rather than re-EM): just use mean of

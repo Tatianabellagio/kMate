@@ -33,7 +33,7 @@ existing scratch/g0_sweep_h_test/filt2_*.counts.npy and
 scratch/seedmix_h_test/filt2_S*.counts.npy.
 
 Outputs:
-  <out_prefix>.h_sweep.npz  keys: founders, gammas, mu (mean m_b),
+  <out_prefix>.h_sweep.npz  keys: founders, gammas,
       h_per_gamma (n_gamma x F), info (list of dicts)
 """
 from __future__ import annotations
