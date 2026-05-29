@@ -68,7 +68,7 @@ if [[ ! -s $SIM_DIR/reads/r1.fq ]]; then
     LOCK=$SIM_DIR.building.lock
     mkdir -p $SIM_DIR
     if mkdir $LOCK 2>/dev/null; then
-        $PY -u $ROOT/src/build_g0_uniform_sim.py \
+        $PY -u $ROOT/sims/scripts/build_g0_uniform_sim.py \
             --n $N --rep $REP $NC_ARG \
             --out-base $SIM_BASE
         rmdir $LOCK

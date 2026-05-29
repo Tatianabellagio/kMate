@@ -20,7 +20,7 @@ for P in 1 2; do
   OUT=$BASE/data/cn_full_231_v3qc_v3_subsampProtect${P}_refilt2/cn_Chr1
   mkdir -p "$(dirname "$OUT")"
   echo "[$(date)] subsampMedian protect-bins=$P -> $OUT"
-  $PY -u $BASE/src/build_subsampled_cn.py \
+  $PY -u $BASE/src/archive/build_subsampled_cn.py \
       --in-cn ${IN}.cn.npz --in-meta ${IN}.meta.npz \
       --out-prefix $OUT --target median --seed 42 \
       --protect-bins $P --refilt2

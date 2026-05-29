@@ -22,7 +22,7 @@ for SEED in 1 7 100; do
     CN_DIR=$ROOT/data/cn_full_231_v3qc_v3_subsampMedian_refilt2_seed${SEED}
     mkdir -p $CN_DIR
 
-    $PY -u $ROOT/src/build_subsampled_cn.py \
+    $PY -u $ROOT/src/archive/build_subsampled_cn.py \
         --in-cn $ROOT/data/cn_full_231_v3qc_v3/cn_Chr1.cn.npz \
         --in-meta $ROOT/data/cn_full_231_v3qc_v3/cn_Chr1.meta.npz \
         --out-prefix $CN_DIR/cn_Chr1 \

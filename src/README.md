@@ -39,8 +39,11 @@ python per_sample_per_chrom.py [same inputs] --block-mode window
 |---|---|
 | `build_kmer_cn.py` | builds `cn` (founder × k-mer membership matrix) |
 | `build_cn_var.py` | builds `cn_var` / `cn_var_called` (founder × variant carrier + called mask) |
-| `build_g0_uniform_sim.py`, `build_subsampled_cn.py` | simulation / subsampling helpers |
-| `aggregate_results.py`, `aggregate_seedmix_validation.py`, `validate_seedmix_recipe.py` | downstream aggregation / validation |
+
+`src/` now holds only the kMate program (estimator + cn builders). Tooling that
+consumes the program's *outputs* or makes *simulation inputs* lives elsewhere:
+- results aggregation / scoring → `benchmarks/scripts/` (`aggregate_results.py`, `aggregate_seedmix_validation.py`)
+- pool simulation → `sims/scripts/` (`build_g0_uniform_sim.py`)
 
 ## Archived (moved here, not deleted) — `archive/`
 
@@ -57,6 +60,8 @@ production estimator.
 | `block_haplotype_bigld.py` | BigLD per-block-haplotype EM driver, moved out of `block_haplotype_em.py` (which now keeps only `smooth_h_across_blocks` for window mode) |
 | `build_kmer_cn_from_fastas.py` | alt cn builder from founder FASTAs; no production caller (production cn uses `build_kmer_cn.py` from the PanGenie index) |
 | `em_fixes/` | experimental H-estimation variant sweep (combined/balanced/balancedbubble/perbubble/whitening/invac/correlation/normalizer_factorial + score_*/run_* drivers); tried, documented in `docs/METHODS_TRIED_AND_RESULTS.md` |
+| `build_subsampled_cn.py` | cn k-mer-balancing transform (per-stratum subsample / cactus-vs-PG class-match); **prototyped but not yet run end-to-end** — a planned method, see `docs/METHODS_TRIED_AND_RESULTS.md` "Open threads" |
+| `validate_seedmix_recipe.py` | recipe-validation helper |
 | `block_solver.py`, `joint_solver.py`, `hapfire_solver.py` | earlier solver prototypes |
 | `sweep_shape_norm_h_only.py` | a one-off k-mer-rebalancing sweep |
 

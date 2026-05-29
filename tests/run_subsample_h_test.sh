@@ -21,7 +21,7 @@ READS1=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDM
 READS2=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_2.dedup.fq.gz
 
 echo "=== 1. Subsample raw v3qc_v3 → median-per-stratum + refilt2 ==="
-$PY -u $ROOT/src/build_subsampled_cn.py \
+$PY -u $ROOT/src/archive/build_subsampled_cn.py \
     --in-cn $ROOT/data/cn_full_231_v3qc_v3/cn_Chr1.cn.npz \
     --in-meta $ROOT/data/cn_full_231_v3qc_v3/cn_Chr1.meta.npz \
     --out-prefix $ROOT/data/cn_full_231_v3qc_v3_subsampMedian_refilt2/cn_Chr1 \
@@ -29,7 +29,7 @@ $PY -u $ROOT/src/build_subsampled_cn.py \
 
 echo
 echo "=== 2. Subsample filt2 v3qc_v3 → median-per-stratum + refilt2 ==="
-$PY -u $ROOT/src/build_subsampled_cn.py \
+$PY -u $ROOT/src/archive/build_subsampled_cn.py \
     --in-cn $ROOT/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.cn.npz \
     --in-meta $ROOT/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz \
     --out-prefix $ROOT/data/cn_full_231_v3qc_v3_filt2_subsampMedian/cn_Chr1 \
