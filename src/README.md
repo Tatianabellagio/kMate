@@ -14,7 +14,6 @@ There are exactly **two estimators**: `global` and `window`. Nothing else.
 | `block_em.py` | Window-mode pieces: `define_windows`, `assign_kmers_to_blocks`, `assign_records_to_blocks`, `solve_em_per_block` (per-window EM + global anchor), `project_blocks_to_records` (per-window → per-record AF, missing-aware). |
 | `block_haplotype_em.py` | `smooth_h_across_blocks` — Li–Stephens-style smoothing of per-window `h` (window mode). |
 | `per_sample_per_chrom.py` | Production driver. FASTQ/BAM → counts → EM (per chromosome) → AF projection → output TSV. Dispatches `--block-mode {global, window}`. |
-| `per_sample_driver.py` | Older genome-wide (non-per-chrom) driver, still used by the test harness (`tests/run_seedmix_*`, `run_site04_array`, `run_visor_test`, `run_per_sample_smoke`). **Use `--block-mode global` only** — the window path calls a stale `project_blocks_to_records` signature and currently raises `TypeError` (see `docs/AUDIT_2026-05-29.md`). New work should use `per_sample_per_chrom.py`. |
 
 ### Production recipes
 
@@ -52,7 +51,8 @@ production estimator.
 |---|---|
 | `pre_cleanup_2026-05-26/{em_solver,block_em,per_sample_per_chrom}.py` | full pre-cleanup snapshots of the three edited files |
 | `ld_blocks.py` | LD-block partitioning — only used by the removed `ld_gabriel`/`ld_complete` modes |
-| `batch_runner.py`, `calibrate_alt_freqs.py` | helpers that depended on `per_sample_driver.py` (which itself now lives in active `src/`, see above) |
+| `per_sample_driver.py` | older genome-wide (non-per-chrom) driver, superseded by `per_sample_per_chrom.py`; archived together with its legacy validation scripts (now in `tests/archive/`). The current harness uses the `*_per_chrom*` tests. Its window path was also broken (stale `project_blocks_to_records` signature). |
+| `batch_runner.py`, `calibrate_alt_freqs.py` | helpers that depended on `per_sample_driver.py` |
 | `per_sample_bigld_haplotype.py` | BigLD per-haplotype estimator (hapFIRE comparison) |
 | `block_haplotype_bigld.py` | BigLD per-block-haplotype EM driver, moved out of `block_haplotype_em.py` (which now keeps only `smooth_h_across_blocks` for window mode) |
 | `build_kmer_cn_from_fastas.py` | alt cn builder from founder FASTAs; no production caller (production cn uses `build_kmer_cn.py` from the PanGenie index) |
