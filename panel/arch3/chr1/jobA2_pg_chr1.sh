@@ -23,12 +23,12 @@ BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-CONVERT=/global/scratch/users/tbellg/kmate/external/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
+CONVERT=../../../external/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py  # see README Prerequisites (external/ is gitignored)
 TRANSFER=../transfer_id_annotation.py   # committed at panel/arch3/transfer_id_annotation.py
 
 CHR1_ANNOT=chr1_135_annotated.sorted.vcf.gz
 BIAL_CATALOG=chr1_135_annotated_biallelic.sorted.vcf.gz
-PG_RAW=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz
+PG_RAW=../../pangenie_genotyping/data/v3qc_tmp/pangenie_153_raw.vcf.gz   # in-tree output of the PG side
 
 [ -s $CHR1_ANNOT ] || { echo "ERROR: missing $CHR1_ANNOT (A1 not done)"; exit 1; }
 

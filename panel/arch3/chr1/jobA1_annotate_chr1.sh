@@ -23,7 +23,7 @@ BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-ANNOTATE=/global/scratch/users/tbellg/kmate/external/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py
+ANNOTATE=../../../external/genotyping-pipelines/prepare-vcf-MC/workflow/scripts/annotate_vcf.py  # see README Prerequisites (external/ is gitignored)
 
 GFA=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.gfa.gz
 FULL_135_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz

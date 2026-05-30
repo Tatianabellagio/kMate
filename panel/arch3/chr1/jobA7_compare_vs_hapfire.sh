@@ -30,7 +30,7 @@ cd "${ARCH3_CHR1_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 NEW=SEEDMIX_S1_arch3_chr1.tsv
-OLD=/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.tsv
+OLD=../../../scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.tsv   # prior-gen baseline (in-tree scratch; optional)
 HAPFIRE=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
 HAPFIRE_VCF=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf
 
@@ -98,7 +98,7 @@ print(f'  NEW SNP records w/ REF/ALT: {len(new_snp):,}')
 
 # OLD: meta is at /data/var_pa_231_v3qc_v3.meta.npz
 print('=== Re-attach REF/ALT bases to OLD ===')
-old_meta_path = '/global/scratch/users/tbellg/kmate/data/var_pa_231_v3qc_v3.meta.npz'
+old_meta_path = '../../../data/var_pa_231_v3qc_v3.meta.npz'  # prior-gen meta (in-tree; optional)
 try:
     om = np.load(old_meta_path, allow_pickle=True)
     om_ref_len = om['ref_len']; om_alt_len = om['alt_len']
