@@ -156,6 +156,9 @@ scratch/**/*.tsv
 scratch/**/*.tsv.gz
 panel/arch3/**/*.tsv
 panel/arch3/**/*.tsv.gz
+# arch3 run artifacts (regeneratable: per-sample validation plots + build sentinels)
+panel/arch3/**/*.png
+panel/arch3/**/*.done
 benchmarks/p80/results/**/*.tsv
 panel_overlap_v3_grenenet/data/*.tsv
 panel_overlap_135_vs_82/results/*.tsv.gz
