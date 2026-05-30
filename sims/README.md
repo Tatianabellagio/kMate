@@ -21,7 +21,12 @@ sims/
     compute_recomb_truth.py    per-record realized-pool AF truth from ancestry tracks
                                (MAR projection through var_pa / var_called; §4 of the
                                methods doc).
-    build_g0_uniform_sim.py    g0 uniform-pool sim generator helper.
+  archive/
+    build_g0_uniform_sim.py    superseded standalone g0 generator (wgsim-based, on the
+                               old v3 panel). The g0 regime is now produced by the
+                               canonical path: make_recomb_mosaics.py --gen0-no-replace
+                               (N_GEN=0), which assigns each founder exactly 1/F (no
+                               multinomial-with-replacement). Kept for provenance.
   data/ logs/ results/         sim outputs (gitignored)
 ```
 
