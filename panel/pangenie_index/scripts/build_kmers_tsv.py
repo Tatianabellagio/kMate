@@ -51,7 +51,8 @@ Parameters not in PG:
   --no-add-reference    omit the all-REF synthetic path. PG includes it by default.
 
 Validation strategy: byte-compare emitted TSV against PG's on a small panel
-(see panel/pangenie_index/tests/test_vs_pangenie.py).
+(see panel/pangenie_index/archive/test_vs_pangenie.py), and the full-scale
+index-parity diff in panel/pangenie_index/scripts/diff_index_vs_pg.py.
 
 Performance (2 Mb Chr1, 1985 bubbles, 4 threads, jellyfish hash 100M):
   PanGenie-index (C++):  ~7 s wall, ~878 MB RSS
@@ -69,8 +70,6 @@ import subprocess
 import sys
 import tempfile
 from collections import OrderedDict, defaultdict
-from itertools import chain
-from pathlib import Path
 from typing import Iterable, Iterator
 
 import pysam
@@ -419,9 +418,9 @@ class JellyfishCounter:
     """
 
     def __init__(self, fasta_path: str, k: int, hash_size: int = 100_000_000, threads: int = 4, workdir: str | None = None):
-        import dna_jellyfish as _jf  # imported here so the script imports even
-                                     # if bindings are missing (we fall back to
-                                     # the slow subprocess path if needed)
+        import dna_jellyfish as _jf  # local import so the module loads without the
+                                     # binding; it is REQUIRED here at construction
+                                     # (no fallback) and raises if missing.
         self._jf = _jf
         self.k = k
         self.workdir = workdir or tempfile.mkdtemp(prefix="jf_")

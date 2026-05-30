@@ -24,7 +24,8 @@ set -euo pipefail
 source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate pangenie
 
-WORK=/global/scratch/users/tbellg/kmate/panel/pangenie_index
+# pangenie_index dir; override $PANGENIE_INDEX for sbatch spool copies.
+WORK="${PANGENIE_INDEX:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
 OUT_DIR=$WORK/pang_135_haploid
