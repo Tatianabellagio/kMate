@@ -11,7 +11,8 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/raw_fastqs
+# Repo dir for this stage; override $PANGENIE_GT for sbatch spool copies.
+BASE="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"/data/raw_fastqs
 
 for ECOTYPE in 100001 100002; do
     DIR=$BASE/$ECOTYPE

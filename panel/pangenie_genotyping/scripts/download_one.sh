@@ -20,7 +20,8 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping
+# Repo dir for this stage; override $PANGENIE_GT for sbatch spool copies.
+BASE="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 MANIFEST=$BASE/data/ena_manifest.tsv
 OUT_DIR=$BASE/data/raw_fastqs
 mkdir -p $OUT_DIR

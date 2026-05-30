@@ -8,7 +8,8 @@
 # =============================================================================
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping
+# Repo dir for this stage; override $PANGENIE_GT for sbatch spool copies.
+BASE="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 MANIFEST=$BASE/data/ena_manifest.tsv
 # Per-chrom prefix produced by build_pangenie_index.sh; PanGenie appends _Chr<N>_*.
 # (Consumed only by the preflight check below — pangenie_one.sh hardcodes its own prefix.)

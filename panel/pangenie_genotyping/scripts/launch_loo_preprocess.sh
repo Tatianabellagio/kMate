@@ -5,7 +5,8 @@
 # launch_loo_downloads.sh — pass $1 to restrict.
 # =============================================================================
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping
+# Repo dir for this stage; override $PANGENIE_GT for sbatch spool copies.
+BASE="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 
 N=$(awk 'NR>1' $BASE/data/loo_ena_manifest.tsv | wc -l)
 ARRAY="${1:-1-${N}%8}"
