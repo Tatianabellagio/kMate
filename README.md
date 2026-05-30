@@ -34,7 +34,7 @@ panel/        231-founder panel construction
 benchmarks/   end-to-end accuracy benchmarks
   p80/   homogeneous 80-cactus-founder control
   p231/  full 231-founder headline benchmark
-sims/         visor_freqk/ — shared pool-seq simulation framework
+sims/         scripts/ — pool-seq simulation framework (mosaic builder + AF truth); see sims/README.md
 
 external/     vendored third-party tools (HapFIRE, pangenie-tools, genotyping-pipelines)
 docs/         analyses + methods writeups

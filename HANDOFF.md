@@ -7,7 +7,7 @@
 
 `kMate` end-to-end: per-sample **weighted** k-mer Poisson EM on the 231-founder simplex (production weight $\omega_k = 1/m_b$, per-bubble de-replication; see `ALGORITHM.md` §4.2), projected through `var_pa` to per-record AF (SNPs + indels + SVs in one pass). Production panel uses the **arch decomposition** (annotate_vcf + convert-to-biallelic). MAR-aware projection is the recipe in both `global` and `★★` window modes. **K-mer filter: production = `filt2inv` (drop ac=1 singletons *and* invariant a_k=F columns; `ALGORITHM.md` §2.1) + EM weighting $\omega_k = 1/m_b$** (filter resolved 2026-05-27, invariant cut added 2026-05-29). *Rebuild pending:* `_filt2inv` is not yet on disk — the matrix currently present is `_filt2`, so the run commands below still point at `_filt2` until the next full rerun. See `docs/METHODS_TRIED_AND_RESULTS.md` §0/§3 for the full sweep history and the panel-conditional caveat (1/m_b is opt-in via `--kmer-weight {uniform,inv_mb}` for users on balanced panels).
 
-**Naming:** the method is **kMate** (see `ALGORITHM.md`). Legacy code, result-dir paths (`*/cactus_em_*`), and the `sims/visor_freqk` sub-repo still carry the prior name `cactus_em`; with the k-mer-filter decision now closed (2026-05-27), the path/code rename is unblocked but not yet executed.
+**Naming:** the method is **kMate** (see `ALGORITHM.md`). Legacy code and result-dir paths (`*/cactus_em_*`) still carry the prior name `cactus_em`; with the k-mer-filter decision now closed (2026-05-27), the path/code rename is unblocked but not yet executed. (The `sims/visor_freqk` sub-repo was removed 2026-05-30 — the sim framework is now self-contained in `sims/`.)
 
 ## Authoritative source on current state
 
@@ -91,7 +91,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 | `docs/RESULTS_LOG.md` | Chronological numerical record (large file; historical reference, not authoritative) |
 | `data/exclude_list.txt` | Assembly_IDs dropped from cactus panel (101003 + 100852) |
 | `data/flag_list.tsv` | Per-Assembly_ID flag status |
-| `sims/visor_freqk/README.md`, `RECOMB_SIM.md` | Pool-seq sim framework |
+| `sims/README.md` + `docs/SIMULATIONS_METHODS.md` | Pool-seq sim framework (self-contained in `sims/`; decoupled from the external `visor_freqk` repo 2026-05-30) |
 | `benchmarks/p80/README.md` | 80-founder homogeneous control |
 
 Historical / superseded docs are preserved under `old_docs/`. Useful for archaeology; do not treat as authoritative.

@@ -48,7 +48,7 @@ CN_VAR_ATOM=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.var_pa.npz
 CN_VAR_ATOM_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.meta.npz
 CN_VAR_RAW=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz
 CN_VAR_RAW_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz
-TRUTH=$ROOT/sims/visor_freqk/scripts/compute_recomb_truth.py
+TRUTH=$ROOT/sims/scripts/compute_recomb_truth.py
 
 for f in "$CACTUS_DIR" "$FOUNDERS_META" "$CN_VAR_ATOM" "$CN_VAR_RAW" "$TRUTH"; do
     [ -e "$f" ] || { echo "ERROR: missing $f" >&2; exit 1; }
@@ -64,7 +64,7 @@ done
 GEN0_FLAG="--gen0-no-replace"
 
 echo "[$(date)] STAGE 1: mosaics (RANDOM crossovers @ 4 cM/Mb, --chroms $CHROMS) $GEN0_FLAG"
-$PYTHON $SCRIPTS/make_recomb_mosaics_p231.py \
+$PYTHON $ROOT/sims/scripts/make_recomb_mosaics.py \
     --n-indiv $N_INDIV \
     --n-generations $N_GEN \
     --seed $SEED \

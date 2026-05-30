@@ -2,15 +2,21 @@
 
 Methods-ready description of the pool-seq simulation framework used to benchmark `kMate` (and comparators). This document describes the simulation pipeline (how pools and reads are generated, how truth is computed) and the regime matrix tested.
 
-The code lives in two places:
+The code is organized as a self-contained framework in `sims/` plus thin
+per-benchmark drivers (decoupled 2026-05-30 from the former external
+`visor_freqk` repo; see `sims/README.md`):
 
-- **Production sim driver and helpers** — `sims/visor_freqk/scripts/`
-  - `make_recomb_mosaics.py` — mosaic founder FASTA generator
-  - `compute_recomb_truth.py` — per-record AF truth from ancestry tracks
-- **Active regime sweep** — `benchmarks/p80/scripts/`
+- **Framework (canonical) — `sims/scripts/`**
+  - `make_recomb_mosaics.py` — mosaic founder FASTA generator (with
+    `--source-weights` and `--gen0-no-replace`); the single source, called by
+    both the p80 and p231 drivers (no per-benchmark clones).
+  - `compute_recomb_truth.py` — per-record AF truth from ancestry tracks.
+  - `sims/data/hapfire_block_index_chr1.npz` — LD-block hotspot crossover index.
+- **Active regime sweep — `benchmarks/p80/scripts/`** (and `p231/scripts/`)
   - `06_run_sim_p80.sh` — uniform-fraction pool driver
   - `06b_run_sim_p80_skewed.sh` — dominant-individual ("selection-like") variant
-  - `make_recomb_mosaics_p80.py` — local clone of the mosaic builder with `--source-weights` support
+  - panel-specific config + the VISOR read-sim stage; calls the canonical
+    `sims/scripts/` framework above.
 
 ## 1. Overview
 
@@ -143,12 +149,12 @@ The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `
 
 | Parameter | Default | Where to change |
 |---|---|---|
-| Recombination rate `r` | `4×10⁻⁸/bp/meiosis` | `--recomb-rate` on `make_recomb_mosaics_p80.py` |
+| Recombination rate `r` | `4×10⁻⁸/bp/meiosis` | `--recomb-rate` on `make_recomb_mosaics.py` |
 | Crossover model | hotspot-aligned (LD-block boundaries) | `--crossovers-from-ld-blocks <npz>` (default) or `--no-hotspots` for uniform-position Poisson |
 | Read length | 150 bp | `--length` in `VISOR SHORtS` |
 | Sequencing error | 0.001 | `--error` in `VISOR SHORtS` |
 | Coverage | 10× cumulative | `--coverage` in the sim driver (positional arg 3) |
-| Founder probabilities | uniform 1/F | `--source-weights <TSV>` on `make_recomb_mosaics_p80.py` |
+| Founder probabilities | uniform 1/F | `--source-weights <TSV>` on `make_recomb_mosaics.py` |
 | Pool dominance fraction | 50% (skewed mode only) | `DOMINANT_FRAC` env var, fourth positional arg in `06b_run_sim_p80_skewed.sh` |
 | Chromosomes | `Chr1` only currently | `CHROMS=…` env var in driver; controls VISOR region BED, mosaic builder, and downstream `--chroms` flag |
 | Seed | 42 | Last positional arg in the sim driver |
