@@ -29,14 +29,14 @@ Everything traces to the current **v3qc + arch3** lineage; nothing stale is forc
 ## Key design choices vs benchmarks/p80
 
 1. **RANDOM crossovers** at the A. thaliana rate (4 cM/Mb, `DEFAULT_RECOMB_RATE`),
-   NOT forced at hapFIRE BigLD block boundaries. Forcing crossovers at the LD
-   blocks the block-based method keys on is circular for a benchmark. We DROP
-   `--crossovers-from-ld-blocks`; `sample_crossovers()` then places Poisson(L·rate)
-   crossovers at uniform-random positions.
+   NOT forced at hapFIRE BigLD block boundaries — forcing crossovers at the LD
+   blocks a block-based method keys on would be circular for a benchmark. The
+   LD-block crossover option was removed entirely (2026-05-30); `sample_crossovers()`
+   always places Poisson(L·rate) crossovers at uniform-random positions.
 2. **Truth on both var_pas** so each projection arm joins its truth 100% on
-   (chrom,pos,ref_len,alt_len) — the est↔truth consistency gate. The OLD sim truth
-   files (`recomb_truth*.tsv.gz` under `sims/visor_freqk/pool_sweep_82_recomb/`)
-   were on a pre-arch3 decomposition and joined only 16–21% to atomized — do NOT use.
+   (chrom,pos,ref_len,alt_len) — the est↔truth consistency gate. (Pre-arch3 sim
+   truth files joined only 16–21% to atomized and must not be reused; the old
+   `visor_freqk` sim data they lived in was removed 2026-05-30.)
 3. **kmer_pa rebuilt from arch3** for single-VCF provenance (vs production reuse).
 
 ## Regimes (match benchmarks/p80, cov10, seed 42, Chr1)

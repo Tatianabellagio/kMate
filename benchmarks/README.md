@@ -5,8 +5,9 @@ a known founder mixture, run the full pipeline, and compare estimated allele
 frequencies against the simulation truth.
 
 Both benchmarks drive the shared pool-seq simulation framework in
-[`../sims/visor_freqk/`](../sims/visor_freqk/) (VISOR haplotype construction →
-pooled read simulation → truth tables) and the estimator in `../src/`.
+[`../sims/`](../sims/) (mosaic construction → VISOR pooled read simulation →
+truth tables; see `../sims/README.md` and `../docs/SIMULATIONS_METHODS.md`) and
+the estimator in `../src/`.
 
 | dir | panel | what it isolates |
 |---|---|---|
