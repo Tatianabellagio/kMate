@@ -183,9 +183,17 @@ bubbles): 1969/1985 bubbles (99.2%) emit byte-identical
 differ only in PanGenie occasionally including an overhang k-mer that
 straddles the bubble-start position by one base (an off-by-one artefact of
 PanGenie's left-flank window construction); no bubble emits a unique-k-mer
-that is not also emitted by PanGenie. Validation against PanGenie's
-2026-05-01 production index on the full 135-assembly pangenome is in
-progress.
+that is not also emitted by PanGenie.
+
+**Full-scale validation: done (Level A, 2026-05-29).** The in-house index was
+diffed against PanGenie's production index on the full 135-assembly pangenome
+across **all five chromosomes** (`scripts/diff_index_vs_pg.py`) and the swap
+was wired into the production `kmer_pa` builder. See `INDEX_SWAP_STATE.md` for
+the per-chromosome parity result and the production wiring. The production
+index is `panel/pangenie_index/pang_135_haploid/ours_Chr{1..5}_kmers.tsv.gz`;
+the concluded equivalence/timing experiments (diploid byte-check, cap2x, the
+2 Mb `pg_reference` panel, the comparison test scripts) now live under
+`panel/pangenie_index/archive/`.
 
 ## 8. Default parameter table for paper methods
 

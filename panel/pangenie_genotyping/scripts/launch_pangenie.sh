@@ -4,17 +4,19 @@
 # Submit a SLURM array of 151 PanGenie genotype jobs.
 # Prerequisites:
 #   1. preprocess_one.sh has run on all 151 samples (preprocessed/ dir populated)
-#   2. build_pangenie_index.sh has run (pang_69 graph indexed)
+#   2. build_pangenie_index.sh has run (pang_135 graph indexed)
 # =============================================================================
 set -euo pipefail
 
 BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping
 MANIFEST=$BASE/data/ena_manifest.tsv
-INDEX=$BASE/data/pang69_pangenie_index
+# Per-chrom prefix produced by build_pangenie_index.sh; PanGenie appends _Chr<N>_*.
+# (Consumed only by the preflight check below — pangenie_one.sh hardcodes its own prefix.)
+INDEX=$BASE/data/pang_135_pangenie_index
 
 # Sanity checks
-if [ ! -f ${INDEX}.cereal ] && [ ! -d $INDEX ]; then
-    echo "ERROR: PanGenie index not found ($INDEX). Run build_pangenie_index.sh first." >&2
+if [ ! -f ${INDEX}_Chr1_Graph.cereal ]; then
+    echo "ERROR: PanGenie index not found (${INDEX}_Chr1_Graph.cereal). Run build_pangenie_index.sh first." >&2
     exit 1
 fi
 if [ ! -d $BASE/data/preprocessed ] || [ "$(ls -A $BASE/data/preprocessed 2>/dev/null | wc -l)" -lt 100 ]; then
