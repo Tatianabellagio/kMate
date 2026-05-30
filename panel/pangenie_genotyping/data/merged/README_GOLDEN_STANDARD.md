@@ -1,4 +1,14 @@
-# GOLDEN-STANDARD production VCF + haploid sibling
+# GOLDEN-STANDARD production VCF + haploid sibling (SUPERSEDED — v1, historical)
+
+> **Superseded.** This describes the **v1** mixed-ploidy catalog
+> (`founders_231_chr.*`, ~5.2M records, built via `bcftools norm -m -any` +
+> `haploidize_merged_vcf.sh` — now in `scripts/archive/`). The current production
+> panel is **`data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz`** (het-masked,
+> AC=0-cleaned; see `../../README.md`), and per-record matrices are built by the
+> arch decomposition (`panel/arch3/`), **not** `norm -m -any`. Kept for the durable
+> rationale below — the **no-imputation** decision and the **carrier-status (het→.)
+> collapse** still hold for v3qc_v3 — but treat the file names, record counts, and
+> build steps here as historical.
 
 This directory holds the production 231-founder catalog in two on-disk forms:
 
