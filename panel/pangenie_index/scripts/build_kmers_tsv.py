@@ -3,7 +3,7 @@
 Standalone re-implementation of PanGenie-index's kmers.tsv.gz output.
 
 Goal: produce the per-bubble unique-k-mer table that downstream tools
-(`build_kmer_cn.py`, future hapwater) consume, WITHOUT depending on PanGenie
+(`src/build_kmer_pa.py`, future hapwater) consume, WITHOUT depending on PanGenie
 to build the rest of its 9 GB index.
 
 Validation against PanGenie v4.2.1 on a 2-accession test panel (set_02_rep1,

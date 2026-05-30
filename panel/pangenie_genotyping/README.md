@@ -51,9 +51,12 @@ assemblies (5772, 9947) → 78 founders. That subset step is preserved in
 `scripts/archive/build_v3qc_merged.sh` (Step 1); it is not re-run by the current
 chain (the `cactus_78.vcf.gz` it produced is reused as an input).
 
-The PanGenie side genotypes **151** ENA founders; `qc_pg_v4_filter.sh` adds **2**
-more from xwu BAMs (100001, 100002) at its Step-2 merge → the **153** short-read
-founders. 78 cactus + 153 PG = the 231-founder panel.
+The PanGenie side genotypes **151** founders (the `pangenie_151` set, which
+already includes 100001/100002 via the xwu-BAM path in `preprocess_one.sh`);
+`qc_pg_v4_filter.sh` then GQ≥20-masks those and merges in **2** leave-one-out
+genotyped founders — **5772 and 9947** (`data/loo_genotyped/{5772,9947}_genotyping.vcf.gz`)
+— at its Step-2 merge → the **153** short-read founders. 78 cactus + 153 PG =
+the 231-founder panel.
 
 ## Validation (kept, off the build chain)
 
@@ -73,10 +76,14 @@ site-specific. Each script roots its paths at `$BASE`, which defaults to this
 directory (resolved from the script location) — **override `$PANGENIE_GT`** when
 launching from an sbatch spool copy outside the source tree. Tools
 (`bcftools`/`bgzip`/`tabix`, Trimmomatic, Clumpify/BBMap, PanGenie, and a Python
-with `pysam`/`numpy`/`scipy`) and the external inputs (the cactus pangenome
-VCF + GFA, TAIR10 reference, ENA fastqs) are referenced by absolute conda-env /
-scratch paths near the top of each script; edit those or place equivalents on
-`$PATH`.
+with `pysam`/`numpy`/`scipy`) and the external inputs are referenced by absolute
+conda-env / scratch paths near the top of each script; edit those or place
+equivalents on `$PATH`. External inputs to supply:
+- the cactus pangenome VCF + GFA, and the TAIR10 reference;
+- ENA fastqs for the 151 short-read founders;
+- the **cactus assembly-ID → 1001G-ID rename map** (`$SAMPLE_RENAME`, required by
+  `merge_vcfs.sh` and `pangenie_loo_one.sh` to subset/reheader the 80 cactus
+  founders; two columns, `assembly_id`↦`ecotype_id`).
 
 ## `scripts/archive/`
 

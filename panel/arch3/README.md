@@ -105,8 +105,9 @@ and provide the following:
   - `annotate_vcf.py` from HPRC [`eblerjana/genotyping-pipelines`](https://github.com/eblerjana/genotyping-pipelines) (`prepare-vcf-MC`).
   - `convert-to-biallelic.py` from [`eblerjana/pangenie`](https://github.com/eblerjana/pangenie) (`pipelines/run-from-callset/scripts`).
 - **Inputs** (live outside the repo; set the paths near the top of jobA1–A3):
-  the 135-sample minigraph-cactus pangenome VCF + GFA (A1), and the haploid PG/cactus
-  side VCFs from `panel/pangenie_genotyping/` (A2/A3).
+  the 135-sample minigraph-cactus pangenome VCF + GFA (A1), and the PG-153 (raw,
+  diploid — A2 haploidizes it) and cactus-78 (already haploid) side VCFs from
+  `panel/pangenie_genotyping/data/v3qc_tmp/` (A2/A3).
 - Override `$ARCH3_CHR1_DIR` if launching from an sbatch spool copy outside the source tree.
 
 ## Validation
@@ -119,8 +120,10 @@ decomposition bug (investigation doc §3, §7).
 against an **independent** estimator (xwu's hapFIRE on the 1001G SNP catalog) on the
 4-tuple `(chrom, pos, ref, alt)` — joining on `pos` alone manufactures off-diagonal
 scatter at multi-allelic split records. Its `NEW` input is a per-sample AF TSV (from the
-production driver `src/per_sample_per_chrom.py`, or the archived `jobA6`); the hapFIRE
-inputs are external. Headline result on SEEDMIX_S1 / Chr1 (518,570 shared SNPs):
+production driver `src/per_sample_per_chrom.py`, or the archived `jobA6`). The hapFIRE
+AF + panel VCF are external inputs; the optional prior-generation baseline (`OLD`,
+`old_meta_path`) lives in the repo's gitignored `scratch/`/`data/` and the script
+degrades gracefully if absent. Headline result on SEEDMIX_S1 / Chr1 (518,570 shared SNPs):
 
 | panel | MAE vs hapFIRE | \|Δ\|>0.10 |
 |---|---|---|
