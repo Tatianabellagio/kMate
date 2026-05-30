@@ -14,7 +14,9 @@ set -euo pipefail
 # Phase 2 Job A4: merge cactus_78 + PG_153 (both Chr1 haploid biallelic) + post-merge AN=0 filter.
 # Outputs the final 231-panel for Chr1.
 
-cd /global/scratch/users/tbellg/kmate/panel/arch3/chr1
+# Run in this script's directory; override $ARCH3_CHR1_DIR when launching from
+# an sbatch spool copy outside the source tree.
+cd "${ARCH3_CHR1_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 
 BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix

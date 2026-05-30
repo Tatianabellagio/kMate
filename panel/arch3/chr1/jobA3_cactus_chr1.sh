@@ -14,14 +14,16 @@ set -euo pipefail
 # Phase 2 Job A3: cactus-side full pipeline on full Chr1 (depends on A1).
 # Steps: subset cactus_78 → transfer_id → convert-to-biallelic → sort/bgzip (already haploid).
 
-cd /global/scratch/users/tbellg/kmate/panel/arch3/chr1
+# Run in this script's directory; override $ARCH3_CHR1_DIR when launching from
+# an sbatch spool copy outside the source tree.
+cd "${ARCH3_CHR1_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 
 BCF=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bcftools
 BGZIP=/global/home/users/tbellg/miniforge3/envs/gwas/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/gwas/bin/tabix
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CONVERT=/global/scratch/users/tbellg/kmate/external/pangenie-tools/pipelines/run-from-callset/scripts/convert-to-biallelic.py
-TRANSFER=/global/scratch/users/tbellg/kmate/scratch/arch3_test/transfer_id_annotation.py
+TRANSFER=../transfer_id_annotation.py   # committed at panel/arch3/transfer_id_annotation.py
 
 CHR1_ANNOT=chr1_135_annotated.sorted.vcf.gz
 BIAL_CATALOG=chr1_135_annotated_biallelic.sorted.vcf.gz
@@ -47,7 +49,6 @@ echo
 echo "[$(date)] === Step 3: convert-to-biallelic ==="
 CACTUS_BIAL=cactus_78_chr1_biallelic.vcf
 cat $CACTUS_ANNOT | $PY $CONVERT $BIAL_CATALOG > $CACTUS_BIAL 2> cactus_convert.log
-echo "  exit: $?"
 echo "  records emitted: $(grep -vc '^#' $CACTUS_BIAL)"
 
 echo

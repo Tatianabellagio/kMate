@@ -20,7 +20,7 @@ after the cactus_78 + PG_153 merge, which have F_MISSING up to 0.66).
 Output: var_pa.npz, var_called.npz, meta.npz (with chrom/pos/ref/alt strings).
 """
 from __future__ import annotations
-import argparse, sys, time
+import argparse, time
 from pathlib import Path
 import numpy as np
 import pysam

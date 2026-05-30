@@ -16,7 +16,9 @@ set -euo pipefail
 # carriers UNIONed across all source records that imply it. MNPs and overlapping
 # region of INS/DEL contribute; pure INS/DEL beyond the alignment overlap do not.
 
-cd /global/scratch/users/tbellg/kmate/panel/arch3/chr1
+# Run in this script's directory; override $ARCH3_CHR1_DIR when launching from
+# an sbatch spool copy outside the source tree.
+cd "${ARCH3_CHR1_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 VCF=merged_231_chr1_final.vcf.gz
 OUT_PREFIX=var_pa_231_arch3_chr1_atomized

@@ -24,7 +24,9 @@ set -euo pipefail
 #         joining on pos only manufactures off-diagonal scatter (per notebook L268).
 # Per memory feedback_use_mae_not_r2.md: lead with MAE.
 
-cd /global/scratch/users/tbellg/kmate/panel/arch3/chr1
+# Run in this script's directory; override $ARCH3_CHR1_DIR when launching from
+# an sbatch spool copy outside the source tree.
+cd "${ARCH3_CHR1_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 NEW=SEEDMIX_S1_arch3_chr1.tsv
