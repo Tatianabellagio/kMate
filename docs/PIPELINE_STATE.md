@@ -6,7 +6,7 @@ Supersedes `old_docs/SESSION_*` and the prior `PIPELINE_STATE_2026-05-19.md`. Th
 
 The "k-mer filter OPEN" item below is **resolved**. Production decision:
 
-- **kmer_pa**: `kmer_pa_231_v3qc_v3_filt2` (drop ac=1 singletons; see `ALGORITHM.md` §2.1). ★
+- **kmer_pa**: production filter = `filt2inv` (drop ac=1 singletons **and** invariant a_k=F columns; see `ALGORITHM.md` §2.1). ★ **Rebuild pending:** the `_filt2inv` matrix is not yet on disk — the matrix currently present is `kmer_pa_231_v3qc_v3_filt2` (no invariant cut); the rebuild is deferred to the next full production rerun, so run commands still point at `_filt2`.
 - **EM weighting**: `--kmer-weight inv_mb`, i.e. $\omega_k = 1/m_b$ per-bubble de-replication (see `ALGORITHM.md` §4.2). ★
 - **Driver invocation**: `per_sample_per_chrom.py --block-mode {global|window} --kmer-weight inv_mb`.
 - **Caveat (panel-conditional, not propagated into the paper)**: on the homogeneous p80 control panel without the cactus/PG imbalance, $\omega_k=1/m_b$ slightly under-performs unweighted EM (+2% to +41% AF MAE). The flag `--kmer-weight uniform` preserves the unweighted MLE byte-identically; balanced-panel users can opt out. See `METHODS_TRIED_AND_RESULTS.md` §3 and `ALGORITHM.md` §10 M6.

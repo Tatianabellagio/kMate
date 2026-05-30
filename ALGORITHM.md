@@ -148,6 +148,12 @@ pre-built matrix. The production matrix is **`kmer_pa_231_v3qc_v3_filt2inv`**
 (supersedes the older `_filt2`, which lacked the invariant cut); all $K_{\mathrm{pa}}$
 references in §3–§4 use it.
 
+> **Build status (2026-05-30):** `_filt2inv` is the *decided* production filter,
+> but the matrix has **not yet been materialized on disk** — the matrix currently
+> present is `_filt2` (filt2 only, no invariant cut). The `_filt2inv` rebuild is
+> deferred to the next full production rerun. Until then, run commands point at
+> `_filt2`. See memory `filt2inv-not-on-disk`.
+
 ### 2.2 $V_{\mathrm{pa}}$ (`var_pa`) — founder × variant alt-allele presence (the projection target)
 
 $$V_{\mathrm{pa}} \in \{0,1\}^{F \times R}, \quad (V_{\mathrm{pa}})_{f,r} = \mathbb{1}[\text{any allele of founder } f \text{'s GT at } r \text{ is alt}]$$
