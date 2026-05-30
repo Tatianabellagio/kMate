@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# commit-msg hook — project policy: NEVER co-author commits.
+#
+# The Claude Code harness default appends a "Co-Authored-By: Claude ..." trailer
+# (and "Generated with Claude Code" lines in PR bodies). This project forbids
+# that. This hook strips any such line from every commit message so the policy
+# holds regardless of who or what creates the commit.
+#
+# Activate (once per clone): git config core.hooksPath .githooks
+set -euo pipefail
+msg_file="$1"
+
+pattern='^[[:space:]]*(Co-authored-by:|🤖|Generated with \[?Claude|Co-Authored-By:)'
+
+if grep -qiE "$pattern" "$msg_file"; then
+    tmp="$(mktemp)"
+    grep -viE "$pattern" "$msg_file" > "$tmp"
+    mv "$tmp" "$msg_file"
+    echo "[commit-msg] stripped co-author / AI-generated trailer (project policy: no co-authoring)." >&2
+fi
+exit 0

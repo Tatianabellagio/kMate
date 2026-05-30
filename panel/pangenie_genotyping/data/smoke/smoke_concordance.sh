@@ -19,8 +19,8 @@ source $(conda info --base)/etc/profile.d/conda.sh
 conda activate pang
 set -u
 
-SMOKE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/smoke
-SCRIPT=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/scripts/loo_concordance.py
+SMOKE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT="$SMOKE/../../scripts/loo_concordance.py"
 mkdir -p $SMOKE
 cd $SMOKE
 

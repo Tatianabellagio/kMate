@@ -19,7 +19,8 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data
+# Repo dir for this stage; override $PANGENIE_GT for sbatch spool copies.
+BASE="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"/data
 BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
 TABIX=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/tabix
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa

@@ -19,7 +19,8 @@
 mkdir -p logs
 set -euo pipefail
 
-BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping
+# Repo dir for this stage; override $PANGENIE_GT for sbatch spool copies.
+BASE="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 GT_DIR=$BASE/data/genotyped
 OUT_DIR=$BASE/data/merged
 mkdir -p $OUT_DIR
@@ -37,7 +38,9 @@ PG_GQ_MIN=${PG_GQ_MIN:-0}
 # (sample_rename.txt). The other 55 are dropped — they're not in GrENE-Net.
 # Chroms in pang are already Chr1..Chr5 (verified) — no chrom rename needed.
 PANG69_VCF=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output/pang_1001gplus_all.vcf.gz
-SAMPLE_RENAME=/global/scratch/users/tbellg/kmate/panel/imputation/work/sample_rename.txt
+# Cactus assembly-ID -> 1001G-ID rename map (REQUIRED external input; see README
+# Prerequisites). Override $SAMPLE_RENAME to point at your copy.
+SAMPLE_RENAME="${SAMPLE_RENAME:-$BASE/data/cactus_sample_rename.txt}"
 KEEP_80=$OUT_DIR/cactus_overlap_80.txt
 awk '{print $2}' $SAMPLE_RENAME | sort -u > $KEEP_80
 echo "[$(date)] cactus founders to keep (1001G IDs): $(wc -l < $KEEP_80)"

@@ -25,7 +25,8 @@ PANG_DIR=/global/scratch/users/tbellg/pang/pang_1001gplus/pang_all/output
 PANG_VCF_GZ=$PANG_DIR/pang_1001gplus_all.vcf.gz
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa
 
-INDEX_DIR=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data
+# pangenie_genotyping dir; override $PANGENIE_GT for sbatch spool copies.
+INDEX_DIR="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"/data
 OUT_PREFIX=$INDEX_DIR/pang_135_pangenie_index
 PANG_VCF=$INDEX_DIR/pang_1001gplus_all.dipl.vcf
 mkdir -p $INDEX_DIR

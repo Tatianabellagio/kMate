@@ -19,7 +19,7 @@ in the path-aware raw var_pa for downstream SV-aware analyses.
 N alleles (including IUPAC ambiguity codes that cactus normalizes to N) are skipped.
 """
 from __future__ import annotations
-import argparse, sys, time
+import argparse, time
 from pathlib import Path
 from collections import defaultdict
 import numpy as np

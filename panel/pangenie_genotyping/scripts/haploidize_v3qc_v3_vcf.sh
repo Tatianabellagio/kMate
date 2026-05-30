@@ -11,7 +11,8 @@
 
 mkdir -p logs
 set -euo pipefail
-BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping
+# Repo dir for this stage; override $PANGENIE_GT for sbatch spool copies.
+BASE="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 SRC=$BASE/data/v3qc_v3/founders_231_v3qc_v3.vcf.gz
 OUT=$BASE/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz
 BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools

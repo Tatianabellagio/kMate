@@ -28,7 +28,8 @@ export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 eval "$(conda shell.bash hook)"
 conda activate pangenie
 
-BASE=/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping
+# Repo dir for this stage; override $PANGENIE_GT for sbatch spool copies.
+BASE="${PANGENIE_GT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 MANIFEST=$BASE/data/loo_ena_manifest.tsv
 PREP_DIR=$BASE/data/loo_preprocessed
 GT_DIR=$BASE/data/loo_genotyped
@@ -48,8 +49,9 @@ TRUTH_VCF=$BASE/data/pang_1001gplus_all.dipl.vcf.gz
 BGZIP=/global/home/users/tbellg/miniforge3/envs/pang/bin/bgzip
 TABIX=/global/home/users/tbellg/miniforge3/envs/pang/bin/tabix
 
-# Cactus assembly-ID → 1001G ID rename map (col 1 = assembly_id, col 2 = ecotype_id)
-SAMPLE_RENAME=/global/scratch/users/tbellg/kmate/panel/imputation/work/sample_rename.txt
+# Cactus assembly-ID → 1001G ID rename map (col 1 = assembly_id, col 2 = ecotype_id).
+# REQUIRED external input (see README Prerequisites); override $SAMPLE_RENAME.
+SAMPLE_RENAME="${SAMPLE_RENAME:-$BASE/data/cactus_sample_rename.txt}"
 
 IDX=${SLURM_ARRAY_TASK_ID:-1}
 LINE=$(sed -n "$((IDX+1))p" $MANIFEST)

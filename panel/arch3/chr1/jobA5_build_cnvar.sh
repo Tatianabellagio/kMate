@@ -15,9 +15,11 @@ set -euo pipefail
 # Outputs: var_pa_231_arch3_chr1.{var_pa,var_called,meta}.npz
 # These feed cactus_em via per_sample_per_chrom.py.
 
-cd /global/scratch/users/tbellg/kmate/panel/arch3/chr1
+# Run in this script's directory; override $ARCH3_CHR1_DIR when launching from
+# an sbatch spool copy outside the source tree.
+cd "${ARCH3_CHR1_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)}"
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-BUILD_CN=/global/scratch/users/tbellg/kmate/src/build_var_pa.py
+BUILD_CN=../../../src/build_var_pa.py
 VCF=merged_231_chr1_final.vcf.gz
 OUT_PREFIX=var_pa_231_arch3_chr1
 

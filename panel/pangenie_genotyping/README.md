@@ -42,16 +42,48 @@ build_v3qc_v3_phase_b.sh                      merge cactus_78_bi + hetmasked_hap
 haploidize_v3qc_v3_vcf.sh                     → founders_231_v3qc_v3.haploid.vcf.gz   ← PRODUCTION PANEL
 ```
 
+### Cactus side (78 founders) and the 151 → 153 count
+
+The chain above is the **short-read (PanGenie) side**. The **cactus side**
+(`data/v3qc_tmp/cactus_78.vcf.gz`, consumed by `build_v3qc_v2_phase_a.sh`) is the
+80-assembly minigraph-cactus pangenome VCF subset to drop the two duplicate
+assemblies (5772, 9947) → 78 founders. That subset step is preserved in
+`scripts/archive/build_v3qc_merged.sh` (Step 1); it is not re-run by the current
+chain (the `cactus_78.vcf.gz` it produced is reused as an input).
+
+The PanGenie side genotypes **151** founders (the `pangenie_151` set, which
+already includes 100001/100002 via the xwu-BAM path in `preprocess_one.sh`);
+`qc_pg_v4_filter.sh` then GQ≥20-masks those and merges in **2** leave-one-out
+genotyped founders — **5772 and 9947** (`data/loo_genotyped/{5772,9947}_genotyping.vcf.gz`)
+— at its Step-2 merge → the **153** short-read founders. 78 cactus + 153 PG =
+the 231-founder panel.
+
 ## Validation (kept, off the build chain)
 
 The PanGenie leave-one-out (LOO) concordance harness checks PG-genotyping
 quality against cactus assembly truth for the founders that have both. It does
 **not** feed the production panel; kept in place as reusable validation:
 `download_loo_one.sh`, `launch_loo_downloads.sh`, `preprocess_loo_one.sh`,
-`launch_loo_preprocess.sh`, `launch_loo_pangenie.sh`, `pangenie_loo_one.sh`,
-`loo_concordance.py`, `validate_loo.sh`, and `loo_concord_imputed_one.sh` (the
-last one targets the hard-rejected Beagle-imputed path — moot, see
-`panel/README.md` and `archive/imputation/`).
+`launch_loo_preprocess.sh`, `launch_loo_pangenie.sh`, `pangenie_loo_one.sh`, and
+`loo_concordance.py` (with `data/smoke/smoke_concordance.sh` as a tiny smoke test
+for the concordance scorer). Superseded LOO variants (`validate_loo.sh`, the
+Beagle-imputed `loo_concord_imputed_one.sh`) are in `scripts/archive/`.
+
+## Prerequisites
+
+These are SLURM jobs written for the Berkeley Savio cluster; `#SBATCH` headers are
+site-specific. Each script roots its paths at `$BASE`, which defaults to this
+directory (resolved from the script location) — **override `$PANGENIE_GT`** when
+launching from an sbatch spool copy outside the source tree. Tools
+(`bcftools`/`bgzip`/`tabix`, Trimmomatic, Clumpify/BBMap, PanGenie, and a Python
+with `pysam`/`numpy`/`scipy`) and the external inputs are referenced by absolute
+conda-env / scratch paths near the top of each script; edit those or place
+equivalents on `$PATH`. External inputs to supply:
+- the cactus pangenome VCF + GFA, and the TAIR10 reference;
+- ENA fastqs for the 151 short-read founders;
+- the **cactus assembly-ID → 1001G-ID rename map** (`$SAMPLE_RENAME`, required by
+  `merge_vcfs.sh` and `pangenie_loo_one.sh` to subset/reheader the 80 cactus
+  founders; two columns, `assembly_id`↦`ecotype_id`).
 
 ## `scripts/archive/`
 
