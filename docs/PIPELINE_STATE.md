@@ -6,7 +6,7 @@ Supersedes `old_docs/SESSION_*` and the prior `PIPELINE_STATE_2026-05-19.md`. Th
 
 The "k-mer filter OPEN" item below is **resolved**. Production decision:
 
-- **cn_full**: `cn_full_231_v3qc_v3_filt2` (drop ac=1 singletons; see `ALGORITHM.md` §2.1). ★
+- **kmer_pa**: `kmer_pa_231_v3qc_v3_filt2` (drop ac=1 singletons; see `ALGORITHM.md` §2.1). ★
 - **EM weighting**: `--kmer-weight inv_mb`, i.e. $\omega_k = 1/m_b$ per-bubble de-replication (see `ALGORITHM.md` §4.2). ★
 - **Driver invocation**: `per_sample_per_chrom.py --block-mode {global|window} --kmer-weight inv_mb`.
 - **Caveat (panel-conditional, not propagated into the paper)**: on the homogeneous p80 control panel without the cactus/PG imbalance, $\omega_k=1/m_b$ slightly under-performs unweighted EM (+2% to +41% AF MAE). The flag `--kmer-weight uniform` preserves the unweighted MLE byte-identically; balanced-panel users can opt out. See `METHODS_TRIED_AND_RESULTS.md` §3 and `ALGORITHM.md` §10 M6.
@@ -16,14 +16,14 @@ The bullets below are kept verbatim for historical context; treat §0 as authori
 
 ## TL;DR
 
-For each panel record, estimate per-record ALT allele frequency from pool-seq reads via a per-sample **weighted** Poisson EM on the 231-founder simplex (production $\omega_k = 1/m_b$), then project through `cn_var` to per-record AF. Production pipeline as of today:
+For each panel record, estimate per-record ALT allele frequency from pool-seq reads via a per-sample **weighted** Poisson EM on the 231-founder simplex (production $\omega_k = 1/m_b$), then project through `var_pa` to per-record AF. Production pipeline as of today:
 
 - **Panel**: `founders_231_v3qc_v3` (78 cactus + 153 PG)
 - **Decomposition**: **arch3** (annotate_vcf + convert-to-biallelic), NOT `bcftools norm -m -any`
-- **Matrices**: `cn_var_231_arch3` (standard, for SV-level analyses) AND `cn_var_231_arch3_atomized` (per-base, for SNP-level GEA)
+- **Matrices**: `var_pa_231_arch3` (standard, for SV-level analyses) AND `var_pa_231_arch3_atomized` (per-base, for SNP-level GEA)
 - **Chrom scope**: Chr1 built; **Chr2–5 extension is the open production task**
-- **K-mer filter / cn_full build**: ~~**OPEN**~~ → **RESOLVED 2026-05-27 (see §0 above)**: `cn_full_231_v3qc_v3_filt2` + EM weighting $\omega_k=1/m_b$. The prior text in this bullet (subsampProtect1 leading, sweep in progress) is superseded.
-- **Projection**: MAR — `(h @ cn_var) / (h @ cn_var_called)` in both global and window modes. Patched 2026-05-21.
+- **K-mer filter / kmer_pa build**: ~~**OPEN**~~ → **RESOLVED 2026-05-27 (see §0 above)**: `kmer_pa_231_v3qc_v3_filt2` + EM weighting $\omega_k=1/m_b$. The prior text in this bullet (subsampProtect1 leading, sweep in progress) is superseded.
+- **Projection**: MAR — `(h @ var_pa) / (h @ var_called)` in both global and window modes. Patched 2026-05-21.
 - **Modes**: both `global` (one h per chrom) and `★★` (window 10kb + global anchor 0.3 + HMM smooth 5α0.5) are production; pick per-regime.
 - **Naming**: the method is **kMate** (algorithm + math: `ALGORITHM.md`). Legacy code, result-dir paths (`*/cactus_em_*`), and the `sims/visor_freqk` sub-repo still use the prior name `cactus_em`; with the k-mer-filter decision now closed, the rename is unblocked but not yet executed.
 
@@ -31,8 +31,8 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 
 | Change | Why |
 |---|---|
-| Arch decomposition replaces `norm -m -any` for cn_var | annotate_vcf + convert-to-biallelic produces symbolic-ID biallelic catalog with +17pp hapFIRE-SNP coverage gain (`project_arch3_chr1_validation` memory) |
-| `cn_var_atomized` added as a production deliverable | Per-base SNP catalog with carriers UNIONed across overlapping records. −23% RMSE, −43% outliers for SNP-level GEA (`project_arch3_atomization_result`) |
+| Arch decomposition replaces `norm -m -any` for var_pa | annotate_vcf + convert-to-biallelic produces symbolic-ID biallelic catalog with +17pp hapFIRE-SNP coverage gain (`project_arch3_chr1_validation` memory) |
+| `var_pa_atomized` added as a production deliverable | Per-base SNP catalog with carriers UNIONed across overlapping records. −23% RMSE, −43% outliers for SNP-level GEA (`project_arch3_atomization_result`) |
 | MAR projection in window mode | Previously window mode silently treated `.` as REF (different from global mode's called-mask normalization). Inconsistent semantics fixed 2026-05-21. Star2 numbers prior to this patch are stale. |
 | K-mer filter declared **undecided** | Prior doc incorrectly said mixed-loose was production. mixed-loose was evaluated, didn't win unanimously. Active testing: `filt2`. **(Superseded 2026-05-27: filt2 + ω_k=1/m_b chosen; see §0.)** |
 
@@ -40,21 +40,21 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 
 | Matrix | Path | Shape (Chr1) | Purpose | Build script |
 |---|---|---|---|---|
-| `cn_full` | **`data/cn_full_231_v3qc_v3_filt2/cn_Chr1.{cn,meta}.npz`** (filt2, drop ac=1) | (231, ~22.7M raw → filt2 subset) | founder × k-mer (k=31, from PanGenie-index) | `build_cn_full_filt2_v3qc_v3_chr1.sh` |
-| `cn_var` | `panel/arch3/chr1/cn_var_231_arch3_chr1.{cn_var,cn_var_called,meta}.npz` | (231, ~6.3M) | founder × biallelic-record carriers + called-mask | `panel/arch3/chr1/jobA5_build_cnvar.sh` |
-| `cn_var_atomized` | `panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.{cn_var,cn_var_called,meta}.npz` | (231, ~7.5M) | founder × per-base SNP (atomized) | `panel/arch3/chr1/jobD1_atomize_cnvar.sh` |
+| `kmer_pa` | **`data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1.{kmer_pa,meta}.npz`** (filt2, drop ac=1) | (231, ~22.7M raw → filt2 subset) | founder × k-mer (k=31, from PanGenie-index) | `build_kmer_pa_filt2_v3qc_v3_chr1.sh` |
+| `var_pa` | `panel/arch3/chr1/var_pa_231_arch3_chr1.{var_pa,var_called,meta}.npz` | (231, ~6.3M) | founder × biallelic-record carriers + called-mask | `panel/arch3/chr1/jobA5_build_cnvar.sh` |
+| `var_pa_atomized` | `panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.{var_pa,var_called,meta}.npz` | (231, ~7.5M) | founder × per-base SNP (atomized) | `panel/arch3/chr1/jobD1_atomize_cnvar.sh` |
 
 The k-mer dictionary is the **pang_135 PanGenie-index** (built once on the full 135-assembly pangenome). Not rebuilt per panel; reused across v3, v3qc, v3qc_v3.
 
 ## 2. Driver — `src/per_sample_per_chrom.py`
 
-Reads FASTQs, runs k-mer Poisson EM on the simplex, projects through cn_var. Output TSV schema (post 2026-05-21 patch):
+Reads FASTQs, runs k-mer Poisson EM on the simplex, projects through var_pa. Output TSV schema (post 2026-05-21 patch):
 
 ```
 chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 ```
 
-- `alt_freq` = `(h @ cn_var)[r] / (h @ cn_var_called)[r]` — MAR projection
+- `alt_freq` = `(h @ var_pa)[r] / (h @ var_called)[r]` — MAR projection
 - `info` = h-weighted called mass at record r (h-dependent, varies with method)
 - `n_called` = integer count of called founders at record r (h-independent panel QC)
 - `se` = Wald SE using `n_called` as effective sample size
@@ -65,14 +65,14 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 
 | Task | Why |
 |---|---|
-| Build `cn_var_231_arch3` for Chr2-5 | Current Chr1-only build is enough to validate; whole-genome is needed for downstream GEA |
+| Build `var_pa_231_arch3` for Chr2-5 | Current Chr1-only build is enough to validate; whole-genome is needed for downstream GEA |
 | ~~Choose production k-mer filter~~ | **DONE 2026-05-27**: `filt2` + `--kmer-weight inv_mb`. See §0 and `METHODS_TRIED_AND_RESULTS.md` §0/§3. |
-| Re-run SEEDMIX baselines under MAR star2 + arch cn_var + `--kmer-weight inv_mb` | Prior numbers used `norm -m -any` cn_var, the buggy "star2 treats `.` as REF" projection, AND unweighted EM; need fresh validation under the full production recipe. |
+| Re-run SEEDMIX baselines under MAR star2 + arch var_pa + `--kmer-weight inv_mb` | Prior numbers used `norm -m -any` var_pa, the buggy "star2 treats `.` as REF" projection, AND unweighted EM; need fresh validation under the full production recipe. |
 | Production scale-out on 2,415 evolved GrENE-Net samples | SLURM template in `tests/`; ~1.5–5 days at cluster-wide concurrency |
 
 ## 4. What's deprecated (do not use)
 
-- `cn_full_231_v3qc_v3_mixedloose/` and `cn_var_231_v3qc_v3.{cn_var,meta}.npz` for new production runs — superseded by arch-decomposed cn_var.
+- `kmer_pa_231_v3qc_v3_mixedloose/` and `var_pa_231_v3qc_v3.{var_pa,meta}.npz` for new production runs — superseded by arch-decomposed var_pa.
 - "Star2 treats `.` as REF" projection — buggy, patched 2026-05-21. Any star2 result TSV without `info`/`n_called`/`se` columns is from the buggy code.
 - mixed-loose / mixed-conserv / mixed-strict filters — evaluated, not production.
 - Beagle imputation for SVs — hard-rejected (−25 to −30pp concordance loss).

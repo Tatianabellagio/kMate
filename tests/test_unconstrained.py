@@ -16,17 +16,17 @@ DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 
 
 def main():
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    ac = cn.sum(axis=0)
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    ac = kmer_pa.sum(axis=0)
     counts = np.load(os.path.join(DATA, "sim_chr1", "uniform82_counts.npz"))["counts"]
     cov = counts.sum() * F / ac.sum()
     h_true = np.full(F, 1.0/F)
 
-    print(f"cn: {F} × {K:,}, cov={cov:.1f}×, truth=1/{F}={1/F:.4f}")
+    print(f"kmer_pa: {F} × {K:,}, cov={cov:.1f}×, truth=1/{F}={1/F:.4f}")
 
     def report(label, h_hat, raw_q=None):
         h_hat = np.asarray(h_hat)
@@ -42,12 +42,12 @@ def main():
 
     print(f"\n{'-'*72}\nUnconstrained methods\n{'-'*72}")
 
-    # U1: scipy NNLS (no upper limit, just q ≥ 0). Solves Σ (c - cn^T q)^2.
+    # U1: scipy NNLS (no upper limit, just q ≥ 0). Solves Σ (c - kmer_pa^T q)^2.
     # Note: solving for q (founder absolute rate, includes coverage)
-    # Predicted: cn^T q. Observed: c.
+    # Predicted: kmer_pa^T q. Observed: c.
     print(f"\n  Solving NNLS (full system, may be slow)...")
     t = time.time()
-    q_nnls, residual = nnls(cn.T.astype(float), counts.astype(float), maxiter=5000)
+    q_nnls, residual = nnls(kmer_pa.T.astype(float), counts.astype(float), maxiter=5000)
     print(f"  [{time.time()-t:.0f}s, residual={residual:.0f}]")
     h_u1 = q_nnls / q_nnls.sum() if q_nnls.sum() > 0 else q_nnls
     report("U1  scipy NNLS", h_u1, raw_q=q_nnls)
@@ -56,7 +56,7 @@ def main():
     print(f"\n  Solving CVXPY q ≥ 0 only (no sum constraint)...")
     t = time.time()
     q = cp.Variable(F, nonneg=True)
-    pred = cn.T @ q
+    pred = kmer_pa.T @ q
     obj = cp.Minimize(cp.sum_squares(counts - pred))
     cp.Problem(obj).solve(solver="SCS", verbose=False)
     q_u2 = q.value
@@ -68,7 +68,7 @@ def main():
     print(f"\n  Solving Poisson NLL, q ≥ 0...")
     t = time.time()
     q = cp.Variable(F, nonneg=True)
-    mu = cn.T @ q + 1e-3
+    mu = kmer_pa.T @ q + 1e-3
     obj = cp.Minimize(cp.sum(mu) - cp.sum(cp.multiply(counts, cp.log(mu))))
     cp.Problem(obj).solve(solver="SCS", verbose=False)
     q_u3 = q.value
@@ -80,7 +80,7 @@ def main():
     print(f"\n  Solving KL divergence, q ≥ 0...")
     t = time.time()
     q = cp.Variable(F, nonneg=True)
-    mu = cn.T @ q + 1e-3
+    mu = kmer_pa.T @ q + 1e-3
     obj = cp.Minimize(cp.sum(cp.kl_div(counts, mu)))
     cp.Problem(obj).solve(solver="SCS", verbose=False)
     q_u4 = q.value
@@ -91,7 +91,7 @@ def main():
     # U5: Identifiability check. The "true" q under uniform truth is (cov/F) for each founder.
     # Check that the system at h=truth fits well.
     q_true = np.full(F, cov/F)
-    pred_true = cn.T @ q_true
+    pred_true = kmer_pa.T @ q_true
     rmse_true = np.sqrt(np.mean((counts - pred_true)**2))
     print(f"\n  At TRUE q (uniform cov/F={cov/F:.3f}):")
     print(f"    RMSE: {rmse_true:.2f}")

@@ -149,7 +149,7 @@ Only on `savio2_htc`, max 4 cores per job.
 | Old Carnegie pattern | Savio recipe to use |
 |---|---|
 | Per-sample kMate (`run_site_array_perchrom.sh` — 8 CPU, 64 GB, hours) | **B** (lowprio, savio4_htc) for the 2,415-sample fan-out. Add `--requeue`. |
-| `build_cn_full_*` / `build_cn_var_*` builders | **A** (condo, savio4_htc) — handful of jobs, fast turnaround matters. |
+| `build_kmer_pa_*` / `build_var_pa_*` builders | **A** (condo, savio4_htc) — handful of jobs, fast turnaround matters. |
 | SEEDMIX runs (`run_seedmix_*` — 8 CPU, 80 GB) | **A** (condo, savio4_htc). |
 | PanGenie index / haploidize / merge VCFs | **A** or **C** on `savio4_htc`. |
 | Anything needing >256 GB RAM | `savio3_bigmem` or `savio3_xlmem` (no per-node memory partition on savio4). |

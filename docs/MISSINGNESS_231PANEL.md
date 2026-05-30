@@ -1,7 +1,7 @@
 # 231-panel missingness by variant class
 
 **Generated**: 2026-05-21
-**Source data**: `data/cn_var_231_v3qc_v3.cn_var_called.npz` + `cn_var_231_v3qc_v3.meta.npz`
+**Source data**: `data/var_pa_231_v3qc_v3.var_called.npz` + `var_pa_231_v3qc_v3.meta.npz`
 **Plot**: `benchmarks/p80/results/missingness_by_var_class_231panel.png`
 **SLURM log**: `benchmarks/p80/logs/miss_231_63224.out`
 
@@ -60,7 +60,7 @@ A strict `F_MISSING ≤ 0.05` filter (~max 11 missing out of 231) **would discar
 
 ## Methodology notes
 
-- `cn_var_called[f, r] = 1` iff founder f's GT at record r is not `.`. Built by `build_cn_var.py` alongside `cn_var`.
+- `var_called[f, r] = 1` iff founder f's GT at record r is not `.`. Built by `build_var_pa.py` alongside `var_pa`.
 - Cactus side identified as Accession_IDs in `data/sv_panel_to_accession_id.tsv` minus `data/exclude_list.txt` (78 of 80 cactus assemblies; 5772 and 9947 PG-substituted per v3qc decisions).
 - Variant class: SNP = `ref_len==1 AND alt_len==1`; SV = `max(ref_len, alt_len) ≥ 50`; indel otherwise.
 - This is panel-side missingness (founder GT availability). Pool-side sampling noise is a separate, orthogonal source of AF variance.

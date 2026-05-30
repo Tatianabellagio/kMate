@@ -36,19 +36,19 @@ No `transfer_id` step (unlike `panel/arch3/chr1/jobA3_*.sh`): production needed 
 
 ### PanGenie-index: pang_135 (production), not p82's
 
-p80 uses the production **`pang_135_pangenie_index_Chr1_kmers.tsv.gz`** for cn_full, NOT `control_p82/data/kmers_p82/`. The reason is graph identity:
+p80 uses the production **`pang_135_pangenie_index_Chr1_kmers.tsv.gz`** for kmer_pa, NOT `control_p82/data/kmers_p82/`. The reason is graph identity:
 
 - The arch3 A1 catalog used here was annotated against `pang_1001gplus_all.gfa.gz` (135-asm production graph). Our p80 VCF inherits that graph's bubble structure.
 - `kmers_p82/` was built from the standalone 82-acc minigraph-cactus run — a different cactus invocation with different bubble topology and k-mer dictionary.
 
-Mixing them would have `build_kmer_cn.py` reconstruct haplotypes from 135-asm records inside 82-acc-defined bubble regions — a silent inconsistency that exactly mirrors the v3 sim-FASTA bug (`memory/project_v3_singleton_kmer_bug`). The pang_135 PG-index is the matching one and is already what production v3qc cn_full uses.
+Mixing them would have `build_kmer_pa.py` reconstruct haplotypes from 135-asm records inside 82-acc-defined bubble regions — a silent inconsistency that exactly mirrors the v3 sim-FASTA bug (`memory/project_v3_singleton_kmer_bug`). The pang_135 PG-index is the matching one and is already what production v3qc kmer_pa uses.
 
 ## Auditor caveats to call out in any writeup
 
 1. **Numbers from `../HANDOFF_P82_CONTROL.md` do NOT carry over.** The p82 vs v3 apples-to-apples table (775,944 shared SNPs; MAE/RMSE/R²) was tied to the p82 build. p80 differs on both axes (sample drop AND decomposition method). Re-run every number.
 2. **5772 drop is a mixed effect.** With 5772 + T980 both present in p82, EM mass-split across the duplicate columns (cactus-FASTA-mislabel artifact). Dropping 5772 *also* removes that simplex degeneracy. So any p80 vs p82 lift mixes (a) drop-noisy-9947, (b) remove-5772-T980-duplicate, (c) arch decomposition. Don't conflate.
 3. **Decomposition is different.** The arch path uses graph-topology symbolic IDs (`convert-to-biallelic.py`) rather than reference-aligned `bcftools norm -m -any`. The variant ID space and exact (chrom, pos, ref, alt) atomization may differ for MNPs and complex bubbles. Intersect on (chrom, pos, ref, alt) when comparing against p82 or v3.
-4. **PanGenie-index is `pang_135` (production), not p82's.** Required for graph-topology consistency with the arch3 A1 catalog (both come from `pang_1001gplus_all`). k-mers private to 5772/9947 in pang_135 land as all-zero cn_full columns after p80 sample-subset; not wrong, just inefficient. If pruning is needed later, drop columns where `cn_full.sum(axis=0) == 0`.
+4. **PanGenie-index is `pang_135` (production), not p82's.** Required for graph-topology consistency with the arch3 A1 catalog (both come from `pang_1001gplus_all`). k-mers private to 5772/9947 in pang_135 land as all-zero kmer_pa columns after p80 sample-subset; not wrong, just inefficient. If pruning is needed later, drop columns where `kmer_pa.sum(axis=0) == 0`.
 
 ## Layout
 
@@ -61,11 +61,11 @@ benchmarks/p80/
 │   ├── samples_80_acc_order.txt                     # canonical 80-Acc_ID order (post-rename)
 │   ├── pangenome_p80_chr1.vcf.gz                    # CANONICAL biallelic VCF (80 samples, Acc_ID)
 │   ├── pangenome_p80_chr1.vcf.gz.tbi
-│   ├── cn_full_p80/
-│   │   ├── cn_Chr1.cn.npz                           # founder x k-mer (80 x ~6M)
-│   │   └── cn_Chr1.meta.npz
-│   ├── cn_var_p80.cn_var.npz                        # founder x variant
-│   └── cn_var_p80.meta.npz
+│   ├── kmer_pa_p80/
+│   │   ├── kmer_pa_Chr1.kmer_pa.npz                           # founder x k-mer (80 x ~6M)
+│   │   └── kmer_pa_Chr1.meta.npz
+│   ├── var_pa_p80.var_pa.npz                        # founder x variant
+│   └── var_pa_p80.meta.npz
 ├── fastas_80/                                 # bcftools-consensus founder FASTAs (Chr1)
 │   └── <Accession_ID>.chr.fa[.fai]            # 80 of these
 ├── sims/                                      # VISOR sim dirs (one per regime)
@@ -79,8 +79,8 @@ benchmarks/p80/
 │   └── FINAL_RESULTS_cov10_p80.ipynb          # TODO (Phase D)
 ├── scripts/
 │   ├── 01_build_biallelic_p80.sh              # subset 135-asm annotated to 80 + convert-to-biallelic + fill-tags + reheader
-│   ├── 03_build_cn_full_p80.sh                # cn_full_p80 (REUSES control_p82 PG-index)
-│   ├── 04_build_cn_var_p80.sh                 # cn_var_p80
+│   ├── 03_build_kmer_pa_p80.sh                # kmer_pa_p80 (REUSES control_p82 PG-index)
+│   ├── 04_build_var_pa_p80.sh                 # var_pa_p80
 │   ├── 05_build_fastas_p80.sh                 # 80-founder consensus FASTAs (array 1-80)
 │   ├── 06_run_sim_p80.sh                      # recomb sim per regime
 │   ├── 07_run_cactus_em_p80.sh                # cactus_em per (regime, method)
@@ -102,8 +102,8 @@ Or step-by-step:
 ```bash
 # Phase A: panel artifacts (arch decomposition; A1 already built in panel/arch3/chr1/)
 A1=$(sbatch --parsable scripts/01_build_biallelic_p80.sh)
-A3=$(sbatch --dependency=afterok:$A1 --parsable scripts/03_build_cn_full_p80.sh)
-A4=$(sbatch --dependency=afterok:$A1 --parsable scripts/04_build_cn_var_p80.sh)
+A3=$(sbatch --dependency=afterok:$A1 --parsable scripts/03_build_kmer_pa_p80.sh)
+A4=$(sbatch --dependency=afterok:$A1 --parsable scripts/04_build_var_pa_p80.sh)
 A5=$(sbatch --dependency=afterok:$A1 --parsable scripts/05_build_fastas_p80.sh)
 
 # Phase B: sims
@@ -128,4 +128,4 @@ sbatch --dependency=afterok:$B3 scripts/07_run_cactus_em_p80.sh n50_g3 star2
 
 ## Consistency invariant
 
-Every p80-specific artifact (`cn_full_p80`, `cn_var_p80`, `fastas_80/`) derives from the **same canonical biallelic VCF** (`data/pangenome_p80_chr1.vcf.gz`). Do not symlink to p82's FASTAs or to v3 artifacts — variant-set mismatch would recreate the v3 simulation bug (`memory/project_v3_singleton_kmer_bug`).
+Every p80-specific artifact (`kmer_pa_p80`, `var_pa_p80`, `fastas_80/`) derives from the **same canonical biallelic VCF** (`data/pangenome_p80_chr1.vcf.gz`). Do not symlink to p82's FASTAs or to v3 artifacts — variant-set mismatch would recreate the v3 simulation bug (`memory/project_v3_singleton_kmer_bug`).

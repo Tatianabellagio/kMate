@@ -8,14 +8,14 @@
 #SBATCH --time=1:00:00
 #SBATCH --output=logs/filt2_v3_%j.out
 #SBATCH --error=logs/filt2_v3_%j.err
-# Subset cn_full_v3qc_v3 to k-mers carried by >=2 founders total (drop private
+# Subset kmer_pa_v3qc_v3 to k-mers carried by >=2 founders total (drop private
 # / singleton k-mers only). Side-only-shared k-mers are KEPT — this is the
 # minimal version of the rebalancing filter and the only mixed-tier sibling
 # that preserves group-specific identifying signal.
 mkdir -p logs
 set -euo pipefail
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-OUT_DIR=/global/scratch/users/tbellg/kmate/data/cn_full_231_v3qc_v3_filt2
+OUT_DIR=/global/scratch/users/tbellg/kmate/data/kmer_pa_231_v3qc_v3_filt2
 mkdir -p $OUT_DIR
 
 $PY << EOF
@@ -23,29 +23,29 @@ import numpy as np, json
 from scipy.sparse import load_npz, save_npz
 from pathlib import Path
 CHR = 'Chr1'
-SRC = Path('/global/scratch/users/tbellg/kmate/data/cn_full_231_v3qc_v3')
+SRC = Path('/global/scratch/users/tbellg/kmate/data/kmer_pa_231_v3qc_v3')
 OUT = Path('${OUT_DIR}')
-cn = load_npz(SRC / f'cn_{CHR}.cn.npz').tocsr()
+kmer_pa = load_npz(SRC / f'cn_{CHR}.kmer_pa.npz').tocsr()
 meta = np.load(SRC / f'cn_{CHR}.meta.npz', allow_pickle=True)
 founders = np.asarray(meta['founders']).astype(str)
-F, K = cn.shape
-print(f'cn_full input: ({F}, {K:,}) nnz={cn.nnz:,}', flush=True)
+F, K = kmer_pa.shape
+print(f'kmer_pa input: ({F}, {K:,}) nnz={kmer_pa.nnz:,}', flush=True)
 with open('/global/scratch/users/tbellg/kmate/data/founder_split_cactus_pg.json') as fp:
     split = json.load(fp)
 cactus = set(map(str, split['cactus'])); pg = set(map(str, split['PG']))
 is_c = np.array([f in cactus for f in founders])
 is_p = np.array([f in pg for f in founders])
-ac   = np.asarray(cn.sum(axis=0)).flatten()
-ac_c = np.asarray(cn[is_c, :].sum(axis=0)).flatten()
-ac_p = np.asarray(cn[is_p, :].sum(axis=0)).flatten()
+ac   = np.asarray(kmer_pa.sum(axis=0)).flatten()
+ac_c = np.asarray(kmer_pa[is_c, :].sum(axis=0)).flatten()
+ac_p = np.asarray(kmer_pa[is_p, :].sum(axis=0)).flatten()
 keep = (ac >= 2)
 print(f'filt2 keep (ac>=2, drop private only): {keep.sum():,}/{K:,} ({keep.mean()*100:.2f}%)', flush=True)
 print(f'  dropped (ac==1): {(ac==1).sum():,}', flush=True)
 print(f'  also dropped (ac==0): {(ac==0).sum():,} -- already empty cols', flush=True)
-cn_f = cn.tocsc()[:, keep].tocsr()
+cn_f = kmer_pa.tocsc()[:, keep].tocsr()
 Kf = np.asarray(cn_f.sum(axis=1)).flatten()
 print(f'K_f median cactus={int(np.median(Kf[is_c])):,}, PG={int(np.median(Kf[is_p])):,}, ratio={np.median(Kf[is_c])/max(np.median(Kf[is_p]),1):.3f}', flush=True)
-save_npz(OUT / f'cn_{CHR}.cn.npz', cn_f)
+save_npz(OUT / f'cn_{CHR}.kmer_pa.npz', cn_f)
 new_meta = {}
 for k in meta.files:
     a = meta[k]

@@ -93,9 +93,9 @@ After Route 1 alone (λ=0.3 anchor) hit R²=0.963 SNP / 0.934 big-SV on n50_g3 a
 **Production recipe (final, replaces 2026-05-06 morning recipe):**
 ```bash
 python src/per_sample_per_chrom.py \
-    --cn-kmer-prefix data/cn_full_231_v2/cn \
-    --cn-var       data/cn_var_231_v2.cn_var.npz \
-    --cn-var-meta  data/cn_var_231_v2.meta.npz \
+    --kmer-pa-prefix data/kmer_pa_231_v2/kmer_pa \
+    --var-pa       data/var_pa_231_v2.var_pa.npz \
+    --var-meta  data/var_pa_231_v2.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
     --threads 8 --chroms Chr1 Chr2 Chr3 Chr4 Chr5 \
     --block-mode window --window-bp 10000 \
@@ -130,7 +130,7 @@ on n50_g3 at the user's required 10 kb resolution.
    per-window fallback in `block_em.solve_em_per_block`).
 2. Per-window EM with Dirichlet pseudocount centered on `h_global`:
    ```
-   h_new[f] ∝ h[f] · (cn @ cw) + λ · N · h_global[f]    then renormalize to simplex
+   h_new[f] ∝ h[f] · (kmer_pa @ cw) + λ · N · h_global[f]    then renormalize to simplex
    ```
    `λ=0` is exactly the legacy `window_10kb`. `λ→∞` reduces to global. The
    anchor pulls per-window solutions toward `h_global` proportional to total
@@ -165,7 +165,7 @@ gives back ~0.4 pp. Sweet spot is λ ∈ [0.3, 0.5]; default for production is
   per-window EM picks one of many equally-good local fits — high variance.
 - The Dirichlet anchor toward `h_global` regularizes those high-variance
   windows. High-evidence windows still adapt freely because `λ·N·h_global`
-  is a constant pseudocount that gets dwarfed by `h · (cn @ cw)` when the
+  is a constant pseudocount that gets dwarfed by `h · (kmer_pa @ cw)` when the
   k-mer evidence is large.
 - This is exactly the regime where Route 3 (kallisto-EM) failed: its per-window
   EC counts ARE much sparser than per-window k-mer counts, so it'd benefit from
@@ -177,9 +177,9 @@ gives back ~0.4 pp. Sweet spot is λ ∈ [0.3, 0.5]; default for production is
 **Production recipe** (replaces the previous 200 kb default):
 ```bash
 python src/per_sample_per_chrom.py \
-    --cn-kmer-prefix data/cn_full_231_v2/cn \
-    --cn-var       data/cn_var_231_v2.cn_var.npz \
-    --cn-var-meta  data/cn_var_231_v2.meta.npz \
+    --kmer-pa-prefix data/kmer_pa_231_v2/kmer_pa \
+    --var-pa       data/var_pa_231_v2.var_pa.npz \
+    --var-meta  data/var_pa_231_v2.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
     --threads 8 --chroms Chr1 Chr2 Chr3 Chr4 Chr5 \
     --block-mode window --window-bp 10000 \
@@ -213,7 +213,7 @@ information that per-k-mer Poisson EM throws away (one read carries ~120
 linked 31-mers from one founder).
 
 **Setup** (cov50_n50_g3_s42_hotspots_p231_chr1, Chr1):
-- Same 231-founder panel (`cn_full_231_v2`), same `cn_var_231_v2` projection
+- Same 231-founder panel (`kmer_pa_231_v2`), same `var_pa_231_v2` projection
 - 10,118,396 read pairs total (cov50)
 - Per-read: extract canonical 31-mers, look up panel column ids via sorted-uint64
   binary search, intersect founder bitmasks per 10 kb window → emit
@@ -252,7 +252,7 @@ suspicion):**
 
 1. **Loss of absence signal.** Per-k-mer Poisson EM uses BOTH high-count and
    low/zero-count k-mers as evidence: a k-mer expected to be present but
-   observed at low count constrains `h^T cn[:, k]` downward. EC-level EM
+   observed at low count constrains `h^T kmer_pa[:, k]` downward. EC-level EM
    only uses observed reads — k-mers that produced no reads contribute zero
    constraints. At full cov50 most panel k-mers DO get reads, but the
    asymmetry seems to bite at fine block scale where per-window k-mer counts
@@ -264,7 +264,7 @@ suspicion):**
    that hits the panel index, regardless of read identity.
 3. **EC dedup flattens count gradient.** Per-k-mer EM's `counts[k]` is a
    gradient observation: 100 vs 5 hits at k-mer k carries information about
-   `h^T cn[:, k]`. EC-level counts only depend on number of READS in each
+   `h^T kmer_pa[:, k]`. EC-level counts only depend on number of READS in each
    compatibility class — independent of how many k-mers each read contributes.
    Reads with many k-mers in the same EC count once, not many times.
 
@@ -283,7 +283,7 @@ implemented is not a win at full cov50 on n50_g3 at 10 kb resolution.
 **Files / artifacts**:
 - Driver: `src/per_sample_kallisto_em.py`
 - Helper: `scripts/precompute_panel_u64_index.py` (one-time uint64
-  panel cache; current: `data/cn_full_231_v2/cn_Chr1_kmers_u64.npz`)
+  panel cache; current: `data/kmer_pa_231_v2/kmer_pa_Chr1_kmers_u64.npz`)
 - Eval: `scripts/eval_kallisto_em.py`
 - Output TSV (full cov, anchor=0): `/tmp/kallisto_em_full.tsv`
 - Wall: 40 min on 1 core (5 min could become ~6 min on 8 cores via
@@ -337,7 +337,7 @@ panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz
   - SVs + small indels + SNPs in one multi-allelic catalog
   - cactus-side haploid `.` PRESERVED (carries biological "no path through bubble" info)
   - PanGenie-side ~0.01% missing
-  - downstream cn-builder treats missing as carrier=False (correct interpretation)
+  - downstream kmer_pa-builder treats missing as carrier=False (correct interpretation)
 ```
 
 The Beagle-imputed VCFs (`panel/imputation/work_merged/founders_231_imputed*.vcf.gz`)
@@ -390,17 +390,17 @@ assumption fails).
 5. Per pool-seq sample, count kept k-mers and run EM on the
    sequence-unique class simplex per block. Project `h_class → h_founder`
    via founder_to_class with equal split among founders in each class.
-6. AF projection through `cn_var_231_v2` is unchanged.
+6. AF projection through `var_pa_231_v2` is unchanged.
 
 **Single-block smoke test signal density** (vs current bigld_panel):
 
 | | typical 7kb block (229 SNPs, 64 haps) | small 297bp block (15 SNPs, 22 haps) |
 |---|---|---|
-| PanGenie cn_full (current bigld_panel) | 61 k-mers | 1 k-mer |
-| Block-haplotype cn (this mode) | 73,816 k-mers | 5,873 k-mers |
+| PanGenie kmer_pa (current bigld_panel) | 61 k-mers | 1 k-mer |
+| Block-haplotype kmer_pa (this mode) | 73,816 k-mers | 5,873 k-mers |
 | Discrimination factor (K / n_uniq) | 1153× | 267× |
 
-So per-block evidence is ~1,000× richer than the current bigld_panel cn_full,
+So per-block evidence is ~1,000× richer than the current bigld_panel kmer_pa,
 which is what unlocks robust EM at fine-block resolution.
 
 **Status**: builder + driver written; full Chr1 build + sim re-runs pending.
@@ -413,10 +413,10 @@ which is what unlocks robust EM at fine-block resolution.
 - `compare_recomb_stratified.py` — already includes `bigld_haplotype` in
   the methods set
 
-**Caveat**: `cn_var_231_v2` IS Beagle-imputed (not pre-imputation). The
+**Caveat**: `var_pa_231_v2` IS Beagle-imputed (not pre-imputation). The
 2026-05-03 morning entry below about Beagle reverts applies to a different
-cn_var build for the PanGenie 226-eco panel, NOT to the cn_var_231_v2
-used here. See memory file `project_cn_var_231_v2_is_beagle_imputed.md`.
+var_pa build for the PanGenie 226-eco panel, NOT to the var_pa_231_v2
+used here. See memory file `project_var_pa_231_v2_is_beagle_imputed.md`.
 
 ---
 
@@ -425,10 +425,10 @@ used here. See memory file `project_cn_var_231_v2_is_beagle_imputed.md`.
 > **Scope note (added 2026-05-03 evening)**: this entry concerns the
 > PanGenie 226-eco genotyping panel deliverable
 > (`panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`) and its derived
-> cn_var. It does NOT apply to `data/cn_var_231_v2.cn_var.npz`,
+> var_pa. It does NOT apply to `data/var_pa_231_v2.var_pa.npz`,
 > which IS Beagle-imputed (verified: 64.5% of SV records have imputed-founder
-> carriers in cn_var_231_v2; pre-imputation would show ~0). The recomb sims
-> and the new `bigld_haplotype` mode use cn_var_231_v2 (Beagle-imputed) and
+> carriers in var_pa_231_v2; pre-imputation would show ~0). The recomb sims
+> and the new `bigld_haplotype` mode use var_pa_231_v2 (Beagle-imputed) and
 > the matching Beagle-imputed `founder_fastas_231/`, so that pipeline is
 > internally consistent with imputed SVs included.
 
@@ -485,7 +485,7 @@ it.
 **Decision: revert to using the pre-imputation merged VCF as the production
 deliverable.** `panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz`
 (231 samples, 5.21M records, 18.5% records with cactus-side haploid `.`).
-The cn-builder (`build_cn_var.py`) treats missing as carrier=False, which is
+The kmer_pa-builder (`build_var_pa.py`) treats missing as carrier=False, which is
 biologically correct for haploid `.` (the assembly didn't carry alt at this
 bubble). Imputed VCFs (`work_merged/founders_231_imputed*.vcf.gz`) kept on
 disk for posterity but not used downstream.
@@ -505,9 +505,9 @@ treats no differently from the cactus side).
 
 ---
 
-## 2026-05-03 — PanGenie het rate is mostly artifact, not biology — sticking with carrier-status cn
+## 2026-05-03 — PanGenie het rate is mostly artifact, not biology — sticking with carrier-status kmer_pa
 
-Question: would moving from carrier-status cn (any-alt = 1) to dose-aware cn (sum/ploidy) recover meaningful information for the pool-seq frequency model? Specifically: what's the true het rate in our 151 PanGenie-genotyped ecotypes?
+Question: would moving from carrier-status kmer_pa (any-alt = 1) to dose-aware kmer_pa (sum/ploidy) recover meaningful information for the pool-seq frequency model? Specifically: what's the true het rate in our 151 PanGenie-genotyped ecotypes?
 
 **Per-sample het distribution (151 ecotypes):**
 
@@ -539,13 +539,13 @@ Het bins vs median GC vs GrENE-Net:
 
 The 6 of top-10 most-het samples are exactly our flagged Cao 2011 GAII low-quality libraries (9507, 9977, 9985, 10013, 9941, 9978). Their "het" is PanGenie returning ambiguous calls on noisy short reads, not real heterozygosity — confirmed because their GrENE-Net concordance also drops.
 
-**Implications for cn matrix design:**
+**Implications for kmer_pa matrix design:**
 
 1. True biological het rate in clean inbred *A. thaliana* lines is **probably <0.5%** (the lowest-het bin in our data is at 0.29-0.49% het, and even those samples have ~99.4% concordance — most "het" calls below that floor are quiet noise).
-2. Going dose-aware (cn = sum/ploidy giving 0.5 for het, 1.0 for hom_alt) would propagate PanGenie's call noise on the ~10% of panel that's high-het.
+2. Going dose-aware (kmer_pa = sum/ploidy giving 0.5 for het, 1.0 for hom_alt) would propagate PanGenie's call noise on the ~10% of panel that's high-het.
 3. The pool-seq f_SV impact of staying carrier-status vs dose-aware is at most **~5% relative AF error** for typical SVs, mostly driven by noise rather than real biology.
 
-**Decision: stick with carrier-status cn.** Don't rebuild the pangenome diploid, don't upgrade the cn-builder to dose-aware. Better strategy is to drop or downweight the 15 high-het founders (mostly Cao 2011 GAII) in downstream analyses if needed.
+**Decision: stick with carrier-status kmer_pa.** Don't rebuild the pangenome diploid, don't upgrade the kmer_pa-builder to dose-aware. Better strategy is to drop or downweight the 15 high-het founders (mostly Cao 2011 GAII) in downstream analyses if needed.
 
 ---
 
@@ -664,7 +664,7 @@ Plots: `plots/cactus_vs_xwu82_snp_venn.png`, `plots/imputation_panel_design_3way
 ## 2026-04-29 ~12:00 — Tier 1 root-cause fix VALIDATED on Chr4 (job 57779)
 
 Built a corrected merged VCF from `ref_80 + imputed_151` (instead of the buggy
-`cactus_svs + imputed_151`), rebuilt cn_kmer_v2 + cn_var_v2 for Chr4 only,
+`cactus_svs + imputed_151`), rebuilt kmer_pa_v2 + var_pa_v2 for Chr4 only,
 re-ran per_sample_driver in global mode on SEEDMIX_S1 reads.
 
 **Headline numbers vs the old (buggy) version**:
@@ -688,7 +688,7 @@ This **conclusively confirms** the 1.43× slope was a build artifact, not a
 fundamental rank-deficiency. **No calibration needed** — slope = 1.003.
 
 **Action**: full-genome rebuild submitted as job **57794** (~10h: ~7.5h for
-the 5 cn_kmer chrom builds + 30 min cn_var). Once done, we have a working
+the 5 kmer_pa chrom builds + 30 min var_pa). Once done, we have a working
 clean 231-founder Beagle-imputed panel ready for production immediately,
 without waiting for pang_69 / PanGenie. PanGenie path is still preferred
 architecturally (no imputation step) but Tier 1 fix gives a fallback today.
@@ -697,7 +697,7 @@ architecturally (no imputation step) but Tier 1 fix gives a fallback today.
 
 ## 2026-04-29 ~11:00 — Deep dive: where does the 1.43× slope come from?
 
-### Finding 1: cn_var_231 has no SNP genotypes for the 80 cactus founders
+### Finding 1: var_pa_231 has no SNP genotypes for the 80 cactus founders
 
 | Record type | n | cactus density | imputed density | ratio |
 |---|---|---|---|---|
@@ -705,12 +705,12 @@ architecturally (no imputation step) but Tier 1 fix gives a fallback today.
 | SNPs (1bp/1bp) | **3,235,480** | **0.000000** | 0.107 | ∞ |
 | All | 3,476,635 | 0.0020 | 0.101 | 50× |
 
-**Root cause**: `cn_var_231` was built via
+**Root cause**: `var_pa_231` was built via
 `bcftools merge cactus_svs_renamed.vcf.gz imputed_151.vcf.gz`. The
 `cactus_svs` file contains only SV records (no SNPs), so when bcftools
 merges, the 80 cactus founders get `./.` at all 3.24M SNP records (the
-build_cn_var.py script treats `./.` as 0). Cactus founders contribute zero
-alt-allele evidence at SNPs — 93% of the cn_var matrix.
+build_var_pa.py script treats `./.` as 0). Cactus founders contribute zero
+alt-allele evidence at SNPs — 93% of the var_pa matrix.
 
 The EM correctly learns "cactus founders never carry alt at SNPs" and
 shifts mass to imputed founders to explain SNP-related k-mer counts. This
@@ -720,12 +720,12 @@ On the SVs alone (where both groups have real data) cactus density (0.029)
 is *higher* than imputed (0.020), as expected biologically — SVs tend to
 be private to specific founders and Beagle imputation is conservative.
 
-**Proper fix**: rebuild `cn_var_231` from
+**Proper fix**: rebuild `var_pa_231` from
 `bcftools merge ref_80.vcf.gz imputed_151.vcf.gz`, where `ref_80` already
 contains the 80 cactus founders' SNP genotypes (from `grene_80.vcf.gz`,
 used as Beagle's reference panel input). The `ref_80.vcf.gz` already
 exists at `/carnegie/nobackup/scratch/tbellagio/kmate/panel/imputation/work/`.
-Estimated rebuild cost: cn_kmer ~9h + cn_var ~30 min, single SLURM job.
+Estimated rebuild cost: kmer_pa ~9h + var_pa ~30 min, single SLURM job.
 
 **Workaround (current)**: post-hoc 1.43× calibration recovers R² 0.68→0.97
 for the production deliverable. Slope is panel-intrinsic and stable
@@ -812,8 +812,8 @@ production pipeline to nocap.**
      python src/calibrate_alt_freqs.py compute \
          --predicted-tsv results/seedmix_231/SEEDMIX_S1.tsv \
          --recipe data/seedmix_recipe_normalized.tsv \
-         --cn-var data/cn_var_231.cn_var.npz \
-         --cn-var-meta data/cn_var_231.meta.npz \
+         --var-pa data/var_pa_231.var_pa.npz \
+         --var-meta data/var_pa_231.meta.npz \
          --out data/calibration_231.json
 
 2. Apply to all 2,414 evolved-sample TSVs:
@@ -948,13 +948,13 @@ Sims pre-existing in `data/sim_chr1{,_skewed}/`, run via global EM at K=80M:
 | uniform82 | 1/82 each | RMSE=0.0034 (R²=nan, zero variance truth) | 3.0h |
 | skewed5 | [.40,.25,.15,.10,.10] | **R²=0.9925, RMSE=0.0048** | 1.4h |
 
-Confirms patched float32-throughout EM works on the full genome-wide K=80M sparse cn matrix.
+Confirms patched float32-throughout EM works on the full genome-wide K=80M sparse kmer_pa matrix.
 
 ---
 
 ## EM solver bottleneck fix (the >60× speedup)
 
-Found via profiling: `h64 @ cn_f32` was triggering an implicit float64 upcast of cn (52 GB temp allocation per iter) — making each EM iteration ~13 seconds at K=12.9M.
+Found via profiling: `h64 @ cn_f32` was triggering an implicit float64 upcast of kmer_pa (52 GB temp allocation per iter) — making each EM iteration ~13 seconds at K=12.9M.
 
 | Operation | Time/call (K=12.9M) | Speedup |
 |---|---|---|

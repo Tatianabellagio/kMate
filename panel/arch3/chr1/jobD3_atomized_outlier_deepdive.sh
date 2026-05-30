@@ -36,9 +36,9 @@ print('=== Load atomized cactus_em + meta + hapFIRE ===')
 atom_af = pd.read_csv('SEEDMIX_S1_arch3_chr1_atomized.tsv', sep='\t')
 print(f'  atomized records: {len(atom_af):,}')
 
-cn_a = load_npz('cn_var_231_arch3_chr1_atomized.cn_var.npz').tocsc()
-cnc_a = load_npz('cn_var_231_arch3_chr1_atomized.cn_var_called.npz').tocsc()
-meta_a = np.load('cn_var_231_arch3_chr1_atomized.meta.npz', allow_pickle=True)
+cn_a = load_npz('var_pa_231_arch3_chr1_atomized.var_pa.npz').tocsc()
+cnc_a = load_npz('var_pa_231_arch3_chr1_atomized.var_called.npz').tocsc()
+meta_a = np.load('var_pa_231_arch3_chr1_atomized.meta.npz', allow_pickle=True)
 m_pos = meta_a['pos']; m_ref = meta_a['ref']; m_alt = meta_a['alt']
 founders = meta_a['founders']
 
@@ -75,7 +75,7 @@ key2idx = {}
 for i in range(len(m_pos)):
     key2idx[(int(m_pos[i]), m_ref_s[i], m_alt_s[i])] = i
 
-# Annotate each outlier with cactus_AF, PG_AF, F_MISSING (computed from cn_var_called)
+# Annotate each outlier with cactus_AF, PG_AF, F_MISSING (computed from var_called)
 print('=== Computing per-class cactus_AF / PG_AF / F_MISSING for outliers ===')
 cact_af_list = []; pg_af_list = []; fmiss_list = []; n_alt_atoms_list = []
 # Also: how many atomized rows at this same pos (different ALT)

@@ -16,8 +16,8 @@ import pysam
 
 ROOT = Path('/global/scratch/users/tbellg/kmate')
 CHROM = sys.argv[1] if len(sys.argv) > 1 else 'Chr1'
-CN    = ROOT / f'data/cn_full_231_v3qc_v3/cn_{CHROM}.cn.npz'
-META  = ROOT / f'data/cn_full_231_v3qc_v3/cn_{CHROM}.meta.npz'
+CN    = ROOT / f'data/kmer_pa_231_v3qc_v3/cn_{CHROM}.kmer_pa.npz'
+META  = ROOT / f'data/kmer_pa_231_v3qc_v3/cn_{CHROM}.meta.npz'
 VCF   = ROOT / 'panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz'
 SPLIT = ROOT / 'data/founder_split_cactus_pg.json'
 PLOTDIR = ROOT/'notebooks/plots'; PLOTDIR.mkdir(exist_ok=True)
@@ -26,7 +26,7 @@ RESULTS = ROOT/'results'; RESULTS.mkdir(exist_ok=True)
 t0 = time.time()
 def log(*a): print(f'[{time.time()-t0:7.1f}s]', *a, flush=True)
 
-cn   = load_npz(CN).tocsr()
+kmer_pa   = load_npz(CN).tocsr()
 meta = np.load(META, allow_pickle=True)
 founders  = np.asarray(meta['founders']).astype(str)
 F = len(founders)
@@ -39,19 +39,19 @@ with open(SPLIT) as f: split = json.load(f)
 cset, pset = set(map(str, split['cactus'])), set(map(str, split['PG']))
 is_c = np.array([x in cset for x in founders]); is_p = np.array([x in pset for x in founders])
 n_c, n_p = int(is_c.sum()), int(is_p.sum())
-log(f'cn={cn.shape} nnz={cn.nnz:,} bubbles={n_bubbles:,} cactus={n_c} PG={n_p}')
+log(f'kmer_pa={kmer_pa.shape} nnz={kmer_pa.nnz:,} bubbles={n_bubbles:,} cactus={n_c} PG={n_p}')
 
-ac   = np.asarray(cn.sum(0)).flatten()
-ac_c = np.asarray(cn[is_c].sum(0)).flatten()
-ac_p = np.asarray(cn[is_p].sum(0)).flatten()
-cn_c = cn[is_c].tocsc()   # pre-slice once; column-subsetting is the hot op
-cn_p = cn[is_p].tocsc()
+ac   = np.asarray(kmer_pa.sum(0)).flatten()
+ac_c = np.asarray(kmer_pa[is_c].sum(0)).flatten()
+ac_p = np.asarray(kmer_pa[is_p].sum(0)).flatten()
+cn_c = kmer_pa[is_c].tocsc()   # pre-slice once; column-subsetting is the hot op
+cn_p = kmer_pa[is_p].tocsc()
 log('carrier counts done')
 
 # --- per-bubble missingness from the VCF (faithful per-bubble fetch) ---
 vcf = pysam.VariantFile(str(VCF))
 vsamples = list(vcf.header.samples)
-vidx = np.array([vsamples.index(f) for f in founders])  # VCF col -> cn order
+vidx = np.array([vsamples.index(f) for f in founders])  # VCF col -> kmer_pa order
 miss_bub = np.zeros((n_bubbles, F), dtype=bool)
 for b in range(n_bubbles):
     s, e = int(bub_start[b]), int(bub_end[b])
@@ -87,7 +87,7 @@ def side_ratio(km):
     c = cn_c[:, co].sum() / n_c; p = cn_p[:, po].sum() / n_p
     return c, p, (c/p if p else np.nan)
 
-allk = np.ones(cn.shape[1], dtype=bool)
+allk = np.ones(kmer_pa.shape[1], dtype=bool)
 fully = ~any_miss[bubble_id]
 
 print('\n================  HEADLINE: PRIVATE k-mers per founder  ================')

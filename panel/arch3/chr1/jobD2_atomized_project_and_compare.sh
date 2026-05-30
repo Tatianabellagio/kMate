@@ -11,20 +11,20 @@
 mkdir -p logs
 set -euo pipefail
 
-# Re-project SEEDMIX_S1 h_v3 through the ATOMIZED cn_var, then compare to hapFIRE
+# Re-project SEEDMIX_S1 h_v3 through the ATOMIZED var_pa, then compare to hapFIRE
 # on the 4-tuple (chrom, pos, ref, alt) join. Quantify encoding-disagreement reduction.
 
 cd /global/scratch/users/tbellg/kmate/panel/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 H_PATH=/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
-CN_VAR=cn_var_231_arch3_chr1_atomized.cn_var.npz
-CN_VAR_CALLED=cn_var_231_arch3_chr1_atomized.cn_var_called.npz
-CN_VAR_META=cn_var_231_arch3_chr1_atomized.meta.npz
+CN_VAR=var_pa_231_arch3_chr1_atomized.var_pa.npz
+VAR_CALLED=var_pa_231_arch3_chr1_atomized.var_called.npz
+CN_VAR_META=var_pa_231_arch3_chr1_atomized.meta.npz
 HAPFIRE=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
 HAPFIRE_VCF=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf
 
-for f in $H_PATH $CN_VAR $CN_VAR_CALLED $CN_VAR_META $HAPFIRE $HAPFIRE_VCF; do
+for f in $H_PATH $CN_VAR $VAR_CALLED $CN_VAR_META $HAPFIRE $HAPFIRE_VCF; do
   [ -s "$f" ] || { echo "ERROR: missing $f"; exit 1; }
 done
 
@@ -53,28 +53,28 @@ h_raw = h_data['Chr1']
 h_founders = h_data['founders']
 print(f'  h shape: {h_raw.shape}, sum: {h_raw.sum():.4f}')
 
-print('=== Load atomized cn_var + meta ===')
-cn_var = load_npz('$CN_VAR').tocsr()
-cn_var_called = load_npz('$CN_VAR_CALLED').tocsr()
+print('=== Load atomized var_pa + meta ===')
+var_pa = load_npz('$CN_VAR').tocsr()
+var_called = load_npz('$VAR_CALLED').tocsr()
 meta = np.load('$CN_VAR_META', allow_pickle=True)
 chrom = meta['chrom']; pos = meta['pos']; ref = meta['ref']; alt = meta['alt']
 cn_founders = meta['founders']
-F = cn_var.shape[0]
-N = cn_var.shape[1]
-print(f'  cn_var: {cn_var.shape}, {cn_var.nnz:,} nnz')
-print(f'  cn_var_called: {cn_var_called.shape}, {cn_var_called.nnz:,} nnz')
+F = var_pa.shape[0]
+N = var_pa.shape[1]
+print(f'  var_pa: {var_pa.shape}, {var_pa.nnz:,} nnz')
+print(f'  var_called: {var_called.shape}, {var_called.nnz:,} nnz')
 print(f'  meta records: {N:,}')
 
 # Verify founder ordering matches
 h_founders_s = [str(x) for x in h_founders]
 cn_founders_s = [str(x) for x in cn_founders]
-assert h_founders_s == cn_founders_s, 'Founder ordering differs between h and atomized cn_var'
+assert h_founders_s == cn_founders_s, 'Founder ordering differs between h and atomized var_pa'
 h = h_raw.astype(float)
 print('  founder ordering identical, no reindex needed')
 
-print(f'\n=== Project AF = h @ cn_var / h @ cn_var_called ===')
-numer = h @ cn_var
-denom = h @ cn_var_called
+print(f'\n=== Project AF = h @ var_pa / h @ var_called ===')
+numer = h @ var_pa
+denom = h @ var_called
 af = np.where(denom > 0, numer / denom, np.nan)
 print(f'  projected in {time.time()-t0:.1f}s; AF range [{np.nanmin(af):.3f}, {np.nanmax(af):.3f}], NaN={np.isnan(af).sum():,}')
 

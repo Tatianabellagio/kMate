@@ -11,4 +11,4 @@
 mkdir -p logs
 set -euo pipefail
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-$PY -u /global/scratch/users/tbellg/kmate/scripts/audit_cn_var_v3qc_v3.py
+$PY -u /global/scratch/users/tbellg/kmate/scripts/audit_var_pa_v3qc_v3.py

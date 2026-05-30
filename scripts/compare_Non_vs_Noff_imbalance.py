@@ -19,9 +19,9 @@ from scipy.sparse import load_npz
 
 ROOT  = Path('/global/scratch/users/tbellg/kmate')
 CHROM = sys.argv[1] if len(sys.argv) > 1 else 'Chr1'
-NON   = ROOT / f'data/cn_full_231_v3qc_v3/cn_{CHROM}.cn.npz'
-NOFF  = ROOT / f'data/cn_full_231_v3qc_v3_Noff_diag/cn_{CHROM}.cn.npz'
-META  = ROOT / f'data/cn_full_231_v3qc_v3/cn_{CHROM}.meta.npz'   # founder order (same for both)
+NON   = ROOT / f'data/kmer_pa_231_v3qc_v3/cn_{CHROM}.kmer_pa.npz'
+NOFF  = ROOT / f'data/kmer_pa_231_v3qc_v3_Noff_diag/cn_{CHROM}.kmer_pa.npz'
+META  = ROOT / f'data/kmer_pa_231_v3qc_v3/cn_{CHROM}.meta.npz'   # founder order (same for both)
 SPLIT = ROOT / 'data/founder_split_cactus_pg.json'
 
 meta = np.load(META, allow_pickle=True)
@@ -34,18 +34,18 @@ n_c, n_p = int(is_c.sum()), int(is_p.sum())
 def stats(path, label):
     if not path.exists():
         print(f'[{label}] MISSING: {path}  (run the rebuild first)'); return
-    cn = load_npz(path).tocsr()
-    ac   = np.asarray(cn.sum(0)).flatten()
-    ac_c = np.asarray(cn[is_c].sum(0)).flatten()
-    ac_p = np.asarray(cn[is_p].sum(0)).flatten()
+    kmer_pa = load_npz(path).tocsr()
+    ac   = np.asarray(kmer_pa.sum(0)).flatten()
+    ac_c = np.asarray(kmer_pa[is_c].sum(0)).flatten()
+    ac_p = np.asarray(kmer_pa[is_p].sum(0)).flatten()
     priv = (ac == 1)
-    cac_priv = cn[is_c][:, priv].sum() / n_c
-    pg_priv  = cn[is_p][:, priv].sum() / n_p
+    cac_priv = kmer_pa[is_c][:, priv].sum() / n_c
+    pg_priv  = kmer_pa[is_p][:, priv].sum() / n_p
     s = (ac >= 2); co = s & (ac_p == 0); po = s & (ac_c == 0)
-    cac_so = cn[is_c][:, co].sum() / n_c
-    pg_so  = cn[is_p][:, po].sum() / n_p
+    cac_so = kmer_pa[is_c][:, co].sum() / n_c
+    pg_so  = kmer_pa[is_p][:, po].sum() / n_p
     print(f'\n===== {label}  ({path.parent.name}) =====')
-    print(f'  shape={cn.shape} nnz={cn.nnz:,}')
+    print(f'  shape={kmer_pa.shape} nnz={kmer_pa.nnz:,}')
     print(f'  ac==0 fraction:            {(ac==0).mean()*100:6.2f}%')
     print(f'  ac==1 (private) fraction:  {(ac==1).mean()*100:6.2f}%')
     print(f'  private/founder  cactus={cac_priv:8.1f}  PG={pg_priv:7.1f}  ratio={cac_priv/max(pg_priv,1e-9):5.2f}x')

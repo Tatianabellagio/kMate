@@ -16,7 +16,7 @@
 #       --crossovers-from-ld-blocks so sample_crossovers() falls back to uniform
 #       random positions. Forcing crossovers at hapFIRE BigLD boundaries was
 #       circular for a benchmark (it biases toward the block-based method).
-#   (2) per-record TRUTH built on BOTH arch3 cn_vars (atomized + raw), so each
+#   (2) per-record TRUTH built on BOTH arch3 var_pas (atomized + raw), so each
 #       projection arm (07c) joins its truth 100% on (chrom,pos,ref_len,alt_len).
 #
 # Usage: sbatch 06_run_sim_p231.sh N_INDIV N_GEN [SEED=42]
@@ -42,12 +42,12 @@ WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}_hotspots_p231_chr1
 mkdir -p $WORK $CTRL/logs
 
 CACTUS_DIR=$CTRL/fastas_231
-FOUNDERS_META=$ROOT/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz
-# arch3 cn_vars (REUSED): atomized (SNP-level) + raw (SNP/indel/SV classes)
-CN_VAR_ATOM=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz
-CN_VAR_ATOM_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.meta.npz
-CN_VAR_RAW=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz
-CN_VAR_RAW_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz
+FOUNDERS_META=$ROOT/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1.meta.npz
+# arch3 var_pas (REUSED): atomized (SNP-level) + raw (SNP/indel/SV classes)
+CN_VAR_ATOM=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.var_pa.npz
+CN_VAR_ATOM_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.meta.npz
+CN_VAR_RAW=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz
+CN_VAR_RAW_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz
 TRUTH=$ROOT/sims/visor_freqk/scripts/compute_recomb_truth.py
 
 for f in "$CACTUS_DIR" "$FOUNDERS_META" "$CN_VAR_ATOM" "$CN_VAR_RAW" "$TRUTH"; do
@@ -127,20 +127,20 @@ fi
 echo "[$(date)] reads: $(du -h ${READS_DIR}/r1.fq ${READS_DIR}/r2.fq | tail -2)"
 
 # -----------------------------------------------------------------------------
-# STAGE 3: per-record truth on BOTH cn_vars (atomized + raw)
+# STAGE 3: per-record truth on BOTH var_pas (atomized + raw)
 # -----------------------------------------------------------------------------
 echo
-echo "[$(date)] STAGE 3a: truth on ATOMIZED cn_var (7.46M per-base records)"
+echo "[$(date)] STAGE 3a: truth on ATOMIZED var_pa (7.46M per-base records)"
 $PYTHON $TRUTH \
     --ancestry $WORK/ancestry.tsv --weights $WORK/pool_weights.tsv \
-    --cn-var $CN_VAR_ATOM --cn-var-meta $CN_VAR_ATOM_META \
+    --var-pa $CN_VAR_ATOM --var-meta $CN_VAR_ATOM_META \
     --out $WORK/recomb_truth_atomized.tsv.gz
 
 echo
-echo "[$(date)] STAGE 3b: truth on RAW arch3 cn_var (2.62M records, SNP/indel/SV)"
+echo "[$(date)] STAGE 3b: truth on RAW arch3 var_pa (2.62M records, SNP/indel/SV)"
 $PYTHON $TRUTH \
     --ancestry $WORK/ancestry.tsv --weights $WORK/pool_weights.tsv \
-    --cn-var $CN_VAR_RAW --cn-var-meta $CN_VAR_RAW_META \
+    --var-pa $CN_VAR_RAW --var-meta $CN_VAR_RAW_META \
     --out $WORK/recomb_truth_raw.tsv.gz
 
 echo

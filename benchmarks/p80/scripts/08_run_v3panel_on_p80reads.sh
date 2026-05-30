@@ -15,8 +15,8 @@
 # something defensible about "v3 panel vs p80 panel."
 #
 # NOTE: this writes results that must be evaluated against p80's recomb_truth
-# (NOT v3's). The (chrom,pos,ref,alt) intersection of v3's cn_var vs p80's
-# cn_var defines the shared evaluation surface in the notebook.
+# (NOT v3's). The (chrom,pos,ref,alt) intersection of v3's var_pa vs p80's
+# var_pa defines the shared evaluation surface in the notebook.
 #
 # Usage:
 #   sbatch 08_run_v3panel_on_p80reads.sh REGIME METHOD
@@ -43,9 +43,9 @@ READS_DIR=$WORK/reads
 [ -s "$READS_DIR/r1.fq" ] || { echo "ERROR: missing reads -- run 06_run_sim_p80.sh first" >&2; exit 1; }
 
 # V3 panel pointers (unchanged -- 231-founder production panel)
-CN_KMER_PREFIX=$ROOT/data/cn_full_231_v3/cn
-CN_VAR=$ROOT/data/cn_var_231_v3.cn_var.npz
-CN_VAR_META=$ROOT/data/cn_var_231_v3.meta.npz
+CN_KMER_PREFIX=$ROOT/data/kmer_pa_231_v3/kmer_pa
+CN_VAR=$ROOT/data/var_pa_231_v3.var_pa.npz
+CN_VAR_META=$ROOT/data/var_pa_231_v3.meta.npz
 
 OUT_DIR=$CTRL/results/v3_panel_on_p80_reads/cactus_em_${METHOD}/${REGIME}
 mkdir -p $OUT_DIR
@@ -60,9 +60,9 @@ fi
 
 echo "[$(date)] running v3 panel on p80 reads -- $REGIME $METHOD"
 $PYTHON -u $DRIVER \
-    --cn-kmer-prefix $CN_KMER_PREFIX \
-    --cn-var $CN_VAR \
-    --cn-var-meta $CN_VAR_META \
+    --kmer-pa-prefix $CN_KMER_PREFIX \
+    --var-pa $CN_VAR \
+    --var-meta $CN_VAR_META \
     --reads $READS_DIR/r1.fq $READS_DIR/r2.fq \
     --sample $SAMPLE \
     --out $OUT_TSV \

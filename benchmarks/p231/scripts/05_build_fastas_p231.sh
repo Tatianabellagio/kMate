@@ -17,7 +17,7 @@
 #
 # Each task builds one founder's Chr1 consensus by bcftools consensus -H 1
 # (VCF is haploid: GT cells are '.'/'0'). Sample names are Accession_IDs, order
-# IDENTICAL to the cn_var/cn_full founders axis (verified).
+# IDENTICAL to the var_pa/kmer_pa founders axis (verified).
 # Output: fastas_231/<Accession_ID>.chr.fa (+ .fai)
 #
 # DO NOT symlink to v3/v3qc unimputed_fastas_* -- variant-set mismatch would
@@ -52,7 +52,7 @@ if [ -s "${OUT_FA}.fai" ]; then
 fi
 
 # bcftools consensus on the haploid VCF. '.' cells -> REF (same rule as the
-# cn_full/cn_var builders), so reads carry exactly the arch3 variant set.
+# kmer_pa/var_pa builders), so reads carry exactly the arch3 variant set.
 $BCF consensus -f $REF -H 1 -s $SAMPLE $VCF 2> ${OUT_FA}.consensus.log > $OUT_FA
 $SAMTOOLS faidx $OUT_FA
 

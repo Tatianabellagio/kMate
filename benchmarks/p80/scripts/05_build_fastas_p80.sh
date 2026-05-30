@@ -51,7 +51,7 @@ fi
 
 # bcftools consensus on the haploid VCF.
 # `.` cells: bcftools consensus skips the variant (treats as REF). Matches v3
-# convention; downstream cn_full/cn_var builders use the same `.` -> REF rule.
+# convention; downstream kmer_pa/var_pa builders use the same `.` -> REF rule.
 $BCF consensus -f $REF -H 1 -s $SAMPLE $VCF 2> ${OUT_FA}.consensus.log > $OUT_FA
 $SAMTOOLS faidx $OUT_FA
 

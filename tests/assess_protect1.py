@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Assessment of the protect1 cn_full strategy for h accuracy.
+Assessment of the protect1 kmer_pa strategy for h accuracy.
 Produces (1) per-ecotype k-mer count redistribution plots (filt2 vs protect1 vs
 subsampMedian), (2) h-accuracy plots on g0 sims and real SEEDMIX (8-rep average
 toward ~uniform), and prints a SEEDMIX score table.

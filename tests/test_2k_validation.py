@@ -1,5 +1,5 @@
 """
-Comprehensive validation on the 2000-bubble cn matrix.
+Comprehensive validation on the 2000-bubble kmer_pa matrix.
 
 For each pool (uniform sim, skewed sim, SEEDMIX_S1):
   - Count k-mers against the 181K query set
@@ -20,21 +20,21 @@ DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 _PROJ_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
-def solve_wls(counts, cn, coverage):
-    K, F = counts.shape[0], cn.shape[0]
+def solve_wls(counts, kmer_pa, coverage):
+    K, F = counts.shape[0], kmer_pa.shape[0]
     weights = 1.0 / np.sqrt(counts + 1.0)
     h = cp.Variable(F, nonneg=True)
-    mu = coverage * (cn.T @ h)
+    mu = coverage * (kmer_pa.T @ h)
     residual = cp.multiply(weights, counts - mu)
     prob = cp.Problem(cp.Minimize(cp.sum_squares(residual)), [cp.sum(h) == 1])
     prob.solve(solver="SCS", verbose=False)
     return np.asarray(h.value)
 
 
-def solve_kl(counts, cn, coverage):
-    F = cn.shape[0]
+def solve_kl(counts, kmer_pa, coverage):
+    F = kmer_pa.shape[0]
     h = cp.Variable(F, nonneg=True)
-    mu = coverage * (cn.T @ h) + 1e-3
+    mu = coverage * (kmer_pa.T @ h) + 1e-3
     obj = cp.Minimize(cp.sum(cp.kl_div(counts, mu)))
     prob = cp.Problem(obj, [cp.sum(h) == 1])
     prob.solve(solver="SCS", verbose=False)
@@ -69,17 +69,17 @@ def evaluate(label, h_hat, h_true):
 
 
 def main():
-    # Load 2000-bubble cn
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first2000.cn.npz"))
+    # Load 2000-bubble kmer_pa
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first2000.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first2000.meta.npz"), allow_pickle=True)
     kmer_index = meta["kmer_index"]
     bubble_id = meta["bubble_id"]
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    ac = cn.sum(axis=0)
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    ac = kmer_pa.sum(axis=0)
     print(f"="*72)
-    print(f"2000-bubble cn validation: F={F}, K={K:,}")
+    print(f"2000-bubble kmer_pa validation: F={F}, K={K:,}")
     print(f"="*72)
     print(f"AC dist: AC=1: {(ac==1).sum():,}   AC 2-4: {((ac>=2)&(ac<=4)).sum():,}   "
           f"AC 5-10: {((ac>=5)&(ac<=10)).sum():,}   AC>10: {(ac>10).sum():,}")
@@ -109,12 +109,12 @@ def main():
                            kmer_index)
     cov = counts.sum() * F / ac.sum()
     print(f"  cov={cov:.1f}×, nonzero kmers: {(counts>0).sum():,}")
-    h_wls = solve_wls(counts, cn, cov)
+    h_wls = solve_wls(counts, kmer_pa, cov)
     evaluate("WLS", h_wls, h_true)
     # for KL on this big matrix, may take long - try
     print("  (KL solve may take a few minutes...)")
     t = time.time()
-    h_kl = solve_kl(counts, cn, cov)
+    h_kl = solve_kl(counts, kmer_pa, cov)
     print(f"  KL [{time.time()-t:.0f}s]")
     evaluate("KL  (Poisson)", h_kl, h_true)
 
@@ -131,9 +131,9 @@ def main():
                            kmer_index)
     cov = counts.sum() * F / ac.sum()
     print(f"  cov={cov:.1f}×, nonzero kmers: {(counts>0).sum():,}")
-    h_wls = solve_wls(counts, cn, cov)
+    h_wls = solve_wls(counts, kmer_pa, cov)
     evaluate("WLS", h_wls, h_true)
-    h_kl = solve_kl(counts, cn, cov)
+    h_kl = solve_kl(counts, kmer_pa, cov)
     evaluate("KL  (Poisson)", h_kl, h_true)
     print(f"  Top 5 by WLS:")
     for i in np.argsort(-h_wls/h_wls.sum())[:5]:
@@ -158,9 +158,9 @@ def main():
                            kmer_index)
     cov = counts.sum() * F / ac.sum()
     print(f"  cov={cov:.1f}×, nonzero kmers: {(counts>0).sum():,}")
-    h_wls = solve_wls(counts, cn, cov)
+    h_wls = solve_wls(counts, kmer_pa, cov)
     evaluate("WLS (vs recipe)", h_wls, h_true)
-    h_kl = solve_kl(counts, cn, cov)
+    h_kl = solve_kl(counts, kmer_pa, cov)
     evaluate("KL  (vs recipe)", h_kl, h_true)
     # Mass on non-GrENE founders should be ~0
     h_wls_norm = h_wls / h_wls.sum()

@@ -11,7 +11,7 @@
 mkdir -p logs
 set -euo pipefail
 
-# Why does arch3 AF (h_v3 @ cn_var) diverge from recipe_fixed (uniform_h @ cn_var)?
+# Why does arch3 AF (h_v3 @ var_pa) diverge from recipe_fixed (uniform_h @ var_pa)?
 # Hypothesis: the h vector is non-uniform; at outlier records, carrier set correlates
 # with the deviation of h from uniform.
 # This is signal (real seed-mix composition), not a bug.
@@ -25,7 +25,7 @@ import pandas as pd
 from scipy.sparse import load_npz
 import json
 
-print('=== Load h vector + cn_var + meta ===')
+print('=== Load h vector + var_pa + meta ===')
 h_data = np.load('/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
 h = h_data['Chr1'].astype(np.float64)
 h_founders = list(h_data['founders'])
@@ -62,19 +62,19 @@ print(f'PG     sum h:  {h[is_pg].sum():.4f}  (expected uniform: {is_pg.sum()/F:.
 print(f'h-bias (cact per-founder / PG per-founder): {(h[is_cactus].mean())/(h[is_pg].mean()):.3f}')
 
 # === Now find outlier records (arch3 vs recipe deviation) and look at their carrier composition ===
-print('\n=== Load cn_var (raw arch3) + project both arch3 + recipe ===')
-cn_var = load_npz('cn_var_231_arch3_chr1.cn_var.npz').tocsr()
-cn_var_called = load_npz('cn_var_231_arch3_chr1.cn_var_called.npz').tocsr()
-meta = np.load('cn_var_231_arch3_chr1.meta.npz', allow_pickle=True)
-N = cn_var.shape[1]
+print('\n=== Load var_pa (raw arch3) + project both arch3 + recipe ===')
+var_pa = load_npz('var_pa_231_arch3_chr1.var_pa.npz').tocsr()
+var_called = load_npz('var_pa_231_arch3_chr1.var_called.npz').tocsr()
+meta = np.load('var_pa_231_arch3_chr1.meta.npz', allow_pickle=True)
+N = var_pa.shape[1]
 
 h_uniform = np.full(F, 1.0/F)
-recipe_n = h_uniform @ cn_var
-recipe_d = h_uniform @ cn_var_called
+recipe_n = h_uniform @ var_pa
+recipe_d = h_uniform @ var_called
 recipe_af = np.where(recipe_d > 0, recipe_n / recipe_d, np.nan)
 
-arch3_n = h @ cn_var
-arch3_d = h @ cn_var_called
+arch3_n = h @ var_pa
+arch3_d = h @ var_called
 arch3_af = np.where(arch3_d > 0, arch3_n / arch3_d, np.nan)
 
 # Outlier records (|arch3 - recipe| > 0.10)
@@ -100,8 +100,8 @@ h_bias_carriers = []
 fmiss_outl = []
 ac_outl = []
 for i in sample:
-    col = cn_var[:, i].toarray().ravel()
-    col_k = cn_var_called[:, i].toarray().ravel()
+    col = var_pa[:, i].toarray().ravel()
+    col_k = var_called[:, i].toarray().ravel()
     if col.sum() == 0:
         h_bias_carriers.append(np.nan)
     else:
@@ -129,7 +129,7 @@ if finite.sum() > 100:
 print('\n=== Cactus vs PG carrier composition at outliers ===')
 n_c_only = 0; n_p_only = 0; n_both = 0
 for i in sample[:1500]:
-    col = cn_var[:, i].toarray().ravel() > 0
+    col = var_pa[:, i].toarray().ravel() > 0
     has_c = col[is_cactus].any()
     has_p = col[is_pg].any()
     if has_c and not has_p: n_c_only += 1
@@ -143,7 +143,7 @@ print(f'  carriers in PG only:         {n_p_only:>4,}  ({100*n_p_only/1500:.1f}%
 print('\n=== Spot-check: 10 random outliers — carrier identity ===')
 spot = np.random.RandomState(7).choice(outl_idx, size=10, replace=False)
 for i in spot:
-    col = cn_var[:, i].toarray().ravel() > 0
+    col = var_pa[:, i].toarray().ravel() > 0
     car_idx = np.where(col)[0]
     car_h = h[car_idx]
     car_names = [h_founders[j] for j in car_idx]

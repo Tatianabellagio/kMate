@@ -1,5 +1,5 @@
 """
-Build an ATOMIZED cn_var: per-base SNP catalog with founder carriers UNIONed across
+Build an ATOMIZED var_pa: per-base SNP catalog with founder carriers UNIONed across
 all source biallelic VCF records that imply each per-base substitution.
 
 For each source record (pos, ref, alt) with carrier set C and called set K:
@@ -14,7 +14,7 @@ For each source record (pos, ref, alt) with carrier set C and called set K:
 Output rows = unique (pos, ref_b, alt_b) tuples; per-row carrier and called sets are unioned.
 Insertions/deletions beyond the aligned overlap region contribute NO atomized records (no
 per-base SNP equivalent). Pure INS/DEL beyond REF/ALT[0] still don't atomize; they remain
-in the path-aware raw cn_var for downstream SV-aware analyses.
+in the path-aware raw var_pa for downstream SV-aware analyses.
 
 N alleles (including IUPAC ambiguity codes that cactus normalizes to N) are skipped.
 """
@@ -130,8 +130,8 @@ def atomize_vcf(vcf_path: str, out_prefix: str, chrom_filter: str | None = None)
         atom_pos, ref_b, alt_b = key
         nnz_c += int(carriers[key].sum())
         nnz_called += int(called_at_pos[(atom_pos, ref_b)].sum())
-    print(f"  cn_var nnz total: {nnz_c:,}", flush=True)
-    print(f"  cn_var_called nnz total: {nnz_called:,}", flush=True)
+    print(f"  var_pa nnz total: {nnz_c:,}", flush=True)
+    print(f"  var_called nnz total: {nnz_called:,}", flush=True)
 
     indices_c = np.empty(nnz_c, dtype=np.int32)
     indices_called = np.empty(nnz_called, dtype=np.int32)
@@ -160,15 +160,15 @@ def atomize_vcf(vcf_path: str, out_prefix: str, chrom_filter: str | None = None)
     data_c = np.ones(nnz_c, dtype=np.int8)
     data_called = np.ones(nnz_called, dtype=np.int8)
 
-    cn_var = csc_matrix((data_c, indices_c, indptr_c), shape=(F, Ncols), dtype=np.int8)
-    cn_var_called = csc_matrix((data_called, indices_called, indptr_called), shape=(F, Ncols), dtype=np.int8)
+    var_pa = csc_matrix((data_c, indices_c, indptr_c), shape=(F, Ncols), dtype=np.int8)
+    var_called = csc_matrix((data_called, indices_called, indptr_called), shape=(F, Ncols), dtype=np.int8)
 
-    print(f"cn_var: {cn_var.shape}  {cn_var.nnz:,} nnz  density={cn_var.nnz/(F*Ncols):.4f}", flush=True)
-    print(f"cn_var_called: {cn_var_called.shape}  {cn_var_called.nnz:,} nnz  density={cn_var_called.nnz/(F*Ncols):.4f}", flush=True)
+    print(f"var_pa: {var_pa.shape}  {var_pa.nnz:,} nnz  density={var_pa.nnz/(F*Ncols):.4f}", flush=True)
+    print(f"var_called: {var_called.shape}  {var_called.nnz:,} nnz  density={var_called.nnz/(F*Ncols):.4f}", flush=True)
 
     Path(out_prefix).parent.mkdir(parents=True, exist_ok=True)
-    save_npz(out_prefix + ".cn_var.npz", cn_var)
-    save_npz(out_prefix + ".cn_var_called.npz", cn_var_called)
+    save_npz(out_prefix + ".var_pa.npz", var_pa)
+    save_npz(out_prefix + ".var_called.npz", var_called)
     np.savez(
         out_prefix + ".meta.npz",
         founders=np.array(samples),
@@ -179,7 +179,7 @@ def atomize_vcf(vcf_path: str, out_prefix: str, chrom_filter: str | None = None)
         ref_len=ref_len_arr,
         alt_len=alt_len_arr,
     )
-    print(f"\nWrote: {out_prefix}.{{cn_var,cn_var_called,meta}}.npz", flush=True)
+    print(f"\nWrote: {out_prefix}.{{var_pa,var_called,meta}}.npz", flush=True)
     print(f"Total time: {time.time()-t0:.0f}s", flush=True)
 
 

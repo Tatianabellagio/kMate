@@ -21,10 +21,10 @@ Design notes:
     boundaries. We use the founder FASTAs in `cactus_dir/<founder>.chr.fa`.
 
 Truth (computed in companion script): per-record AF =
-  sum_i cn_var[founder_at_(chrom,pos)_in_ind_i, record] × weight_i / sum_i weight_i
+  sum_i var_pa[founder_at_(chrom,pos)_in_ind_i, record] × weight_i / sum_i weight_i
 
 This collapses to the same expression cactus_em projects through
-(founder_freq × cn_var), but with founder_freq varying per genomic window.
+(founder_freq × var_pa), but with founder_freq varying per genomic window.
 """
 from __future__ import annotations
 import argparse, os, random, subprocess
@@ -277,7 +277,7 @@ def main():
     ap.add_argument("--cactus-dir", required=True,
                     help="dir holding <founder>.chr.fa[.fai]")
     ap.add_argument("--founders-meta", required=True,
-                    help="cn_full meta.npz with 'founders' field")
+                    help="kmer_pa meta.npz with 'founders' field")
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--samtools", default="/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools",
                     help="samtools binary, used to index the mosaic FASTAs (default: shared install)")

@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
-"""Project h (estimated + true) through the latest arch3 cn_var -> per-record AF,
+"""Project h (estimated + true) through the latest arch3 var_pa -> per-record AF,
 compare est vs truth. For the 2 finalist methods on the g0 replicate sims.
-AF_r = (h . cn_var)_r / (h . cn_var_called)_r   (MAR projection)."""
+AF_r = (h . var_pa)_r / (h . var_called)_r   (MAR projection)."""
 import numpy as np, glob, os, math
 from pathlib import Path
 from scipy.sparse import load_npz
 ROOT=str(Path(__file__).resolve().parents[2])
-CV=f"{ROOT}/panel/arch3/chr1/cn_var_231_arch3_chr1"
-print("loading cn_var ...",flush=True)
-cn_var=load_npz(f"{CV}.cn_var.npz").tocsc()
-cn_called=load_npz(f"{CV}.cn_var_called.npz").tocsc()
+CV=f"{ROOT}/panel/arch3/chr1/var_pa_231_arch3_chr1"
+print("loading var_pa ...",flush=True)
+var_pa=load_npz(f"{CV}.var_pa.npz").tocsc()
+cn_called=load_npz(f"{CV}.var_called.npz").tocsc()
 meta=np.load(f"{CV}.meta.npz",allow_pickle=True)
 fo=np.asarray(meta["founders"]).astype(str)
 rl=np.asarray(meta["ref_len"]); al=np.asarray(meta["alt_len"])
 is_snp=(rl==1)&(al==1); is_sv=(rl>=50)|(al>=50)
 fidx={f:i for i,f in enumerate(fo)}
-R=cn_var.shape[1]; print(f"  founders={len(fo)} records={R:,} SNP={is_snp.sum():,} SV={is_sv.sum():,}",flush=True)
+R=var_pa.shape[1]; print(f"  founders={len(fo)} records={R:,} SNP={is_snp.sum():,} SV={is_sv.sum():,}",flush=True)
 
 def proj(h):
-    num=cn_var.T.dot(h); den=cn_called.T.dot(h)
+    num=var_pa.T.dot(h); den=cn_called.T.dot(h)
     return num,den
 
 def hvec_from_truth(sim):

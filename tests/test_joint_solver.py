@@ -32,12 +32,12 @@ def metrics(h_hat, h_true):
 
 
 def main():
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     bubble_id = meta["bubble_id"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    print(f"cn: F={F}, K={K:,}, n_bubbles={len(set(bubble_id))}")
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    print(f"kmer_pa: F={F}, K={K:,}, n_bubbles={len(set(bubble_id))}")
 
     rng = np.random.default_rng(42)
     pools = [
@@ -56,16 +56,16 @@ def main():
     coverages = [5, 10, 20, 30]
     for label, h_true in pools:
         for cov in coverages:
-            mu = cov * (h_true @ cn)
+            mu = cov * (h_true @ kmer_pa)
             counts = rng.poisson(np.maximum(mu, 1e-6))
 
-            h_em, _ = solve_em(counts, cn, cov, max_iter=200)
+            h_em, _ = solve_em(counts, kmer_pa, cov, max_iter=200)
             try:
-                h_wls, _ = solve_block_wls(counts, cn, cov)
+                h_wls, _ = solve_block_wls(counts, kmer_pa, cov)
             except Exception:
                 h_wls = np.full(F, 1.0/F)
             t = time.time()
-            h_jt, info = solve_joint(counts, cn, bubble_id)
+            h_jt, info = solve_joint(counts, kmer_pa, bubble_id)
             t_jt = time.time() - t
             if h_jt is None:
                 h_jt = np.full(F, 1.0/F)
@@ -85,8 +85,8 @@ def main():
     # Show top-5 for SKEWED 5 with JOINT solver
     print(f"{'-'*76}\nDiagnostic: SKEWED 5 at cov=10 — top 8 by JOINT")
     h_true = np.zeros(F); h_true[[0, 1, 2, 3, 4]] = [0.40, 0.25, 0.15, 0.10, 0.10]
-    counts = rng.poisson(np.maximum(10 * (h_true @ cn), 1e-6))
-    h_jt, info = solve_joint(counts, cn, bubble_id, verbose=True)
+    counts = rng.poisson(np.maximum(10 * (h_true @ kmer_pa), 1e-6))
+    h_jt, info = solve_joint(counts, kmer_pa, bubble_id, verbose=True)
     h_jt_norm = h_jt / h_jt.sum()
     for i in np.argsort(-h_jt_norm)[:8]:
         marker = "✓" if h_true[i] > 0 else " "

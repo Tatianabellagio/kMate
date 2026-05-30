@@ -10,11 +10,11 @@
 #SBATCH --error=logs/07b_em_filt2_%j.err
 
 # =============================================================================
-# Phase C (filt2 A/B) -- run cactus_em on p80 sim regime with FILT2 cn_full.
+# Phase C (filt2 A/B) -- run cactus_em on p80 sim regime with FILT2 kmer_pa.
 # Mirrors 07_run_cactus_em_p80.sh but:
-#   --cn-kmer-prefix .../cn_full_p80_filt2/cn  (singletons dropped)
+#   --kmer-pa-prefix .../kmer_pa_p80_filt2/kmer_pa  (singletons dropped)
 #   outputs to results/cactus_em_<METHOD>_filt2/<REGIME>/p80_filt2_*.tsv
-# sim reads + cn_var + cn_var_called are unchanged (k-mer side only).
+# sim reads + var_pa + var_called are unchanged (k-mer side only).
 #
 # Usage:
 #   sbatch 07b_run_cactus_em_p80_filt2.sh REGIME METHOD
@@ -53,9 +53,9 @@ for f in $READS_DIR/r1.fq $READS_DIR/r2.fq $WORK/recomb_truth.tsv.gz; do
     [ -s "$f" ] || { echo "ERROR: missing $f -- run 06_run_sim_p80.sh first" >&2; exit 1; }
 done
 
-CN_KMER_PREFIX=$CTRL/data/cn_full_p80_filt2/cn
-CN_VAR=$CTRL/data/cn_var_p80.cn_var.npz
-CN_VAR_META=$CTRL/data/cn_var_p80.meta.npz
+CN_KMER_PREFIX=$CTRL/data/kmer_pa_p80_filt2/kmer_pa
+CN_VAR=$CTRL/data/var_pa_p80.var_pa.npz
+CN_VAR_META=$CTRL/data/var_pa_p80.meta.npz
 
 OUT_DIR=$CTRL/results/cactus_em_${METHOD}_filt2/${REGIME}
 mkdir -p $OUT_DIR
@@ -71,15 +71,15 @@ fi
 
 echo "[$(date)] cactus_em FILT2 --method $METHOD --regime $REGIME"
 echo "  reads:   $READS_DIR/r1.fq + r2.fq"
-echo "  cn_full: $CN_KMER_PREFIX (filt2)"
-echo "  cn_var:  $CN_VAR"
+echo "  kmer_pa: $CN_KMER_PREFIX (filt2)"
+echo "  var_pa:  $CN_VAR"
 echo "  out:     $OUT_TSV"
 echo "  mode:    $MODE_ARGS"
 
 $PYTHON -u $DRIVER \
-    --cn-kmer-prefix $CN_KMER_PREFIX \
-    --cn-var $CN_VAR \
-    --cn-var-meta $CN_VAR_META \
+    --kmer-pa-prefix $CN_KMER_PREFIX \
+    --var-pa $CN_VAR \
+    --var-meta $CN_VAR_META \
     --reads $READS_DIR/r1.fq $READS_DIR/r2.fq \
     --sample $SAMPLE \
     --out $OUT_TSV \

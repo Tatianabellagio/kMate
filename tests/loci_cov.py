@@ -3,14 +3,14 @@ from pathlib import Path
 from scipy.sparse import load_npz
 ROOT=str(Path(__file__).resolve().parents[2])
 CAC=set(map(str,json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))["cactus"]))
-cn=load_npz(f"{ROOT}/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.cn.npz").tocsr()
-meta=np.load(f"{ROOT}/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz",allow_pickle=True)
+kmer_pa=load_npz(f"{ROOT}/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1.kmer_pa.npz").tocsr()
+meta=np.load(f"{ROOT}/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1.meta.npz",allow_pickle=True)
 fo=np.asarray(meta["founders"]).astype(str); bid=np.asarray(meta["bubble_id"]).astype(np.int64)
 nbub=int(bid.max())+1
 import numpy as np
 ncov=np.zeros(len(fo)); nkm=np.zeros(len(fo))
 for f in range(len(fo)):
-    s,e=cn.indptr[f],cn.indptr[f+1]; cols=cn.indices[s:e]
+    s,e=kmer_pa.indptr[f],kmer_pa.indptr[f+1]; cols=kmer_pa.indices[s:e]
     nkm[f]=len(cols); ncov[f]=len(np.unique(bid[cols]))
 cac=np.array([x in CAC for x in fo])
 print(f"total bubbles in panel: {nbub:,}")

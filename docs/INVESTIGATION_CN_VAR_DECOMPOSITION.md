@@ -1,15 +1,15 @@
-# Investigation report: cn_var decomposition bug + open-loop validation framework
+# Investigation report: var_pa decomposition bug + open-loop validation framework
 
 **Date:** 2026-05-19
-**Scope:** Audit of cn_var construction across v3 → v3qc → v3qc_v2 → v3qc_v3 panels; survey of decomposition tools; review of validation methodology; consolidated path forward.
+**Scope:** Audit of var_pa construction across v3 → v3qc → v3qc_v2 → v3qc_v3 panels; survey of decomposition tools; review of validation methodology; consolidated path forward.
 **Status:** Investigation complete. Implementation pending three open decisions (Section 11).
 
 ---
 
 ## 1. TL;DR
 
-1. **There is a systematic bug in `cn_var` construction** that under-counts carriers at SNPs co-located with multi-allelic indels (the "cell [d]" failure mode). Caused by `bcftools norm -m -any` scattering carriers across decomposed biallelics at shifted positions.
-2. **The bug went undetected through v3, v3qc, v3qc_v2, v3qc_v3** because the simulation validation is **closed-loop**: `compute_recomb_truth.py` computes truth-AF by indexing into the same cn_var matrix that cactus_em projects through. Any cn_var bias cancels out in the truth-vs-estimate comparison.
+1. **There is a systematic bug in `var_pa` construction** that under-counts carriers at SNPs co-located with multi-allelic indels (the "cell [d]" failure mode). Caused by `bcftools norm -m -any` scattering carriers across decomposed biallelics at shifted positions.
+2. **The bug went undetected through v3, v3qc, v3qc_v2, v3qc_v3** because the simulation validation is **closed-loop**: `compute_recomb_truth.py` computes truth-AF by indexing into the same var_pa matrix that cactus_em projects through. Any var_pa bias cancels out in the truth-vs-estimate comparison.
 3. **Three "fixes" investigated and rejected in this session:**
    - Coord-aware coalescence patch: works for under-counting cases (10421645, 13843898) but introduces over-counting at indel-shifted bases (5870018-type).
    - `bcftools norm --atomize`: does positional byte-offset decomposition; produces ~35× false positives at indel-adjacent SNPs (verified against long-read assemblies).
@@ -23,7 +23,7 @@
 
 ## 2. The bug — mechanism and evidence
 
-### 2.1 What's wrong with cn_var
+### 2.1 What's wrong with var_pa
 
 Cactus pangenome multi-allelic snarls are decomposed in Phase A by `bcftools norm -f REF -m -any`. This:
 1. Splits each multi-allelic record into one biallelic per ALT.
@@ -32,7 +32,7 @@ Cactus pangenome multi-allelic snarls are decomposed in Phase A by `bcftools nor
 
 **Failure mode 1 — position scatter (under-counting).** When a 530bp multi-allelic snarl with 72 ALTs decomposes, biallelics scatter across many positions because each ALT's prefix-stripping produces a different anchor. At Chr1:10421232 (530bp × 72 ALTs), `bcftools norm` produces 72 biallelic records spanning positions 10421232–10421645+. A SNP at TAIR10:10421645 (T→C) only retains carriers of the one ALT path that happened to anchor there post-stripping. Other ALT paths with C at coord 10421645 are stored at different biallelic positions → invisible to a same-position carrier query.
 
-Empirical: cn_var AC=2 of 231 vs xwu/hapFIRE truth AC=229. ~99% carrier loss at this site.
+Empirical: var_pa AC=2 of 231 vs xwu/hapFIRE truth AC=229. ~99% carrier loss at this site.
 
 **Failure mode 2 — byte-offset misalignment (over-counting via patches/atomize).** When you try to "fix" by reading `ALT[byte_offset]` to attribute carriers across spanning records, the byte-offset only maps to TAIR10 coord (pos + offset) IF the ALT has no internal indels. For ALTs with internal indels, the bytes past the indel are shifted.
 
@@ -43,11 +43,11 @@ Empirical at Chr1:5869846 (260bp × 12 ALTs, with 8bp insertion in 9 of 12 ALTs)
 - xwu truth AC≈5/231 (consistent)
 - `bcftools norm --atomize` and naive coord-aware patches: claim 70–117 carriers (35–60× over-count)
 
-### 2.2 Carrier loss IS in cn_var, not elsewhere
+### 2.2 Carrier loss IS in var_pa, not elsewhere
 
-- **`cn_full` is fine.** Built from per-founder consensus FASTAs via `bcftools consensus`. Consensus correctly applies each biallelic substitution at its anchored position, so founder FASTAs end up with the correct base at each coord regardless of which scattered biallelic encoded the substitution. k-mer extraction from coord-correct FASTAs gives coord-correct cn_full.
-- **EM math is fine.** Operating on coord-correct cn_full, the EM recovers founder weights `h` faithfully. Verified by single-founder pure-pool tests showing correct h-vector recovery.
-- **AF projection is the broken step.** `h @ cn_var / h @ cn_var_called` projects through buggy cn_var → systematically biased per-record AF.
+- **`kmer_pa` is fine.** Built from per-founder consensus FASTAs via `bcftools consensus`. Consensus correctly applies each biallelic substitution at its anchored position, so founder FASTAs end up with the correct base at each coord regardless of which scattered biallelic encoded the substitution. k-mer extraction from coord-correct FASTAs gives coord-correct kmer_pa.
+- **EM math is fine.** Operating on coord-correct kmer_pa, the EM recovers founder weights `h` faithfully. Verified by single-founder pure-pool tests showing correct h-vector recovery.
+- **AF projection is the broken step.** `h @ var_pa / h @ var_called` projects through buggy var_pa → systematically biased per-record AF.
 
 ### 2.3 Where in the genome this hurts
 
@@ -65,29 +65,29 @@ Direction: 99% of cell [d] outliers are **under-prediction** — classic carrier
 
 ### 3.1 What `compute_recomb_truth.py` actually does
 
-The simulation truth computation (`sims/visor_freqk/scripts/compute_recomb_truth.py`) computes truth-AF by literally reading the same `cn_var` matrix that cactus_em uses for AF projection:
+The simulation truth computation (`sims/visor_freqk/scripts/compute_recomb_truth.py`) computes truth-AF by literally reading the same `var_pa` matrix that cactus_em uses for AF projection:
 
 ```python
-cn = load_npz(args.cn_var).tocsr()  # SAME cn_var as cactus_em
+kmer_pa = load_npz(args.var_pa).tocsr()  # SAME var_pa as cactus_em
 ...
 for ind_idx, ind_id in enumerate(inds):
     founder_per_rec = assign_founder_per_record(rec_chrom, rec_pos, segs_by_chrom)
     for f in set(founder_per_rec):
-        row_dense = np.asarray(cn[row_idx, :].todense()).flatten()
+        row_dense = np.asarray(kmer_pa[row_idx, :].todense()).flatten()
         ind_contrib[mask] = row_dense[mask]
     truth_af += w * ind_contrib
 ```
 
-For non-recombinant pure-pool sims, this is exactly `truth_af = w @ cn_var`. For recomb sims, it's the same with per-position founder lookup. Both truth and cactus_em estimate are linear functions of cn_var. **Any cn_var bug is algebraically invisible to the comparison.**
+For non-recombinant pure-pool sims, this is exactly `truth_af = w @ var_pa`. For recomb sims, it's the same with per-position founder lookup. Both truth and cactus_em estimate are linear functions of var_pa. **Any var_pa bug is algebraically invisible to the comparison.**
 
 ### 3.2 hapFIRE on sims is also closed-loop
 
 `FINAL_RESULTS_cov10_v3.ipynb` runs three "hapFIRE" variants for cross-comparison:
-- `hapfire_v2panel_v3proj`: hapFIRE h-vectors from v2 panel projected through cn_var_v3
-- `hapfire_v3panel`: hapFIRE on a SNP-only carrier panel built FROM cn_var_v3 carriers
-- All also go through cn_var_v3 (either at projection step or input panel construction)
+- `hapfire_v2panel_v3proj`: hapFIRE h-vectors from v2 panel projected through var_pa_v3
+- `hapfire_v3panel`: hapFIRE on a SNP-only carrier panel built FROM var_pa_v3 carriers
+- All also go through var_pa_v3 (either at projection step or input panel construction)
 
-The 7–20 pp gap between cactus_em (~0.99 R²) and hapfire-v3panel (~0.89 R²) measures **h-vector quality difference**, not cn_var correctness. Both estimators share the cn_var bias.
+The 7–20 pp gap between cactus_em (~0.99 R²) and hapfire-v3panel (~0.89 R²) measures **h-vector quality difference**, not var_pa correctness. Both estimators share the var_pa bias.
 
 ### 3.3 Symptom was visible but mis-attributed
 
@@ -99,7 +99,7 @@ Both are direct symptoms of carrier-scatter under-counting. Attributed in the no
 
 ### 3.4 First crack: real-data SEEDMIX_S1 vs xwu hapFIRE
 
-The bug became visible only when comparing cactus_em against an **independent** estimator that doesn't go through our cn_var — xwu's hapFIRE on real GrENE-Net pool-seq data. That comparison surfaced the 0.88% outlier rate and the directional under-prediction at SNPs-in-bubbles that all closed-loop sim eval had hidden.
+The bug became visible only when comparing cactus_em against an **independent** estimator that doesn't go through our var_pa — xwu's hapFIRE on real GrENE-Net pool-seq data. That comparison surfaced the 0.88% outlier rate and the directional under-prediction at SNPs-in-bubbles that all closed-loop sim eval had hidden.
 
 ---
 
@@ -177,9 +177,9 @@ multi-allelic VCF with snarl-tagged records
        ▼
 biallelic atomic VCF with correct per-sample GTs
        │
-       │  build_cn_var.py (unchanged)
+       │  build_var_pa.py (unchanged)
        ▼
-cn_var, cn_var_called
+var_pa, var_called
 ```
 
 **Pros:** graph-native; field-adjacent (used by HPRC for catalog generation); handles convergence by construction; preserves bubble metadata for downstream queries.
@@ -204,9 +204,9 @@ Most principled treatment (reference-tree formalization, Heng Li's group). Recov
 **Cons:** brand new (zero ecosystem adoption); variant-edge output requires our own coord-projection layer.
 **Use:** parallel baseline for comparison, not primary path. +2 days.
 
-### Arch 4 (NOT NOW): multi-allelic-native cn_var
+### Arch 4 (NOT NOW): multi-allelic-native var_pa
 
-Skip decomposition entirely, store cn_var as 3D ragged sparse with per-(record, alt) carriers. Architecturally cleanest endpoint. Effectively what `pantree` formalizes.
+Skip decomposition entirely, store var_pa as 3D ragged sparse with per-(record, alt) carriers. Architecturally cleanest endpoint. Effectively what `pantree` formalizes.
 
 **Cons:** largest implementation lift; downstream rewrite (recipe, comparison, output schema).
 **Use:** longer-horizon ideal; revisit after Arch 1 ships.
@@ -226,7 +226,7 @@ The closed-loop trap took 6+ months to surface. The validation methodology adopt
 
 Join on (chrom, pos, ref, alt). Pairwise MAE. Stratify by `is_in_multiallelic_bubble`. **Bug canary**: cactus_em should match grenedalf and mpileup at non-bubble sites AND at bubble-co-located sites if the rebuild worked.
 
-**B — FASTA-lookup truth.** Per-coord truth as `Σ_i w_i × [base_at(founder_i.fa, coord) == ALT]`. Uses `pyfaidx`. Never touches cn_var. Algebraically independent. Canonical truth from here on.
+**B — FASTA-lookup truth.** Per-coord truth as `Σ_i w_i × [base_at(founder_i.fa, coord) == ALT]`. Uses `pyfaidx`. Never touches var_pa. Algebraically independent. Canonical truth from here on.
 
 ### Tier 2 — Strongly recommended (+2 days)
 
@@ -269,14 +269,14 @@ Join on (chrom, pos, ref, alt). Pairwise MAE. Stratify by `is_in_multiallelic_bu
 
 ### Week 2 — Scaffold + Chr1 pilot
 
-- **Day 5–6:** Replace `bcftools norm -m -any` with `vg deconstruct -a -e | resolve-nested-genotypes` in phase A scripts. Update build_cn_var.py if needed (likely no change). Haploidization, fill-tags, merge, AC=0 cleanup stay as-is.
+- **Day 5–6:** Replace `bcftools norm -m -any` with `vg deconstruct -a -e | resolve-nested-genotypes` in phase A scripts. Update build_var_pa.py if needed (likely no change). Haploidization, fill-tags, merge, AC=0 cleanup stay as-is.
 - **Day 7:** Full Chr1 pilot. SEEDMIX_S1 end-to-end. Spot-check 3 known sites.
 - **Day 8–9:** Tier 1 validation (grenedalf, mpileup, FASTA-truth) on Chr1.
 - **Day 10:** Gate check (G1–G5). If pass → scale. If fail → diagnose.
 
 ### Week 3 — Genome scale + final validation
 
-- **Day 11–13:** Genome-wide rebuild (all 5 chroms). cn_var + cn_full + FASTAs.
+- **Day 11–13:** Genome-wide rebuild (all 5 chroms). var_pa + kmer_pa + FASTAs.
 - **Day 14:** Tier 2 LOO validation (G6–G7).
 - **Day 15:** Tier 3 + write up methodology for repo + paper.
 
@@ -288,10 +288,10 @@ Join on (chrom, pos, ref, alt). Pairwise MAE. Stratify by `is_in_multiallelic_bu
 |---|---|---|
 | HIGH | `resolve-nested-genotypes` convergence case not explicitly documented | Day 1 spot-check is gating; fall back to Arch 3 if it fails |
 | HIGH | Wrong architecture choice locks in another months-long bug cycle | Run Arch 1 + pantree in parallel on validation cases before committing |
-| MEDIUM | vg deconstruct -a record count >50M, breaks cn_var memory | Bench on Chr1 first; chunk by region if needed |
+| MEDIUM | vg deconstruct -a record count >50M, breaks var_pa memory | Bench on Chr1 first; chunk by region if needed |
 | MEDIUM | PG side integration (PanGenie outputs not in AT-tagged form) | May need HPRC `convert-to-biallelic.py` for PG side; vg approach for cactus side |
 | MEDIUM | FASTA-truth pyfaidx performance at 5M coords × 231 founders | Bench; likely sub-hour but verify |
-| MEDIUM | cn_full rebuild required (founder FASTAs change with new VCF) | Document explicitly; estimated 6–8 h genome-wide |
+| MEDIUM | kmer_pa rebuild required (founder FASTAs change with new VCF) | Document explicitly; estimated 6–8 h genome-wide |
 | LOW | Methodological paper opportunity if framing right | Document validation framework carefully during rebuild |
 
 ---
@@ -321,7 +321,7 @@ Implications:
 ## 13. Memory updates needed
 
 After rebuild ships, update / create:
-- [ ] `project_cn_var_decomposition_fix.md` — record what was fixed and how
+- [ ] `project_var_pa_decomposition_fix.md` — record what was fixed and how
 - [ ] `project_validation_framework_open_loop.md` — document grenedalf + FASTA-truth + LOO methodology
 - [ ] `feedback_compute_recomb_truth_is_closed_loop.md` — warn future-Claude not to trust truth_vs_estimate R² as panel correctness signal
 - [ ] `feedback_vcfwave_dedup_loses_carriers.md` — record the vcfwave GT-loss bug for any future decomposition decisions

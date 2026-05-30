@@ -36,15 +36,15 @@ df['absd']  = np.abs(df['delta'])
 outl = df[df['absd'] > 0.10].copy().reset_index(drop=True)
 print(f'  total rows: {len(df):,}, outliers (|Δ|>0.10): {len(outl):,}')
 
-print('=== Load Arch 3 cn_var + meta ===')
-cn = load_npz('cn_var_231_arch3_chr1.cn_var.npz').tocsc()
-cn_called = load_npz('cn_var_231_arch3_chr1.cn_var_called.npz').tocsc()
-meta = np.load('cn_var_231_arch3_chr1.meta.npz', allow_pickle=True)
+print('=== Load Arch 3 var_pa + meta ===')
+kmer_pa = load_npz('var_pa_231_arch3_chr1.var_pa.npz').tocsc()
+cn_called = load_npz('var_pa_231_arch3_chr1.var_called.npz').tocsc()
+meta = np.load('var_pa_231_arch3_chr1.meta.npz', allow_pickle=True)
 m_pos = meta['pos']
 m_ref = meta['ref']
 m_alt = meta['alt']
 founders = meta['founders']
-print(f'  cn_var: {cn.shape}, {cn.nnz:,} nnz')
+print(f'  var_pa: {kmer_pa.shape}, {kmer_pa.nnz:,} nnz')
 
 cactus_ids = set(open('/global/scratch/users/tbellg/kmate/panel/pangenie_genotyping/data/merged/cactus_overlap_80.txt').read().split())
 f_is_cactus = np.array([str(f) in cactus_ids for f in founders])
@@ -63,10 +63,10 @@ for j, pos_i in enumerate(unique_pos):
     rows = pos_to_indices.get(int(pos_i), [])
     if not rows:
         continue
-    union_carrier = np.zeros(cn.shape[0], dtype=bool)
-    union_called  = np.zeros(cn.shape[0], dtype=bool)
+    union_carrier = np.zeros(kmer_pa.shape[0], dtype=bool)
+    union_called  = np.zeros(kmer_pa.shape[0], dtype=bool)
     for ri in rows:
-        c = cn[:, ri].toarray().ravel()
+        c = kmer_pa[:, ri].toarray().ravel()
         cc = cn_called[:, ri].toarray().ravel()
         union_carrier |= (c > 0)
         union_called  |= (cc > 0)

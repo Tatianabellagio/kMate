@@ -3,16 +3,16 @@ EM solver for pool-seq founder frequencies.
 
 Mixture-model formulation:
     For each k-mer k, the observed count c_k is the sum of contributions from
-    each founder f, weighted by h[f] · cn[f,k] · λ. The expected total rate is
-    μ_k = λ · Σ_f h[f] · cn[f,k].
+    each founder f, weighted by h[f] · kmer_pa[f,k] · λ. The expected total rate is
+    μ_k = λ · Σ_f h[f] · kmer_pa[f,k].
 
 EM treats this as a multinomial mixture:
     Each "k-mer event" (each unit of count) comes from one founder f, with
-    probability  P(f | k) = h[f] · cn[f,k] / Σ_f' h[f'] · cn[f',k].
+    probability  P(f | k) = h[f] · kmer_pa[f,k] / Σ_f' h[f'] · kmer_pa[f',k].
 
 E-step:
     For each k-mer, distribute its count fractionally over founders carrying it:
-        n_attributed[f, k] = c_k · h[f] · cn[f,k] / sum_f'(h[f'] · cn[f',k])
+        n_attributed[f, k] = c_k · h[f] · kmer_pa[f,k] / sum_f'(h[f'] · kmer_pa[f',k])
 
 M-step:
     Update h[f] ∝ Σ_k n_attributed[f, k]
@@ -31,7 +31,7 @@ import numpy as np
 
 def solve_em(
     counts: np.ndarray,            # K-vector of observed counts
-    cn: np.ndarray,                # F × K binary copy-number matrix
+    kmer_pa: np.ndarray,                # F × K binary presence/absence matrix (K_pa)
     coverage: float,               # not used directly in EM (it cancels in the M-step)
     h_init: np.ndarray | None = None,
     max_iter: int = 100,
@@ -46,14 +46,14 @@ def solve_em(
 
     With dirichlet_alpha > 0, applies a symmetric Dirichlet(α) prior on h.
     The MAP update becomes:
-        h_new[f] ∝ (h[f] · Σ_k cn[f,k] · counts[k] / μ_k) + (α - 1) / total_c
+        h_new[f] ∝ (h[f] · Σ_k kmer_pa[f,k] · counts[k] / μ_k) + (α - 1) / total_c
     For α = 1: no regularization (uniform prior, equivalent to MLE).
     For α > 1: pulls h toward uniform, prevents winner-takes-all collapse.
     Use small values like α = 1.01 to 1.5 for mild regularization.
 
     With prior_h + prior_weight > 0, applies a Dirichlet pseudocount centered
     on prior_h (instead of uniform):
-        h_new[f] ∝ (h[f] · Σ_k cn[f,k] · counts[k] / μ_k) + λ · total_c · prior_h[f]
+        h_new[f] ∝ (h[f] · Σ_k kmer_pa[f,k] · counts[k] / μ_k) + λ · total_c · prior_h[f]
     This is the MAP update under a Dirichlet(α_f = 1 + λ·N·prior_h[f]) prior —
     pulls the per-window solution toward `prior_h` (typically the chrom-wide
     `h_global`). Local k-mer evidence has to overcome the prior to move h away
@@ -62,7 +62,7 @@ def solve_em(
 
     With omega (K-vector of per-k-mer weights ω_k), every count is reweighted:
     the M-step uses ω_k·c_k everywhere it used c_k, i.e.
-        h_new[f] ∝ h[f] · Σ_k cn[f,k] · (ω_k·c_k)/μ_k ,  normalized by Σ_k ω_k·c_k.
+        h_new[f] ∝ h[f] · Σ_k kmer_pa[f,k] · (ω_k·c_k)/μ_k ,  normalized by Σ_k ω_k·c_k.
     ω_k = 1/m_b (m_b = #k-mers in k's bubble) is per-bubble de-replication; it
     turns "h ∝ k-mer count" into "h ∝ locus count" and removes the imbalanced-
     design over-credit. omega=None reproduces the unweighted MLE exactly.
@@ -70,9 +70,9 @@ def solve_em(
     Returns (h, info_dict).
     """
     K = counts.shape[0]
-    F = cn.shape[0]
-    if cn.dtype != np.float32:
-        cn = cn.astype(np.float32)
+    F = kmer_pa.shape[0]
+    if kmer_pa.dtype != np.float32:
+        kmer_pa = kmer_pa.astype(np.float32)
     counts = counts.astype(np.float32)
 
     h = np.full(F, 1.0 / F, dtype=np.float32) if h_init is None \
@@ -94,9 +94,9 @@ def solve_em(
 
     history = []
     for it in range(max_iter):
-        denom = np.maximum(h @ cn, np.float32(1e-7))
+        denom = np.maximum(h @ kmer_pa, np.float32(1e-7))
         cw = wc / denom
-        em_term = h * (cn @ cw)
+        em_term = h * (kmer_pa @ cw)
         if anchor_term is not None:
             em_term = em_term + anchor_term
         if prior_pseudo > 0:

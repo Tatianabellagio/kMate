@@ -7,7 +7,7 @@ Architecture (HAFpipe / hapFIRE style):
     selection. A single genome-wide h discards this signal. Per-block h
     captures local ancestry, and per-record alt_freq becomes:
 
-        alt_freq(record) = h_local[block(record)] @ cn_var[:, record]
+        alt_freq(record) = h_local[block(record)] @ var_pa[:, record]
 
 Block definitions:
     - 'window': fixed bp windows (default 200 kb). Simple; ignores LD.
@@ -111,7 +111,7 @@ def assign_kmers_to_blocks(kmer_bubble_id, bubble_chrom, bubble_start,
 
 
 def assign_records_to_blocks(record_chrom, record_pos, blocks):
-    """Per-cn_var-record block index. Same scheme as assign_kmers_to_blocks."""
+    """Per-var_pa-record block index. Same scheme as assign_kmers_to_blocks."""
     chrom_blocks = {}
     for i, b in enumerate(blocks):
         chrom_blocks.setdefault(b.chrom, []).append((b.start, b.end, i))
@@ -138,7 +138,7 @@ def assign_records_to_blocks(record_chrom, record_pos, blocks):
     return rec_block
 
 
-def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
+def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                        coverage, em_max_iter=200, tol=1e-7,
                        min_kmers_per_block=200, verbose=False,
                        n_workers=4,
@@ -151,7 +151,7 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
 
     Args:
         counts: K-vec of observed counts (already filtered to block coverage)
-        cn_kmer_dense: F × K float32 cn matrix
+        kmer_pa_dense: F × K float32 kmer_pa matrix
         kmer_block: K-vec of block index per k-mer (-1 = no block)
         n_blocks: number of blocks
         coverage: scalar coverage estimate
@@ -175,7 +175,7 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
     from concurrent.futures import ThreadPoolExecutor
     from threadpoolctl import threadpool_limits
 
-    F = cn_kmer_dense.shape[0]
+    F = kmer_pa_dense.shape[0]
     h_blocks = np.zeros((n_blocks, F), dtype=np.float32)
     block_status = np.full(n_blocks, 2, dtype=np.int8)
 
@@ -183,7 +183,7 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
     if verbose:
         print(f"  computing global-h fallback...", flush=True)
     t = time.time()
-    global_h, info = solve_em(counts, cn_kmer_dense, coverage,
+    global_h, info = solve_em(counts, kmer_pa_dense, coverage,
                               max_iter=em_max_iter, tol=tol,
                               omega=omega)
     global_h = global_h.astype(np.float32)
@@ -208,7 +208,7 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
         idxs_nz = idxs[nz[idxs]]
         if len(idxs_nz) < min_kmers_per_block:
             return b, global_h, 1
-        cn_b = np.ascontiguousarray(cn_kmer_dense[:, idxs_nz])
+        cn_b = np.ascontiguousarray(kmer_pa_dense[:, idxs_nz])
         c_b = counts[idxs_nz]
         omega_b = None if omega is None else omega[idxs_nz]
         if global_anchor_weight > 0:
@@ -249,8 +249,8 @@ def solve_em_per_block(counts, cn_kmer_dense, kmer_block, n_blocks,
     return h_blocks, block_status, global_h
 
 
-def project_blocks_to_records(h_blocks, global_h, cn_var, record_block,
-                              cn_var_called=None):
+def project_blocks_to_records(h_blocks, global_h, var_pa, record_block,
+                              var_called=None):
     """Project per-block h to per-record alt freqs by hard window assignment.
 
     Each record uses the h of the window containing it, h_blocks[record_block[r]]
@@ -258,24 +258,24 @@ def project_blocks_to_records(h_blocks, global_h, cn_var, record_block,
     records with no window, record_block == -1, use global_h). With HMM smoothing
     applied upstream, this hard assignment is the production projection.
 
-    With cn_var_called, AF is the missing-aware (h@cn_var)/(h@cn_var_called);
+    With var_called, AF is the missing-aware (h@var_pa)/(h@var_called);
     without it, ./. is treated as REF (→ SV AF under-call at high missingness).
 
     Returns (alt_freq, info), both length-N float64. info[r] is the projection
     denominator — the h-weighted called mass at r (1.0 when no called mask).
     """
-    N = cn_var.shape[1]
+    N = var_pa.shape[1]
     out = np.zeros(N, dtype=np.float64)
     info = np.ones(N, dtype=np.float64)
     rb = np.asarray(record_block)
-    cn_var_csc = cn_var.tocsc()
-    cvc_csc = cn_var_called.tocsc() if cn_var_called is not None else None
+    var_pa_csc = var_pa.tocsc()
+    cvc_csc = var_called.tocsc() if var_called is not None else None
     for b in np.unique(rb):
         mask = (rb == b)
         if not mask.any():
             continue
         h = (h_blocks[b] if b >= 0 else global_h).astype(np.float32)
-        num = (h @ cn_var_csc[:, mask].toarray()).astype(np.float64)
+        num = (h @ var_pa_csc[:, mask].toarray()).astype(np.float64)
         if cvc_csc is not None:
             den = (h @ cvc_csc[:, mask].toarray()).astype(np.float64)
             out[mask] = num / np.maximum(den, 1e-12)

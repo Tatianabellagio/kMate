@@ -2,8 +2,8 @@
 
 Per-sample, per-record **allele-frequency estimation from pooled sequencing** against a
 multi-founder reference panel. kMate runs a weighted k-mer Poisson EM on the 231-founder
-simplex to estimate founder frequencies (`h`), then projects through a per-record copy-number
-matrix (`cn_var`) to allele frequencies for SNPs, indels, and SVs in a single pass.
+simplex to estimate founder frequencies (`h`), then projects through a per-record presence/absence
+matrix (`var_pa`, the founder × variant alt-allele matrix $V_\mathrm{pa}$) to allele frequencies for SNPs, indels, and SVs in a single pass.
 
 The project root *is* the kMate estimator (renamed from the legacy `hapfire_sv/`).
 
@@ -20,13 +20,13 @@ The project root *is* the kMate estimator (renamed from the legacy `hapfire_sv/`
 ## Layout
 
 ```
-src/          estimator code (em_solver, kmer_count, per_sample_per_chrom, cn builders); src/archive/ = retired variants
+src/          estimator code (em_solver, kmer_count, per_sample_per_chrom, kmer_pa builders); src/archive/ = retired variants
 scripts/      helper/run scripts for the estimator; scripts/archive/ = superseded
 tests/        dev/smoke tests + the production scale-out template (run_site_array_perchrom.sh)
-data/         production cn matrices (cn_full_*, cn_var_*), sample lists, splits, small config
+data/         production kmer_pa matrices (kmer_pa_*, var_pa_*), sample lists, splits, small config
 
 panel/        231-founder panel construction
-  arch3/              arch decomposition → per-record cn_var matrices
+  arch3/              arch decomposition → per-record var_pa matrices
   pangenie_index/     in-house k-mer index tables
   pangenie_genotyping/  short-read PanGenie genotyping of the 153 PG founders
   imputation/         deprecated (Beagle); kept for archaeology
@@ -52,10 +52,10 @@ old_docs/     superseded docs (historical; not authoritative)
 
 ```bash
 python src/per_sample_per_chrom.py \
-    --cn-kmer-prefix data/cn_full_231_v3qc_v3_filt2/cn \
-    --cn-var        panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \
-    --cn-var-called panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \
-    --cn-var-meta   panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz \
+    --kmer-pa-prefix data/kmer_pa_231_v3qc_v3_filt2inv/kmer_pa \
+    --var-pa        panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz \
+    --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
+    --var-meta   panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
     --threads 8 --chroms Chr1 --block-mode global --kmer-weight inv_mb
 ```

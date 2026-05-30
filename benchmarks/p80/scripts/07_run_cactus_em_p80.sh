@@ -58,9 +58,9 @@ for f in $READS_DIR/r1.fq $READS_DIR/r2.fq $WORK/recomb_truth.tsv.gz; do
     [ -s "$f" ] || { echo "ERROR: missing $f -- run 06_run_sim_p80.sh first" >&2; exit 1; }
 done
 
-CN_KMER_PREFIX=$CTRL/data/cn_full_p80/cn
-CN_VAR=$CTRL/data/cn_var_p80.cn_var.npz
-CN_VAR_META=$CTRL/data/cn_var_p80.meta.npz
+CN_KMER_PREFIX=$CTRL/data/kmer_pa_p80/kmer_pa
+CN_VAR=$CTRL/data/var_pa_p80.var_pa.npz
+CN_VAR_META=$CTRL/data/var_pa_p80.meta.npz
 
 OUT_DIR=$CTRL/results/cactus_em_${METHOD}/${REGIME}
 mkdir -p $OUT_DIR
@@ -76,15 +76,15 @@ fi
 
 echo "[$(date)] cactus_em --method $METHOD --regime $REGIME"
 echo "  reads:   $READS_DIR/r1.fq + r2.fq"
-echo "  cn_full: $CN_KMER_PREFIX"
-echo "  cn_var:  $CN_VAR"
+echo "  kmer_pa: $CN_KMER_PREFIX"
+echo "  var_pa:  $CN_VAR"
 echo "  out:     $OUT_TSV"
 echo "  mode:    $MODE_ARGS"
 
 $PYTHON -u $DRIVER \
-    --cn-kmer-prefix $CN_KMER_PREFIX \
-    --cn-var $CN_VAR \
-    --cn-var-meta $CN_VAR_META \
+    --kmer-pa-prefix $CN_KMER_PREFIX \
+    --var-pa $CN_VAR \
+    --var-meta $CN_VAR_META \
     --reads $READS_DIR/r1.fq $READS_DIR/r2.fq \
     --sample $SAMPLE \
     --out $OUT_TSV \

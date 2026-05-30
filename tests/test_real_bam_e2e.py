@@ -20,7 +20,7 @@ panel members that are population-similar to the unobserved 151.
 Pipeline tested:
 - block_solver.solve_block_irls
 - kmer_count.count_kmers_in_bam
-- build_kmer_cn output (loaded from data/test_chr1_first200.*)
+- build_kmer_pa output (loaded from data/test_chr1_first200.*)
 """
 from __future__ import annotations
 import sys, os, time
@@ -37,17 +37,17 @@ def main():
     print("Real-BAM end-to-end test")
     print("="*70)
 
-    # 1. Load cn matrix
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    # 1. Load kmer_pa matrix
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     kmer_index = meta["kmer_index"]
     bubble_id = meta["bubble_id"]
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    print(f"\n[1] Loaded cn: F={F} founders × K={K:,} k-mers")
-    print(f"    AC distribution: median={int(np.median(cn.sum(axis=0)))}  "
-          f"max={cn.sum(axis=0).max()}  AC=1: {(cn.sum(axis=0)==1).sum()}")
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    print(f"\n[1] Loaded kmer_pa: F={F} founders × K={K:,} k-mers")
+    print(f"    AC distribution: median={int(np.median(kmer_pa.sum(axis=0)))}  "
+          f"max={kmer_pa.sum(axis=0).max()}  AC=1: {(kmer_pa.sum(axis=0)==1).sum()}")
 
     # 2. Pick a sim BAM (cov50, all 231 ecotypes uniformly, with a 1kb DEL at f=90%)
     bam = "/global/scratch/users/tbellg/visor_freqk/data/reads_var/del/rep29/cov50/var_del_1kb_n231_f90_err001/sim.srt.bam"
@@ -80,7 +80,7 @@ def main():
     # For this test, treat all 200 bubbles as a single "block" (Chr1 first 200)
     print(f"\n[5] Solving for h (block = all 200 bubbles)...")
     t0 = time.time()
-    h_irls, obj_irls = solve_block_irls(counts, cn, coverage=cov_kmer,
+    h_irls, obj_irls = solve_block_irls(counts, kmer_pa, coverage=cov_kmer,
                                          max_iter=5, tol=1e-4, verbose=True)
     print(f"    [took {time.time()-t0:.1f}s, obj={obj_irls:.2f}]")
     print(f"    h sum: {h_irls.sum():.4f}  (should be 1.0)")
@@ -105,7 +105,7 @@ def main():
     print(f"      effective n founders (1/Σh²): {1/np.sum(h_irls**2):.1f}")
 
     # 7. Sanity check: predicted vs observed counts
-    pred = cov_kmer * (cn.T @ h_irls)
+    pred = cov_kmer * (kmer_pa.T @ h_irls)
     nonzero = counts > 0
     if nonzero.any():
         rmse = np.sqrt(np.mean((counts[nonzero] - pred[nonzero])**2))

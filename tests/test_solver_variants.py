@@ -24,18 +24,18 @@ from scipy.sparse import load_npz
 from kmer_count import count_kmers_in_fasta
 
 
-def solve_block_custom(counts, cn, coverage, alpha=1.0, omega=None,
+def solve_block_custom(counts, kmer_pa, coverage, alpha=1.0, omega=None,
                        weights=None, loss="l2", reg_uniform=0.0,
                        reg_sparsity=0.0):
     """Generic CVXPY block solver supporting several loss + regularization options."""
     K = counts.shape[0]
-    F = cn.shape[0]
+    F = kmer_pa.shape[0]
     if omega is None: omega = np.zeros(K)
     if np.isscalar(alpha): alpha = np.full(K, alpha)
     if weights is None: weights = 1.0 / np.sqrt(counts + 1.0)
 
     h = cp.Variable(F, nonneg=True)
-    mu = coverage * cp.multiply(alpha, cn.T @ h) + coverage * omega
+    mu = coverage * cp.multiply(alpha, kmer_pa.T @ h) + coverage * omega
     residual = cp.multiply(weights, counts - mu)
 
     if loss == "l2":
@@ -68,15 +68,15 @@ def main():
     print("Solver variants on uniform-82 Chr1 simulation")
     print("="*72)
 
-    # Load cn
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    # Load kmer_pa
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     kmer_index = meta["kmer_index"]
     bubble_id = meta["bubble_id"]
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    ac = cn.sum(axis=0)
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    ac = kmer_pa.sum(axis=0)
     print(f"\ncn: {F} × {K:,}")
     print(f"AC dist: AC=1: {(ac==1).sum():,}   AC 2-4: {((ac>=2)&(ac<=4)).sum():,}   "
           f"AC 5-10: {((ac>=5)&(ac<=10)).sum():,}   AC>10: {(ac>10).sum():,}")
@@ -125,58 +125,58 @@ def main():
         return err
 
     # V0 baseline
-    h0, _ = solve_block_custom(counts, cn, cov_est)
+    h0, _ = solve_block_custom(counts, kmer_pa, cov_est)
     report("V0  baseline WLS", h0)
 
     # V1 drop AC=1
     keep = ac >= 2
-    h1, _ = solve_block_custom(counts[keep], cn[:, keep], cov_est)
+    h1, _ = solve_block_custom(counts[keep], kmer_pa[:, keep], cov_est)
     report(f"V1  drop AC=1 (keep {keep.sum():,})", h1)
 
     # V2 drop AC<5
     keep5 = ac >= 5
-    h2, _ = solve_block_custom(counts[keep5], cn[:, keep5], cov_est)
+    h2, _ = solve_block_custom(counts[keep5], kmer_pa[:, keep5], cov_est)
     report(f"V2  drop AC<5 (keep {keep5.sum():,})", h2)
 
     # V3 L1 (slow)
-    h3, _ = solve_block_custom(counts, cn, cov_est, loss="l1")
+    h3, _ = solve_block_custom(counts, kmer_pa, cov_est, loss="l1")
     report("V3  L1 loss", h3)
 
     # V4 Huber
-    h4, _ = solve_block_custom(counts, cn, cov_est, loss="huber")
+    h4, _ = solve_block_custom(counts, kmer_pa, cov_est, loss="huber")
     report("V4  Huber loss", h4)
 
     # V5 L2 + regularization toward uniform (try several lambdas)
     for lam in [0.01, 0.1, 1.0, 10.0]:
-        hr, _ = solve_block_custom(counts, cn, cov_est, reg_uniform=lam)
+        hr, _ = solve_block_custom(counts, kmer_pa, cov_est, reg_uniform=lam)
         report(f"V5  L2 + uniform-reg λ={lam}", hr)
 
     # V6 different weight scheme: w = 1/(count + 0.5), lighter on zeros
     weights6 = 1.0 / (counts + 0.5)
-    h6, _ = solve_block_custom(counts, cn, cov_est, weights=weights6)
+    h6, _ = solve_block_custom(counts, kmer_pa, cov_est, weights=weights6)
     report("V6  weights = 1/(count+0.5)", h6)
 
     # V7 drop k-mers with count=0
     nz = counts > 0
-    h7, _ = solve_block_custom(counts[nz], cn[:, nz], cov_est)
+    h7, _ = solve_block_custom(counts[nz], kmer_pa[:, nz], cov_est)
     report(f"V7  drop count=0 rows (keep {nz.sum():,})", h7)
 
     # V8 AC≥2 + uniform reg
     for lam in [0.01, 0.1, 1.0]:
         keep = ac >= 2
-        h8, _ = solve_block_custom(counts[keep], cn[:, keep], cov_est, reg_uniform=lam)
+        h8, _ = solve_block_custom(counts[keep], kmer_pa[:, keep], cov_est, reg_uniform=lam)
         report(f"V8  AC≥2 + uniform-reg λ={lam}", h8)
 
     # V9 AC≥5 + Huber
     keep5 = ac >= 5
-    h9, _ = solve_block_custom(counts[keep5], cn[:, keep5], cov_est, loss="huber")
+    h9, _ = solve_block_custom(counts[keep5], kmer_pa[:, keep5], cov_est, loss="huber")
     report(f"V9  AC≥5 + Huber", h9)
 
     # V10 AC≥2 + drop count=0 + uniform reg
     for lam in [0.01, 0.1, 1.0]:
         keep = (ac >= 2) & (counts > 0)
         if keep.sum() < F: continue
-        h10, _ = solve_block_custom(counts[keep], cn[:, keep], cov_est, reg_uniform=lam)
+        h10, _ = solve_block_custom(counts[keep], kmer_pa[:, keep], cov_est, reg_uniform=lam)
         report(f"V10 AC≥2 ∧ count>0 + uniform-reg λ={lam} (n={keep.sum():,})", h10)
 
 

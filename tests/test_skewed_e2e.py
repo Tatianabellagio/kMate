@@ -16,51 +16,51 @@ DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 SIM_PREFIX = os.path.join(DATA, "sim_chr1_skewed", "skewed5")
 
 
-def solve_wls(counts, cn, coverage, weights=None):
-    K, F = counts.shape[0], cn.shape[0]
+def solve_wls(counts, kmer_pa, coverage, weights=None):
+    K, F = counts.shape[0], kmer_pa.shape[0]
     if weights is None: weights = 1.0 / np.sqrt(counts + 1.0)
     h = cp.Variable(F, nonneg=True)
-    mu = coverage * (cn.T @ h)
+    mu = coverage * (kmer_pa.T @ h)
     residual = cp.multiply(weights, counts - mu)
     prob = cp.Problem(cp.Minimize(cp.sum_squares(residual)), [cp.sum(h) == 1])
     prob.solve(solver="SCS", verbose=False)
     return np.asarray(h.value)
 
 
-def solve_kl(counts, cn, coverage):
-    K, F = counts.shape[0], cn.shape[0]
+def solve_kl(counts, kmer_pa, coverage):
+    K, F = counts.shape[0], kmer_pa.shape[0]
     h = cp.Variable(F, nonneg=True)
-    mu = coverage * (cn.T @ h) + 1e-3
+    mu = coverage * (kmer_pa.T @ h) + 1e-3
     obj = cp.Minimize(cp.sum(cp.kl_div(counts, mu)))
     prob = cp.Problem(obj, [cp.sum(h) == 1])
     prob.solve(solver="SCS", verbose=False)
     return np.asarray(h.value)
 
 
-def per_block_avg(counts, cn, coverage, bubble_id, n_blocks=20, solver=solve_wls):
+def per_block_avg(counts, kmer_pa, coverage, bubble_id, n_blocks=20, solver=solve_wls):
     """Solve each sub-block independently, return averaged h."""
-    F = cn.shape[0]
+    F = kmer_pa.shape[0]
     bubbles_per_block = max(1, len(set(bubble_id)) // n_blocks)
     sub_block = bubble_id // bubbles_per_block
     h_acc = []
     for b in range(sub_block.max() + 1):
         mask = sub_block == b
         if mask.sum() < F: continue
-        h = solver(counts[mask], cn[:, mask], coverage)
+        h = solver(counts[mask], kmer_pa[:, mask], coverage)
         h_acc.append(h / h.sum())
     return np.mean(h_acc, axis=0)
 
 
 def main():
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     kmer_index = meta["kmer_index"]
     bubble_id = meta["bubble_id"]
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    ac = cn.sum(axis=0)
-    print(f"cn: F={F} × K={K:,}")
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    ac = kmer_pa.sum(axis=0)
+    print(f"kmer_pa: F={F} × K={K:,}")
 
     # Truth
     truth = pd.read_csv(f"{SIM_PREFIX}_truth.tsv", sep="\t")
@@ -102,32 +102,32 @@ def main():
     print(f"\n{'-'*72}\nSolver variants on skewed truth\n{'-'*72}")
 
     # S1 baseline WLS
-    h = solve_wls(counts, cn, cov)
+    h = solve_wls(counts, kmer_pa, cov)
     report("S1  baseline WLS", h)
 
     # S2 Poisson NLL
-    h = solve_kl(counts, cn, cov)
+    h = solve_kl(counts, kmer_pa, cov)
     report("S2  Poisson NLL (KL div)", h)
 
     # S3 per-block average (10 sub-blocks)
-    h = per_block_avg(counts, cn, cov, bubble_id, n_blocks=10, solver=solve_wls)
+    h = per_block_avg(counts, kmer_pa, cov, bubble_id, n_blocks=10, solver=solve_wls)
     report("S3  per-block-avg WLS, 10 sub-blocks", h)
 
     # S4 per-block average (20 sub-blocks)
-    h = per_block_avg(counts, cn, cov, bubble_id, n_blocks=20, solver=solve_wls)
+    h = per_block_avg(counts, kmer_pa, cov, bubble_id, n_blocks=20, solver=solve_wls)
     report("S4  per-block-avg WLS, 20 sub-blocks", h)
 
     # S5 per-block average (50 sub-blocks)
-    h = per_block_avg(counts, cn, cov, bubble_id, n_blocks=50, solver=solve_wls)
+    h = per_block_avg(counts, kmer_pa, cov, bubble_id, n_blocks=50, solver=solve_wls)
     report("S5  per-block-avg WLS, 50 sub-blocks", h)
 
     # S6 per-block KL
-    h = per_block_avg(counts, cn, cov, bubble_id, n_blocks=20, solver=solve_kl)
+    h = per_block_avg(counts, kmer_pa, cov, bubble_id, n_blocks=20, solver=solve_kl)
     report("S6  per-block-avg KL, 20 sub-blocks", h)
 
     # Show top recovered for best
     print(f"\nTop 8 by S5 (per-block-avg WLS, 50 sub-blocks):")
-    h_best = per_block_avg(counts, cn, cov, bubble_id, n_blocks=50, solver=solve_wls)
+    h_best = per_block_avg(counts, kmer_pa, cov, bubble_id, n_blocks=50, solver=solve_wls)
     h_best = h_best / h_best.sum()
     for i in np.argsort(-h_best)[:8]:
         marker = "✓" if h_true[i] > 0 else " "

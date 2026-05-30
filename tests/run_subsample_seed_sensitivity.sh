@@ -19,17 +19,17 @@ READS2=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDM
 
 for SEED in 1 7 100; do
     echo "=== Seed $SEED: subsample raw v3qc_v3 → refilt2 → EM ==="
-    CN_DIR=$ROOT/data/cn_full_231_v3qc_v3_subsampMedian_refilt2_seed${SEED}
+    CN_DIR=$ROOT/data/kmer_pa_231_v3qc_v3_subsampMedian_refilt2_seed${SEED}
     mkdir -p $CN_DIR
 
     $PY -u $ROOT/src/archive/build_subsampled_cn.py \
-        --in-cn $ROOT/data/cn_full_231_v3qc_v3/cn_Chr1.cn.npz \
-        --in-meta $ROOT/data/cn_full_231_v3qc_v3/cn_Chr1.meta.npz \
-        --out-prefix $CN_DIR/cn_Chr1 \
+        --in-kmer_pa $ROOT/data/kmer_pa_231_v3qc_v3/kmer_pa_Chr1.kmer_pa.npz \
+        --in-meta $ROOT/data/kmer_pa_231_v3qc_v3/kmer_pa_Chr1.meta.npz \
+        --out-prefix $CN_DIR/kmer_pa_Chr1 \
         --target median --seed $SEED --refilt2
 
     $PY -u $ROOT/src/sweep_shape_norm_h_only.py \
-        --cn-prefix $CN_DIR/cn_Chr1 \
+        --kmer_pa-prefix $CN_DIR/kmer_pa_Chr1 \
         --reads $READS1 $READS2 \
         --sample SEEDMIX_S1 \
         --out-prefix $OUT_DIR/subsampRaw_seed${SEED}_SEEDMIX_S1_chr1 \

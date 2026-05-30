@@ -10,17 +10,17 @@
 #SBATCH --error=logs/03b_filt2_%j.err
 
 # benchmarks/p231 Phase A3b -- filt2 (drop ac<2 singleton k-mers), mirrors
-# benchmarks/p80/03b_build_cn_full_filt2_p80.sh. This is the front-runner cn_full base.
+# benchmarks/p80/03b_build_kmer_pa_filt2_p80.sh. This is the front-runner kmer_pa base.
 mkdir -p logs
 set -uo pipefail
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CTRL=/global/scratch/users/tbellg/kmate/benchmarks/p231
-SRC=$CTRL/data/cn_full_p231
-OUT=$CTRL/data/cn_full_p231_filt2
+SRC=$CTRL/data/kmer_pa_p231
+OUT=$CTRL/data/kmer_pa_p231_filt2
 mkdir -p $OUT
 
-if [ -s "$OUT/cn_Chr1.cn.npz" ] && [ -s "$OUT/cn_Chr1.meta.npz" ]; then
-    echo "[$(date)] cn_full_p231_filt2 already present -- skip"; ls -lh $OUT/cn_Chr1.*; exit 0
+if [ -s "$OUT/kmer_pa_Chr1.kmer_pa.npz" ] && [ -s "$OUT/kmer_pa_Chr1.meta.npz" ]; then
+    echo "[$(date)] kmer_pa_p231_filt2 already present -- skip"; ls -lh $OUT/kmer_pa_Chr1.*; exit 0
 fi
 echo "[$(date)] filt2 (ac>=2) build from $SRC -> $OUT"
 
@@ -29,16 +29,16 @@ import numpy as np
 from scipy.sparse import load_npz, save_npz
 from pathlib import Path
 chrom="Chr1"; SRC=Path("${SRC}"); OUT=Path("${OUT}"); OUT.mkdir(exist_ok=True)
-cn=load_npz(SRC/f"cn_{chrom}.cn.npz"); meta=np.load(SRC/f"cn_{chrom}.meta.npz",allow_pickle=True)
-F,K=cn.shape; print(f"[{chrom}] cn ({F},{K:,}) nnz={cn.nnz:,}",flush=True)
-ac=np.asarray(cn.sum(axis=0)).flatten().astype(np.int32); keep=ac>=2
+kmer_pa=load_npz(SRC/f"cn_{chrom}.kmer_pa.npz"); meta=np.load(SRC/f"cn_{chrom}.meta.npz",allow_pickle=True)
+F,K=kmer_pa.shape; print(f"[{chrom}] kmer_pa ({F},{K:,}) nnz={kmer_pa.nnz:,}",flush=True)
+ac=np.asarray(kmer_pa.sum(axis=0)).flatten().astype(np.int32); keep=ac>=2
 print(f"[{chrom}] keep ac>=2: {keep.sum():,}/{K:,} (ac=0:{(ac==0).sum():,} ac=1:{(ac==1).sum():,})",flush=True)
-cn_f=cn.tocsc()[:,keep].tocsr()
+cn_f=kmer_pa.tocsc()[:,keep].tocsr()
 new_meta={}
 for k in meta.keys():
     a=meta[k]
     new_meta[k]=a[keep] if (a.shape and a.shape[0]==K) else a
-save_npz(OUT/f"cn_{chrom}.cn.npz",cn_f); np.savez(OUT/f"cn_{chrom}.meta.npz",**new_meta)
+save_npz(OUT/f"cn_{chrom}.kmer_pa.npz",cn_f); np.savez(OUT/f"cn_{chrom}.meta.npz",**new_meta)
 print(f"[{chrom}] DONE filt2 nnz={cn_f.nnz:,} shape={cn_f.shape}",flush=True)
 EOF
-echo "[$(date)] DONE"; ls -lh $OUT/cn_Chr1.cn.npz $OUT/cn_Chr1.meta.npz
+echo "[$(date)] DONE"; ls -lh $OUT/kmer_pa_Chr1.kmer_pa.npz $OUT/kmer_pa_Chr1.meta.npz

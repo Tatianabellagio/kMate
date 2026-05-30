@@ -13,7 +13,7 @@ mkdir -p logs
 set -uo pipefail
 cd /global/scratch/users/tbellg/kmate
 
-/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python src/build_kmer_cn.py \
+/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python src/build_kmer_pa.py \
     --kmers /global/scratch/users/tbellg/kmate/pangenie_test/pangenie_idx_rawv2_Chr1_kmers.tsv.gz \
     --vcf   /global/scratch/users/tbellg/kmate/pangenie_test/raw_vcfbub_lv0_diploid.vcf.gz \
     --ref   /global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa \

@@ -35,14 +35,14 @@ def main():
     print("SEEDMIX end-to-end test")
     print("="*70)
 
-    # 1. Load cn matrix (200 bubbles, Chr1 first 100kb)
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    # 1. Load kmer_pa matrix (200 bubbles, Chr1 first 100kb)
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     kmer_index = meta["kmer_index"]
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    print(f"\n[1] Loaded cn: F={F}, K={K:,}")
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    print(f"\n[1] Loaded kmer_pa: F={F}, K={K:,}")
 
     # 2. Map our 82 panel founders to 1001G IDs and check GrENE-overlap
     panel_map = pd.read_csv(
@@ -103,7 +103,7 @@ def main():
     # 7. WLS solve (more stable than IRLS for this system)
     print(f"\n[4] WLS solve...")
     t0 = time.time()
-    h_wls, obj = solve_block_wls(counts, cn, coverage=cov_kmer)
+    h_wls, obj = solve_block_wls(counts, kmer_pa, coverage=cov_kmer)
     print(f"    [took {time.time()-t0:.0f}s, obj={obj:.0f}]")
     print(f"    h sum: {h_wls.sum():.4f}")
     print(f"    h support (>0.001): {(h_wls > 0.001).sum()}/{F}")

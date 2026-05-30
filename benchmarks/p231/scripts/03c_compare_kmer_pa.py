@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-"""Validate the rebuilt p231 cn_full against the production cn_full_231_v3qc_v3_filt2.
-If cn_full is representation-invariant (consensus-derived from the same panel), the
+"""Validate the rebuilt p231 kmer_pa against the production kmer_pa_231_v3qc_v3_filt2.
+If kmer_pa is representation-invariant (consensus-derived from the same panel), the
 two should be nearly identical. Reports: founder-axis match, k-mer set overlap,
 per-founder k-mer-count correlation, and carrier-pattern agreement on shared k-mers."""
 import numpy as np
 from pathlib import Path
 from scipy.sparse import load_npz
 ROOT=str(Path(__file__).resolve().parents[2])
-P231=f"{ROOT}/benchmarks/p231/data/cn_full_p231_filt2"
-PROD=f"{ROOT}/data/cn_full_231_v3qc_v3_filt2"
+P231=f"{ROOT}/benchmarks/p231/data/kmer_pa_p231_filt2"
+PROD=f"{ROOT}/data/kmer_pa_231_v3qc_v3_filt2"
 
 def load(d):
-    cn=load_npz(f"{d}/cn_Chr1.cn.npz").tocsc()
-    m=np.load(f"{d}/cn_Chr1.meta.npz",allow_pickle=True)
-    return cn, np.asarray(m["founders"]).astype(str), np.asarray(m["kmer_index"]).astype(str)
+    kmer_pa=load_npz(f"{d}/kmer_pa_Chr1.kmer_pa.npz").tocsc()
+    m=np.load(f"{d}/kmer_pa_Chr1.meta.npz",allow_pickle=True)
+    return kmer_pa, np.asarray(m["founders"]).astype(str), np.asarray(m["kmer_index"]).astype(str)
 
 cnA,foA,kmA=load(P231); cnB,foB,kmB=load(PROD)
 print(f"p231 rebuilt : F={len(foA)} K={cnA.shape[1]:,} nnz={cnA.nnz:,}")
@@ -45,5 +45,5 @@ if np.array_equal(foA,foB) and inter:
     print(f"\ncarrier-pattern agreement on {len(samp):,} shared k-mers:")
     print(f"  per-cell agreement: {100*agree:.4f}%")
     print(f"  fully-identical carrier columns: {100*identical_cols:.4f}%")
-print("\n=> If overlap ~100% and carrier agreement ~100%, cn_full is representation-"
-      "invariant; the rebuilt and production cn_full are equivalent (consistency proven).")
+print("\n=> If overlap ~100% and carrier agreement ~100%, kmer_pa is representation-"
+      "invariant; the rebuilt and production kmer_pa are equivalent (consistency proven).")

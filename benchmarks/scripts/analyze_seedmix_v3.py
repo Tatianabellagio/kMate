@@ -102,7 +102,7 @@ def main() -> None:
         report("v2", s2)
     print("")
     print("Targets:")
-    print("  slope ≈ 1.000     (v2 was ~1.013 raw, ~1.43× w/ different cn_var build)")
+    print("  slope ≈ 1.000     (v2 was ~1.013 raw, ~1.43× w/ different var_pa build)")
     print("  R²    ≥ 0.99      (v2 hit 0.996)")
     print("  R² delta v3-v2:   {:+.4f}".format(s3["r2"] - s2["r2"]) if s2 else "")
     print("  slope delta v3-v2:{:+.4f}".format(s3["slope"] - s2["slope"]) if s2 else "")

@@ -18,9 +18,9 @@
 #   MANIFEST         — TSV with sample_id, reads_path, [reads_path2]
 #   OUT_DIR          — output directory
 #   CHUNK_SIZE       — samples per array task
-#   CN_KMER_PREFIX   — path prefix to per-chrom cn matrices
-#   CN_VAR           — path to cn_var matrix
-#   CN_VAR_META      — path to cn_var meta
+#   CN_KMER_PREFIX   — path prefix to per-chrom kmer_pa matrices
+#   CN_VAR           — path to var_pa matrix
+#   CN_VAR_META      — path to var_pa meta
 #
 # To use:
 #   1. Build manifest from your sample sources
@@ -34,9 +34,9 @@
 #   # 231-founder run on the 2,415 evolved samples (after imputation lands):
 #   MANIFEST=data/sample_manifest.tsv \
 #   OUT_DIR=results/per_sample_231 \
-#   CN_KMER_PREFIX=data/cn_full_231/cn \
-#   CN_VAR=data/cn_var_231.cn_var.npz \
-#   CN_VAR_META=data/cn_var_231.meta.npz \
+#   CN_KMER_PREFIX=data/kmer_pa_231/kmer_pa \
+#   CN_VAR=data/var_pa_231.var_pa.npz \
+#   CN_VAR_META=data/var_pa_231.meta.npz \
 #     sbatch --array=0-48%10 tests/run_batch_template.sh
 
 set -uo pipefail
@@ -46,9 +46,9 @@ cd /global/scratch/users/tbellg/kmate
 MANIFEST="${MANIFEST:-data/sample_manifest.tsv}"
 OUT_DIR="${OUT_DIR:-results/per_sample}"
 CHUNK_SIZE="${CHUNK_SIZE:-50}"
-CN_KMER_PREFIX="${CN_KMER_PREFIX:-data/cn_full}"
-CN_VAR="${CN_VAR:-data/cn_var_82.cn_var.npz}"
-CN_VAR_META="${CN_VAR_META:-data/cn_var_82.meta.npz}"
+CN_KMER_PREFIX="${CN_KMER_PREFIX:-data/kmer_pa}"
+CN_VAR="${CN_VAR:-data/var_pa_82.var_pa.npz}"
+CN_VAR_META="${CN_VAR_META:-data/var_pa_82.meta.npz}"
 
 # Extract this task's chunk
 START=$((SLURM_ARRAY_TASK_ID * CHUNK_SIZE + 2))   # +2 to skip header (row 1) and 1-index
@@ -65,8 +65,8 @@ sed -n "${START},${END}p" $MANIFEST >> $CHUNK_MANIFEST
 /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python src/batch_runner.py \
     --manifest $CHUNK_MANIFEST \
     --out-dir $OUT_DIR \
-    --cn-kmer-prefix $CN_KMER_PREFIX \
-    --cn-var $CN_VAR \
-    --cn-var-meta $CN_VAR_META \
+    --kmer-pa-prefix $CN_KMER_PREFIX \
+    --var-pa $CN_VAR \
+    --var-meta $CN_VAR_META \
     --threads 8 \
     --workers 1

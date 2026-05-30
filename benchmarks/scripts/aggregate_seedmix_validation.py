@@ -9,13 +9,13 @@ Usage:
     python aggregate_seedmix_validation.py \\
         --label-82 "82-founder" \\
         --dir-82 results/seedmix_82 \\
-        --cn-var-82 data/cn_var_82.cn_var.npz \\
-        --meta-82 data/cn_var_82.meta.npz \\
+        --var-pa-82 data/var_pa_82.var_pa.npz \\
+        --meta-82 data/var_pa_82.meta.npz \\
         --panel-map ../data/sv_panel_to_accession_id.tsv \\
         --label-231 "231-founder" \\
         --dir-231 results/seedmix_231 \\
-        --cn-var-231 data/cn_var_231.cn_var.npz \\
-        --meta-231 data/cn_var_231.meta.npz \\
+        --var-pa-231 data/var_pa_231.var_pa.npz \\
+        --meta-231 data/var_pa_231.meta.npz \\
         --recipe ../data/seedmix_recipe_normalized.tsv \\
         --out results/seedmix_aggregate.tsv
 
@@ -53,7 +53,7 @@ def metrics(y_pred, y_true):
     return r2, rmse, r
 
 
-def project_recipe(cn_var, founders, panel_map_path, recipe_path):
+def project_recipe(var_pa, founders, panel_map_path, recipe_path):
     """Return (expected_alt_freq vector, panel_total_mass, h_norm)."""
     if panel_map_path:
         pm = pd.read_csv(panel_map_path, sep="\t")
@@ -68,23 +68,23 @@ def project_recipe(cn_var, founders, panel_map_path, recipe_path):
     h = np.array([rd.get(fid, 0.0) if fid else 0.0 for fid in founder_1001g])
     panel_total = float(h.sum())
     h_norm = h / panel_total if panel_total > 0 else h
-    expected = np.asarray((h_norm @ cn_var)).flatten()
+    expected = np.asarray((h_norm @ var_pa)).flatten()
     return expected, panel_total, h_norm
 
 
-def evaluate_panel(label, output_dir, cn_var_path, meta_path,
+def evaluate_panel(label, output_dir, var_pa_path, meta_path,
                    panel_map_path, recipe_path):
     print(f"\n=== {label} ===")
     print(f"  output dir: {output_dir}")
-    cn_var = load_npz(cn_var_path)
+    var_pa = load_npz(var_pa_path)
     meta = np.load(meta_path, allow_pickle=True)
     founders = list(meta["founders"])
-    F, N = cn_var.shape
-    print(f"  cn_var: {cn_var.shape}, nnz={cn_var.nnz:,}")
+    F, N = var_pa.shape
+    print(f"  var_pa: {var_pa.shape}, nnz={var_pa.nnz:,}")
 
-    ac = np.asarray(cn_var.sum(axis=0)).flatten()
+    ac = np.asarray(var_pa.sum(axis=0)).flatten()
     expected, panel_total, h_norm = project_recipe(
-        cn_var, founders, panel_map_path, recipe_path)
+        var_pa, founders, panel_map_path, recipe_path)
     print(f"  recipe panel mass: {panel_total*100:.1f}%, "
           f"effective n founders (1/Σh²): {1/np.sum(h_norm**2):.1f}")
 
@@ -95,7 +95,7 @@ def evaluate_panel(label, output_dir, cn_var_path, meta_path,
         sid = os.path.splitext(os.path.basename(path))[0]
         df = pd.read_csv(path, sep="\t")
         if len(df) != N:
-            print(f"  SKIP {sid}: {len(df):,} records ≠ {N:,} cn_var records")
+            print(f"  SKIP {sid}: {len(df):,} records ≠ {N:,} var_pa records")
             continue
         pred = df["alt_freq"].to_numpy()
         for bin_label, lo, hi in AC_BINS:
@@ -114,29 +114,29 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--label-82", default="82-founder")
     ap.add_argument("--dir-82", required=True)
-    ap.add_argument("--cn-var-82", required=True)
+    ap.add_argument("--var-pa-82", required=True)
     ap.add_argument("--meta-82", required=True)
     ap.add_argument("--panel-map", default=None,
                     help="Assembly_ID → Accession_ID mapping (only needed if "
-                         "cn_var founder names are Assembly IDs, e.g. for the "
-                         "82-founder cn_var). Omit for 231-founder cn_var "
+                         "var_pa founder names are Assembly IDs, e.g. for the "
+                         "82-founder var_pa). Omit for 231-founder var_pa "
                          "where founders are already 1001G IDs.")
     ap.add_argument("--label-231", default="231-founder")
     ap.add_argument("--dir-231", default=None,
                     help="omit if 231 results aren't ready yet — only 82 reported")
-    ap.add_argument("--cn-var-231", default=None)
+    ap.add_argument("--var-pa-231", default=None)
     ap.add_argument("--meta-231", default=None)
     ap.add_argument("--recipe", required=True)
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
     rows = evaluate_panel(
-        args.label_82, args.dir_82, args.cn_var_82, args.meta_82,
+        args.label_82, args.dir_82, args.var_pa_82, args.meta_82,
         args.panel_map, args.recipe,
     )
     if args.dir_231 and os.path.isdir(args.dir_231):
         rows += evaluate_panel(
-            args.label_231, args.dir_231, args.cn_var_231, args.meta_231,
+            args.label_231, args.dir_231, args.var_pa_231, args.meta_231,
             None, args.recipe,
         )
 

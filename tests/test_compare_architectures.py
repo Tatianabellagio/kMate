@@ -1,5 +1,5 @@
 """
-Compare all three architectures on real cn matrix at multiple coverages and pool types.
+Compare all three architectures on real kmer_pa matrix at multiple coverages and pool types.
 
 Architectures:
   WLS         baseline weighted least-squares (block_solver.solve_block_wls)
@@ -42,15 +42,15 @@ def metrics(h_hat, h_true):
 
 
 def main():
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    ac = cn.sum(axis=0)
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    ac = kmer_pa.sum(axis=0)
 
-    # How many unique haplotype patterns in this cn?
-    cn_uniq, f2h, h2f = reduce_to_unique_haplotypes(cn)
+    # How many unique haplotype patterns in this kmer_pa?
+    cn_uniq, f2h, h2f = reduce_to_unique_haplotypes(kmer_pa)
     print(f"="*86)
-    print(f"Compare architectures on real 200-bubble cn (F={F}, K={K:,}, cov tested 5-30×)")
+    print(f"Compare architectures on real 200-bubble kmer_pa (F={F}, K={K:,}, cov tested 5-30×)")
     print(f"  unique haplotypes in this block: H={cn_uniq.shape[0]} (F={F}, ratio={F/cn_uniq.shape[0]:.1f})")
     print(f"  hap_to_founders sizes: {[len(x) for x in h2f[:10]]}{'...' if len(h2f) > 10 else ''}")
     print(f"="*86)
@@ -81,22 +81,22 @@ def main():
 
     for label, h_true in pools:
         for cov in coverages:
-            mu = cov * (h_true @ cn)
+            mu = cov * (h_true @ kmer_pa)
             counts = rng.poisson(np.maximum(mu, 1e-6))
 
             # WLS
             try:
-                h_wls, _ = solve_block_wls(counts, cn, cov)
+                h_wls, _ = solve_block_wls(counts, kmer_pa, cov)
                 r2_w, rmse_w = metrics(h_wls, h_true)
             except Exception:
                 r2_w, rmse_w = float("nan"), float("nan")
 
             # EM flat
-            h_em, _ = solve_em(counts, cn, cov, max_iter=200, tol=1e-7)
+            h_em, _ = solve_em(counts, kmer_pa, cov, max_iter=200, tol=1e-7)
             r2_e, rmse_e = metrics(h_em, h_true)
 
             # HF two-stage (equal-share projection)
-            h_hf = solve_block_two_stage(counts, cn, cov,
+            h_hf = solve_block_two_stage(counts, kmer_pa, cov,
                                          project_method="equal_share",
                                          em_max_iter=200)
             r2_h, rmse_h = metrics(h_hf, h_true)
@@ -113,8 +113,8 @@ def main():
     print(f"\n{'-'*86}\nDiagnostic: two-stage SKEWED 5 (h_hf vs truth on top founders)")
     h_true = np.zeros(F)
     h_true[[0, 1, 2, 3, 4]] = [0.40, 0.25, 0.15, 0.10, 0.10]
-    counts = rng.poisson(np.maximum(10 * (h_true @ cn), 1e-6))
-    h_hf, diag = solve_block_two_stage(counts, cn, 10, return_diagnostics=True)
+    counts = rng.poisson(np.maximum(10 * (h_true @ kmer_pa), 1e-6))
+    h_hf, diag = solve_block_two_stage(counts, kmer_pa, 10, return_diagnostics=True)
     print(f"  unique haplotypes: H={diag['n_unique_haplotypes']} for F={F}")
     print(f"  truth founders: 0-4")
     print(f"  founder 0 lives in haplotype: {f2h[0]}, sharing with: {h2f[f2h[0]][:10]}")

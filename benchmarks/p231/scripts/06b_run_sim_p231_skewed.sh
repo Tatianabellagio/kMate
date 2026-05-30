@@ -13,7 +13,7 @@
 # benchmarks/p231 Phase B' (skewed) -- cov10 sim on the 231 panel with ONE DOMINANT
 # individual (ind001 gets DOMINANT_FRAC% of pool reads). Mirrors benchmarks/p80
 # 06b with the SAME two p231 changes: (1) RANDOM crossovers (no LD-block flag),
-# (2) truth on BOTH arch3 cn_vars (atomized + raw).
+# (2) truth on BOTH arch3 var_pas (atomized + raw).
 #
 # Usage: sbatch 06b_run_sim_p231_skewed.sh N_INDIV N_GEN [SEED=42] [DOMINANT_FRAC=50.0]
 #   for n50_g3_dom500 use: 50 3 42 50.0  (dir tag dom500)
@@ -38,11 +38,11 @@ WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}_hotspots_${DOM_TAG
 mkdir -p $WORK $CTRL/logs
 
 CACTUS_DIR=$CTRL/fastas_231
-FOUNDERS_META=$ROOT/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz
-CN_VAR_ATOM=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz
-CN_VAR_ATOM_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.meta.npz
-CN_VAR_RAW=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz
-CN_VAR_RAW_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz
+FOUNDERS_META=$ROOT/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1.meta.npz
+CN_VAR_ATOM=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.var_pa.npz
+CN_VAR_ATOM_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.meta.npz
+CN_VAR_RAW=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz
+CN_VAR_RAW_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz
 TRUTH=$ROOT/sims/visor_freqk/scripts/compute_recomb_truth.py
 
 for f in "$CACTUS_DIR" "$FOUNDERS_META" "$CN_VAR_ATOM" "$CN_VAR_RAW" "$TRUTH"; do
@@ -98,13 +98,13 @@ print(repr(o), repr(d))
 fi
 echo "[$(date)] reads: $(du -h ${READS_DIR}/r1.fq ${READS_DIR}/r2.fq | tail -2)"
 
-# STAGE 3: truth on BOTH cn_vars, using the SKEWED visor_pool_fractions.tsv
+# STAGE 3: truth on BOTH var_pas, using the SKEWED visor_pool_fractions.tsv
 echo; echo "[$(date)] STAGE 3a: truth ATOMIZED (skewed weights)"
 $PYTHON $TRUTH --ancestry $WORK/ancestry.tsv --weights $WORK/visor_pool_fractions.tsv \
-    --cn-var $CN_VAR_ATOM --cn-var-meta $CN_VAR_ATOM_META --out $WORK/recomb_truth_atomized.tsv.gz
+    --var-pa $CN_VAR_ATOM --var-meta $CN_VAR_ATOM_META --out $WORK/recomb_truth_atomized.tsv.gz
 echo; echo "[$(date)] STAGE 3b: truth RAW (skewed weights)"
 $PYTHON $TRUTH --ancestry $WORK/ancestry.tsv --weights $WORK/visor_pool_fractions.tsv \
-    --cn-var $CN_VAR_RAW --cn-var-meta $CN_VAR_RAW_META --out $WORK/recomb_truth_raw.tsv.gz
+    --var-pa $CN_VAR_RAW --var-meta $CN_VAR_RAW_META --out $WORK/recomb_truth_raw.tsv.gz
 
 echo; echo "[$(date)] DONE -- $WORK"
 ls -lh $WORK/reads/r1.fq $WORK/recomb_truth_atomized.tsv.gz $WORK/recomb_truth_raw.tsv.gz

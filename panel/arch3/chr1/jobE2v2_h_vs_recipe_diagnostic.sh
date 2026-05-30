@@ -12,7 +12,7 @@ mkdir -p logs
 set -euo pipefail
 
 # Fast version of the h-vs-recipe diagnostic — fully vectorized.
-# At each record r, compute mean_h(carriers at r) = (h @ cn_var)[r] / AC[r]
+# At each record r, compute mean_h(carriers at r) = (h @ var_pa)[r] / AC[r]
 # carrier_hbias[r] = mean_h(carriers) / mean(h) - 1
 # Then correlate carrier_hbias with (arch3_af - recipe_af) at outlier records.
 
@@ -24,7 +24,7 @@ import numpy as np
 from scipy.sparse import load_npz
 import json
 
-print('=== Load h + cn_var ===')
+print('=== Load h + var_pa ===')
 h_data = np.load('/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz', allow_pickle=True)
 h = h_data['Chr1'].astype(np.float64)
 h_founders = list(h_data['founders'])
@@ -35,33 +35,33 @@ with open('/global/scratch/users/tbellg/kmate/data/founder_split_cactus_pg.json'
 is_cactus = np.array([str(s) in set(map(str, split['cactus'])) for s in h_founders])
 is_pg = np.array([str(s) in set(map(str, split['PG'])) for s in h_founders])
 
-cn_var = load_npz('cn_var_231_arch3_chr1.cn_var.npz').tocsr()
-cn_var_called = load_npz('cn_var_231_arch3_chr1.cn_var_called.npz').tocsr()
-meta = np.load('cn_var_231_arch3_chr1.meta.npz', allow_pickle=True)
-N = cn_var.shape[1]
-print(f'cn_var: {cn_var.shape}, {cn_var.nnz:,} nnz; {N:,} records')
+var_pa = load_npz('var_pa_231_arch3_chr1.var_pa.npz').tocsr()
+var_called = load_npz('var_pa_231_arch3_chr1.var_called.npz').tocsr()
+meta = np.load('var_pa_231_arch3_chr1.meta.npz', allow_pickle=True)
+N = var_pa.shape[1]
+print(f'var_pa: {var_pa.shape}, {var_pa.nnz:,} nnz; {N:,} records')
 
 # Project both
 h_uni = np.full(F, 1.0/F)
-arch3_n = h @ cn_var          # (N,) — h-weighted carrier sum per record
-arch3_d = h @ cn_var_called   # (N,) — h-weighted called sum per record
-recipe_n = h_uni @ cn_var
-recipe_d = h_uni @ cn_var_called
+arch3_n = h @ var_pa          # (N,) — h-weighted carrier sum per record
+arch3_d = h @ var_called   # (N,) — h-weighted called sum per record
+recipe_n = h_uni @ var_pa
+recipe_d = h_uni @ var_called
 arch3_af  = np.where(arch3_d > 0,  arch3_n  / arch3_d,  np.nan)
 recipe_af = np.where(recipe_d > 0, recipe_n / recipe_d, np.nan)
 
 # Vectorized per-record carrier stats
-ac = np.asarray(cn_var.sum(axis=0)).ravel()    # (N,) carrier count per record
-an = np.asarray(cn_var_called.sum(axis=0)).ravel()  # (N,) called count per record
+ac = np.asarray(var_pa.sum(axis=0)).ravel()    # (N,) carrier count per record
+an = np.asarray(var_called.sum(axis=0)).ravel()  # (N,) called count per record
 mean_h_carriers = np.where(ac > 0, arch3_n / ac, np.nan)
 mean_h_all = h.mean()
 carrier_hbias = mean_h_carriers / mean_h_all - 1.0  # >0: carriers tend to be high-h founders
 
 # Per-class carrier counts (vectorized)
-cn_var_c = cn_var[is_cactus, :]
-cn_var_p = cn_var[~is_cactus, :]
-ac_c = np.asarray(cn_var_c.sum(axis=0)).ravel()
-ac_p = np.asarray(cn_var_p.sum(axis=0)).ravel()
+var_pa_c = var_pa[is_cactus, :]
+var_pa_p = var_pa[~is_cactus, :]
+ac_c = np.asarray(var_pa_c.sum(axis=0)).ravel()
+ac_p = np.asarray(var_pa_p.sum(axis=0)).ravel()
 
 # Outlier mask
 diff = arch3_af - recipe_af

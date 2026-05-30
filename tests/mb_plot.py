@@ -4,16 +4,16 @@ from scipy.sparse import load_npz
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 ROOT=str(Path(__file__).resolve().parents[2])
 CAC=set(map(str,json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))["cactus"]))
-cn=load_npz(f"{ROOT}/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.cn.npz").tocsr()
-meta=np.load(f"{ROOT}/data/cn_full_231_v3qc_v3_filt2/cn_Chr1.meta.npz",allow_pickle=True)
+kmer_pa=load_npz(f"{ROOT}/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1.kmer_pa.npz").tocsr()
+meta=np.load(f"{ROOT}/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1.meta.npz",allow_pickle=True)
 fo=np.asarray(meta["founders"]).astype(str); bid=np.asarray(meta["bubble_id"]).astype(np.int64)
 is_cac=np.array([x in CAC for x in fo])
 m_b=np.bincount(bid)[bid].astype(np.int64)                 # per-kmer bubble size
 # per-bubble size (each bubble once)
 mb_per_bubble=np.bincount(bid)
 # which class carries each k-mer (any founder of that class)
-cac_car=np.asarray(cn[is_cac].sum(0)).flatten()>0
-pg_car =np.asarray(cn[~is_cac].sum(0)).flatten()>0
+cac_car=np.asarray(kmer_pa[is_cac].sum(0)).flatten()>0
+pg_car =np.asarray(kmer_pa[~is_cac].sum(0)).flatten()>0
 fig,ax=plt.subplots(1,2,figsize=(14,5))
 b=np.linspace(0,300,60)
 ax[0].hist(np.clip(mb_per_bubble,0,300),bins=b,color="#555")

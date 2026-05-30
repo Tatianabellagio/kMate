@@ -10,9 +10,9 @@
 #SBATCH --error=logs/07c_mb_%j.err
 
 # =============================================================================
-# benchmarks/p231 front-runner: filt2 cn_full + GLOBAL EM + ω_k=1/m_b, projected
-# through ONE arch3 cn_var arm (atomized | raw). The EM h is identical across
-# arms (same reads, same cn_full); only the projection cn_var differs.
+# benchmarks/p231 front-runner: filt2 kmer_pa + GLOBAL EM + ω_k=1/m_b, projected
+# through ONE arch3 var_pa arm (atomized | raw). The EM h is identical across
+# arms (same reads, same kmer_pa); only the projection var_pa differs.
 #
 # Usage: sbatch 07c_run_kmate_filt2_mb_p231.sh REGIME CNVAR [WEIGHT]
 #   REGIME = n50_g0 n231_g0 n50_g1 n231_g1 n50_g3 n50_g3_dom500
@@ -47,17 +47,17 @@ WORK=$CTRL/sims/$SUBDIR
 READS_DIR=$WORK/reads
 [ -s "$READS_DIR/r1.fq" ] || { echo "ERROR: missing $READS_DIR/r1.fq -- run 06 first" >&2; exit 1; }
 
-# Front-runner cn_full: REBUILT-from-arch3 filt2 (single-source). Falls back to
+# Front-runner kmer_pa: REBUILT-from-arch3 filt2 (single-source). Falls back to
 # production v3qc_v3 filt2 if the rebuilt one is absent.
-CN_KMER_PREFIX=$CTRL/data/cn_full_p231_filt2/cn
-[ -s "${CN_KMER_PREFIX}_Chr1.cn.npz" ] || CN_KMER_PREFIX=$ROOT/data/cn_full_231_v3qc_v3_filt2/cn
+CN_KMER_PREFIX=$CTRL/data/kmer_pa_p231_filt2/kmer_pa
+[ -s "${CN_KMER_PREFIX}_Chr1.kmer_pa.npz" ] || CN_KMER_PREFIX=$ROOT/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa
 
 if [ "$CNVAR" = "atomized" ]; then
-    CN_VAR=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.cn_var.npz
-    CN_VAR_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1_atomized.meta.npz
+    CN_VAR=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.var_pa.npz
+    CN_VAR_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.meta.npz
 else
-    CN_VAR=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz
-    CN_VAR_META=$ROOT/panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz
+    CN_VAR=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz
+    CN_VAR_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz
 fi
 
 WTAG=$([[ "$WEIGHT" == "inv_mb" ]] && echo filt2mb || echo filt2u)
@@ -66,15 +66,15 @@ mkdir -p $OUT_DIR
 SAMPLE=p231_${WTAG}_${CNVAR}_${REGIME}_cov${COV}_s${SEED}
 OUT_TSV=$OUT_DIR/${SAMPLE}.tsv
 
-echo "[$(date)] kMate ${WEIGHT} GLOBAL  regime=$REGIME  cn_var=$CNVAR"
-echo "  cn_full: $CN_KMER_PREFIX"
-echo "  cn_var:  $CN_VAR"
+echo "[$(date)] kMate ${WEIGHT} GLOBAL  regime=$REGIME  var_pa=$CNVAR"
+echo "  kmer_pa: $CN_KMER_PREFIX"
+echo "  var_pa:  $CN_VAR"
 echo "  out:     $OUT_TSV"
 
 $PYTHON -u $DRIVER \
-    --cn-kmer-prefix $CN_KMER_PREFIX \
-    --cn-var $CN_VAR \
-    --cn-var-meta $CN_VAR_META \
+    --kmer-pa-prefix $CN_KMER_PREFIX \
+    --var-pa $CN_VAR \
+    --var-meta $CN_VAR_META \
     --reads $READS_DIR/r1.fq $READS_DIR/r2.fq \
     --sample $SAMPLE \
     --out $OUT_TSV \

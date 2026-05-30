@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Run the 4 focus methods on replicate g0 sims, GLOBAL normalizer.
-For one cn base (filt2 or subsamp): load cn once, then for each sim count reads
+For one kmer_pa base (filt2 or subsamp): load kmer_pa once, then for each sim count reads
 against the base kmer_index and run EM with w in {1, 1/m_b}. Append scored rows.
 Methods: filt2 / fact-w=1/m_b-global (base=filt2); subsampMedian / subsamp+1/m_b-global (base=subsamp)."""
 import sys, os, glob, csv, json, math, time
@@ -15,17 +15,17 @@ base=sys.argv[1]                       # filt2 | subsamp
 sims=sorted(glob.glob(sys.argv[2]))    # sim dirs
 out_tsv=sys.argv[3]
 CAC=set(map(str,json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))["cactus"]))
-CNDIR={"filt2":"cn_full_231_v3qc_v3_filt2","subsamp":"cn_full_231_v3qc_v3_subsampMedian_refilt2"}[base]
+CNDIR={"filt2":"kmer_pa_231_v3qc_v3_filt2","subsamp":"kmer_pa_231_v3qc_v3_subsampMedian_refilt2"}[base]
 NAME={"filt2":{"u":"filt2","mb":"fact w=1/m_b global"},
       "subsamp":{"u":"subsampMedian","mb":"subsamp+1/m_b global"}}[base]
 
-print(f"[{base}] loading cn ...",flush=True)
-cn=load_npz(f"{ROOT}/data/{CNDIR}/cn_Chr1.cn.npz").tocsr()
-meta=np.load(f"{ROOT}/data/{CNDIR}/cn_Chr1.meta.npz",allow_pickle=True)
+print(f"[{base}] loading kmer_pa ...",flush=True)
+kmer_pa=load_npz(f"{ROOT}/data/{CNDIR}/kmer_pa_Chr1.kmer_pa.npz").tocsr()
+meta=np.load(f"{ROOT}/data/{CNDIR}/kmer_pa_Chr1.meta.npz",allow_pickle=True)
 founders=np.asarray(meta["founders"]).astype(str)
 kmer_index=list(np.asarray(meta["kmer_index"]).astype(str))
 bid=np.asarray(meta["bubble_id"]).astype(np.int64); m_b=np.bincount(bid)[bid].astype(np.float64)
-F,K=cn.shape; print(f"  F={F} K={K:,}",flush=True)
+F,K=kmer_pa.shape; print(f"  F={F} K={K:,}",flush=True)
 
 def em_global(cn_nz,counts_nz,omega,max_iter=300,tol=1e-7):
     h=np.full(cn_nz.shape[0],1.0/cn_nz.shape[0],np.float32)
@@ -59,7 +59,7 @@ for sd in sims:
     else:
         t=time.time(); cd=count_kmers_in_fasta([r1,r2],kmer_index,k=31,threads=8,hash_size="3G")
         counts=np.array([cd[km] for km in kmer_index],dtype=np.int64); np.save(cpath,counts)
-    nz=counts>0; cn_nz=np.asarray(cn[:,nz].todense(),np.float32); cnz=counts[nz].astype(np.float32); mbz=m_b[nz]
+    nz=counts>0; cn_nz=np.asarray(kmer_pa[:,nz].todense(),np.float32); cnz=counts[nz].astype(np.float32); mbz=m_b[nz]
     print(f"  {name}: counted nz={nz.sum():,} [{time.time()-t:.0f}s]",flush=True)
     for wkey,om in [("u",np.ones(nz.sum(),np.float32)),("mb",(1.0/mbz).astype(np.float32))]:
         h=em_global(cn_nz,cnz,om); cm,rmse,spur=score(h,th)

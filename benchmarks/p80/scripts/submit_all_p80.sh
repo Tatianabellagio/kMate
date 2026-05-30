@@ -12,8 +12,8 @@
 #         convert-to-biallelic against arch3 biallelic catalog, fill-tags,
 #         drop AC=0, reheader Asm_ID -> Acc_ID
 #         -> canonical pangenome_p80_chr1.vcf.gz (biallelic, 80 samples)
-#   03 -- cn_full_p80 (uses pang_135 PG-index from panel/pangenie_genotyping/data/)
-#   04 -- cn_var_p80
+#   03 -- kmer_pa_p80 (uses pang_135 PG-index from panel/pangenie_genotyping/data/)
+#   04 -- var_pa_p80
 #   05 -- 80 founder consensus FASTAs
 #   06 -- recomb sims for {n50_g1, n50_g3}
 #   07 -- cactus_em {global, star2} per regime
@@ -32,8 +32,8 @@ for f in $A1_ANNOT $A1_BIAL; do
 done
 
 A1=$(sbatch --parsable scripts/01_build_biallelic_p80.sh)
-A3=$(sbatch --dependency=afterok:$A1 --parsable scripts/03_build_cn_full_p80.sh)
-A4=$(sbatch --dependency=afterok:$A1 --parsable scripts/04_build_cn_var_p80.sh)
+A3=$(sbatch --dependency=afterok:$A1 --parsable scripts/03_build_kmer_pa_p80.sh)
+A4=$(sbatch --dependency=afterok:$A1 --parsable scripts/04_build_var_pa_p80.sh)
 A5=$(sbatch --dependency=afterok:$A1 --parsable scripts/05_build_fastas_p80.sh)
 
 B1=$(sbatch --dependency=afterok:$A3:$A4:$A5 --parsable scripts/06_run_sim_p80.sh 50 1)
@@ -54,8 +54,8 @@ C3S=$(sbatch --dependency=afterok:$B3 --parsable scripts/07_run_cactus_em_p80.sh
 cat <<EOF
 Submitted job chain (arch decomposition; A1 reused from panel/arch3/chr1/):
   A1   = $A1     -- subset to 80, convert-to-biallelic, fill-tags, drop AC=0, reheader
-  A3   = $A3     -- cn_full_p80 (uses pang_135 PG-index)
-  A4   = $A4     -- cn_var_p80
+  A3   = $A3     -- kmer_pa_p80 (uses pang_135 PG-index)
+  A4   = $A4     -- var_pa_p80
   A5   = $A5     -- 80 founder FASTAs
   B1   = $B1     -- sim n50_g1
   B3   = $B3     -- sim n50_g3

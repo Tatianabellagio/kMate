@@ -1,5 +1,5 @@
 """
-Genome-wide validation: concatenate per-chromosome cn matrices, count k-mers
+Genome-wide validation: concatenate per-chromosome kmer_pa matrices, count k-mers
 in each pool against the full set, run EM, compare to truth.
 
 Pools:
@@ -42,7 +42,7 @@ def metrics(h_hat, h_true):
 
 
 def load_genomewide_cn():
-    """Concatenate per-chromosome cn matrices (built by 56188)."""
+    """Concatenate per-chromosome kmer_pa matrices (built by 56188)."""
     chroms = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
     cn_blocks = []
     kmer_indices = []
@@ -50,10 +50,10 @@ def load_genomewide_cn():
     bubble_offset = 0
 
     for c in chroms:
-        cn_path = os.path.join(DATA, f"cn_full_{c}.cn.npz")
-        meta_path = os.path.join(DATA, f"cn_full_{c}.meta.npz")
+        cn_path = os.path.join(DATA, f"kmer_pa_{c}.kmer_pa.npz")
+        meta_path = os.path.join(DATA, f"kmer_pa_{c}.meta.npz")
         if not os.path.exists(cn_path):
-            print(f"  WARN: {c} cn missing, skipping")
+            print(f"  WARN: {c} kmer_pa missing, skipping")
             continue
         cn_b = load_npz(cn_path)
         meta = np.load(meta_path, allow_pickle=True)
@@ -62,18 +62,18 @@ def load_genomewide_cn():
         bubble_ids.append(meta["bubble_id"] + bubble_offset)
         n_bubbles = int(meta["bubble_id"].max()) + 1
         bubble_offset += n_bubbles
-        print(f"  {c}: cn shape={cn_b.shape}, bubbles={n_bubbles}, "
+        print(f"  {c}: kmer_pa shape={cn_b.shape}, bubbles={n_bubbles}, "
               f"kmers={cn_b.shape[1]:,}")
 
     if not cn_blocks:
-        raise RuntimeError("No per-chrom cn files found. 56188 may not be done yet.")
+        raise RuntimeError("No per-chrom kmer_pa files found. 56188 may not be done yet.")
 
-    cn_full = hstack(cn_blocks, format="csr")
+    kmer_pa = hstack(cn_blocks, format="csr")
     kmer_index = np.concatenate(kmer_indices)
     bubble_id = np.concatenate(bubble_ids)
-    print(f"\nFull cn shape: {cn_full.shape}, total bubbles: {int(bubble_id.max()) + 1}")
-    return cn_full, kmer_index, bubble_id, np.load(
-        os.path.join(DATA, "cn_full_Chr1.meta.npz"), allow_pickle=True)["founders"]
+    print(f"\nFull kmer_pa shape: {kmer_pa.shape}, total bubbles: {int(bubble_id.max()) + 1}")
+    return kmer_pa, kmer_index, bubble_id, np.load(
+        os.path.join(DATA, "kmer_pa_Chr1.meta.npz"), allow_pickle=True)["founders"]
 
 
 def get_or_count(pool_name, fastqs, kmer_index):
@@ -118,16 +118,16 @@ def main():
     print(f"Genome-wide validation", flush=True)
     print(f"="*72, flush=True)
 
-    cn, kmer_index, bubble_id, founders = load_genomewide_cn()
-    F, K = cn.shape
+    kmer_pa, kmer_index, bubble_id, founders = load_genomewide_cn()
+    F, K = kmer_pa.shape
 
     # Densify and cast to float32 ONCE; reused across all pools. Keeping the
     # int8 alive while EM internally casts to float32 was the source of the
     # 56202 segfault — peak ~2× memory per pool. Now: single 26 GB allocation.
-    print(f"\n[{time.strftime('%H:%M:%S')}] Densifying + casting cn → float32 "
+    print(f"\n[{time.strftime('%H:%M:%S')}] Densifying + casting kmer_pa → float32 "
           f"({F*K*4/1e9:.1f} GB)...", flush=True)
-    cn_f32 = np.asarray(cn.todense()).astype(np.float32)
-    del cn
+    cn_f32 = np.asarray(kmer_pa.todense()).astype(np.float32)
+    del kmer_pa
     gc.collect()
     ac = cn_f32.sum(axis=0)
     print(f"  AC dist: AC=1: {(ac==1).sum():,}  AC 2-4: {((ac>=2)&(ac<=4)).sum():,}  "

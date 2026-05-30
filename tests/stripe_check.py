@@ -1,8 +1,8 @@
 import numpy as np
 from pathlib import Path
 from scipy.sparse import load_npz
-ROOT=str(Path(__file__).resolve().parents[2]); CV=f"{ROOT}/panel/arch3/chr1/cn_var_231_arch3_chr1"
-cn_var=load_npz(f"{CV}.cn_var.npz").tocsc(); cn_called=load_npz(f"{CV}.cn_var_called.npz").tocsc()
+ROOT=str(Path(__file__).resolve().parents[2]); CV=f"{ROOT}/panel/arch3/chr1/var_pa_231_arch3_chr1"
+var_pa=load_npz(f"{CV}.var_pa.npz").tocsc(); cn_called=load_npz(f"{CV}.var_called.npz").tocsc()
 fo=np.asarray(np.load(f"{CV}.meta.npz",allow_pickle=True)["founders"]).astype(str); F=len(fo)
 fidx={f:i for i,f in enumerate(fo)}
 sim="g0_n50_rep101_pg"
@@ -13,7 +13,7 @@ for ln in open(f"{ROOT}/sims/visor_freqk/g0_reps/{sim}/h_truth.tsv"):
 print(f"present founders in pool: {present.sum()}")
 # per-record: # PRESENT founders called, and truth_AF = present_carriers/present_called
 called_present = np.asarray(cn_called[present].sum(axis=0)).flatten()   # of the 50 present, how many called
-carr_present   = np.asarray(cn_var[present].sum(axis=0)).flatten()
+carr_present   = np.asarray(var_pa[present].sum(axis=0)).flatten()
 ncalled_all    = np.asarray(cn_called.sum(axis=0)).flatten()            # of all 231
 valid=called_present>0
 truth=np.where(valid,carr_present/np.maximum(called_present,1),np.nan)

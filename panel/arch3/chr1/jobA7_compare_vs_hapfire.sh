@@ -12,7 +12,7 @@ mkdir -p logs
 set -euo pipefail
 
 # Phase 2 Job A7: compare per-SNP AF on Chr1
-#   NEW = SEEDMIX_S1_arch3_chr1.tsv (A6 output: h_v3 @ cn_var_arch3)
+#   NEW = SEEDMIX_S1_arch3_chr1.tsv (A6 output: h_v3 @ var_pa_arch3)
 #   OLD = /scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.tsv (already-computed v3 panel projection)
 #   HAPFIRE = xwu's production hapFIRE on the 231-panel (greneNet_final_v1.1.recode.vcf).
 #         This is what SEEDMIX_S1_v3_vs_hapfire.ipynb consumes. The contamination_test folder
@@ -70,13 +70,13 @@ print(f'  total OLD records: {len(old):,}')
 old_snp = old[(old.ref_len==1) & (old.alt_len==1)].copy()
 print(f'  SNP-only: {len(old_snp):,}')
 
-# NEW + OLD: do we have ref/alt columns? cn_var meta has them, but A6 only writes ref_len/alt_len.
+# NEW + OLD: do we have ref/alt columns? var_pa meta has them, but A6 only writes ref_len/alt_len.
 # Need to re-load from meta.npz to attach actual REF/ALT bases.
 # CRITICAL: meta['ref']/meta['alt'] are object arrays — DO NOT cast to fixed-width strings
 # via np.array([str(x) for x in ref]), some cactus SV REF alleles are 94kb+ → 925 GiB allocation.
 print()
 print('=== Re-attach REF/ALT bases from meta.npz to NEW ===')
-meta = np.load('cn_var_231_arch3_chr1.meta.npz', allow_pickle=True)
+meta = np.load('var_pa_231_arch3_chr1.meta.npz', allow_pickle=True)
 # Subset to SNPs FIRST using ref_len/alt_len (which are int arrays), then convert just the
 # subset to a list of strings — keeps the 925 GiB monster off the heap.
 meta_ref_len = meta['ref_len']; meta_alt_len = meta['alt_len']
@@ -94,9 +94,9 @@ new_snp['alt'] = [str(x) for x in np.asarray(meta['alt'])[snp_mask]]
 new_snp['chrom_num'] = new_snp['chrom'].astype(str).str.replace('Chr','',regex=False).astype(int)
 print(f'  NEW SNP records w/ REF/ALT: {len(new_snp):,}')
 
-# OLD: meta is at /data/cn_var_231_v3qc_v3.meta.npz
+# OLD: meta is at /data/var_pa_231_v3qc_v3.meta.npz
 print('=== Re-attach REF/ALT bases to OLD ===')
-old_meta_path = '/global/scratch/users/tbellg/kmate/data/cn_var_231_v3qc_v3.meta.npz'
+old_meta_path = '/global/scratch/users/tbellg/kmate/data/var_pa_231_v3qc_v3.meta.npz'
 try:
     om = np.load(old_meta_path, allow_pickle=True)
     om_ref_len = om['ref_len']; om_alt_len = om['alt_len']

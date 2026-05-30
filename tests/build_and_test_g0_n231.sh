@@ -66,7 +66,7 @@ rm -rf $PERFOUNDER
 echo
 echo "=== Run cactus_em filt2 baseline ==="
 $PY -u $ROOT/src/sweep_shape_norm_h_only.py \
-    --cn-prefix $ROOT/data/cn_full_231_v3qc_v3_filt2/cn_Chr1 \
+    --kmer_pa-prefix $ROOT/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1 \
     --reads $SIM_DIR/reads/r1.fq $SIM_DIR/reads/r2.fq \
     --sample g0_n231 \
     --out-prefix $SIM_DIR/filt2_g0_n231 \
@@ -74,9 +74,9 @@ $PY -u $ROOT/src/sweep_shape_norm_h_only.py \
     --counts-cache $SIM_DIR/filt2_g0_n231.counts.npy
 
 echo
-echo "=== Run cactus_em subsamp_raw cn ==="
+echo "=== Run cactus_em subsamp_raw kmer_pa ==="
 $PY -u $ROOT/src/sweep_shape_norm_h_only.py \
-    --cn-prefix $ROOT/data/cn_full_231_v3qc_v3_subsampMedian_refilt2/cn_Chr1 \
+    --kmer_pa-prefix $ROOT/data/kmer_pa_231_v3qc_v3_subsampMedian_refilt2/kmer_pa_Chr1 \
     --reads $SIM_DIR/reads/r1.fq $SIM_DIR/reads/r2.fq \
     --sample g0_n231 \
     --out-prefix $SIM_DIR/subsamp_g0_n231 \

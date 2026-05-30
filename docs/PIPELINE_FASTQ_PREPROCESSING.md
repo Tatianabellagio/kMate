@@ -54,7 +54,7 @@ This matches `panel/pangenie_genotyping/scripts/preprocess_one.sh`.
 
 **Why different params for pool-seq vs ecotype**: xwu's deliberate choice; the 1001G data has lower-quality 3' tails, and SLIDINGWINDOW drops too many reads (4.7% empirically) → loses coverage at edges. Pool-seq data (PCRfreeLucigen) is higher quality, can afford stricter trimming.
 
-**Why this doesn't break apples-to-apples** vs cn_full: cn_full's founder k-mers are **FASTA-derived** (consensus sequences from VCFs), not FASTQ-derived. The trim choice on founder FASTQs only propagates indirectly through PanGenie GT calls for the 151 PG founders. See `memory/project_kmer_pipeline_provenance.md`.
+**Why this doesn't break apples-to-apples** vs kmer_pa: kmer_pa's founder k-mers are **FASTA-derived** (consensus sequences from VCFs), not FASTQ-derived. The trim choice on founder FASTQs only propagates indirectly through PanGenie GT calls for the 151 PG founders. See `memory/project_kmer_pipeline_provenance.md`.
 
 **Tool path**:
 - jar: `/home/tbellagio/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/trimmomatic.jar`
@@ -90,32 +90,32 @@ clumpify.sh in=$TRIM_R1 in2=$TRIM_R2 \
 
 ---
 
-## 3. cn_full rebuild — when it's needed (and when it's not)
+## 3. kmer_pa rebuild — when it's needed (and when it's not)
 
-**cn_full does NOT need to be rebuilt when**:
-- SEEDMIX FASTQs are reprocessed (clumpify dedup added). cn_full is founder-side only.
-- New pool-seq samples are added. cn_full is sample-agnostic.
+**kmer_pa does NOT need to be rebuilt when**:
+- SEEDMIX FASTQs are reprocessed (clumpify dedup added). kmer_pa is founder-side only.
+- New pool-seq samples are added. kmer_pa is sample-agnostic.
 - Trimmomatic params change for pool-seq. Same reason.
 
-**cn_full DOES need to be rebuilt when**:
+**kmer_pa DOES need to be rebuilt when**:
 - The founder panel changes (different ecotypes added/removed).
 - The cactus pangenome graph is rebuilt (different bubble structure → different consensus).
 - The TAIR10 reference changes.
 - The 151 PG founder VCF changes (PanGenie re-genotyped with different reads or different graph).
 - The k-mer size (default 31) changes.
 
-**If cn_full DOES need rebuilding** — example: new founder substituted into PG_153:
+**If kmer_pa DOES need rebuilding** — example: new founder substituted into PG_153:
 1. Re-process that founder's raw FASTQs through `preprocess_one.sh` (ecotype Trimmomatic + clumpify).
 2. Re-run PanGenie genotyping (`panel/pangenie_genotyping/scripts/pangenie_one.sh`) → new per-sample VCF.
 3. Re-merge into the 153-sample PG-panel VCF, then re-merge with cactus_78 (see `scratch/arch3_chr1/jobA1-A4` for current Arch 3 merge pipeline).
-4. Re-run `build_kmer_cn.py` (founder k-mer matrix from VCF + TAIR10 ref) → new cn_full.
-5. Re-run `build_cn_var.py` (founder × variant carrier matrix from biallelic VCF) → new cn_var.
+4. Re-run `build_kmer_pa.py` (founder k-mer matrix from VCF + TAIR10 ref) → new kmer_pa.
+5. Re-run `build_var_pa.py` (founder × variant carrier matrix from biallelic VCF) → new var_pa.
 
 ---
 
 ## 4. Re-running cactus_em SEEDMIX on dedup'd FASTQs
 
-**Goal**: refit `h` vector for each SEEDMIX_S{1..8} using clumpify-dedup'd FASTQs, then re-project against existing cn_var (or new Arch 3 cn_var).
+**Goal**: refit `h` vector for each SEEDMIX_S{1..8} using clumpify-dedup'd FASTQs, then re-project against existing var_pa (or new Arch 3 var_pa).
 
 **Prerequisite**: B1 array (trim+clumpify) complete. Outputs at
 `/home/tbellagio/scratch/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S{N}_{1,2}.dedup.fq.gz`.
@@ -193,13 +193,13 @@ Since the Carnegie-DPB raw share is invisible to compute nodes, our jobB1 (`scra
 | Tier | Path on disk | Trimmomatic? | Clumpify? | Compute-node accessible? | Status |
 |---|---|---|---|---|---|
 | **Raw** (ENA-downloaded or xwu_BAM-derived) | `panel/pangenie_genotyping/data/raw_fastqs/{ECOTYPE}/{RUN}_{1,2}.fastq.gz` (ENA), or `panel/pangenie_genotyping/data/raw_fastqs/{ECOTYPE}/{ECOTYPE}_{1,2}.fastq.gz` (xwu_BAM, lane-concat'd) | NO | NO | YES | Source for `preprocess_one.sh` |
-| **Trim + clumpify-dedup** | `panel/pangenie_genotyping/data/preprocessed/{ECOTYPE}_{1,2}.dedup.fq.gz` | YES (xwu's 1001G config, NO SLIDINGWINDOW) | YES (`dedupe=t dupesubs=0 optical=f`) | YES | What PanGenie consumes via `pangenie_one.sh`; what built the 151-PG-founder VCFs that feed cn_full |
+| **Trim + clumpify-dedup** | `panel/pangenie_genotyping/data/preprocessed/{ECOTYPE}_{1,2}.dedup.fq.gz` | YES (xwu's 1001G config, NO SLIDINGWINDOW) | YES (`dedupe=t dupesubs=0 optical=f`) | YES | What PanGenie consumes via `pangenie_one.sh`; what built the 151-PG-founder VCFs that feed kmer_pa |
 
 The founder pipeline already does trim + clumpify correctly — no fix needed there.
 
 ### Where the two streams meet
 
-- **Founders' k-mers in cn_full**: built FASTA-side from VCFs, NOT directly from these FASTQs. The founder FASTQ → PanGenie → VCF chain produces clean consensus sequences which then get k-merized by `build_kmer_cn.py`. So founder FASTQ trim choices propagate through PanGenie GT calls only (modest effect; PanGenie has internal noise tolerance).
+- **Founders' k-mers in kmer_pa**: built FASTA-side from VCFs, NOT directly from these FASTQs. The founder FASTQ → PanGenie → VCF chain produces clean consensus sequences which then get k-merized by `build_kmer_pa.py`. So founder FASTQ trim choices propagate through PanGenie GT calls only (modest effect; PanGenie has internal noise tolerance).
 - **SEEDMIX k-mers**: counted directly from FASTQs via jellyfish inside `per_sample_per_chrom.py`. SEEDMIX trim/dedup choices directly affect which k-mers enter the EM. This is where clumpify matters most.
 
 ---
@@ -247,7 +247,7 @@ The GrENE-Net evolution pool-seq samples may use PCR-based library prep, in whic
 
 ### What I got right vs wrong
 
-- **Right**: The cn_full FASTA-derived k-mer provenance, the xwu trim-by-data-class split, the lack of SLIDINGWINDOW being intentional for ecotype data.
+- **Right**: The kmer_pa FASTA-derived k-mer provenance, the xwu trim-by-data-class split, the lack of SLIDINGWINDOW being intentional for ecotype data.
 - **Wrong**: Assumed the 35% size delta in `seed_mix_trimmed/dedup/` represented 35% read-count dedup. Should have counted reads first. Sloppy.
 - **The whole "PCR duplicates are inflating SEEDMIX k-mer counts" worry**: false premise; PCR-free libraries don't have meaningful PCR duplicates.
 

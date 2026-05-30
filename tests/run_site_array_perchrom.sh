@@ -23,9 +23,9 @@
 # Optional env:
 #   BLOCK_MODE   — "window" (evolved samples, default) | "global" (F0 pools)
 #   WINDOW_BP    — for window mode, default 200000
-#   CN_PREFIX    — default data/cn_full_231_v2/cn
-#   CN_VAR       — default data/cn_var_231_v2.cn_var.npz
-#   CN_VAR_META  — default data/cn_var_231_v2.meta.npz
+#   CN_PREFIX    — default data/kmer_pa_231_v2/kmer_pa
+#   CN_VAR       — default data/var_pa_231_v2.var_pa.npz
+#   CN_VAR_META  — default data/var_pa_231_v2.meta.npz
 #   CHROMS       — quoted space-separated, default "Chr1 Chr2 Chr3 Chr4 Chr5"
 
 set -uo pipefail
@@ -36,9 +36,9 @@ mkdir -p tests/logs
 : ${OUT_DIR:?Set OUT_DIR to a results subdir}
 BLOCK_MODE=${BLOCK_MODE:-window}
 WINDOW_BP=${WINDOW_BP:-200000}
-CN_PREFIX=${CN_PREFIX:-data/cn_full_231_v2/cn}
-CN_VAR=${CN_VAR:-data/cn_var_231_v2.cn_var.npz}
-CN_VAR_META=${CN_VAR_META:-data/cn_var_231_v2.meta.npz}
+CN_PREFIX=${CN_PREFIX:-data/kmer_pa_231_v2/kmer_pa}
+CN_VAR=${CN_VAR:-data/var_pa_231_v2.var_pa.npz}
+CN_VAR_META=${CN_VAR_META:-data/var_pa_231_v2.meta.npz}
 CHROMS=${CHROMS:-"Chr1 Chr2 Chr3 Chr4 Chr5"}
 
 mkdir -p $OUT_DIR
@@ -58,7 +58,7 @@ fi
 echo "[$(date)] task=${SLURM_ARRAY_TASK_ID}  sample=${SAMPLE}  block_mode=${BLOCK_MODE}"
 echo "  R1: $R1"
 echo "  R2: $R2"
-echo "  cn_prefix: $CN_PREFIX  cn_var: $CN_VAR"
+echo "  kmer_pa_prefix: $CN_PREFIX  var_pa: $CN_VAR"
 
 # Build reads args (handle single FASTQ or paired)
 if [ -n "${R2:-}" ] && [ -s "$R2" ]; then
@@ -73,9 +73,9 @@ if [ "$BLOCK_MODE" = "window" ]; then
 fi
 
 /usr/bin/time -v /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
-    --cn-kmer-prefix $CN_PREFIX \
-    --cn-var $CN_VAR \
-    --cn-var-meta $CN_VAR_META \
+    --kmer-pa-prefix $CN_PREFIX \
+    --var-pa $CN_VAR \
+    --var-meta $CN_VAR_META \
     $READS_ARGS \
     --sample $SAMPLE \
     --out $OUT \

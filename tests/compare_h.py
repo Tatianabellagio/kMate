@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compare EM h estimates (from cn_full built by different k-mer indexes) against
+Compare EM h estimates (from kmer_pa built by different k-mer indexes) against
 the g0 ground-truth founder frequencies.
 
 For each (index variant, sim) the h-only sweep wrote <prefix>.h_sweep.npz with

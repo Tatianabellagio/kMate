@@ -24,7 +24,7 @@ mkdir -p $SIM_BASE $OUT_DIR
 #   n=50:  rep0=cact-heavy (40C+10PG), rep1=balanced (~17C+33PG), rep2=pg-heavy (5C+45PG)
 #   n=200: rep0=random, rep1=random
 #   n=231: rep0=all
-# Each x 2 cn = 18 SLURM tasks (0..17)
+# Each x 2 kmer_pa = 18 SLURM tasks (0..17)
 
 # Pack: [n, rep, n_cactus_or_-1, cn_idx]
 CFG=(
@@ -41,8 +41,8 @@ CFG=(
 IDX=$SLURM_ARRAY_TASK_ID
 read N REP NC CN_IDX <<< "${CFG[$IDX]}"
 
-CNS=(cn_full_231_v3qc_v3_filt2
-     cn_full_231_v3qc_v3_subsampMedian_refilt2)
+CNS=(kmer_pa_231_v3qc_v3_filt2
+     kmer_pa_231_v3qc_v3_subsampMedian_refilt2)
 CN=${CNS[$CN_IDX]}
 [[ $CN == *subsamp* ]] && TAG=subsamp || TAG=filt2
 
@@ -81,7 +81,7 @@ fi
 
 echo "[$(date)] === EM $TAG on $SIM_NAME ==="
 $PY -u $ROOT/src/sweep_shape_norm_h_only.py \
-    --cn-prefix $ROOT/data/$CN/cn_Chr1 \
+    --kmer_pa-prefix $ROOT/data/$CN/kmer_pa_Chr1 \
     --reads $SIM_DIR/reads/r1.fq $SIM_DIR/reads/r2.fq \
     --sample $SIM_NAME \
     --out-prefix $OUT_DIR/${TAG}_${SIM_NAME} \

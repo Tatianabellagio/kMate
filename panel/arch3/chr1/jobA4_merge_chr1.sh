@@ -28,7 +28,7 @@ PG_HAP=pg_153_chr1_haploid.vcf.gz
 
 echo "[$(date)] === Step 1: bcftools merge (both haploid biallelic) ==="
 # --merge none: same-(CHROM,POS,REF,ALT) records combine sample sets; different ALTs become
-# separate biallelic rows. Default would create multi-allelic records which build_cn_var
+# separate biallelic rows. Default would create multi-allelic records which build_var_pa
 # misattributes (stores ALT[0] only but counts any non-zero allele as carrier of ALT[0]).
 MERGED=merged_231_chr1.vcf.gz
 $BCF merge --merge none $CACTUS_HAP $PG_HAP --threads 8 -Oz -o $MERGED

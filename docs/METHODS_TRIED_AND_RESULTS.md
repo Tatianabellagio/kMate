@@ -10,31 +10,31 @@ and complements `RESULTS_LOG.md` (chronological numbers) and `archive/README.md`
 ## 0. Production pipeline (as of 2026-05-27)
 
 kMate (legacy name `cactus_em`): per-sample Poisson k-mer EM on the 231-founder simplex
-→ h → project through cn_var → per-record AF.
+→ h → project through var_pa → per-record AF.
 
-- **EM cn_full (k-mer index):** `cn_full_231_v3qc_v3_filt2` (drop ac=1 singletons). ★
+- **EM kmer_pa (k-mer index):** `kmer_pa_231_v3qc_v3_filt2` (drop ac=1 singletons). ★
 - **EM weighting:** `--kmer-weight inv_mb` (ω_k = 1/m_b, per-bubble de-replication), GLOBAL mode. ★ for the heterogeneous 231 panel — but **panel-conditional** (see §3).
-- **Projection cn_var:** arch3 — `cn_var_231_arch3_chr1_atomized` (SNP-level GEA) + raw `cn_var_231_arch3_chr1` (SNP/indel/SV). ★
+- **Projection var_pa:** arch3 — `var_pa_231_arch3_chr1_atomized` (SNP-level GEA) + raw `var_pa_231_arch3_chr1` (SNP/indel/SV). ★
 - **Canonical VCF:** `panel/arch3/chr1/merged_231_chr1_final.vcf.gz` (v3qc QC: GQ≥20 + 5772/9947 dropped; arch biallelic; unimputed; het→missing).
 - **Driver:** `src/per_sample_per_chrom.py` (`--block-mode global --kmer-weight inv_mb`); solver `src/em_solver.py` (`solve_em(omega=)`).
 
 ---
 
-## 1. cn_full lineage (k-mer copy-number matrix) — what each version was & verdict
+## 1. kmer_pa lineage (k-mer presence/absence matrix $K_{\mathrm{pa}}$) — what each version was & verdict
 
 | Version | What changed | Verdict |
 |---|---|---|
-| `cn_full_231` | v1 first build | ✗ superseded |
-| `cn_full_231_v2` | PanGenie-index-derived k-mers | ✗ superseded (in-house builder replaced PG-index) |
-| `cn_full_231_oursHAP/DIP/CAP2X` | in-house build: haploid / diploid / per-allele-cap-2× experiments | ◯ haploid+cap chosen as the build convention; dirs superseded |
-| `cn_full_231_v3` | in-house `build_kmers_tsv.py`; fixed missing-GT→N handling | ✗ superseded by v3qc |
-| `cn_full_231_v3_filt2/3/5/10` | singleton-threshold sweep (drop ac<2/3/5/10) | ✓ **filt2 (ac≥2) won** the threshold sweep; filt3/5/10 over-prune |
-| `cn_full_231_v3qc` | + QC (GQ≥20, exclude 7 assemblies) | ✗ superseded by v3qc_v3 |
-| `cn_full_231_v3qc_filt2` | v3qc + filt2 | ✗ superseded by v3qc_v3_filt2 |
-| `cn_full_231_v3qc_lowmiss/nomiss` | missingness-threshold builds | ✗ failed/empty builds (512 B) |
-| `cn_full_231_v3qc_v2*` (+ rownorm, mixed*) | v3qc rev2 + row-normalization + mixed-loose/strict/conserv k-mer-set experiments | ✗ all superseded by v3qc_v3 |
-| `cn_full_231_v3qc_v3` | + het→missing masking (May 18); CURRENT base | ✓ base for filt2 |
-| **`cn_full_231_v3qc_v3_filt2`** | v3qc_v3 + drop ac=1 | ★ **front-runner base** |
+| `kmer_pa_231` | v1 first build | ✗ superseded |
+| `kmer_pa_231_v2` | PanGenie-index-derived k-mers | ✗ superseded (in-house builder replaced PG-index) |
+| `kmer_pa_231_oursHAP/DIP/CAP2X` | in-house build: haploid / diploid / per-allele-cap-2× experiments | ◯ haploid+cap chosen as the build convention; dirs superseded |
+| `kmer_pa_231_v3` | in-house `build_kmers_tsv.py`; fixed missing-GT→N handling | ✗ superseded by v3qc |
+| `kmer_pa_231_v3_filt2/3/5/10` | singleton-threshold sweep (drop ac<2/3/5/10) | ✓ **filt2 (ac≥2) won** the threshold sweep; filt3/5/10 over-prune |
+| `kmer_pa_231_v3qc` | + QC (GQ≥20, exclude 7 assemblies) | ✗ superseded by v3qc_v3 |
+| `kmer_pa_231_v3qc_filt2` | v3qc + filt2 | ✗ superseded by v3qc_v3_filt2 |
+| `kmer_pa_231_v3qc_lowmiss/nomiss` | missingness-threshold builds | ✗ failed/empty builds (512 B) |
+| `kmer_pa_231_v3qc_v2*` (+ rownorm, mixed*) | v3qc rev2 + row-normalization + mixed-loose/strict/conserv k-mer-set experiments | ✗ all superseded by v3qc_v3 |
+| `kmer_pa_231_v3qc_v3` | + het→missing masking (May 18); CURRENT base | ✓ base for filt2 |
+| **`kmer_pa_231_v3qc_v3_filt2`** | v3qc_v3 + drop ac=1 | ★ **front-runner base** |
 | `…_v3qc_v3_mixedloose/strict/conserv` | mixed cactus∪PG k-mer-set rules | ✗ lost to filt2 |
 | `…_v3qc_v3_classmatchPG_refilt2` | class-match cactus k-mers to PG count | ✗ lost (see [[project_kmer_imbalance_investigation]]) |
 | `…_v3qc_v3_subsampMedian_refilt2` (+seed1/7/100) | per-AC subsample to panel median | ✗ lost to filt2+1/m_b on AF MAE (over-corrects) |
@@ -75,13 +75,13 @@ byte-identical to the old MLE solver).
 
 ---
 
-## 4. cn_var lineage (variant copy-number for projection)
+## 4. var_pa lineage (variant presence/absence $V_{\mathrm{pa}}$ for projection)
 
 | Version | Verdict |
 |---|---|
-| `cn_var_231_v2` | ✗ Beagle-IMPUTED (incl. SVs) — rejected ([[cn_var_231_v2_is_beagle_imputed]]) |
-| `cn_var_231_v3`, `_v3qc`, `_v3qc_v2` (+OLD_no_called_mask) | ✗ superseded; pre-arch decomposition |
-| **`panel/arch3/chr1/cn_var_231_arch3_chr1`** (raw) | ★ SNP/indel/SV classes (2.62M records) |
+| `var_pa_231_v2` | ✗ Beagle-IMPUTED (incl. SVs) — rejected ([[var_pa_231_v2_is_beagle_imputed]]) |
+| `var_pa_231_v3`, `_v3qc`, `_v3qc_v2` (+OLD_no_called_mask) | ✗ superseded; pre-arch decomposition |
+| **`panel/arch3/chr1/var_pa_231_arch3_chr1`** (raw) | ★ SNP/indel/SV classes (2.62M records) |
 | **`…_arch3_chr1_atomized`** | ★ per-base SNP-level (7.46M); use for SNP GEA |
 
 Arch3 = graph-annotated + `convert-to-biallelic` decomposition; lifted hapFIRE SNP
@@ -124,7 +124,7 @@ See [[feedback_gen0_no_replace_required]] for the full rationale and do-not-revi
 ## 7. Benchmarks
 
 - `benchmarks/p80/` — homogeneous-panel control. filt2 vs filt2+1/m_b A/B, 6 regimes. DONE; results in `benchmarks/p80/results/filt2_mb_vs_uniform_summary.tsv` + notebook.
-- `benchmarks/p231/` — ⋯ **headline 231 benchmark, in progress** (random crossovers; both cn_var arms; cn_full rebuilt from arch3 for single-source). See `benchmarks/p231/README.md`.
+- `benchmarks/p231/` — ⋯ **headline 231 benchmark, in progress** (random crossovers; both var_pa arms; kmer_pa rebuilt from arch3 for single-source). See `benchmarks/p231/README.md`.
 - Prior eval notebooks: `notebooks/FINAL_RESULTS_cov10*.ipynb`, `panel/arch3/chr1/AF_TRUTH_VS_ESTIMATE_arch3_chr1.ipynb`.
 
 ---
@@ -133,16 +133,16 @@ See [[feedback_gen0_no_replace_required]] for the full rationale and do-not-revi
 
 Moved (reversible `mv`) to `archive/`; large data is git-ignored there (on-disk only).
 
-**`archive/cn_full_superseded/` (56 GB, 32 dirs):** every `cn_full_231_*` EXCEPT the
-two kept in place — `cn_full_231_v3qc_v3` (front-runner base) and
-`cn_full_231_v3qc_v3_filt2` (front-runner). Archived: v1, oursCAP2X/DIP/HAP, v2, v3,
+**`archive/kmer_pa_superseded/` (56 GB, 32 dirs):** every `kmer_pa_231_*` EXCEPT the
+two kept in place — `kmer_pa_231_v3qc_v3` (front-runner base) and
+`kmer_pa_231_v3qc_v3_filt2` (front-runner). Archived: v1, oursCAP2X/DIP/HAP, v2, v3,
 v3_filt2/3/5/10, v3qc, v3qc_filt2, v3qc_lowmiss/nomiss, v3qc_v2 (+rownorm/mixed*),
 v3qc_v3_{classmatchPG, filt2_subsampMedian, mixed*, subsampMedian(+seeds),
 subsampProtect1/2(+seeds)}. Verdicts in §1–2.
 
-**`archive/cn_var_superseded/` (3.3 GB):** `cn_var_231_{v2,v3,v3qc,v3qc_v2}*`
-(+ `.OLD_no_called_mask`). Kept: `cn_var_231_v3qc_v3` (data) and the
-production `panel/arch3/chr1/cn_var_231_arch3_chr1*`.
+**`archive/var_pa_superseded/` (3.3 GB):** `var_pa_231_{v2,v3,v3qc,v3qc_v2}*`
+(+ `.OLD_no_called_mask`). Kept: `var_pa_231_v3qc_v3` (data) and the
+production `panel/arch3/chr1/var_pa_231_arch3_chr1*`.
 
 **`archive/fastas_superseded/` (42 GB):** `unimputed_fastas_v3` (pre-QC),
 `founder_fastas_231_v3`, `imputed_fastas_v2_DEPRECATED`. Kept: `unimputed_fastas_v3qc`
@@ -153,6 +153,6 @@ production `panel/arch3/chr1/cn_var_231_arch3_chr1*`.
 `*.v2_imputed_BACKUP / OLD_BUGGY / DELETE_ME / macbad` dirs were DELETED 2026-05-27
 (explicitly stale-marked, current counterparts verified).
 
-**Dangling refs (recoverable):** `scripts/{build_cn_full_*,run_seedmix_*}`
+**Dangling refs (recoverable):** `scripts/{build_kmer_pa_*,run_seedmix_*}`
 for the archived variants now point at archived dirs — they are the build/run scripts of
 the concluded experiments; not archived (kept as records), will fail only if re-run.

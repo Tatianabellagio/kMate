@@ -41,10 +41,10 @@ WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}_hotspots_p80_chr1
 mkdir -p $WORK $CTRL/logs
 
 CACTUS_DIR=$CTRL/fastas_80
-FOUNDERS_META=$CTRL/data/cn_full_p80/cn_Chr1.meta.npz
-CN_KMER_PREFIX=$CTRL/data/cn_full_p80/cn
-CN_VAR=$CTRL/data/cn_var_p80.cn_var.npz
-CN_VAR_META=$CTRL/data/cn_var_p80.meta.npz
+FOUNDERS_META=$CTRL/data/kmer_pa_p80/kmer_pa_Chr1.meta.npz
+CN_KMER_PREFIX=$CTRL/data/kmer_pa_p80/kmer_pa
+CN_VAR=$CTRL/data/var_pa_p80.var_pa.npz
+CN_VAR_META=$CTRL/data/var_pa_p80.meta.npz
 HF_BLOCK_INDEX=/global/scratch/users/tbellg/kmate/sims/visor_freqk/chr1_only_panel/hapfire_block_index_chr1.npz
 
 for f in "$CACTUS_DIR" "$FOUNDERS_META" "$CN_VAR" "$CN_VAR_META" "$HF_BLOCK_INDEX"; do
@@ -149,15 +149,15 @@ fi
 echo "[$(date)] reads: $(du -h ${READS_DIR}/r1.fq ${READS_DIR}/r2.fq | tail -2)"
 
 # -----------------------------------------------------------------------------
-# STAGE 3: truth from ancestry tracks (cn_var_p80)
+# STAGE 3: truth from ancestry tracks (var_pa_p80)
 # -----------------------------------------------------------------------------
 echo
-echo "[$(date)] STAGE 3: per-record truth from ancestry tracks (cn_var_p80)"
+echo "[$(date)] STAGE 3: per-record truth from ancestry tracks (var_pa_p80)"
 $PYTHON /global/scratch/users/tbellg/kmate/sims/visor_freqk/scripts/compute_recomb_truth.py \
     --ancestry $WORK/ancestry.tsv \
     --weights $WORK/pool_weights.tsv \
-    --cn-var $CN_VAR \
-    --cn-var-meta $CN_VAR_META \
+    --var-pa $CN_VAR \
+    --var-meta $CN_VAR_META \
     --out $WORK/recomb_truth.tsv.gz
 
 echo

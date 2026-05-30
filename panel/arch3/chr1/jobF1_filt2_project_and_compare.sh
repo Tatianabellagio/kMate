@@ -11,7 +11,7 @@
 mkdir -p logs
 set -euo pipefail
 
-# Project SEEDMIX_S1 h_filt2 through arch3 atomized cn_var, compare to hapFIRE,
+# Project SEEDMIX_S1 h_filt2 through arch3 atomized var_pa, compare to hapFIRE,
 # and do a 3-way head-to-head: mixedloose vs filt2 vs hapFIRE.
 
 cd /global/scratch/users/tbellg/kmate/panel/arch3/chr1
@@ -19,13 +19,13 @@ PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 H_FILT2=/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_filt2_chr1/SEEDMIX_S1.h_per_chrom.npz
 H_OLD=/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/SEEDMIX_S1.h_per_chrom.npz
-CN_VAR=cn_var_231_arch3_chr1_atomized.cn_var.npz
-CN_VAR_CALLED=cn_var_231_arch3_chr1_atomized.cn_var_called.npz
-CN_VAR_META=cn_var_231_arch3_chr1_atomized.meta.npz
+CN_VAR=var_pa_231_arch3_chr1_atomized.var_pa.npz
+VAR_CALLED=var_pa_231_arch3_chr1_atomized.var_called.npz
+CN_VAR_META=var_pa_231_arch3_chr1_atomized.meta.npz
 HAPFIRE=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt
 HAPFIRE_REFALT=hapfire_chr1_refalt.tsv   # built by D2
 
-for f in $H_FILT2 $H_OLD $CN_VAR $CN_VAR_CALLED $CN_VAR_META $HAPFIRE $HAPFIRE_REFALT; do
+for f in $H_FILT2 $H_OLD $CN_VAR $VAR_CALLED $CN_VAR_META $HAPFIRE $HAPFIRE_REFALT; do
   [ -s "$f" ] || { echo "ERROR: missing $f"; exit 1; }
 done
 
@@ -42,33 +42,33 @@ H_OLD    = '/global/scratch/users/tbellg/kmate/scratch/v3qc_v3_mixedloose_chr1/S
 HAPFIRE  = '/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt'
 HAPFIRE_REFALT = 'hapfire_chr1_refalt.tsv'
 
-print('=== Load cn_var (atomized) ===')
-cn_var        = load_npz('cn_var_231_arch3_chr1_atomized.cn_var.npz').tocsr()
-cn_var_called = load_npz('cn_var_231_arch3_chr1_atomized.cn_var_called.npz').tocsr()
-meta          = np.load('cn_var_231_arch3_chr1_atomized.meta.npz', allow_pickle=True)
+print('=== Load var_pa (atomized) ===')
+var_pa        = load_npz('var_pa_231_arch3_chr1_atomized.var_pa.npz').tocsr()
+var_called = load_npz('var_pa_231_arch3_chr1_atomized.var_called.npz').tocsr()
+meta          = np.load('var_pa_231_arch3_chr1_atomized.meta.npz', allow_pickle=True)
 chrom = meta['chrom']; pos = meta['pos']; ref = meta['ref']; alt = meta['alt']
 cn_founders = [str(x) for x in meta['founders']]
-N = cn_var.shape[1]
-print(f'  cn_var: {cn_var.shape}, {cn_var.nnz:,} nnz')
+N = var_pa.shape[1]
+print(f'  var_pa: {var_pa.shape}, {var_pa.nnz:,} nnz')
 
 def load_h(path, label):
     d = np.load(path, allow_pickle=True)
     h = d['Chr1'].astype(np.float64)
     founders = [str(x) for x in d['founders']]
-    assert founders == cn_founders, f'{label}: founder mismatch vs cn_var'
+    assert founders == cn_founders, f'{label}: founder mismatch vs var_pa'
     return h
 
 h_filt2 = load_h(H_FILT2, 'filt2')
 h_old   = load_h(H_OLD,   'mixedloose')
 
-def project(h, cn_var, cn_var_called):
-    numer = h @ cn_var
-    denom = h @ cn_var_called
+def project(h, var_pa, var_called):
+    numer = h @ var_pa
+    denom = h @ var_called
     return np.where(denom > 0, numer / denom, np.nan)
 
 print('=== Project both h vectors ===')
-af_filt2 = project(h_filt2, cn_var, cn_var_called)
-af_old   = project(h_old,   cn_var, cn_var_called)
+af_filt2 = project(h_filt2, var_pa, var_called)
+af_old   = project(h_old,   var_pa, var_called)
 print(f'  filt2:      AF range [{np.nanmin(af_filt2):.3f}, {np.nanmax(af_filt2):.3f}], NaN={np.isnan(af_filt2).sum():,}')
 print(f'  mixedloose: AF range [{np.nanmin(af_old):.3f}, {np.nanmax(af_old):.3f}], NaN={np.isnan(af_old).sum():,}')
 print(f'  elapsed: {time.time()-t0:.1f}s')

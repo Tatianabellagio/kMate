@@ -3,12 +3,12 @@ from pathlib import Path
 from scipy.sparse import load_npz
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
-ROOT=str(Path(__file__).resolve().parents[2]); CV=f"{ROOT}/panel/arch3/chr1/cn_var_231_arch3_chr1"
-print("loading cn_var...",flush=True)
-cn_var=load_npz(f"{CV}.cn_var.npz").tocsc(); cn_called=load_npz(f"{CV}.cn_var_called.npz").tocsc()
+ROOT=str(Path(__file__).resolve().parents[2]); CV=f"{ROOT}/panel/arch3/chr1/var_pa_231_arch3_chr1"
+print("loading var_pa...",flush=True)
+var_pa=load_npz(f"{CV}.var_pa.npz").tocsc(); cn_called=load_npz(f"{CV}.var_called.npz").tocsc()
 fo=np.asarray(np.load(f"{CV}.meta.npz",allow_pickle=True)["founders"]).astype(str)
 fidx={f:i for i,f in enumerate(fo)}
-def proj(h): return cn_var.T.dot(h), cn_called.T.dot(h)
+def proj(h): return var_pa.T.dot(h), cn_called.T.dot(h)
 def htrue(sim):
     h=np.zeros(len(fo))
     for ln in open(f"{ROOT}/sims/visor_freqk/g0_reps/{sim}/h_truth.tsv"):

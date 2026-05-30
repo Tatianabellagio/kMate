@@ -27,16 +27,16 @@ def main():
     print("Chr1 simulation end-to-end test")
     print("="*70)
 
-    # Load cn
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    # Load kmer_pa
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     kmer_index = meta["kmer_index"]
     bubble_id = meta["bubble_id"]
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    print(f"\n[1] cn matrix: F={F} × K={K:,}")
-    print(f"    AC distribution: median={int(np.median(cn.sum(axis=0)))}  AC=1: {(cn.sum(axis=0)==1).sum():,}")
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    print(f"\n[1] kmer_pa matrix: F={F} × K={K:,}")
+    print(f"    AC distribution: median={int(np.median(kmer_pa.sum(axis=0)))}  AC=1: {(kmer_pa.sum(axis=0)==1).sum():,}")
 
     # Load truth
     truth = pd.read_csv(f"{SIM_PREFIX}_truth.tsv", sep="\t")
@@ -59,9 +59,9 @@ def main():
     print(f"    median nonzero count: {np.median(counts[counts>0]):.1f}, "
           f"max: {counts.max()}")
 
-    # Estimate coverage from total counts: total_count = K * lambda_kmer * mean(cn @ h)
-    # Use the AC distribution as the prior: mean cn^T @ uniform = mean AC / F
-    mean_ac = cn.sum(axis=0).mean()
+    # Estimate coverage from total counts: total_count = K * lambda_kmer * mean(kmer_pa @ h)
+    # Use the AC distribution as the prior: mean kmer_pa^T @ uniform = mean AC / F
+    mean_ac = kmer_pa.sum(axis=0).mean()
     expected_per_kmer = mean_ac / F
     cov_kmer_est = counts.mean() / expected_per_kmer
     print(f"    coverage estimate from data: {cov_kmer_est:.1f}×")
@@ -69,7 +69,7 @@ def main():
     # ============== Variant A: WLS, no ω ==============
     print(f"\n[4A] WLS, ω=0 (baseline)")
     t0 = time.time()
-    h_a, obj = solve_block_wls(counts, cn, coverage=cov_kmer_est)
+    h_a, obj = solve_block_wls(counts, kmer_pa, coverage=cov_kmer_est)
     print(f"    [took {time.time()-t0:.0f}s, obj={obj:.0f}]")
     r_a = np.corrcoef(h_a, h_true)[0, 1]
     err_a = np.linalg.norm(h_a - h_true)
@@ -84,9 +84,9 @@ def main():
     omega = np.zeros(K)
     h_b = np.full(F, 1.0/F)
     for outer in range(3):
-        h_b, _ = solve_block_wls(counts, cn, coverage=cov_kmer_est, omega=omega)
-        # Estimate omega: counts - cov*cn.T@h, clipped at 0
-        residual = counts - cov_kmer_est * (cn.T @ h_b)
+        h_b, _ = solve_block_wls(counts, kmer_pa, coverage=cov_kmer_est, omega=omega)
+        # Estimate omega: counts - cov*kmer_pa.T@h, clipped at 0
+        residual = counts - cov_kmer_est * (kmer_pa.T @ h_b)
         omega = np.maximum(0, residual / cov_kmer_est)
         # only count nonzero contamination
         n_contam = (omega > 0.5).sum()
@@ -100,7 +100,7 @@ def main():
     best_r = 0
     for scale in cov_scales:
         cov_try = cov_kmer_est * scale
-        h_c, obj_c = solve_block_wls(counts, cn, coverage=cov_try)
+        h_c, obj_c = solve_block_wls(counts, kmer_pa, coverage=cov_try)
         r_c = np.corrcoef(h_c, h_true)[0, 1]
         if r_c > best_r:
             best_r = r_c
@@ -120,7 +120,7 @@ def main():
     for b in range(sub_block.max() + 1):
         mask = sub_block == b
         if mask.sum() < F: continue  # skip blocks with fewer kmers than founders
-        h_b_sub, _ = solve_block_wls(counts[mask], cn[:, mask], coverage=cov_kmer_est)
+        h_b_sub, _ = solve_block_wls(counts[mask], kmer_pa[:, mask], coverage=cov_kmer_est)
         h_d_per_block.append(h_b_sub)
     h_d = np.mean(h_d_per_block, axis=0)
     h_d = h_d / h_d.sum()  # renormalize

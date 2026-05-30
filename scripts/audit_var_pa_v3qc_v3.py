@@ -1,13 +1,13 @@
-"""Audit cn_var / cn_var_called consistency vs the haploid VCF F_MISSING.
+"""Audit var_pa / var_called consistency vs the haploid VCF F_MISSING.
 
-Hypothesis (Mechanism 3): cn_var_called over-counts non-missing cells, so
-projection denominator (h @ cn_var_called) is inflated and AF cactus_em
+Hypothesis (Mechanism 3): var_called over-counts non-missing cells, so
+projection denominator (h @ var_called) is inflated and AF cactus_em
 pulled toward zero.
 
 Diagnostics:
-  1. Per-record nnz of cn_var_called (= called founders).
+  1. Per-record nnz of var_called (= called founders).
   2. Compare to VCF F_MISSING (231 - F_MISSING*231) for a Chr1 sample.
-  3. Identity check: nnz(cn_var) <= nnz(cn_var_called) per record.
+  3. Identity check: nnz(var_pa) <= nnz(var_called) per record.
   4. Sanity: are any GT codings being silently mapped to ALT or to "called"?
 """
 from __future__ import annotations
@@ -19,9 +19,9 @@ import sys, time, os
 
 OUT_DIR = "/tmp"
 BASE = str(Path(__file__).resolve().parents[2])
-CV   = f"{BASE}/data/cn_var_231_v3qc_v3.cn_var.npz"
-CVC  = f"{BASE}/data/cn_var_231_v3qc_v3.cn_var_called.npz"
-META = f"{BASE}/data/cn_var_231_v3qc_v3.meta.npz"
+CV   = f"{BASE}/data/var_pa_231_v3qc_v3.var_pa.npz"
+CVC  = f"{BASE}/data/var_pa_231_v3qc_v3.var_called.npz"
+META = f"{BASE}/data/var_pa_231_v3qc_v3.meta.npz"
 VCF  = f"{BASE}/panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz"
 
 t0 = time.time()
@@ -48,12 +48,12 @@ ac = col_nnz_from_csr(CV, N)
 an = col_nnz_from_csr(CVC, N)
 print(f"[{time.time()-t0:6.0f}s] AC/AN computed", flush=True)
 
-print("\n--- AC (cn_var per-record nnz) ---")
+print("\n--- AC (var_pa per-record nnz) ---")
 print(f"  min {ac.min()}  max {ac.max()}  median {int(np.median(ac))}")
 print(f"  AC==0    : {(ac==0).sum():,}   (after AC=0 cleanup; expect 0)")
 print(f"  AC==F    : {(ac==F).sum():,}   (fixed-ALT records)")
 
-print("\n--- AN (cn_var_called per-record nnz = 2*(1-F_MISSING)*F for haploid F-counts) ---")
+print("\n--- AN (var_called per-record nnz = 2*(1-F_MISSING)*F for haploid F-counts) ---")
 print(f"  min {an.min()}  max {an.max()}  median {int(np.median(an))}")
 print(f"  AN==F    : {(an==F).sum():,}  ({100*(an==F).sum()/N:.2f}%)  -- no missing")
 print(f"  AN==0    : {(an==0).sum():,}")
@@ -62,7 +62,7 @@ for p in [1,5,25,50,75,95,99]:
     print(f"  AN p{p:>2} : {np.percentile(an, p):.0f}")
 
 fm = 1.0 - an/F
-print("\n--- F_MISSING (= 1 - AN/F) implied by cn_var_called ---")
+print("\n--- F_MISSING (= 1 - AN/F) implied by var_called ---")
 bins = [(-1e-9, 0.0001), (0.0001, 0.05), (0.05, 0.1), (0.1, 0.2),
         (0.2, 0.5), (0.5, 0.8), (0.8, 1.01)]
 for lo, hi in bins:
@@ -82,7 +82,7 @@ pos_arr   = np.asarray(meta['pos']).astype(np.int64)
 print(f"  meta chrom unique: {sorted(set(chrom_arr.tolist()))[:10]}")
 
 # Step 3: re-read VCF, compute per-record AN_vcf for first N_CHECK records and
-#         compare to AN-from-cn_var_called.
+#         compare to AN-from-var_called.
 N_CHECK = 100000
 print(f"\n[{time.time()-t0:6.0f}s] re-reading VCF Chr1 (first {N_CHECK} records) to check AN", flush=True)
 vcf = pysam.VariantFile(VCF)
@@ -143,12 +143,12 @@ vcf_ac_m = vcf_ac[:matched]
 
 an_diff = an_cnvar - vcf_an_m
 ac_diff = ac_cnvar - vcf_ac_m
-print(f"\n--- AN  (cn_var_called)  vs  AN_vcf  on Chr1 first {matched} records ---")
-print(f"  AN     mean: cn_var={an_cnvar.mean():.3f}  vcf={vcf_an_m.mean():.3f}")
+print(f"\n--- AN  (var_called)  vs  AN_vcf  on Chr1 first {matched} records ---")
+print(f"  AN     mean: var_pa={an_cnvar.mean():.3f}  vcf={vcf_an_m.mean():.3f}")
 print(f"  AN diff: nonzero records {(an_diff!=0).sum()} / {matched}")
 print(f"  AN diff: min {an_diff.min()}  max {an_diff.max()}  mean {an_diff.mean():.4f}")
-print(f"\n--- AC  (cn_var)         vs  AC_vcf ---")
-print(f"  AC     mean: cn_var={ac_cnvar.mean():.3f}  vcf={vcf_ac_m.mean():.3f}")
+print(f"\n--- AC  (var_pa)         vs  AC_vcf ---")
+print(f"  AC     mean: var_pa={ac_cnvar.mean():.3f}  vcf={vcf_ac_m.mean():.3f}")
 print(f"  AC diff: nonzero records {(ac_diff!=0).sum()} / {matched}")
 print(f"  AC diff: min {ac_diff.min()}  max {ac_diff.max()}  mean {ac_diff.mean():.4f}")
 
@@ -170,8 +170,8 @@ for lo, hi in bins:
         label = f'{lo:.4f} < F <= {hi:.4f}'
     print(f"  {label:32s}: {m_.sum():>10,}  ({100*m_.sum()/matched:.2f}%)")
 
-np.savez(f"{OUT_DIR}/cn_var_v3qc_v3_audit.npz",
+np.savez(f"{OUT_DIR}/var_pa_v3qc_v3_audit.npz",
          ac=ac, an=an,
          vcf_an_chr1_first=vcf_an_m, vcf_ac_chr1_first=vcf_ac_m,
          cnvar_an_chr1_first=an_cnvar, cnvar_ac_chr1_first=ac_cnvar)
-print(f"\n[{time.time()-t0:6.0f}s] saved {OUT_DIR}/cn_var_v3qc_v3_audit.npz")
+print(f"\n[{time.time()-t0:6.0f}s] saved {OUT_DIR}/var_pa_v3qc_v3_audit.npz")

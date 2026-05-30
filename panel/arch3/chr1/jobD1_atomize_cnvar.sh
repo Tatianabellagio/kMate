@@ -11,7 +11,7 @@
 mkdir -p logs
 set -euo pipefail
 
-# Build atomized cn_var from the merged Arch 3 chr1 biallelic VCF.
+# Build atomized var_pa from the merged Arch 3 chr1 biallelic VCF.
 # Each output row is a single-base substitution (pos, ref_base, alt_base) with
 # carriers UNIONed across all source records that imply it. MNPs and overlapping
 # region of INS/DEL contribute; pure INS/DEL beyond the alignment overlap do not.
@@ -19,12 +19,12 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate/panel/arch3/chr1
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 VCF=merged_231_chr1_final.vcf.gz
-OUT_PREFIX=cn_var_231_arch3_chr1_atomized
+OUT_PREFIX=var_pa_231_arch3_chr1_atomized
 
 [ -s "$VCF" ] || { echo "ERROR: missing $VCF"; exit 1; }
 
-echo "[$(date)] === atomize cn_var from $VCF ==="
-$PY -u build_cn_var_atomized.py --vcf "$VCF" --out "$OUT_PREFIX"
+echo "[$(date)] === atomize var_pa from $VCF ==="
+$PY -u build_var_pa_atomized.py --vcf "$VCF" --out "$OUT_PREFIX"
 echo
 ls -lh ${OUT_PREFIX}.*
 echo "[$(date)] DONE D1"

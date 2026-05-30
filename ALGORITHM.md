@@ -7,8 +7,8 @@ below has been cross-checked against the production code; references are
 
 Code-verified against:
 - `src/em_solver.py` — EM core
-- `src/build_kmer_cn.py` — cn_full builder
-- `src/build_cn_var.py` — cn_var + cn_var_called builder
+- `src/build_kmer_pa.py` — kmer_pa builder
+- `src/build_var_pa.py` — var_pa + var_called builder
 - `src/per_sample_per_chrom.py` — production per-sample driver
 - `src/block_em.py` — per-window / per-block EM
 - `src/kmer_count.py` — jellyfish wrapper
@@ -17,13 +17,13 @@ Last verified: 2026-05-27.
 
 > **Note (2026-05-26 cleanup):** the estimator was reduced to two modes,
 > `global` and `window`; LD-block modes, overlapping windows, the older k-mer
-> rebalancing (`--row-normalize-cn`, see §8.1), carrier-weighting (§8.2) and
+> rebalancing (`--row-normalize-kmer_pa`, see §8.1), carrier-weighting (§8.2) and
 > contamination-ω (§8.4) were archived to `src/archive/`. §7–§8 below
 > are updated, but the inline `file:line` references elsewhere predate the
 > cleanup and may have shifted. The authoritative file list and invocation
 > recipes now live in `src/README.md`.
 >
-> **Note (2026-05-27 production decision):** the cn_full singleton filter
+> **Note (2026-05-27 production decision):** the kmer_pa singleton filter
 > `filt2` (drop k-mers with column-sum < 2; §2.1) and the per-k-mer EM weight
 > $\omega_k = 1/m_b$ (per-bubble de-replication; §4.2) are now production
 > defaults on the heterogeneous 231-founder panel. Both are documented inline
@@ -50,13 +50,27 @@ covering SNPs, short indels, and SVs $\geq 50$ bp.
 
 ## 2. Precomputed panel matrices
 
-Three sparse $F \times \cdot$ indicator matrices are built once per panel:
+Three sparse $F \times \cdot$ binary **presence/absence (incidence)** matrices are
+built once per panel. Each entry is a 0/1 indicator (the panel is haploid, so
+these are membership flags, **not** integer copy numbers).
 
-### 2.1 `cn` — founder × k-mer (the EM evidence)
+**Notation ↔ implementation map.** The math symbols below are the paper/algorithm
+names; the code variables, on-disk file/dir names, and CLI flags now use the same
+presence/absence nomenclature throughout (the legacy `cn`/`cn_var`/`cn_full` names
+were fully renamed — see `scripts/rename_cn_to_kmer_pa.py`). Use this table to bridge
+the math symbols to the implementation:
 
-$$\mathrm{cn} \in \{0,1\}^{F \times K}, \quad \mathrm{cn}_{f,k} = \mathbb{1}[\text{founder } f \text{ carries panel k-mer } k]$$
+| symbol | shape | what it is | code var | on-disk / CLI |
+|---|---|---|---|---|
+| $K_{\mathrm{pa}}$ | $F\times K$ | founder × k-mer presence/absence | `kmer_pa` | dir `kmer_pa_*`, suffix `.kmer_pa`, flag `--kmer-pa-prefix` |
+| $V_{\mathrm{pa}}$ | $F\times R$ | founder × variant alt-allele presence | `var_pa` | suffix `.var_pa.npz`, flag `--var-pa` |
+| $V_{\mathrm{called}}$ | $F\times R$ | founder × variant genotype-call mask | `var_called` | suffix `.var_called.npz`, flag `--var-called` |
 
-Built per-chromosome by `build_kmer_cn.py:96-230` from PanGenie's bubble-level
+### 2.1 $K_{\mathrm{pa}}$ (`kmer_pa`) — founder × k-mer presence/absence (the EM evidence)
+
+$$K_{\mathrm{pa}} \in \{0,1\}^{F \times K}, \quad (K_{\mathrm{pa}})_{f,k} = \mathbb{1}[\text{founder } f \text{ carries panel k-mer } k]$$
+
+Built per-chromosome by `build_kmer_pa.py:96-230` from PanGenie's bubble-level
 k-mer index (`kmers.tsv.gz`), the panel VCF, and the reference FASTA. For each
 PanGenie bubble:
 
@@ -66,61 +80,91 @@ PanGenie bubble:
    We inherit those filters.
 2. For each founder, we reconstruct their haplotype across the bubble by
    applying their genotype to the reference (`reconstruct_haplotype`,
-   `build_kmer_cn.py:45-76`).
+   `build_kmer_pa.py:45-76`).
 3. We compute the canonical k-mer set of the reconstructed haplotype
-   (`canonical_kmer_set`, `build_kmer_cn.py:34-42`). A canonical k-mer is the
+   (`canonical_kmer_set`, `build_kmer_pa.py:34-42`). A canonical k-mer is the
    lexicographically smaller of $(k, \text{revcomp}(k))$; k-mers containing N
    are skipped.
-4. $\mathrm{cn}_{f,k} = 1$ iff the bubble's k-mer $k$ is in founder $f$'s
+4. $(K_{\mathrm{pa}})_{f,k} = 1$ iff the bubble's k-mer $k$ is in founder $f$'s
    canonical k-mer set.
 
-**Haploid panel input.** The panel VCF that feeds both `cn` and `cn_var` is
+**Haploid panel input.** The panel VCF that feeds both $K_{\mathrm{pa}}$ and $V_{\mathrm{pa}}$ is
 *pre-haploidized* (e.g. `panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz`):
 each GT field contains a single allele, `0`, `1`, ..., or `.`. PanGenie outputs
 diploid GTs for the 153 short-read–genotyped founders, which we haploidize
 before merging with the 78 long-read–assembled cactus founders, so the resulting
 231-founder panel is entirely haploid. Under pysam this surfaces as
-single-element tuples (`(0,)`, `(1,)`, `(None,)`); `build_kmer_cn.py:189-194`
+single-element tuples (`(0,)`, `(1,)`, `(None,)`); `build_kmer_pa.py:189-194`
 reads `gt[0]`, which is the only allele.
 
-**Missing-GT handling (`build_kmer_cn.py:189-194`):** controlled by
-`--treat-missing-as-n`. Production `cn_full_v3qc_v3` was built with
-`treat_missing_as_n=False`, i.e. `./.` → REF in the reconstructed haplotype.
-The earlier `v3qc_v2` build with `treat_missing_as_n=True` over-inflated
-private-k-mer ratios via N-poisoning of short bubbles and is archived.
+**Missing-GT handling (`build_kmer_pa.py:189-204`):** controlled by
+`--treat-missing-as-n`. Production `kmer_pa_v3qc_v3` was built with
+`treat_missing_as_n=True`: `./.` → N over the variant's REF span, so every k-mer
+overlapping that span is dropped from that founder's reconstructed haplotype (the
+founder gets neither REF nor ALT credit at the missing site). The `./.` → REF
+alternative is **deliberately rejected** — imputing reference from a low-quality
+no-call fabricates a confident genotype and biases the panel toward REF.
+**Verified 2026-05-29:** *both* `v3qc_v2` and `v3qc_v3` were built N-on (build
+scripts pass `--treat-missing-as-n`; build logs print
+`--treat-missing-as-n ON: ./. → N`), and **no N-off production build exists on
+disk** — the previous claim here that v3qc_v3 was N-off was incorrect. It was
+hypothesized that N-on *causes* the cactus/PG private-k-mer imbalance (PG SV
+missingness → dropped PG k-mers → cactus-skewed survivors). **Tested and rejected
+2026-05-29** (`notebooks/MISSINGNESS_CAUSES_IMBALANCE.ipynb`,
+`scripts/run_missingness_test.py`): in *fully-called* bubbles — where N-on ≡ N-off,
+so missingness cannot contribute — the Chr1 private ratio is **16.5×**, *higher*
+than the all-bubble 15.5×, and the ratio is flat across PG-missingness strata
+(16.3× at 0% → 15.3× at >40%). The imbalance is **real biology** (long-read cactus
+assemblies realize ~16× more private k-mers/founder than short-read PG-genotyped
+founders, which snap onto common graph paths and cannot call truly-private
+alleles), not a missingness artifact. See §10 M3.
 
-**Production singleton filter — `filt2` (`build_cn_full_filt2_v3qc_v3_chr1.sh`).**
-After building $\mathrm{cn}$, the production matrix drops every k-mer column
-$k$ with allele-count $a_k = \sum_f \mathrm{cn}_{f,k} = 1$ (so-called
-*singletons* — k-mers carried by a single founder). The retained matrix is
+**Production column filter (`build_kmer_pa.py --filter-production`, applied at
+generation).** The production kmer_pa is written *already filtered*: a k-mer
+column $k$ with allele-count $a_k = \sum_f (K_{\mathrm{pa}})_{f,k}$ is kept iff
 
-$$\mathrm{cn}^{\text{filt2}} = \mathrm{cn}_{:,\,\{k\,:\,a_k \geq 2\}}.$$
+$$K_{\mathrm{pa}}^{\text{prod}} = (K_{\mathrm{pa}})_{:,\,\{k\,:\,2 \,\leq\, a_k \,\leq\, F-1\}}.$$
 
-Rationale: singletons over-represent founder-private sequencing errors and
-private repeats that survive PanGenie's in-bubble dedup, and they contribute
-zero discrimination across founders. The threshold sweep (drop $a_k < 2$, $3$,
-$5$, $10$) found that **filt2 is the optimum**: filt3/5/10 over-prune real
-signal (`docs/METHODS_TRIED_AND_RESULTS.md` §1). The production cn_full referenced
-elsewhere in this document is `cn_full_231_v3qc_v3_filt2`; all `cn` references
-in §3–§4 implicitly use the filt2-filtered matrix.
+This drops three useless classes in one cut:
+- $a_k = 0$ — **dead**: tag k-mers for alleles no panel founder realizes (the
+  pang_135-graph-vs-231-panel mismatch; ~22% of raw columns). $\mu_k=0$, never
+  matched, zero contribution.
+- $a_k = 1$ — **private singletons** (the original *filt2* rule): over-represent
+  founder-private sequencing errors / private repeats surviving PanGenie's
+  in-bubble dedup, zero cross-founder discrimination. The threshold sweep (drop
+  $a_k<2,3,5,10$) found $a_k\!\geq\!2$ optimal; filt3/5/10 over-prune
+  (`docs/METHODS_TRIED_AND_RESULTS.md` §1).
+- $a_k = F$ — **invariant**: carried by every founder (monomorphic in panel).
+  $\mu_k=\sum_f h_f\cdot 1=1$ for all $h$, so it adds an identical constant to
+  every founder's M-step term — a useless mild dilution toward the current $h$.
+  Upper bound added 2026-05-29.
 
-### 2.2 `cn_var` — founder × variant (the projection target)
+On Chr1 (raw 22,673,541 columns) the filter drops 5,057,036 dead + 6,465,089
+private + 216,980 invariant → **10,934,436 kept (48.2%)**. The keep rule is the
+single source of truth `filter_kmer_pa_production.production_keep_mask`; it is applied
+in-line by the production builder `build_kmer_pa_production_v3qc_v3.sh`
+(`--filter-production`), and `filter_kmer_pa_production.py` applies the same rule to a
+pre-built matrix. The production matrix is **`kmer_pa_231_v3qc_v3_filt2inv`**
+(supersedes the older `_filt2`, which lacked the invariant cut); all $K_{\mathrm{pa}}$
+references in §3–§4 use it.
 
-$$\mathrm{cn}_{\text{var}} \in \{0,1\}^{F \times R}, \quad \mathrm{cn}_{\text{var},f,r} = \mathbb{1}[\text{any allele of founder } f \text{'s GT at } r \text{ is alt}]$$
+### 2.2 $V_{\mathrm{pa}}$ (`var_pa`) — founder × variant alt-allele presence (the projection target)
 
-Built by `build_cn_var.py:30-109` from the same haploid biallelic-decomposed
-panel VCF used for `cn`, processed with `bcftools norm -m -`. A founder is
+$$V_{\mathrm{pa}} \in \{0,1\}^{F \times R}, \quad (V_{\mathrm{pa}})_{f,r} = \mathbb{1}[\text{any allele of founder } f \text{'s GT at } r \text{ is alt}]$$
+
+Built by `build_var_pa.py:30-109` from the same haploid biallelic-decomposed
+panel VCF used for $K_{\mathrm{pa}}$, processed with `bcftools norm -m -`. A founder is
 marked as an alt-carrier iff any allele in its GT field is non-zero
-(`build_cn_var.py:68`: `any(a is not None and a > 0 for a in gt)`). On a
+(`build_var_pa.py:68`: `any(a is not None and a > 0 for a in gt)`). On a
 haploid GT (`(0,)`, `(1,)`, ...) this is equivalent to checking `gt[0] > 0`,
-so the alt-carrier definitions in `cn` and `cn_var` agree exactly under the
+so the alt-carrier definitions in $K_{\mathrm{pa}}$ and $V_{\mathrm{pa}}$ agree exactly under the
 production panel.
 
-### 2.3 `cn_var_called` — founder × variant (the call mask)
+### 2.3 $V_{\mathrm{called}}$ (`var_called`) — founder × variant call mask
 
-$$\mathrm{cn}_{\text{var\_called}} \in \{0,1\}^{F \times R}, \quad \mathrm{cn}_{\text{var\_called},f,r} = \mathbb{1}[\text{founder } f \text{'s GT at } r \text{ is NOT } ./.]$$
+$$V_{\mathrm{called}} \in \{0,1\}^{F \times R}, \quad (V_{\mathrm{called}})_{f,r} = \mathbb{1}[\text{founder } f \text{'s GT at } r \text{ is NOT } ./.]$$
 
-Built alongside `cn_var` (`build_cn_var.py:62-66`). This call mask is **critical
+Built alongside $V_{\mathrm{pa}}$ (`build_var_pa.py:62-66`). This call mask is **critical
 for the AF projection** in §6 — without it, `./.` cells get silently treated as
 REF, which under-counts AF at records with high `F_MISSING` (up to 0.66 on
 cactus-only or PG-only records after the cactus-78 + PG-153 merge).
@@ -138,7 +182,7 @@ must handle that for non-PCR-free libraries).
 Let $c_k \in \mathbb{Z}_{\geq 0}$ be the observed canonical-k-mer count and
 $\mathbf{h} \in \Delta^{F-1}$ the latent founder mixture. We model
 
-$$\boxed{\; c_k \;\sim\; \mathrm{Poisson}\!\left(\lambda \cdot \mu_k(\mathbf{h})\right), \qquad \mu_k(\mathbf{h}) = \sum_{f=1}^F h_f \, \mathrm{cn}_{f,k} \;}$$
+$$\boxed{\; c_k \;\sim\; \mathrm{Poisson}\!\left(\lambda \cdot \mu_k(\mathbf{h})\right), \qquad \mu_k(\mathbf{h}) = \sum_{f=1}^F h_f \, (K_{\mathrm{pa}})_{f,k} \;}$$
 
 as conditionally independent across $k$, with simplex constraint
 $h_f \geq 0$, $\sum_f h_f = 1$.
@@ -162,7 +206,7 @@ in §4.2.
 **Coverage estimate $\lambda$.** Reported at load time as a sanity-check value
 (`per_sample_per_chrom.py:104-106`):
 
-$$\hat{\lambda} \;=\; \frac{F \cdot \sum_k c_k}{\sum_{f,k} \mathrm{cn}_{f,k}}$$
+$$\hat{\lambda} \;=\; \frac{F \cdot \sum_k c_k}{\sum_{f,k} (K_{\mathrm{pa}})_{f,k}}$$
 
 (total counts $\times$ $F$ divided by total founder–k-mer carrier entries;
 assumes uniform $h$). **$\lambda$ cancels in the M-step ratio (§4) and is not
@@ -174,17 +218,17 @@ consumed by the EM** — the value is logged for inspection only.
 
 Treat each unit of count at k-mer $k$ as a latent draw from one of the
 founders carrying $k$. Let $z_{k,f}$ be the (unobserved) count attributed to
-founder $f$, with $z_{k,f} = 0$ if $\mathrm{cn}_{f,k} = 0$ and
+founder $f$, with $z_{k,f} = 0$ if $(K_{\mathrm{pa}})_{f,k} = 0$ and
 $\sum_f z_{k,f} = c_k$.
 
 **E-step.** Given current $\mathbf{h}^{(t)}$:
 
-$$\mathbb{E}\!\left[z_{k,f} \mid c_k, \mathbf{h}^{(t)}\right] \;=\; c_k \cdot \frac{h_f^{(t)} \, \mathrm{cn}_{f,k}}{\mu_k(\mathbf{h}^{(t)})}$$
+$$\mathbb{E}\!\left[z_{k,f} \mid c_k, \mathbf{h}^{(t)}\right] \;=\; c_k \cdot \frac{h_f^{(t)} \, (K_{\mathrm{pa}})_{f,k}}{\mu_k(\mathbf{h}^{(t)})}$$
 
 **M-step (weighted form, production).** Constrained MLE on the simplex under
 the weighted likelihood of §3:
 
-$$\boxed{\; h_f^{(t+1)} \;\propto\; h_f^{(t)} \cdot \sum_{k=1}^K \mathrm{cn}_{f,k} \cdot \frac{\omega_k\, c_k}{\mu_k(\mathbf{h}^{(t)})} \;}$$
+$$\boxed{\; h_f^{(t+1)} \;\propto\; h_f^{(t)} \cdot \sum_{k=1}^K (K_{\mathrm{pa}})_{f,k} \cdot \frac{\omega_k\, c_k}{\mu_k(\mathbf{h}^{(t)})} \;}$$
 
 followed by L1 renormalization $\sum_f h_f^{(t+1)} = 1$. The coverage $\lambda$
 cancels. Setting $\omega_k \equiv 1$ recovers the unweighted Poisson MLE
@@ -195,9 +239,9 @@ Vectorized implementation (`em_solver.py:80-110`):
 
 ```python
 wc      = counts if omega is None else (omega * counts)  # ω_k · c_k
-denom   = np.maximum(h @ cn, 1e-7)   # μ_k(h), with numerical floor
+denom   = np.maximum(h @ kmer_pa, 1e-7)   # μ_k(h), with numerical floor
 cw      = wc / denom                  # ω_k · c_k / μ_k
-em_term = h * (cn @ cw)               # h_f · Σ_k cn[f,k] · ω_k · c_k / μ_k
+em_term = h * (kmer_pa @ cw)               # h_f · Σ_k kmer_pa[f,k] · ω_k · c_k / μ_k
 h_new   = em_term / em_term.sum()     # L1 renormalize
 ```
 
@@ -208,7 +252,7 @@ $\varepsilon = 10^{-7}$ in production (`per_sample_per_chrom.py:225`,
 `block_em.py:362`). Typical 30–80 iterations in float32.
 
 **EM is run only on k-mers with $c_k > 0$** (`per_sample_per_chrom.py:207-211`).
-The Poisson M-step sums $\mathrm{cn}_{f,k} \, c_k / \mu_k$, so terms with $c_k = 0$
+The Poisson M-step sums $(K_{\mathrm{pa}})_{f,k} \, c_k / \mu_k$, so terms with $c_k = 0$
 contribute zero — filtering is exact, not an approximation. Production
 $n_{nz} / K \approx 0.05$–$0.30$ depending on coverage.
 
@@ -224,7 +268,7 @@ when running per-window EM:
 
 **Symmetric Dirichlet$(\alpha)$ prior on $\mathbf{h}$** (`em_solver.py:74-75, 92-94`):
 
-$$h_f^{(t+1)} \;\propto\; h_f^{(t)} \sum_k \mathrm{cn}_{f,k} \frac{c_k}{\mu_k} \;+\; (\alpha - 1)$$
+$$h_f^{(t+1)} \;\propto\; h_f^{(t)} \sum_k (K_{\mathrm{pa}})_{f,k} \frac{c_k}{\mu_k} \;+\; (\alpha - 1)$$
 
 $\alpha = 1$ recovers the MLE; $\alpha > 1$ pulls toward uniform.
 
@@ -232,7 +276,7 @@ $\alpha = 1$ recovers the MLE; $\alpha > 1$ pulls toward uniform.
 chromosome-wide global $\hat{\mathbf{h}}$, weighted by $\beta$;
 `em_solver.py:78-94`):
 
-$$h_f^{(t+1)} \;\propto\; h_f^{(t)} \sum_k \mathrm{cn}_{f,k} \frac{c_k}{\mu_k} \;+\; \beta \, N \, h_{\text{prior},f}, \qquad N = \sum_k c_k$$
+$$h_f^{(t+1)} \;\propto\; h_f^{(t)} \sum_k (K_{\mathrm{pa}})_{f,k} \frac{c_k}{\mu_k} \;+\; \beta \, N \, h_{\text{prior},f}, \qquad N = \sum_k c_k$$
 
 $\beta = 0$ is pure MLE; $\beta = 1$ weights the prior as much as the data;
 $\beta \in [0.05, 0.5]$ is the working range.
@@ -240,7 +284,7 @@ $\beta \in [0.05, 0.5]$ is the working range.
 ### 4.2 Per-bubble de-replication weight $\omega_k = 1/m_b$ (production)
 
 **Definition.** Every panel k-mer $k$ is contributed by exactly one PanGenie
-bubble (the local pangenome graph object that produced it; `build_kmer_cn.py`
+bubble (the local pangenome graph object that produced it; `build_kmer_pa.py`
 preserves the bubble assignment in `meta["bubble_id"]`). Let
 
 $$m_b(k) \;=\; \#\{k' : \mathrm{bubble}(k') = \mathrm{bubble}(k)\}$$
@@ -274,7 +318,7 @@ which is panel-symmetric and cancels the over-credit at its source.
 **Empirical result.** On the heterogeneous 231 panel, `filt2 + ω_k=1/m_b
 global` wins per-record AF MAE in every cov/n/g regime tested (g0 sims,
 replicate-validated; `docs/METHODS_TRIED_AND_RESULTS.md` §3). $\omega_k = 1/m_b$ is
-therefore the production EM weighting alongside the filt2 cn_full.
+therefore the production EM weighting alongside the filt2 kmer_pa.
 
 **Equivalence to count rescaling.** Because the Poisson M-step is linear in
 $c_k$, $\omega_k$ enters the update exactly as if each count had been rescaled
@@ -299,7 +343,7 @@ byte-identically (`em_solver.py:80`, `:65`) for users on balanced panels.
 
 The production driver `per_sample_per_chrom.py:68-121` runs **one EM per
 chromosome**, not a single genome-wide EM. Rationale (`per_sample_per_chrom.py:1-13`):
-loading the full genome-wide `cn` matrix would peak at ~74 GB float32; per-chrom
+loading the full genome-wide $K_{\mathrm{pa}}$ matrix would peak at ~74 GB float32; per-chrom
 peaks ~5× lower, fitting in 32–64 GB SLURM allocations.
 
 The per-chromosome $\hat{\mathbf{h}}_c$ vectors agree with the genome-wide
@@ -317,20 +361,20 @@ Given the per-chromosome $\hat{\mathbf{h}}_c$, the alternate-allele frequency
 at record $r$ on chromosome $c$ is the **missing-aware projection**
 (`per_sample_per_chrom.py:129-150`):
 
-$$\boxed{\; \widehat{\mathrm{AF}}_r \;=\; \frac{\hat{\mathbf{h}}_c^{\!\top} \, \mathrm{cn}_{\text{var},:,r}}{\hat{\mathbf{h}}_c^{\!\top} \, \mathrm{cn}_{\text{var\_called},:,r}} \;}$$
+$$\boxed{\; \widehat{\mathrm{AF}}_r \;=\; \frac{\hat{\mathbf{h}}_c^{\!\top} \, (V_{\mathrm{pa}})_{:,r}}{\hat{\mathbf{h}}_c^{\!\top} \, (V_{\mathrm{called}})_{:,r}} \;}$$
 
 with a safe-divide floor of $10^{-12}$ on the denominator. This is the standard
 "AF among called samples" (AC/AN). For uniform $\mathbf{h} = (1/F) \mathbf{1}$ it
 collapses to AC/AN exactly.
 
 **Why the call-mask matters.** Under the bare projection $\hat{\mathbf{h}}^\top
-\mathrm{cn}_{\text{var}}$ (the formula in the old `ALGORITHM.md` and
-`CACTUS_EM_MATH.md`), `./.` cells are treated as REF (because `cn_var` is 0
+V_{\mathrm{pa}}$ (the formula in the old `ALGORITHM.md` and
+`CACTUS_EM_MATH.md`), `./.` cells are treated as REF (because $V_{\mathrm{pa}}$ is 0
 both for confirmed-REF and for missing). At records where a substantial
 fraction of founders is `./.` (e.g. cactus-only or PG-only records after the
 cactus-78 + PG-153 merge, where `F_MISSING` runs up to 0.66), this
 systematically under-counts the true AF. The fix divides by the h-weighted
-called mass at each record. See `build_cn_var.py:12-18` for the production
+called mass at each record. See `build_var_pa.py:12-18` for the production
 note.
 
 ### 6.1 Per-record uncertainty outputs (added 2026-05-21)
@@ -340,8 +384,8 @@ for both `global` and `window` modes (`per_sample_per_chrom.py:658-684`):
 
 | field | definition | h-dependent? | code |
 |---|---|---|---|
-| `info` | $\hat{\mathbf{h}}_c^{\!\top}\,\mathrm{cn}_{\text{var\_called},:,r}\in[0,1]$ — the h-weighted called mass (the projection denominator) | yes | `:246-249` |
-| `n_called` | $\sum_f \mathrm{cn}_{\text{var\_called},f,r}\in\{0,\dots,F\}$ — integer count of called founders at $r$ | no | `:594-600` |
+| `info` | $\hat{\mathbf{h}}_c^{\!\top}\,(V_{\mathrm{called}})_{:,r}\in[0,1]$ — the h-weighted called mass (the projection denominator) | yes | `:246-249` |
+| `n_called` | $\sum_f (V_{\mathrm{called}})_{f,r}\in\{0,\dots,F\}$ — integer count of called founders at $r$ | no | `:594-600` |
 | `se` | $\sqrt{\,p(1-p)/\max(n_{\text{called}},1)\,}$, $p=\widehat{\mathrm{AF}}_r$ clipped to $[0,1]$; NaN if AF is NaN or $n_{\text{called}}=0$ | only through $p$ | `:662-666` |
 
 **What `se` is.** The Wald (binomial) standard error of a proportion
@@ -389,7 +433,7 @@ multiple generations of meiosis), partition the chromosome into windows
 $\{W_w\}$ and run the EM independently within each window. Window-mode
 projection becomes
 
-$$\widehat{\mathrm{AF}}_r \;=\; \frac{\hat{\mathbf{h}}_{w(r)}^{\!\top} \, \mathrm{cn}_{\text{var},:,r}}{\hat{\mathbf{h}}_{w(r)}^{\!\top} \, \mathrm{cn}_{\text{var\_called},:,r}}$$
+$$\widehat{\mathrm{AF}}_r \;=\; \frac{\hat{\mathbf{h}}_{w(r)}^{\!\top} \, (V_{\mathrm{pa}})_{:,r}}{\hat{\mathbf{h}}_{w(r)}^{\!\top} \, (V_{\mathrm{called}})_{:,r}}$$
 
 where $w(r)$ is the window containing record $r$.
 
@@ -412,7 +456,7 @@ otherwise collapse onto a single founder.
 
 **Window-mode caveat.** A 100 kb hard-window mode on the 827k-SNP panel
 (hapFIRE-equivalent fine-scale) blew up haplotype-class count to 196/231 →
-HARP-style class methods failed; the founder-simplex EM in cn-window mode
+HARP-style class methods failed; the founder-simplex EM in kmer_pa-window mode
 was unaffected (it doesn't form discrete classes). See
 `PIPELINE_STATE_2026-05-19.md`.
 
@@ -423,8 +467,8 @@ was unaffected (it doesn't form discrete classes). See
 Current production:
 - **Per-bubble de-replication weight $\omega_k = 1/m_b$ (§4.2)** is the
   production EM weighting on the 231 heterogeneous panel, selected via
-  `--kmer-weight inv_mb`. The `cn_full_231_v3qc_v3_filt2` singleton-filtered
-  matrix (§2.1) is the production cn_full base.
+  `--kmer-weight inv_mb`. The `kmer_pa_231_v3qc_v3_filt2` singleton-filtered
+  matrix (§2.1) is the production kmer_pa base.
 - **Global anchor (`--global-anchor-weight`) and HMM smoothing
   (`--hmm-smooth-*`, §8.3)** are part of the production *window* recipe — they
   are the window-mode defaults (anchor 0.3, passes 5, α 0.5; see §7), not
@@ -441,7 +485,7 @@ Removed / archived (do not use):
 The subsections below remain as archaeology for the archived variants; the
 active production-EM weighting is documented in §4.2, not in §8.
 
-### 8.1 K-mer-budget balancing (`--row-normalize-cn`, `--kf-correction-alpha`)
+### 8.1 K-mer-budget balancing (`--row-normalize-kmer_pa`, `--kf-correction-alpha`)
 
 Empirically, the 78 cactus founders carry roughly 2× as many private k-mers
 per founder as the 153 PanGenie-imputed founders (median 8.7K vs 4.5K),
@@ -449,8 +493,8 @@ producing a +41% h-bias toward cactus founders even in a balanced ground
 truth. The mitigation
 (`per_sample_per_chrom.py:111-121, 153-183`):
 
-1. Pre-EM: $\mathrm{cn}_{f,k} \leftarrow \mathrm{cn}_{f,k} / K_f$ where
-   $K_f = \sum_k \mathrm{cn}_{f,k}$. This makes each founder row sum to 1.
+1. Pre-EM: $(K_{\mathrm{pa}})_{f,k} \leftarrow (K_{\mathrm{pa}})_{f,k} / K_f$ where
+   $K_f = \sum_k (K_{\mathrm{pa}})_{f,k}$. This makes each founder row sum to 1.
 2. Post-EM: $h_f^{\text{proj}} \propto \hat{h}_f / K_f^{\alpha}$ (renormalize).
    $\alpha = 1$ is the mass-domain inverse exactly; $\alpha > 1$ over-corrects
    to suppress residual h-bias.
@@ -466,7 +510,7 @@ that wins per-record AF MAE on the 231 panel.
 
 ### 8.2 Carrier-weighted counts (`--ac-weight-counts`)
 
-Multiplies $c_k \leftarrow c_k \cdot a_k$ where $a_k = \sum_f \mathrm{cn}_{f,k}$
+Multiplies $c_k \leftarrow c_k \cdot a_k$ where $a_k = \sum_f (K_{\mathrm{pa}})_{f,k}$
 before the EM (`per_sample_per_chrom.py:214-222`). Cancels the
 "singleton voice" amplification: in plain EM, a k-mer carried by a single
 founder gets a $1/a_k = 1$ weight in the M-step, vs. $1/231$ for a
@@ -495,7 +539,7 @@ the production driver.
 | column | meaning |
 |---|---|
 | `chrom` | chromosome (string, e.g. `Chr1`) |
-| `pos` | 1-based position (matches `cn_var.meta.pos`; freqk users: see §10 L4) |
+| `pos` | 1-based position (matches `var_pa.meta.pos`; freqk users: see §10 L4) |
 | `ref_len` | length of REF allele (bp) |
 | `alt_len` | length of ALT allele (bp) |
 | `alt_freq` | $\widehat{\mathrm{AF}}_r$, the missing-aware projection of §6 |
@@ -516,20 +560,20 @@ The following are issues / assumptions worth knowing about. Severity tags:
 
 | ID | Sev | Issue |
 |---|---|---|
-| C1 | CRITICAL | Old AF projection formula in `ALGORITHM.md` and `CACTUS_EM_MATH.md` (`AF = h^T cn_var`) silently treats `./.` as REF and under-counts AF on records with high `F_MISSING`. **Fixed in production**: §6 above is the correct formula. The old MDs are why this single source of truth was needed. |
+| C1 | CRITICAL | Old AF projection formula in `ALGORITHM.md` and `CACTUS_EM_MATH.md` (`AF = h^T V_pa`) silently treats `./.` as REF and under-counts AF on records with high `F_MISSING`. **Fixed in production**: §6 above is the correct formula. The old MDs are why this single source of truth was needed. |
 | H1 | HIGH | Production runs **one EM per chromosome**, not a single genome-wide EM. Empirically per-chrom $\hat{\mathbf{h}}_c$ agrees to ~0.1% with genome-wide $\hat{\mathbf{h}}$, but methods text must say "per-chromosome" not "genome-wide". |
 | H2 | HIGH | The EM filters to $c_k > 0$ k-mers before solving. Mathematically equivalent under the M-step, but the matrix actually fed to EM is ~5–30% the size of $K$ depending on coverage. State this so reviewers don't get confused by "80M k-mer EM" claims. |
-| H3 | ~~HIGH~~ → resolved | The cn-vs-cn_var heterozygote-handling asymmetry in code (`GT[0]`-only vs `any(a > 0)`) is **not active** for the production panel: `founders_231_v3qc_v3.haploid.vcf.gz` is pre-haploidized (only `.`, `0`, `1` tokens; verified 2026-05-22). pysam returns 1-tuples, both definitions agree. **Latent hazard closed 2026-05-22**: both `build_kmer_cn.py:189-202` and `build_cn_var.py:62-73` now raise `ValueError` on any GT with `len(gt) != 1`, so feeding a diploid VCF fails fast instead of silently producing inconsistent matrices. |
+| H3 | ~~HIGH~~ → resolved | The kmer_pa-vs-var_pa heterozygote-handling asymmetry in code (`GT[0]`-only vs `any(a > 0)`) is **not active** for the production panel: `founders_231_v3qc_v3.haploid.vcf.gz` is pre-haploidized (only `.`, `0`, `1` tokens; verified 2026-05-22). pysam returns 1-tuples, both definitions agree. **Latent hazard closed 2026-05-22**: both `build_kmer_pa.py:189-202` and `build_var_pa.py:62-73` now raise `ValueError` on any GT with `len(gt) != 1`, so feeding a diploid VCF fails fast instead of silently producing inconsistent matrices. |
 | H4 | HIGH | The per-record `se` (`per_sample_per_chrom.py:662-666`) is a **panel-side** binomial SE: $\sqrt{p(1-p)/n_{\text{called}}}$ with effective N = number of genotyped founders. It captures panel completeness / AC-AN sampling only, and **omits** EM-$\hat{\mathbf{h}}$ estimation error, read-coverage Poisson noise, and pool finite-$N$ sampling. Safe to use for **filtering/flagging** low-support records; **not** safe to inverse-variance-weight on as if it were the full AF precision (that weights by panel completeness). Documented in §6.1; a coverage/EM-aware uncertainty is not implemented. |
-| M1 | MEDIUM | The old MD coverage formula "$\lambda$ = total read length / genome size" doesn't match production code, which uses $\hat\lambda = F \cdot \sum c_k / \sum_{f,k} \mathrm{cn}_{f,k}$ (uniform-h estimate). Cosmetic since $\lambda$ cancels; fixed in §3 above. |
+| M1 | MEDIUM | The old MD coverage formula "$\lambda$ = total read length / genome size" doesn't match production code, which uses $\hat\lambda = F \cdot \sum c_k / \sum_{f,k} (K_{\mathrm{pa}})_{f,k}$ (uniform-h estimate). Cosmetic since $\lambda$ cancels; fixed in §3 above. |
 | M2 | ~~MEDIUM~~ → resolved | Production tolerance is $\varepsilon = 10^{-7}$ throughout (`per_sample_per_chrom.py:225`, `block_em.py:362`); §4 above uses that single value. |
-| M3 | MEDIUM | `--treat-missing-as-n` flag in `build_kmer_cn.py`. Production v3qc-v3 was built with this **OFF** (./. → REF). The v3qc-v2 build with the flag ON inflated K_f ratios and is archived. State which build the paper uses. |
-| M4 | MEDIUM | `denom = max(h @ cn, 1e-7)` numerical floor in EM (`em_solver.py:87`). Kicks in only at simplex boundaries; mention if you want to be precise. |
+| M3 | MEDIUM | `--treat-missing-as-n` in `build_kmer_pa.py`. **Corrected 2026-05-29:** production `v3qc_v3` (and `v3qc_v2`) were built with this **ON** (`./.` → N, every k-mer over the span dropped), *not* OFF as this table previously stated. Verified from build scripts + build logs; no N-off build exists on disk. N-on is the deliberate choice — `./.`→REF would fabricate confident reference genotypes from low-quality no-calls. **Hypothesis tested and REJECTED 2026-05-29:** we suspected N-on *causes* the cactus/PG private-k-mer imbalance via PG SV missingness (dropped PG k-mers → cactus-skewed survivors). The missingness-causation test (`notebooks/MISSINGNESS_CAUSES_IMBALANCE.ipynb`, `scripts/run_missingness_test.py`) shows otherwise: in *fully-called* Chr1 bubbles (where N-on ≡ N-off, so missingness cannot contribute) the private ratio is **16.5×**, *higher* than the all-bubble 15.5×, and flat across PG-missingness strata (16.3× at 0% → 15.3× at >40%); cactus privates are no more enriched in missing bubbles (81.9%) than PG privates (82.7%). The imbalance is **real biology** — long-read cactus assemblies realize ~16× more private k-mers/founder than short-read PG-genotyped founders. **Consequences:** (1) the proposed per-founder `kmer_pa` call-mask / dosage fix is **shelved** — it would not reduce the imbalance, which is what `filt2`/ω=1/m_b (§2.1, §4.2) already target; (2) N-on remains the correct modeling choice on its own merits; (3) `kmer_pa` is still not missing-aware the way the §6 projection is (`var_called`) — a latent correctness nuance, but not the imbalance driver. For the paper: state the panel is N-on and that the cactus/PG private skew is a genotyping-modality (assembly vs short-read) effect, not a missingness artifact. |
+| M4 | MEDIUM | `denom = max(h @ kmer_pa, 1e-7)` numerical floor in EM (`em_solver.py:87`). Kicks in only at simplex boundaries; mention if you want to be precise. |
 | M5 | MEDIUM | `samtools fastq -F 0x900` filters secondary+supplementary but **not** PCR duplicates (`kmer_count.py:72`). SEEDMIX is PCR-free (memory: `seedmix_is_pcr_free`) so no dedup needed. **Evolved GrENE-Net samples are not PCR-free and require an upstream dedup step** (clumpify or equivalent) before kMate; otherwise PCR-duplicate reads inflate k-mer counts and bias the EM. State the preprocessing distinction in the paper's per-sample pipeline section. |
 | M6 | MEDIUM | Production weighting $\omega_k = 1/m_b$ (§4.2) is **panel-conditional**: it wins per-record AF MAE on the heterogeneous 231 panel (where it cancels the cactus/PG imbalance) but slightly under-performs $\omega_k=1$ on the homogeneous 80-cactus control panel (+2% to +41% MAE, `benchmarks/p80/results/filt2_mb_vs_uniform_summary.tsv`). For the GrENE-Net 231 application the win is decisive; the paper treats $\omega_k=1/m_b$ as the method default. Code preserves both via `--kmer-weight {uniform,inv_mb}` so balanced-panel users can opt out. See `docs/METHODS_TRIED_AND_RESULTS.md` §3. |
-| L1 | LOW | `cn_full` is conceptually genome-wide but physically per-chromosome (`build_kmer_cn.build_cn_for_chrom`). Cosmetic. |
+| L1 | LOW | `kmer_pa` is conceptually genome-wide but physically per-chromosome (`build_kmer_pa.build_kmer_pa_for_chrom`). Cosmetic. |
 | L2 | LOW | `solve_em_with_omega` (contamination) exists in code but is unused in production runs. |
-| L3 | LOW | `freqk` reports `VCF_pos - 2`; add 2 before joining freqk output to any VCF or cn_var (memory: `freqk_pos_offset`). |
+| L3 | LOW | `freqk` reports `VCF_pos - 2`; add 2 before joining freqk output to any VCF or var_pa (memory: `freqk_pos_offset`). |
 | L4 | LOW | `pos` in the kMate TSV is the original VCF position (1-based). Joining to other tools requires checking their offset convention. |
 
 **Top 3 to carry into the paper:**
@@ -551,12 +595,12 @@ The following are issues / assumptions worth knowing about. Severity tags:
 | Evidence | canonical k-mer counts $c_k$ | per-base read pileup $P(\text{base}|\text{hap}, q)$ | per-bubble k-mer counts (independent bubbles) |
 | Inference | weighted Poisson EM, multiplicative update ($\omega_k=1/m_b$, §4.2) | per-base likelihood EM (HARP) | per-bubble alt/total ratio |
 | Cross-bubble pooling | yes — bubbles with sparse k-mers borrow strength via h | yes within an LD block | no |
-| Projection | $\hat{\mathbf{h}}^\top \mathrm{cn}_{\text{var}} / \hat{\mathbf{h}}^\top \mathrm{cn}_{\text{var\_called}}$ | $\hat{\mathbf{h}}_{\text{hap}}^\top \mathrm{H2S}$ + founder solve | per-bubble alt-count / total-count |
+| Projection | $\hat{\mathbf{h}}^\top V_{\mathrm{pa}} / \hat{\mathbf{h}}^\top V_{\mathrm{called}}$ | $\hat{\mathbf{h}}_{\text{hap}}^\top \mathrm{H2S}$ + founder solve | per-bubble alt-count / total-count |
 | Sees SVs | yes — k-mers span bubble alleles | no (per-base SNP-only) | yes (bubble-level) |
 | Reference | pangenome graph | single linear reference | pangenome graph |
 
 The M-step form
-$h_f^{(t+1)} \propto h_f^{(t)} \sum_k \mathrm{cn}_{f,k}\, \omega_k\, c_k / \mu_k$
+$h_f^{(t+1)} \propto h_f^{(t)} \sum_k (K_{\mathrm{pa}})_{f,k}\, \omega_k\, c_k / \mu_k$
 also recurs in NMF (Lee & Seung 1999), the original EM derivation (Dempster
 et al. 1977), and RNA-seq abundance estimation (RSEM/kallisto/salmon); the
 $\omega_k$ weighting is the composite-likelihood generalization (Lindsay 1988).

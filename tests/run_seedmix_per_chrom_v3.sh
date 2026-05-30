@@ -19,9 +19,9 @@ cd /global/scratch/users/tbellg/kmate
 mkdir -p results/seedmix_231_v3_perchrom
 
 /usr/bin/time -v /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
-    --cn-kmer-prefix data/cn_full_231_v3/cn \
-    --cn-var data/cn_var_231_v3.cn_var.npz \
-    --cn-var-meta data/cn_var_231_v3.meta.npz \
+    --kmer-pa-prefix data/kmer_pa_231_v3/kmer_pa \
+    --var-pa data/var_pa_231_v3.var_pa.npz \
+    --var-meta data/var_pa_231_v3.meta.npz \
     --reads /global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S1-1.1_P.fq.gz \
             /global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S1-1.2_P.fq.gz \
     --sample SEEDMIX_S1 \

@@ -13,7 +13,7 @@ set -euo pipefail
 
 # g0 SUBSET pool: pick 50 of the 231 founders (seeded), equal reads each.
 # Truth h = 1/50 on the chosen 50, 0 on the other 181. A sparse-h test is more
-# discriminating of cn_full identifiability than the perfect 1/231 mix: the EM
+# discriminating of kmer_pa identifiability than the perfect 1/231 mix: the EM
 # must put mass on the RIGHT 50 and zero elsewhere.
 
 ROOT=/global/scratch/users/tbellg/kmate

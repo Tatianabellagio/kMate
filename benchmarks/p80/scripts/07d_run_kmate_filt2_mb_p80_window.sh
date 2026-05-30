@@ -52,9 +52,9 @@ for f in $READS_DIR/r1.fq $READS_DIR/r2.fq $WORK/recomb_truth.tsv.gz; do
     [ -s "$f" ] || { echo "ERROR missing $f" >&2; exit 1; }
 done
 
-CN_KMER_PREFIX=$CTRL/data/cn_full_p80_filt2/cn
-CN_VAR=$CTRL/data/cn_var_p80.cn_var.npz
-CN_VAR_META=$CTRL/data/cn_var_p80.meta.npz
+CN_KMER_PREFIX=$CTRL/data/kmer_pa_p80_filt2/kmer_pa
+CN_VAR=$CTRL/data/var_pa_p80.var_pa.npz
+CN_VAR_META=$CTRL/data/var_pa_p80.meta.npz
 
 OUT_DIR=$CTRL/results/${ODIR}/${REGIME}
 mkdir -p $OUT_DIR
@@ -63,9 +63,9 @@ OUT_TSV=$OUT_DIR/${SAMPLE}.tsv
 
 echo "[$(date)] kMate filt2 WINDOW(10kb) weight=$WEIGHT --regime $REGIME"
 $PYTHON -u $DRIVER \
-    --cn-kmer-prefix $CN_KMER_PREFIX \
-    --cn-var $CN_VAR \
-    --cn-var-meta $CN_VAR_META \
+    --kmer-pa-prefix $CN_KMER_PREFIX \
+    --var-pa $CN_VAR \
+    --var-meta $CN_VAR_META \
     --reads $READS_DIR/r1.fq $READS_DIR/r2.fq \
     --sample $SAMPLE --out $OUT_TSV \
     --threads 8 --chroms Chr1 \

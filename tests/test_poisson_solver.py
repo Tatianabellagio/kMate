@@ -20,12 +20,12 @@ from scipy.sparse import load_npz
 DATA = os.path.join(os.path.dirname(__file__), "..", "data")
 
 
-def solve_poisson(counts, cn, coverage, omega=None, eps=1e-3):
+def solve_poisson(counts, kmer_pa, coverage, omega=None, eps=1e-3):
     K = counts.shape[0]
-    F = cn.shape[0]
+    F = kmer_pa.shape[0]
     if omega is None: omega = np.zeros(K)
     h = cp.Variable(F, nonneg=True)
-    mu = coverage * (cn.T @ h) + coverage * omega + eps
+    mu = coverage * (kmer_pa.T @ h) + coverage * omega + eps
     # Poisson NLL: minimize Σ [μ - c log μ]
     obj = cp.Minimize(cp.sum(mu) - cp.sum(cp.multiply(counts, cp.log(mu))))
     prob = cp.Problem(obj, [cp.sum(h) == 1])
@@ -33,15 +33,15 @@ def solve_poisson(counts, cn, coverage, omega=None, eps=1e-3):
     return np.asarray(h.value)
 
 
-def solve_l2_normalized(counts, cn, coverage, omega=None):
-    """L2 on the relative-rate scale: c_k/(λ × AC_k) ≈ Σ_f h[f] cn[f,k]/AC_k"""
+def solve_l2_normalized(counts, kmer_pa, coverage, omega=None):
+    """L2 on the relative-rate scale: c_k/(λ × AC_k) ≈ Σ_f h[f] kmer_pa[f,k]/AC_k"""
     K = counts.shape[0]
-    F = cn.shape[0]
+    F = kmer_pa.shape[0]
     if omega is None: omega = np.zeros(K)
-    ac = cn.sum(axis=0)
-    # design matrix: cn[f,k] / AC[k]  → predicts h-weighted "presence fraction"
+    ac = kmer_pa.sum(axis=0)
+    # design matrix: kmer_pa[f,k] / AC[k]  → predicts h-weighted "presence fraction"
     rate_obs = counts / np.maximum(coverage * ac, 1e-6)  # observed rate per k-mer
-    cn_norm = cn.astype(float) / np.maximum(ac[None, :], 1)  # F × K, sums to 1 over founders
+    cn_norm = kmer_pa.astype(float) / np.maximum(ac[None, :], 1)  # F × K, sums to 1 over founders
     h = cp.Variable(F, nonneg=True)
     pred = cn_norm.T @ h  # K-vector, sums to 1 only if h sums to 1 and cn_norm columns sum to 1
     residual = rate_obs - pred
@@ -51,16 +51,16 @@ def solve_l2_normalized(counts, cn, coverage, omega=None):
     return np.asarray(h.value)
 
 
-def solve_kl(counts, cn, coverage, omega=None, eps=1e-3):
+def solve_kl(counts, kmer_pa, coverage, omega=None, eps=1e-3):
     """KL-divergence loss (= Poisson NLL up to constants).
     cp.kl_div(c, μ) = c log(c/μ) - c + μ ≥ 0, convex.
     For c=0: kl_div = μ. For c>0: penalizes μ near 0 strongly.
     """
     K = counts.shape[0]
-    F = cn.shape[0]
+    F = kmer_pa.shape[0]
     if omega is None: omega = np.zeros(K)
     h = cp.Variable(F, nonneg=True)
-    mu = coverage * (cn.T @ h) + coverage * omega + eps
+    mu = coverage * (kmer_pa.T @ h) + coverage * omega + eps
     obj = cp.Minimize(cp.sum(cp.kl_div(counts, mu)))
     prob = cp.Problem(obj, [cp.sum(h) == 1])
     prob.solve(solver="SCS", verbose=False)
@@ -68,17 +68,17 @@ def solve_kl(counts, cn, coverage, omega=None, eps=1e-3):
 
 
 def main():
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    ac = cn.sum(axis=0)
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    ac = kmer_pa.sum(axis=0)
     counts = np.load(os.path.join(DATA, "sim_chr1", "uniform82_counts.npz"))["counts"]
     cov = counts.sum() * F / ac.sum()
     h_true = np.full(F, 1.0/F)
 
-    print(f"cn: {F} × {K:,}, cov={cov:.1f}×")
+    print(f"kmer_pa: {F} × {K:,}, cov={cov:.1f}×")
     print(f"truth: uniform 1/{F} = {1/F:.4f}")
 
     def report(label, h_hat):
@@ -91,26 +91,26 @@ def main():
     print(f"\n{'-'*72}")
     # P1 Poisson NLL via kl_div
     t = time.time()
-    h_p = solve_kl(counts, cn, cov)
+    h_p = solve_kl(counts, kmer_pa, cov)
     report(f"P1 Poisson NLL via kl_div  [{time.time()-t:.0f}s]", h_p)
 
     # P2 KL with proper coverage scan
     for c_try in [cov*0.5, cov, cov*2.0]:
-        h = solve_kl(counts, cn, c_try)
+        h = solve_kl(counts, kmer_pa, c_try)
         report(f"P2 kl_div, cov={c_try:.1f}×", h)
 
     # P3 L2 on normalized rates
-    h_n = solve_l2_normalized(counts, cn, cov)
+    h_n = solve_l2_normalized(counts, kmer_pa, cov)
     report("P3 L2 on rate=c/(cov×AC)", h_n)
 
     # P4 Poisson on AC≥2 only
     keep = ac >= 2
-    h_p2 = solve_kl(counts[keep], cn[:, keep], cov)
+    h_p2 = solve_kl(counts[keep], kmer_pa[:, keep], cov)
     report(f"P4 KL, AC≥2 only (n={keep.sum():,})", h_p2)
 
     # P5 Poisson on AC≥5 only
     keep5 = ac >= 5
-    h_p5 = solve_kl(counts[keep5], cn[:, keep5], cov)
+    h_p5 = solve_kl(counts[keep5], kmer_pa[:, keep5], cov)
     report(f"P5 KL, AC≥5 only (n={keep5.sum():,})", h_p5)
 
     # show top founders by inferred h for the best variant

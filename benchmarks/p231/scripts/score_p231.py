@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Score kMate p231 AF estimates vs per-record truth, both cn_var arms.
-JOIN BY RECORD INDEX (not the 4-key): est, truth and the cn_var meta are all emitted
-in identical cn_var record order, so est[i]<->truth[i]<->cn_var record i. The
+"""Score kMate p231 AF estimates vs per-record truth, both var_pa arms.
+JOIN BY RECORD INDEX (not the 4-key): est, truth and the var_pa meta are all emitted
+in identical var_pa record order, so est[i]<->truth[i]<->var_pa record i. The
 (chrom,pos,ref_len,alt_len) 4-key is NOT unique on the multiallelic-heavy atomized
 panel (38% dup keys) -> a key-merge mis-joins/collapses multiallelic ALTs. We assert
 identical (pos,ref_len,alt_len) row order, then compare by position.
@@ -32,7 +32,7 @@ for reg in REGIMES:
             es=pd.read_csv(ep,sep="\t")
             if len(es)!=len(tr):
                 print(f"[ERR] {reg} {cnvar} {weight}: len est={len(es)} != truth={len(tr)} -- SKIP"); continue
-            # ORDER GATE: both must be in identical cn_var record order
+            # ORDER GATE: both must be in identical var_pa record order
             if not (np.array_equal(es["pos"].values,tr["pos"].values)
                     and np.array_equal(es["ref_len"].values.astype(int),rl)
                     and np.array_equal(es["alt_len"].values.astype(int),al)):

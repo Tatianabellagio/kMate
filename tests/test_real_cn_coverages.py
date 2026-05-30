@@ -1,8 +1,8 @@
 """
-Test EM and WLS on the REAL 200-bubble cn matrix, with simulated counts at
+Test EM and WLS on the REAL 200-bubble kmer_pa matrix, with simulated counts at
 multiple coverages (5×, 10×, 20×, 30×).
 
-Uses the existing uniform82 cn and skewed5 truths but generates new Poisson
+Uses the existing uniform82 kmer_pa and skewed5 truths but generates new Poisson
 counts at the requested coverage so we can compare across coverages.
 
 Reports R² and RMSE.
@@ -31,14 +31,14 @@ def metrics(h_hat, h_true):
 
 
 def main():
-    # Load real 200-bubble cn
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    # Load real 200-bubble kmer_pa
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     founders = meta["founders"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
-    ac = cn.sum(axis=0)
-    print(f"Real cn: F={F}, K={K:,}")
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
+    ac = kmer_pa.sum(axis=0)
+    print(f"Real kmer_pa: F={F}, K={K:,}")
     print(f"  AC dist: AC=1: {(ac==1).sum():,}  AC 2-4: {((ac>=2)&(ac<=4)).sum():,}  "
           f"AC 5-10: {((ac>=5)&(ac<=10)).sum():,}  AC>10: {(ac>10).sum():,}")
 
@@ -84,18 +84,18 @@ def main():
 
         # For each coverage, generate counts and solve
         for cov in coverages:
-            mu = cov * (h_true @ cn)
+            mu = cov * (h_true @ kmer_pa)
             counts = rng.poisson(np.maximum(mu, 1e-6))
 
             # EM
             t = time.time()
-            h_em, info = solve_em(counts, cn, cov, max_iter=200, tol=1e-7)
+            h_em, info = solve_em(counts, kmer_pa, cov, max_iter=200, tol=1e-7)
             t_em = time.time() - t
             r2_em, rmse_em = metrics(h_em, h_true)
 
             # WLS
             t = time.time()
-            h_wls, _ = solve_block_wls(counts, cn, cov)
+            h_wls, _ = solve_block_wls(counts, kmer_pa, cov)
             t_wls = time.time() - t
             r2_wls, rmse_wls = metrics(h_wls, h_true)
 

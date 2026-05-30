@@ -14,16 +14,16 @@ Everything traces to the current **v3qc + arch3** lineage; nothing stale is forc
   arch biallelic decomposition + merge + AN=0 filter, **unimputed**, het→missing
   masked. 1.90M SNP / 637K indel / 84K SV. This is the latest QC'd arch panel.
 - **FASTAs** `fastas_231/`: rebuilt by `bcftools consensus -H 1` from that VCF
-  (haploid; founder order identical to cn_var). NOT the stale v3 fasta dirs.
-- **cn_full** `data/cn_full_p231[_filt2]/`: rebuilt from the SAME VCF via
-  `build_kmer_cn.py` + the pang_135 k-mer dictionary (135-asm graph, matches
+  (haploid; founder order identical to var_pa). NOT the stale v3 fasta dirs.
+- **kmer_pa** `data/kmer_pa_p231[_filt2]/`: rebuilt from the SAME VCF via
+  `build_kmer_pa.py` + the pang_135 k-mer dictionary (135-asm graph, matches
   merged_231's annotation topology), `--treat-missing-as-n`. Validated against the
-  production `cn_full_231_v3qc_v3_filt2` by `03c_compare_cn_full.py` (cn_full is
+  production `kmer_pa_231_v3qc_v3_filt2` by `03c_compare_kmer_pa.py` (kmer_pa is
   consensus-derived ⇒ representation-invariant ⇒ expected ~identical).
-- **cn_var** (projection + truth target): REUSED `panel/arch3/chr1/cn_var_231_arch3_chr1`
+- **var_pa** (projection + truth target): REUSED `panel/arch3/chr1/var_pa_231_arch3_chr1`
   in TWO arms — `_atomized` (7.46M per-base records, SNP-level GEA benchmark) and
   raw (2.62M records, SNP/indel/SV classes). Both built from the canonical VCF.
-- **het handling**: both cn_full and cn_var mask het→missing (Arouisse-2020
+- **het handling**: both kmer_pa and var_pa mask het→missing (Arouisse-2020
   precedent); consistent across the k-mer and variant sides.
 
 ## Key design choices vs benchmarks/p80
@@ -33,11 +33,11 @@ Everything traces to the current **v3qc + arch3** lineage; nothing stale is forc
    blocks the block-based method keys on is circular for a benchmark. We DROP
    `--crossovers-from-ld-blocks`; `sample_crossovers()` then places Poisson(L·rate)
    crossovers at uniform-random positions.
-2. **Truth on both cn_vars** so each projection arm joins its truth 100% on
+2. **Truth on both var_pas** so each projection arm joins its truth 100% on
    (chrom,pos,ref_len,alt_len) — the est↔truth consistency gate. The OLD sim truth
    files (`recomb_truth*.tsv.gz` under `sims/visor_freqk/pool_sweep_82_recomb/`)
    were on a pre-arch3 decomposition and joined only 16–21% to atomized — do NOT use.
-3. **cn_full rebuilt from arch3** for single-VCF provenance (vs production reuse).
+3. **kmer_pa rebuilt from arch3** for single-VCF provenance (vs production reuse).
 
 ## Regimes (match benchmarks/p80, cov10, seed 42, Chr1)
 
@@ -48,9 +48,9 @@ individual at 50% of pool reads). g0 = perfect founder mix (no recombination).
 
 ```
 05_build_fastas_p231.sh         231 consensus FASTAs from merged_231 (array 1-231)
-03_build_cn_full_p231.sh        cn_full from merged_231 + pang_135 dict
-03b_build_cn_full_filt2_p231.sh filt2 (drop ac<2 singletons) -> front-runner cn_full
-03c_compare_cn_full.py          validate rebuilt vs production cn_full
+03_build_kmer_pa_p231.sh        kmer_pa from merged_231 + pang_135 dict
+03b_build_kmer_pa_filt2_p231.sh filt2 (drop ac<2 singletons) -> front-runner kmer_pa
+03c_compare_kmer_pa.py          validate rebuilt vs production kmer_pa
 06_run_sim_p231.sh N G          mosaics (RANDOM crossovers) + VISOR reads + truth x2
 06b_run_sim_p231_skewed.sh      dom500 variant
 07c_run_kmate_filt2_mb_p231.sh REGIME CNVAR [WEIGHT]   EM (global, inv_mb) + project
@@ -60,13 +60,13 @@ submit_all_p231.sh              the full DAG
 
 ## Verification gates
 
-- G1/G2 (FASTAs): 231 built, every one applied >0 variants, founder IDs == cn_full. ✅
+- G1/G2 (FASTAs): 231 built, every one applied >0 variants, founder IDs == kmer_pa. ✅
 - G4 (truth): `recomb_truth_atomized` n rows == 7,464,709; `recomb_truth_raw` == 2,617,370.
-- G6 (join): est↔truth inner join == cn_var record count (100%).
-- cn_full validation: rebuilt vs production overlap ~100%, carrier agreement ~100%.
+- G6 (join): est↔truth inner join == var_pa record count (100%).
+- kmer_pa validation: rebuilt vs production overlap ~100%, carrier agreement ~100%.
 
 ## Note
 
-Reads/cn_full use a haploid panel; the founder-list source for the mosaic builder
-is the production cn_full meta (founders identical to merged_231, order-verified) —
+Reads/kmer_pa use a haploid panel; the founder-list source for the mosaic builder
+is the production kmer_pa meta (founders identical to merged_231, order-verified) —
 immaterial to provenance (only names are used).

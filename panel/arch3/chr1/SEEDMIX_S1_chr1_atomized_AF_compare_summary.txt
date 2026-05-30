@@ -1,12 +1,12 @@
 === Load h vector (v3qc_v3) ===
   h shape: (231,), sum: 1.0000
-=== Load atomized cn_var + meta ===
-  cn_var: (231, 7464709), 76,920,922 nnz
-  cn_var_called: (231, 7464709), 1,178,293,839 nnz
+=== Load atomized var_pa + meta ===
+  var_pa: (231, 7464709), 76,920,922 nnz
+  var_called: (231, 7464709), 1,178,293,839 nnz
   meta records: 7,464,709
   founder ordering identical, no reindex needed
 
-=== Project AF = h @ cn_var / h @ cn_var_called ===
+=== Project AF = h @ var_pa / h @ var_called ===
   projected in 35.3s; AF range [0.000, 1.000], NaN=0
 === Write atomized per-record TSV ===
   wrote SEEDMIX_S1_arch3_chr1_atomized.tsv  (7,464,709 rows)

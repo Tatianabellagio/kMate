@@ -10,8 +10,8 @@
 #SBATCH --error=logs/03b_filt2_%j.err
 
 # =============================================================================
-# Phase A3b -- Build cn_full_p80_filt2 by post-filtering cn_full_p80.
-# Drops k-mer columns where ac_k = cn.sum(axis=0) < 2 (singletons).
+# Phase A3b -- Build kmer_pa_p80_filt2 by post-filtering kmer_pa_p80.
+# Drops k-mer columns where ac_k = kmer_pa.sum(axis=0) < 2 (singletons).
 # meta arrays whose first dim equals K are subset by the same mask.
 # Idempotent: skips if outputs already exist.
 # =============================================================================
@@ -20,13 +20,13 @@ set -uo pipefail
 
 PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 CTRL=/global/scratch/users/tbellg/kmate/benchmarks/p80
-SRC=$CTRL/data/cn_full_p80
-OUT=$CTRL/data/cn_full_p80_filt2
+SRC=$CTRL/data/kmer_pa_p80
+OUT=$CTRL/data/kmer_pa_p80_filt2
 mkdir -p $OUT
 
-if [ -s "$OUT/cn_Chr1.cn.npz" ] && [ -s "$OUT/cn_Chr1.meta.npz" ]; then
-    echo "[$(date)] cn_full_p80_filt2 already present -- skip"
-    ls -lh $OUT/cn_Chr1.cn.npz $OUT/cn_Chr1.meta.npz
+if [ -s "$OUT/kmer_pa_Chr1.kmer_pa.npz" ] && [ -s "$OUT/kmer_pa_Chr1.meta.npz" ]; then
+    echo "[$(date)] kmer_pa_p80_filt2 already present -- skip"
+    ls -lh $OUT/kmer_pa_Chr1.kmer_pa.npz $OUT/kmer_pa_Chr1.meta.npz
     exit 0
 fi
 
@@ -42,16 +42,16 @@ SRC = Path("${SRC}")
 OUT = Path("${OUT}")
 OUT.mkdir(exist_ok=True)
 
-cn = load_npz(SRC / f"cn_{chrom}.cn.npz")
+kmer_pa = load_npz(SRC / f"cn_{chrom}.kmer_pa.npz")
 meta = np.load(SRC / f"cn_{chrom}.meta.npz", allow_pickle=True)
-F, K = cn.shape
-print(f"[{chrom}] cn shape ({F}, {K:,}) nnz={cn.nnz:,}", flush=True)
+F, K = kmer_pa.shape
+print(f"[{chrom}] kmer_pa shape ({F}, {K:,}) nnz={kmer_pa.nnz:,}", flush=True)
 
-ac = np.asarray(cn.sum(axis=0)).flatten().astype(np.int32)
+ac = np.asarray(kmer_pa.sum(axis=0)).flatten().astype(np.int32)
 keep = ac >= 2
 print(f"[{chrom}] keep ac>=2: {keep.sum():,}/{K:,} (ac=0: {(ac==0).sum():,}, ac=1: {(ac==1).sum():,})", flush=True)
 
-cn_f = cn.tocsc()[:, keep].tocsr()
+cn_f = kmer_pa.tocsc()[:, keep].tocsr()
 new_meta = {}
 for k in meta.keys():
     a = meta[k]
@@ -60,11 +60,11 @@ for k in meta.keys():
     else:
         new_meta[k] = a
 
-save_npz(OUT / f"cn_{chrom}.cn.npz", cn_f)
+save_npz(OUT / f"cn_{chrom}.kmer_pa.npz", cn_f)
 np.savez(OUT / f"cn_{chrom}.meta.npz", **new_meta)
 print(f"[{chrom}] DONE filtered nnz={cn_f.nnz:,} shape={cn_f.shape}", flush=True)
 EOF
 
 echo ""
 echo "[$(date)] DONE"
-ls -lh $OUT/cn_Chr1.cn.npz $OUT/cn_Chr1.meta.npz
+ls -lh $OUT/kmer_pa_Chr1.kmer_pa.npz $OUT/kmer_pa_Chr1.meta.npz

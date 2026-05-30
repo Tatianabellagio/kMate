@@ -20,9 +20,9 @@ There are exactly **two estimators**: `global` and `window`. Nothing else.
 ```bash
 # global — selfing / inbred / F0 pools (e.g. SEEDMIX)
 python per_sample_per_chrom.py \
-  --cn-kmer-prefix <cn_full>/cn \
-  --cn-var <panel>.cn_var.npz --cn-var-called <panel>.cn_var_called.npz \
-  --cn-var-meta <panel>.meta.npz \
+  --kmer-pa-prefix <kmer_pa>/kmer_pa \
+  --var-pa <panel>.var_pa.npz --var-called <panel>.var_called.npz \
+  --var-meta <panel>.meta.npz \
   --reads R1.fq R2.fq --sample <name> --out <name>.tsv \
   --threads 8 --chroms Chr1 --block-mode global
 
@@ -37,10 +37,10 @@ python per_sample_per_chrom.py [same inputs] --block-mode window
 
 | file | role |
 |---|---|
-| `build_kmer_cn.py` | builds `cn` (founder × k-mer membership matrix) |
-| `build_cn_var.py` | builds `cn_var` / `cn_var_called` (founder × variant carrier + called mask) |
+| `build_kmer_pa.py` | builds `kmer_pa` (founder × k-mer membership matrix) |
+| `build_var_pa.py` | builds `var_pa` / `var_called` (founder × variant carrier + called mask) |
 
-`src/` now holds only the kMate program (estimator + cn builders). Tooling that
+`src/` now holds only the kMate program (estimator + kmer_pa builders). Tooling that
 consumes the program's *outputs* or makes *simulation inputs* lives elsewhere:
 - results aggregation / scoring → `benchmarks/scripts/` (`aggregate_results.py`, `aggregate_seedmix_validation.py`)
 - pool simulation → `sims/scripts/` (`build_g0_uniform_sim.py`)
@@ -58,9 +58,9 @@ production estimator.
 | `batch_runner.py`, `calibrate_alt_freqs.py` | helpers that depended on `per_sample_driver.py` |
 | `per_sample_bigld_haplotype.py` | BigLD per-haplotype estimator (hapFIRE comparison) |
 | `block_haplotype_bigld.py` | BigLD per-block-haplotype EM driver, moved out of `block_haplotype_em.py` (which now keeps only `smooth_h_across_blocks` for window mode) |
-| `build_kmer_cn_from_fastas.py` | alt cn builder from founder FASTAs; no production caller (production cn uses `build_kmer_cn.py` from the PanGenie index) |
+| `build_kmer_pa_from_fastas.py` | alt kmer_pa builder from founder FASTAs; no production caller (production kmer_pa uses `build_kmer_pa.py` from the PanGenie index) |
 | `em_fixes/` | experimental H-estimation variant sweep (combined/balanced/balancedbubble/perbubble/whitening/invac/correlation/normalizer_factorial + score_*/run_* drivers); tried, documented in `docs/METHODS_TRIED_AND_RESULTS.md` |
-| `build_subsampled_cn.py` | cn k-mer-balancing transform (per-stratum subsample / cactus-vs-PG class-match). **Tested and rejected** — all subsample variants lost to plain `filt2` on AF MAE (`docs/METHODS_TRIED_AND_RESULTS.md` §1–2). Production filter is **filt2 only** (drop ac=1). Kept for provenance. |
+| `build_subsampled_cn.py` | kmer_pa k-mer-balancing transform (per-stratum subsample / cactus-vs-PG class-match). **Tested and rejected** — all subsample variants lost to plain `filt2` on AF MAE (`docs/METHODS_TRIED_AND_RESULTS.md` §1–2). Production filter is **filt2 only** (drop ac=1). Kept for provenance. |
 | `validate_seedmix_recipe.py` | recipe-validation helper |
 | `block_solver.py`, `joint_solver.py`, `hapfire_solver.py` | earlier solver prototypes |
 | `sweep_shape_norm_h_only.py` | a one-off k-mer-rebalancing sweep |
@@ -69,4 +69,4 @@ production estimator.
 
 - `em_solver.py`: `solve_em_with_omega` (contamination-ω variant; never used).
 - `block_em.py`: `solve_em_clustered_per_block` + `find_haplotype_clusters` (earlier per-block EM, superseded by `solve_em_per_block`); `assign_kmers_to_blocks_multi` + `project_blocks_to_records_overlap` (overlapping-windows "Route 2").
-- `per_sample_per_chrom.py`: the `ld_gabriel`/`ld_complete`/`bigld_panel` block modes; overlapping windows (`--window-step`); the k-mer-budget balancing flags (`--row-normalize-cn`, `--kf-correction-alpha`) and `_apply_kf_correction`; and `--ac-weight-counts`. All were off-by-default experiments (see `ALGORITHM.md` §8).
+- `per_sample_per_chrom.py`: the `ld_gabriel`/`ld_complete`/`bigld_panel` block modes; overlapping windows (`--window-step`); the k-mer-budget balancing flags (`--row-normalize-kmer_pa`, `--kf-correction-alpha`) and `_apply_kf_correction`; and `--ac-weight-counts`. All were off-by-default experiments (see `ALGORITHM.md` §8).

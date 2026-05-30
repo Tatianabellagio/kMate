@@ -38,7 +38,7 @@ def metrics(h_hat, h_true):
     return r2, rmse
 
 
-def two_stage_aggregated(counts, cn, bubble_id, bubbles_per_block, F):
+def two_stage_aggregated(counts, kmer_pa, bubble_id, bubbles_per_block, F):
     """Run two-stage per sub-block; return averaged founder freqs."""
     sub_block = bubble_id // bubbles_per_block
     h_per_block = []
@@ -46,7 +46,7 @@ def two_stage_aggregated(counts, cn, bubble_id, bubbles_per_block, F):
         mask = sub_block == b
         if mask.sum() < 3:
             continue
-        cn_sub = cn[:, mask]
+        cn_sub = kmer_pa[:, mask]
         c_sub = counts[mask]
         cn_uniq, founder_to_hap, hap_to_founders = reduce_to_unique_haplotypes(cn_sub)
         if cn_uniq.shape[0] < 2:
@@ -61,11 +61,11 @@ def two_stage_aggregated(counts, cn, bubble_id, bubbles_per_block, F):
 
 
 def main():
-    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.cn.npz"))
+    cn_sparse = load_npz(os.path.join(DATA, "test_chr1_first200.kmer_pa.npz"))
     meta = np.load(os.path.join(DATA, "test_chr1_first200.meta.npz"), allow_pickle=True)
     bubble_id = meta["bubble_id"]
     F, K = cn_sparse.shape
-    cn = np.asarray(cn_sparse.todense()).astype(np.int8)
+    kmer_pa = np.asarray(cn_sparse.todense()).astype(np.int8)
 
     print(f"="*100)
     print(f"Block-size sweep: two-stage architecture with varying bubbles/block")
@@ -91,18 +91,18 @@ def main():
 
     for label, h_true in pools:
         for cov in coverages:
-            mu = cov * (h_true @ cn)
+            mu = cov * (h_true @ kmer_pa)
             counts = rng.poisson(np.maximum(mu, 1e-6))
 
             # flat EM
-            h_em, _ = solve_em(counts, cn, cov, max_iter=200, tol=1e-7)
+            h_em, _ = solve_em(counts, kmer_pa, cov, max_iter=200, tol=1e-7)
             # 2-stage with various block sizes
-            h_2s_1 = two_stage_aggregated(counts, cn, bubble_id, 1, F)
-            h_2s_5 = two_stage_aggregated(counts, cn, bubble_id, 5, F)
-            h_2s_20 = two_stage_aggregated(counts, cn, bubble_id, 20, F)
+            h_2s_1 = two_stage_aggregated(counts, kmer_pa, bubble_id, 1, F)
+            h_2s_5 = two_stage_aggregated(counts, kmer_pa, bubble_id, 5, F)
+            h_2s_20 = two_stage_aggregated(counts, kmer_pa, bubble_id, 20, F)
             # flat WLS
             try:
-                h_wls, _ = solve_block_wls(counts, cn, cov)
+                h_wls, _ = solve_block_wls(counts, kmer_pa, cov)
             except Exception:
                 h_wls = np.full(F, 1.0/F)
 

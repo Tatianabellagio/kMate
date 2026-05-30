@@ -18,7 +18,7 @@ OUT_DIR=$ROOT/scratch/shape_norm_sweep_filt2
 mkdir -p $OUT_DIR $ROOT/tests/logs
 
 $PY $ROOT/src/sweep_shape_norm_h_only.py \
-    --cn-prefix $ROOT/data/cn_full_231_v3qc_v3_filt2/cn_Chr1 \
+    --kmer_pa-prefix $ROOT/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1 \
     --reads /global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_1.dedup.fq.gz \
             /global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimdedup/SEEDMIX_S1_2.dedup.fq.gz \
     --sample SEEDMIX_S1 \

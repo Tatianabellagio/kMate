@@ -19,12 +19,12 @@ SIM_BASE=$ROOT/sims/visor_freqk/pool_sweep_82_recomb
 OUT_DIR=$ROOT/scratch/sim_h_test
 mkdir -p $OUT_DIR
 
-# Job grid: 3 sims x 2 cn matrices = 6 jobs
+# Job grid: 3 sims x 2 kmer_pa matrices = 6 jobs
 SIMS=(cov10_n200_g1_s42_hotspots_p231_chr1
       cov10_n50_g1_s42_hotspots_p231_chr1
       cov10_n50_g3_s42_hotspots_p231_chr1)
-CNS=(cn_full_231_v3qc_v3_filt2
-     cn_full_231_v3qc_v3_subsampMedian_refilt2)
+CNS=(kmer_pa_231_v3qc_v3_filt2
+     kmer_pa_231_v3qc_v3_subsampMedian_refilt2)
 
 SIM_IDX=$(( SLURM_ARRAY_TASK_ID / 2 ))
 CN_IDX=$(( SLURM_ARRAY_TASK_ID % 2 ))
@@ -37,9 +37,9 @@ else
     TAG=filt2
 fi
 
-echo "=== TASK $SLURM_ARRAY_TASK_ID: sim=$SIM  cn=$CN  tag=$TAG ==="
+echo "=== TASK $SLURM_ARRAY_TASK_ID: sim=$SIM  kmer_pa=$CN  tag=$TAG ==="
 $PY -u $ROOT/src/sweep_shape_norm_h_only.py \
-    --cn-prefix $ROOT/data/$CN/cn_Chr1 \
+    --kmer_pa-prefix $ROOT/data/$CN/kmer_pa_Chr1 \
     --reads $SIM_BASE/$SIM/reads/r1.fq $SIM_BASE/$SIM/reads/r2.fq \
     --sample $SIM \
     --out-prefix $OUT_DIR/${TAG}_${SIM} \

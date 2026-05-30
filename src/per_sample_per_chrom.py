@@ -8,16 +8,16 @@ Two estimators only:
               --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5). These are the
               defaults below, so `--block-mode window` alone reproduces it.
 
-Memory note: instead of loading the genome-wide cn_kmer matrix (~74 GB dense
+Memory note: instead of loading the genome-wide kmer_pa matrix (~74 GB dense
 float32 for 80M k-mers × 231 founders), we process one chromosome at a time
 (~5× lower peak). Per-chrom h agrees with a genome-wide solve to ~0.1%.
 
 Usage:
     python per_sample_per_chrom.py \\
-        --cn-kmer-prefix data/cn_full_231/cn \\
-        --cn-var       panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var.npz \\
-        --cn-var-called panel/arch3/chr1/cn_var_231_arch3_chr1.cn_var_called.npz \\
-        --cn-var-meta  panel/arch3/chr1/cn_var_231_arch3_chr1.meta.npz \\
+        --kmer-pa-prefix data/kmer_pa_231/kmer_pa \\
+        --var-pa       panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz \\
+        --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \\
+        --var-meta  panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \\
         --reads R1.fq R2.fq --sample <name> --out <name>.tsv \\
         --threads 8 --chroms Chr1 --block-mode global
 
@@ -36,24 +36,24 @@ from block_em import (define_windows, assign_kmers_to_blocks,
 from block_haplotype_em import smooth_h_across_blocks
 
 
-def _count_and_load_cn_dense(chrom, cn_prefix, reads_input, threads):
-    """Load one chrom's cn_kmer + meta, count k-mers in reads, densify to float32.
+def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads):
+    """Load one chrom's kmer_pa + meta, count k-mers in reads, densify to float32.
 
     Shared between global and window modes. Returns
-    (cn_dense, counts, meta, cov, F, K) or
+    (kmer_pa_dense, counts, meta, cov, F, K) or
     (None, None, None, 0.0, 0, 0) if the chrom is missing.
     """
-    cn_path = cn_prefix + f"_{chrom}.cn.npz"
-    meta_path = cn_prefix + f"_{chrom}.meta.npz"
+    cn_path = kmer_pa_prefix + f"_{chrom}.kmer_pa.npz"
+    meta_path = kmer_pa_prefix + f"_{chrom}.meta.npz"
     if not os.path.exists(cn_path):
-        print(f"  [{chrom}] cn missing — skip")
+        print(f"  [{chrom}] kmer_pa missing — skip")
         return None, None, None, 0.0, 0, 0
 
-    cn_kmer = load_npz(cn_path)
+    kmer_pa = load_npz(cn_path)
     meta = np.load(meta_path, allow_pickle=True)
     kmer_index = meta["kmer_index"]
-    F, K = cn_kmer.shape
-    print(f"  [{chrom}] cn_kmer F={F}, K={K:,}", flush=True)
+    F, K = kmer_pa.shape
+    print(f"  [{chrom}] kmer_pa F={F}, K={K:,}", flush=True)
 
     t = time.time()
     if isinstance(reads_input, str) and reads_input.endswith(".bam"):
@@ -63,42 +63,42 @@ def _count_and_load_cn_dense(chrom, cn_prefix, reads_input, threads):
     counts = np.array([cd[km] for km in kmer_index], dtype=np.int64)
     print(f"  [{chrom}] {time.time()-t:.0f}s count: nonzero {(counts>0).sum():,}/{K:,}", flush=True)
 
-    cn_dense = np.asarray(cn_kmer.todense() if hasattr(cn_kmer, "todense") else cn_kmer).astype(np.float32)
-    del cn_kmer
+    kmer_pa_dense = np.asarray(kmer_pa.todense() if hasattr(kmer_pa, "todense") else kmer_pa).astype(np.float32)
+    del kmer_pa
     gc.collect()
-    ac = cn_dense.sum(axis=0)
+    ac = kmer_pa_dense.sum(axis=0)
     cov = counts.sum() * F / max(1, ac.sum())
-    print(f"  [{chrom}] cov estimate: {cov:.1f}×, cn_dense: {cn_dense.nbytes/1e9:.1f} GB", flush=True)
-    return cn_dense, counts, meta, cov, F, K
+    print(f"  [{chrom}] cov estimate: {cov:.1f}×, kmer_pa_dense: {kmer_pa_dense.nbytes/1e9:.1f} GB", flush=True)
+    return kmer_pa_dense, counts, meta, cov, F, K
 
 
-# Module-level globals populated by main(): cn_var_called sparse matrix.
+# Module-level globals populated by main(): var_called sparse matrix.
 # _project_with_called_mask reads this so we don't plumb it through every
 # function signature.
-_CN_VAR_CALLED = None  # scipy.sparse, founder × variant; 1 if GT != ./.
+_VAR_CALLED = None  # scipy.sparse, founder × variant; 1 if GT != ./.
 
-def _project_with_called_mask(cn_var_chrom, h, idx):
-    """Project h through cn_var with per-record renormalization by the called mask.
+def _project_with_called_mask(var_pa_chrom, h, idx):
+    """Project h through var_pa with per-record renormalization by the called mask.
 
-    Returns (alt_freq, info): AF = (h@cn_var)/(h@cn_var_called) and info = the
+    Returns (alt_freq, info): AF = (h@var_pa)/(h@var_called) and info = the
     projection denominator, i.e. the h-weighted called mass per record (ones when
     no called mask is loaded). At records where some founders are ./., their
     h-mass is excluded from both numerator and denominator; equals AC/AN under
     uniform h.
     """
-    freqs = cn_var_chrom.T @ h
+    freqs = var_pa_chrom.T @ h
     if hasattr(freqs, "toarray"):
         freqs = np.asarray(freqs).flatten()
-    if _CN_VAR_CALLED is None:
+    if _VAR_CALLED is None:
         return freqs, np.ones(len(idx), dtype=freqs.dtype)
-    called_weight = _CN_VAR_CALLED[:, idx].T @ h
+    called_weight = _VAR_CALLED[:, idx].T @ h
     if hasattr(called_weight, "toarray"):
         called_weight = np.asarray(called_weight).flatten()
     safe = np.maximum(called_weight, np.array(1e-12, dtype=freqs.dtype))
     return (freqs / safe).astype(freqs.dtype), called_weight.astype(freqs.dtype)
 
 
-def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, threads,
+def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          em_max_iter=200, kmer_weight="uniform"):
     """Global-mode (single h per chrom) EM + projection.
 
@@ -106,16 +106,16 @@ def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     de-replication; m_b = #k-mers sharing the k-mer's bubble_id).
     """
     t_chrom = time.time()
-    cn_dense, counts, meta, cov, F, K = _count_and_load_cn_dense(
-        chrom, cn_prefix, reads_input, threads)
-    if cn_dense is None:
+    kmer_pa_dense, counts, meta, cov, F, K = _count_and_load_kmer_pa_dense(
+        chrom, kmer_pa_prefix, reads_input, threads)
+    if kmer_pa_dense is None:
         return None, None, None, 0.0
 
     # Filter to nonzero-count k-mers (the EM only needs those)
     nz = counts > 0
-    cn_em = np.ascontiguousarray(cn_dense[:, nz])
+    kmer_pa_em = np.ascontiguousarray(kmer_pa_dense[:, nz])
     counts_em = counts[nz].astype(np.float32)
-    del cn_dense
+    del kmer_pa_dense
     gc.collect()
 
     # Optional per-bubble de-replication weight ω_k = 1/m_b (on nz k-mers).
@@ -128,24 +128,24 @@ def run_one_chrom_global(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
               f"max={m_b[nz].max():.0f}", flush=True)
 
     t = time.time()
-    h, info = solve_em(counts_em, cn_em, cov, max_iter=em_max_iter, tol=1e-7,
+    h, info = solve_em(counts_em, kmer_pa_em, cov, max_iter=em_max_iter, tol=1e-7,
                        omega=omega)
     print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
           f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
-    del cn_em, counts_em
+    del kmer_pa_em, counts_em
     gc.collect()
 
     rec_chrom = np.asarray(var_meta["chrom"]).astype(str)
     idx = np.where(rec_chrom == str(chrom))[0]
-    cn_var_chrom = cn_var[:, idx]
-    freqs, info = _project_with_called_mask(cn_var_chrom, h, idx)
+    var_pa_chrom = var_pa[:, idx]
+    freqs, info = _project_with_called_mask(var_pa_chrom, h, idx)
     info = info.astype(np.float32)
     elapsed = time.time() - t_chrom
     print(f"  [{chrom}] {elapsed:.0f}s total — {len(idx):,} records projected", flush=True)
     return idx, freqs, info, h, elapsed
 
 
-def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, threads,
+def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          window_bp=10_000, em_max_iter=200,
                          global_anchor_weight=0.3,
                          hmm_smooth_passes=5,
@@ -157,12 +157,12 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
     h_global (global_anchor_weight) and post-smoothed across windows
     (Li-Stephens-style, hmm_smooth_*). Each window's h projects its records
-    through cn_var with the missing-aware (called-mask) normalization.
+    through var_pa with the missing-aware (called-mask) normalization.
     """
     t_chrom = time.time()
-    cn_dense, counts, meta, cov, F, K = _count_and_load_cn_dense(
-        chrom, cn_prefix, reads_input, threads)
-    if cn_dense is None:
+    kmer_pa_dense, counts, meta, cov, F, K = _count_and_load_kmer_pa_dense(
+        chrom, kmer_pa_prefix, reads_input, threads)
+    if kmer_pa_dense is None:
         return None, None, None, None, 0.0
 
     bubble_id = meta["bubble_id"]
@@ -188,7 +188,7 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
 
     t = time.time()
     h_blocks, status, global_h = solve_em_per_block(
-        counts.astype(np.float32), cn_dense, kmer_block, n_blocks,
+        counts.astype(np.float32), kmer_pa_dense, kmer_block, n_blocks,
         cov, em_max_iter=em_max_iter, tol=1e-7,
         min_kmers_per_block=200, verbose=False,
         global_anchor_weight=global_anchor_weight,
@@ -197,7 +197,7 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     print(f"  [{chrom}] block-EM {time.time()-t:.0f}s "
           f"({(status==0).sum()}/{n_blocks} local fits, "
           f"{(status==1).sum()} fallbacks)", flush=True)
-    del cn_dense
+    del kmer_pa_dense
     gc.collect()
 
     # Optional post-EM HMM smoothing across blocks (Li-Stephens style).
@@ -222,18 +222,18 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
     rec_chrom = np.asarray(var_meta["chrom"]).astype(str)
     rec_pos = np.asarray(var_meta["pos"])
     idx = np.where(rec_chrom == str(chrom))[0]
-    cn_var_chrom = cn_var[:, idx]
-    # MAR projection: pass cn_var_called sliced to this chrom so window-mode
-    # matches global-mode's (h@cn_var)/(h@cn_var_called) semantics.
-    cn_var_called_chrom = _CN_VAR_CALLED[:, idx] if _CN_VAR_CALLED is not None else None
+    var_pa_chrom = var_pa[:, idx]
+    # MAR projection: pass var_called sliced to this chrom so window-mode
+    # matches global-mode's (h@var_pa)/(h@var_called) semantics.
+    var_called_chrom = _VAR_CALLED[:, idx] if _VAR_CALLED is not None else None
 
     # Hard window assignment: each record gets the h of its window (already
     # HMM-smoothed across windows above). The projection returns the AF and the
     # per-record info (h-weighted called mass) in one pass.
     rec_block = assign_records_to_blocks(rec_chrom[idx], rec_pos[idx], blocks)
     freqs, info = project_blocks_to_records(
-        h_blocks, global_h, cn_var_chrom, rec_block,
-        cn_var_called=cn_var_called_chrom,
+        h_blocks, global_h, var_pa_chrom, rec_block,
+        var_called=var_called_chrom,
     )
     info = info.astype(np.float32)
     elapsed = time.time() - t_chrom
@@ -243,14 +243,14 @@ def run_one_chrom_window(chrom, cn_prefix, cn_var, var_meta, reads_input, thread
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cn-kmer-prefix", required=True)
-    ap.add_argument("--cn-var", required=True)
-    ap.add_argument("--cn-var-meta", required=True)
-    ap.add_argument("--cn-var-called", default=None,
-                    help="Path to cn_var_called.npz (founder × variant 1/0 mask "
+    ap.add_argument("--kmer-pa-prefix", required=True)
+    ap.add_argument("--var-pa", required=True)
+    ap.add_argument("--var-meta", required=True)
+    ap.add_argument("--var-called", default=None,
+                    help="Path to var_called.npz (founder × variant 1/0 mask "
                          "of called genotypes). When provided, AF projection "
-                         "uses (h@cn_var)/(h@cn_var_called) to correctly handle "
-                         "./. cells. Auto-detected next to --cn-var if not given.")
+                         "uses (h@var_pa)/(h@var_called) to correctly handle "
+                         "./. cells. Auto-detected next to --var-pa if not given.")
     ap.add_argument("--reads", required=True, nargs="+")
     ap.add_argument("--sample", required=True)
     ap.add_argument("--out", required=True)
@@ -284,27 +284,27 @@ def main():
     print(f"  reads: {args.reads}", flush=True)
     t0 = time.time()
 
-    cn_var = load_npz(args.cn_var)
-    var_meta = np.load(args.cn_var_meta, allow_pickle=True)
-    n_records = cn_var.shape[1]
-    print(f"  cn_var: {cn_var.shape}, n_records: {n_records:,}", flush=True)
+    var_pa = load_npz(args.var_pa)
+    var_meta = np.load(args.var_meta, allow_pickle=True)
+    n_records = var_pa.shape[1]
+    print(f"  var_pa: {var_pa.shape}, n_records: {n_records:,}", flush=True)
 
-    # Optional: load cn_var_called mask for missing-aware AF projection.
-    global _CN_VAR_CALLED
-    called_path = args.cn_var_called
+    # Optional: load var_called mask for missing-aware AF projection.
+    global _VAR_CALLED
+    called_path = args.var_called
     if called_path is None:
-        guess = args.cn_var.replace(".cn_var.npz", ".cn_var_called.npz")
-        if guess != args.cn_var and os.path.exists(guess):
+        guess = args.var_pa.replace(".var_pa.npz", ".var_called.npz")
+        if guess != args.var_pa and os.path.exists(guess):
             called_path = guess
     if called_path and os.path.exists(called_path):
-        _CN_VAR_CALLED = load_npz(called_path)
-        print(f"  cn_var_called: {_CN_VAR_CALLED.shape}, nnz={_CN_VAR_CALLED.nnz:,} "
+        _VAR_CALLED = load_npz(called_path)
+        print(f"  var_called: {_VAR_CALLED.shape}, nnz={_VAR_CALLED.nnz:,} "
               f"(loaded from {called_path}; AF projection will divide by h@called)",
               flush=True)
     else:
-        _CN_VAR_CALLED = None
-        print(f"  cn_var_called: NOT FOUND — AF projection treats ./. as REF "
-              f"(legacy behavior). Rebuild with build_cn_var.py for "
+        _VAR_CALLED = None
+        print(f"  var_called: NOT FOUND — AF projection treats ./. as REF "
+              f"(legacy behavior). Rebuild with build_var_pa.py for "
               f"missing-aware projection.", flush=True)
 
     reads_input = args.reads if len(args.reads) > 1 else args.reads[0]
@@ -314,24 +314,24 @@ def main():
     h_save = {}  # global: h_per_chrom[chrom] = h. window: per-chrom block packs.
 
     # Panel-level per-record called counts (h-independent QC metric). When
-    # cn_var_called is unavailable, assume the panel size F (all called).
-    F_total = cn_var.shape[0]
-    if _CN_VAR_CALLED is not None:
-        n_called_per_rec = np.asarray(_CN_VAR_CALLED.sum(axis=0)).flatten().astype(np.int32)
+    # var_called is unavailable, assume the panel size F (all called).
+    F_total = var_pa.shape[0]
+    if _VAR_CALLED is not None:
+        n_called_per_rec = np.asarray(_VAR_CALLED.sum(axis=0)).flatten().astype(np.int32)
     else:
         n_called_per_rec = np.full(n_records, F_total, dtype=np.int32)
 
     for chrom in args.chroms:
         if args.block_mode == "global":
             idx, freqs, info, h, _ = run_one_chrom_global(
-                chrom, args.cn_kmer_prefix, cn_var, var_meta,
+                chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads, kmer_weight=args.kmer_weight)
             if idx is None:
                 continue
             h_save[chrom] = h
         else:  # window
             idx, freqs, info, pack, _ = run_one_chrom_window(
-                chrom, args.cn_kmer_prefix, cn_var, var_meta,
+                chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads,
                 window_bp=args.window_bp,
                 global_anchor_weight=args.global_anchor_weight,

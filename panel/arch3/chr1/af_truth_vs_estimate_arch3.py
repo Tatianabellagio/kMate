@@ -2,11 +2,11 @@
 Recreate AF_TRUTH_VS_ESTIMATE_v3qc_v3_mixedloose for Arch 3 chr1.
 
 Builds three views on SNP-only records:
-  1. RECIPE TRUTH = uniform-h projection through cn_var (h = 1/F for all founders)
+  1. RECIPE TRUTH = uniform-h projection through var_pa (h = 1/F for all founders)
      This is the AF you would observe in a pool where every founder contributes
      equally — a panel-intrinsic baseline that has no sequencing/projection error.
   2. hapFIRE AF (xwu's 2023 production HARP+CVXPY on the 231-panel greneNet_v1.1)
-  3. cactus_em AF (h_v3 @ cn_var_arch3 from A6)
+  3. cactus_em AF (h_v3 @ var_pa_arch3 from A6)
 
 4-tuple join on (chrom, pos, ref, alt) so multi-allelic-split SNPs don't manufacture
 off-diagonal scatter.
@@ -23,19 +23,19 @@ import matplotlib.pyplot as plt
 
 ROOT = Path(__file__).resolve().parents[2]
 ARCH = ROOT / "arch3" / "chr1"
-CN_VAR     = ARCH / "cn_var_231_arch3_chr1.cn_var.npz"
-CN_CALLED  = ARCH / "cn_var_231_arch3_chr1.cn_var_called.npz"
-META       = ARCH / "cn_var_231_arch3_chr1.meta.npz"
-SEEDMIX    = ARCH / "SEEDMIX_S1_arch3_chr1.tsv"   # h_v3 @ cn_var_arch3
+CN_VAR     = ARCH / "var_pa_231_arch3_chr1.var_pa.npz"
+CN_CALLED  = ARCH / "var_pa_231_arch3_chr1.var_called.npz"
+META       = ARCH / "var_pa_231_arch3_chr1.meta.npz"
+SEEDMIX    = ARCH / "SEEDMIX_S1_arch3_chr1.tsv"   # h_v3 @ var_pa_arch3
 HAPFIRE    = "/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_snp_frequency.txt"
 HAPFIRE_VCF = "/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf"
 
 OUT_PLOT = ROOT / "plots" / "AF_TRUTH_VS_ESTIMATE_arch3_chr1.png"
 OUT_PLOT.parent.mkdir(parents=True, exist_ok=True)
 
-print("[load] cn_var + cn_var_called + meta")
-cn_var       = load_npz(CN_VAR).tocsr()
-cn_var_called = load_npz(CN_CALLED).tocsr()
+print("[load] var_pa + var_called + meta")
+var_pa       = load_npz(CN_VAR).tocsr()
+var_called = load_npz(CN_CALLED).tocsr()
 meta = np.load(META, allow_pickle=True)
 pos  = meta["pos"]
 chrom = meta["chrom"]
@@ -43,14 +43,14 @@ ref_arr = meta["ref"]   # object array
 alt_arr = meta["alt"]   # object array
 ref_len = meta["ref_len"]
 alt_len = meta["alt_len"]
-F = cn_var.shape[0]
-N = cn_var.shape[1]
-print(f"  cn_var: {cn_var.shape}, {cn_var.nnz:,} nnz")
+F = var_pa.shape[0]
+N = var_pa.shape[1]
+print(f"  var_pa: {var_pa.shape}, {var_pa.nnz:,} nnz")
 
 print("[build] recipe truth — uniform-h projection (h_i = 1/F)")
 h_uniform = np.full(F, 1.0/F, dtype=np.float64)
-numer = h_uniform @ cn_var          # shape (N,)
-denom = h_uniform @ cn_var_called   # shape (N,)
+numer = h_uniform @ var_pa          # shape (N,)
+denom = h_uniform @ var_called   # shape (N,)
 recipe_truth = np.where(denom > 0, numer / denom, np.nan)
 print(f"  recipe_truth: AF range [{np.nanmin(recipe_truth):.3f}, {np.nanmax(recipe_truth):.3f}], NaN={np.isnan(recipe_truth).sum():,}")
 
@@ -136,10 +136,10 @@ x_hf  = joined["af_hapfire"].to_numpy()
 x_cem = joined["cem_af"].to_numpy()
 
 hexpanel(axes[0,0], x_rec, x_hf,
-         "recipe truth AF (uniform-h ∗ Arch 3 cn_var)", "hapFIRE AF",
+         "recipe truth AF (uniform-h ∗ Arch 3 var_pa)", "hapFIRE AF",
          "Recipe truth vs hapFIRE\n(panel intrinsic vs 1001G short-read calls)", m_rec_vs_hf)
 hexpanel(axes[0,1], x_rec, x_cem,
-         "recipe truth AF", "cactus_em SEEDMIX_S1 AF (h_v3 ∗ Arch 3 cn_var)",
+         "recipe truth AF", "cactus_em SEEDMIX_S1 AF (h_v3 ∗ Arch 3 var_pa)",
          "Recipe truth vs cactus_em\n(should be ~perfect if h ≈ uniform, slope deviation = sample composition)", m_rec_vs_cem)
 hexpanel(axes[1,0], x_cem, x_hf,
          "cactus_em SEEDMIX_S1 AF", "hapFIRE AF",

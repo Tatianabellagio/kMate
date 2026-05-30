@@ -23,9 +23,9 @@ R1=/global/scratch/users/tbellg/pang/grenenet_reads/grenenet-phase1/trimmed_dedu
 R2=/global/scratch/users/tbellg/pang/grenenet_reads/grenenet-phase1/trimmed_dedup/${SAMPLE}_2.fq.gz
 
 /usr/bin/time -v /global/home/users/tbellg/miniforge3/envs/hapfm/bin/python -u src/per_sample_per_chrom.py \
-    --cn-kmer-prefix data/cn_full_231_v2/cn \
-    --cn-var data/cn_var_231_v2.cn_var.npz \
-    --cn-var-meta data/cn_var_231_v2.meta.npz \
+    --kmer-pa-prefix data/kmer_pa_231_v2/kmer_pa \
+    --var-pa data/var_pa_231_v2.var_pa.npz \
+    --var-meta data/var_pa_231_v2.meta.npz \
     --reads $R1 $R2 \
     --sample $SAMPLE \
     --out results/site04_231_v2_perchrom/${SAMPLE}.tsv \

@@ -1,5 +1,5 @@
 """
-Build the founder × k-mer copy-number matrix from PanGenie-index output + the
+Build the founder × k-mer presence/absence matrix (K_pa) from PanGenie-index output + the
 input multi-allelic VCF.
 
 PanGenie merges nearby bubbles (within k-mer distance) into a single "merged
@@ -8,7 +8,7 @@ bubble". For each merged bubble at [start, end], we:
   2. For each founder, reconstruct their haplotype sequence across the region
      by applying their chosen alt for each VCF record
   3. Compute the canonical k-mer set of each founder's reconstructed sequence
-  4. cn[f, k] = 1 iff k-mer k (from the bubble's unique-kmers list) is in
+  4. kmer_pa[f, k] = 1 iff k-mer k (from the bubble's unique-kmers list) is in
      founder f's k-mer set, else 0
 
 Output is a sparse F × K matrix (CSR), plus arrays mapping each k-mer to its
@@ -93,7 +93,7 @@ def parse_kmer_file(kmers_tsv_gz: str) -> list[dict]:
     return bubbles
 
 
-def build_cn_for_chrom(
+def build_kmer_pa_for_chrom(
     kmers_tsv_gz: str,
     vcf_path: str,
     ref_fasta: str,
@@ -107,7 +107,7 @@ def build_cn_for_chrom(
     """Build the founder × k-mer matrix for one chromosome.
 
     Returns:
-        cn:          scipy.sparse.csr_matrix of shape (F, K_total)
+        kmer_pa:          scipy.sparse.csr_matrix of shape (F, K_total)
         kmer_index:  list of canonical k-mer strings (length K_total)
         bubble_id:   K_total-vector mapping each k-mer to its bubble idx (0..n_bubbles-1)
         bubble_meta: list of (chrom, start, end) per bubble (length n_bubbles)
@@ -138,7 +138,7 @@ def build_cn_for_chrom(
     if verbose:
         print(f"[build_cn] total k-mers across bubbles: {total_K:,}")
 
-    # Pre-allocate cn as dense int8 (F × total_K). For Chr1: 82 × ~6M = ~500MB.
+    # Pre-allocate kmer_pa as dense int8 (F × total_K). For Chr1: 82 × ~6M = ~500MB.
     # Use sparse builders if memory tight.
     cn_rows = []
     cn_cols = []
@@ -186,15 +186,15 @@ def build_cn_for_chrom(
                 gt = rec.samples[founder]["GT"]
                 if gt is None or len(gt) == 0:
                     continue
-                # Panel must be pre-haploidized. cn_full reconstructs ONE
+                # Panel must be pre-haploidized. kmer_pa reconstructs ONE
                 # sequence per founder; with diploid GTs (e.g. 0/1) we'd
-                # silently use only gt[0] and disagree with cn_var's
+                # silently use only gt[0] and disagree with var_pa's
                 # any(a>0) carrier rule. Fail loudly instead.
                 if len(gt) != 1:
                     raise ValueError(
                         f"Panel VCF must be haploid (got len(GT)={len(gt)} for "
                         f"{founder} at {rec.chrom}:{rec.pos}). Haploidize the "
-                        f"VCF before building cn_full."
+                        f"VCF before building kmer_pa."
                     )
                 if gt[0] is None:
                     # Missing GT. Behavior depends on treat_missing_as_n flag.
@@ -224,19 +224,19 @@ def build_cn_for_chrom(
         k_offset += K_b
         if verbose and (b_idx + 1) % 1000 == 0:
             print(f"  ... processed {b_idx+1:,}/{len(bubbles):,} bubbles, "
-                  f"current cn nnz={len(cn_rows):,}")
+                  f"current kmer_pa nnz={len(cn_rows):,}")
 
     # Build sparse matrix
-    cn = csr_matrix(
+    kmer_pa = csr_matrix(
         (np.ones(len(cn_rows), dtype=np.int8), (cn_rows, cn_cols)),
         shape=(F, total_K),
         dtype=np.int8,
     )
     bubble_meta = [(b["chrom"], b["start"], b["end"]) for b in bubbles]
     if verbose:
-        print(f"[build_cn] DONE. cn shape={cn.shape}, nnz={cn.nnz:,}, "
-              f"density={cn.nnz / (cn.shape[0]*cn.shape[1]):.4%}")
-    return cn, kmer_index, bubble_id, bubble_meta, founders
+        print(f"[build_cn] DONE. kmer_pa shape={kmer_pa.shape}, nnz={kmer_pa.nnz:,}, "
+              f"density={kmer_pa.nnz / (kmer_pa.shape[0]*kmer_pa.shape[1]):.4%}")
+    return kmer_pa, kmer_index, bubble_id, bubble_meta, founders
 
 
 if __name__ == "__main__":
@@ -250,20 +250,46 @@ if __name__ == "__main__":
     ap.add_argument("--max-bubbles", type=int, default=None)
     ap.add_argument("--treat-missing-as-n", action="store_true",
                     help="Write N at positions where founder has ./. GT, instead "
-                         "of defaulting to REF. Drops k-mers spanning N from cn_full. "
-                         "Use for v3qc-v2 and onwards. v3/v3qc were built without this.")
+                         "of defaulting to REF. Drops k-mers spanning N from kmer_pa. "
+                         "Production v3qc_v2/v3 use this (./. -> REF would fabricate "
+                         "confident reference genotypes; see ALGORITHM.md s2.1).")
+    ap.add_argument("--filter-production", action="store_true",
+                    help="Apply the production column filter at build time: keep "
+                         "min_ac <= ac <= F-invariant_margin (drops ac==0 dead, "
+                         "ac==1 private, ac==F invariant). The matrix is written "
+                         "already-filtered. See ALGORITHM.md s2.1.")
+    ap.add_argument("--min-ac", type=int, default=2,
+                    help="lower keep bound for --filter-production (default 2)")
+    ap.add_argument("--invariant-margin", type=int, default=1,
+                    help="drop ac > F-margin for --filter-production (default 1 = drop ac==F only)")
     args = ap.parse_args()
 
     if args.treat_missing_as_n:
         print("[build_cn] --treat-missing-as-n ON: ./. → N in haplotype")
 
-    cn, kmer_index, bubble_id, bubble_meta, founders = build_cn_for_chrom(
+    kmer_pa, kmer_index, bubble_id, bubble_meta, founders = build_kmer_pa_for_chrom(
         args.kmers, args.vcf, args.ref, args.chrom,
         max_bubbles=args.max_bubbles,
         treat_missing_as_n=args.treat_missing_as_n,
     )
+
+    if args.filter_production:
+        # Filter invariant/private/dead columns at generation, so the production
+        # kmer_pa is written already-filtered (single source of truth for the
+        # rule lives in filter_kmer_pa_production.production_keep_mask).
+        from filter_kmer_pa_production import report_filter
+        kmer_index = np.asarray(kmer_index)
+        F = kmer_pa.shape[0]
+        ac = np.asarray(kmer_pa.sum(axis=0)).flatten()
+        print(f"[build_cn] --filter-production ON (F={F})")
+        keep = report_filter(ac, F, args.min_ac, args.invariant_margin)
+        kmer_pa = kmer_pa.tocsc()[:, keep].tocsr()
+        kmer_index = kmer_index[keep]
+        bubble_id = bubble_id[keep]
+        print(f"[build_cn] filtered kmer_pa shape={kmer_pa.shape} nnz={kmer_pa.nnz:,}")
+
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    save_npz(args.out + ".cn.npz", cn)
+    save_npz(args.out + ".kmer_pa.npz", kmer_pa)
     np.savez(args.out + ".meta.npz",
              kmer_index=np.array(kmer_index),
              bubble_id=bubble_id,
@@ -271,4 +297,4 @@ if __name__ == "__main__":
              bubble_start=np.array([m[1] for m in bubble_meta], dtype=np.int64),
              bubble_end=np.array([m[2] for m in bubble_meta], dtype=np.int64),
              founders=np.array(founders))
-    print(f"Wrote {args.out}.cn.npz and {args.out}.meta.npz")
+    print(f"Wrote {args.out}.kmer_pa.npz and {args.out}.meta.npz")

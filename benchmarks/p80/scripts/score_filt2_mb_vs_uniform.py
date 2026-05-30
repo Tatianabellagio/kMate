@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Score filt2+1/m_b (inv_mb) vs filt2 (uniform) global EM on p80 recomb sims.
-JOIN BY RECORD INDEX: est, truth, cn_var are all in identical cn_var record order,
-so est[i]<->truth[i]. The (chrom,pos,ref_len,alt_len) 4-key is NOT unique (p80 cn_var
+JOIN BY RECORD INDEX: est, truth, var_pa are all in identical var_pa record order,
+so est[i]<->truth[i]. The (chrom,pos,ref_len,alt_len) 4-key is NOT unique (p80 var_pa
 has 4.6% dup keys; atomized 231 has 38%) -> a key-merge mis-joins multiallelic ALTs.
 We assert identical (pos,ref_len,alt_len) row order then compare by position.
 Class from ref_len/alt_len. Writes filt2_mb_vs_uniform_summary.tsv."""
