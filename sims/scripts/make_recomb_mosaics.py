@@ -82,69 +82,26 @@ CHROM_LENGTHS = {
 }
 
 
-def sample_crossovers(chrom_len, rate, rng, allowed_positions=None):
-    """Sample crossover positions on one chromosome via Poisson process.
+def sample_crossovers(chrom_len, rate, rng):
+    """Sample crossover positions on one chromosome via a Poisson process.
 
-    If `allowed_positions` is None: positions sampled uniformly along the chrom
-    (the original behaviour, useful as a stress-test).
-
-    If `allowed_positions` is an array of bp positions (e.g., LD-block
-    boundaries from BigLD on the panel): the Poisson-distributed *number* of
-    crossovers per chromosome is preserved, but each crossover is placed at a
-    randomly chosen allowed position. This models real meiosis where crossover
-    hotspots define LD block boundaries — within-block ancestry is preserved.
+    The number of crossovers ~ Poisson(chrom_len * rate); each crossover is
+    placed at a uniformly random position along the chromosome.
     """
     n = rng.poisson(chrom_len * rate)
     if n == 0:
         return np.array([], dtype=np.int64)
-    if allowed_positions is None:
-        pos = np.sort(rng.integers(1, chrom_len, size=n))
-    else:
-        if len(allowed_positions) == 0:
-            return np.array([], dtype=np.int64)
-        # Sample with replacement from allowed positions, then sort + dedup.
-        # Replacement is fine: at our rates each chrom has ~1-4 crossovers and
-        # ~1000s of allowed positions, so collisions are vanishingly rare.
-        chosen = rng.choice(allowed_positions, size=n, replace=True)
-        pos = np.unique(np.sort(chosen))
-    return pos
+    return np.sort(rng.integers(1, chrom_len, size=n))
 
 
-def load_ld_block_boundaries(path):
-    """Load LD-block boundaries from a hapfire_block_index.npz (build_hapfire_block_index.py output).
-
-    Returns dict {chrom: sorted np.array of bp positions where crossovers can fire}.
-    Boundaries are taken as block_pos_end of each block (= the last SNP in the
-    block, just before the next block starts). Chrom names are converted from
-    panel VCF style ('1','2',...) to FASTA style ('Chr1','Chr2',...).
-    """
-    npz = np.load(path, allow_pickle=True)
-    block_chrom = np.asarray(npz['block_chrom']).astype(str)
-    block_pos_end = np.asarray(npz['block_pos_end']).astype(np.int64)
-    out = {}
-    for raw_chrom in np.unique(block_chrom):
-        m = block_chrom == raw_chrom
-        # Convert '1' → 'Chr1' to match CHROM_LENGTHS keys
-        target = f"Chr{raw_chrom}" if not str(raw_chrom).startswith("Chr") else str(raw_chrom)
-        # Filter to positions strictly inside the chrom (not at ends — those don't
-        # produce ancestry switches anyway)
-        L = CHROM_LENGTHS.get(target, None)
-        ends = block_pos_end[m]
-        if L is not None:
-            ends = ends[(ends > 0) & (ends < L)]
-        out[target] = np.sort(np.unique(ends))
-    return out
-
-
-def make_one_mosaic(parent_a_id, parent_b_id, rate, rng, allowed_per_chrom=None):
+def make_one_mosaic(parent_a_id, parent_b_id, rate, rng):
     """Build segment list for a 1-gen recombinant of (parent_a, parent_b).
 
     Returns dict {chrom: [(start, end, founder_id), ...]}.
     """
     out = {}
     for chrom, L in CHROM_LENGTHS.items():
-        chrom_allowed = allowed_per_chrom.get(chrom) if allowed_per_chrom else None
-        cuts = sample_crossovers(L, rate, rng, allowed_positions=chrom_allowed)
+        cuts = sample_crossovers(L, rate, rng)
         # Walk left-to-right alternating founders (random starting parent)
         which = rng.integers(0, 2)
         boundaries = [0] + list(cuts) + [L]
@@ -158,7 +115,7 @@ def make_one_mosaic(parent_a_id, parent_b_id, rate, rng, allowed_per_chrom=None)
     return out
 
 
-def make_individuals(n_indiv, n_generations, weights_dict, rate, rng, allowed_per_chrom=None,
+def make_individuals(n_indiv, n_generations, weights_dict, rate, rng,
                      gen0_no_replace=False):
     """Build n_indiv recombinant haploids after n_generations.
 
@@ -204,19 +161,18 @@ def make_individuals(n_indiv, n_generations, weights_dict, rate, rng, allowed_pe
         for _ in range(n_indiv):
             # pick two parents at random from pop
             i, j = rng.integers(0, len(pop)), rng.integers(0, len(pop))
-            child = recombine_segments(pop[i], pop[j], rate, rng, allowed_per_chrom)
+            child = recombine_segments(pop[i], pop[j], rate, rng)
             new_pop.append(child)
         pop = new_pop
 
     return pop
 
 
-def recombine_segments(parent_a, parent_b, rate, rng, allowed_per_chrom=None):
+def recombine_segments(parent_a, parent_b, rate, rng):
     """Recombine two segment-track parents into one haploid offspring."""
     out = {}
     for chrom, L in CHROM_LENGTHS.items():
-        chrom_allowed = allowed_per_chrom.get(chrom) if allowed_per_chrom else None
-        cuts = sample_crossovers(L, rate, rng, allowed_positions=chrom_allowed)
+        cuts = sample_crossovers(L, rate, rng)
         which = rng.integers(0, 2)
         boundaries = [0] + list(cuts) + [L]
         segs = []
@@ -283,10 +239,6 @@ def main():
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--samtools", default="/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools",
                     help="samtools binary, used to index the mosaic FASTAs (default: shared install)")
-    ap.add_argument("--crossovers-from-ld-blocks", default=None,
-                    help="Path to a hapfire_block_index.npz (output of build_hapfire_block_index.py). "
-                         "If given, sample crossover positions only at LD-block boundaries (= recombination "
-                         "hotspots). If omitted, fall back to uniform-position Poisson sampling.")
     ap.add_argument("--chroms", default=None,
                     help="Space-separated chroms to include (e.g. 'Chr1'). Default: all 5. "
                          "Use this for Chr1-only sims when founder FASTAs only have Chr1.")
@@ -392,23 +344,11 @@ def main():
     print(f"  n founders with count>0 in pool: {n_used} ({n_used/len(founders)*100:.1f}%)", flush=True)
     print(f"  recomb rate: {args.recomb_rate:.2e} per bp ({args.n_generations} generation{'s' if args.n_generations != 1 else ''})", flush=True)
 
-    # Optional: load LD-block boundaries to constrain crossover positions
-    allowed_per_chrom = None
-    if args.crossovers_from_ld_blocks:
-        allowed_per_chrom = load_ld_block_boundaries(args.crossovers_from_ld_blocks)
-        n_allowed = sum(len(v) for v in allowed_per_chrom.values())
-        print(f"  crossover model: hotspot-aligned (LD-block boundaries from "
-              f"{args.crossovers_from_ld_blocks})", flush=True)
-        print(f"    n_allowed_positions: {n_allowed:,} across "
-              f"{len(allowed_per_chrom)} chroms; per-chrom counts: "
-              f"{ {c: len(v) for c, v in allowed_per_chrom.items()} }", flush=True)
-    else:
-        print(f"  crossover model: uniform-position Poisson", flush=True)
+    print(f"  crossover model: uniform-position Poisson (random)", flush=True)
 
     # Build mosaic individuals
     pop = make_individuals(args.n_indiv, args.n_generations, weights_dict,
                            args.recomb_rate, rng,
-                           allowed_per_chrom=allowed_per_chrom,
                            gen0_no_replace=args.gen0_no_replace)
     write_ancestry_tsv(pop, out / "ancestry.tsv")
     print(f"  wrote ancestry.tsv: {sum(len(p[c]) for p in pop for c in p):,} segments", flush=True)

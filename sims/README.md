@@ -14,20 +14,14 @@ methods write-up (regime matrix, parameters, citations, validation) is
 sims/
   scripts/
     make_recomb_mosaics.py     canonical mosaic-FASTA generator (Stage 1: founder draw,
-                               optional G-generation recombination at hotspot or random
-                               crossovers, stitch consensus FASTAs into per-individual
-                               haploid mosaics). Supports --source-weights and
-                               --gen0-no-replace (SEEDMIX-mimicry balanced allocation).
+                               optional G-generation recombination at uniform-random
+                               crossover positions, stitch consensus FASTAs into
+                               per-individual haploid mosaics). Supports --source-weights
+                               and --gen0-no-replace (SEEDMIX-mimicry balanced allocation).
     compute_recomb_truth.py    per-record realized-pool AF truth from ancestry tracks
                                (MAR projection through var_pa / var_called; §4 of the
                                methods doc).
     build_g0_uniform_sim.py    g0 uniform-pool sim generator helper.
-  data/
-    hapfire_block_index_chr1.npz   LD-block boundaries (BigLD on the GrENE-Net 231-panel
-                               SNP set; Kim et al. 2018) used as hotspot crossover
-                               positions for recombinant regimes. Fixed input, gitignored
-                               (binary data, 7.5M); regenerate from the 231-panel SNP set
-                               via BigLD if absent (see docs/SIMULATIONS_METHODS.md §9).
   data/ logs/ results/         sim outputs (gitignored)
 ```
 
@@ -38,9 +32,11 @@ config + the VISOR read-sim stage, and call the **canonical** scripts here (no
 per-benchmark copies of the mosaic builder anymore):
 
 - `benchmarks/p80/scripts/06_run_sim_p80.sh`, `06b_run_sim_p80_skewed.sh`
-  (80-cactus control; uses the LD-block hotspot crossovers from `data/`)
+  (80-cactus control)
 - `benchmarks/p231/scripts/06_run_sim_p231.sh`, `06b_run_sim_p231_skewed.sh`
-  (231-founder headline; random crossovers, does not use the block index)
+  (231-founder headline)
+
+Recombination uses uniform-random crossovers (no LD-block/hotspot dependency).
 
 Benchmark-local scoring/validation (`compare_af_vs_truth.py`,
 `sim_from_raw_assemblies.py`) stays in `benchmarks/p80/scripts/` — it is

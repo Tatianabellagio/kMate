@@ -45,9 +45,7 @@ FOUNDERS_META=$CTRL/data/kmer_pa_p80/kmer_pa_Chr1.meta.npz
 CN_KMER_PREFIX=$CTRL/data/kmer_pa_p80/kmer_pa
 CN_VAR=$CTRL/data/var_pa_p80.var_pa.npz
 CN_VAR_META=$CTRL/data/var_pa_p80.meta.npz
-HF_BLOCK_INDEX=/global/scratch/users/tbellg/kmate/sims/data/hapfire_block_index_chr1.npz
-
-for f in "$CACTUS_DIR" "$FOUNDERS_META" "$CN_VAR" "$CN_VAR_META" "$HF_BLOCK_INDEX"; do
+for f in "$CACTUS_DIR" "$FOUNDERS_META" "$CN_VAR" "$CN_VAR_META"; do
     [ -e "$f" ] || { echo "ERROR: missing $f" >&2; exit 1; }
 done
 
@@ -77,7 +75,6 @@ $PYTHON /global/scratch/users/tbellg/kmate/sims/scripts/make_recomb_mosaics.py \
     --founders-meta $FOUNDERS_META \
     --out-dir $WORK \
     --chroms "$CHROMS" \
-    --crossovers-from-ld-blocks $HF_BLOCK_INDEX \
     $GEN0_FLAG
 
 # -----------------------------------------------------------------------------

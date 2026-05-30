@@ -11,7 +11,6 @@ per-benchmark drivers (decoupled 2026-05-30 from the former external
     `--source-weights` and `--gen0-no-replace`); the single source, called by
     both the p80 and p231 drivers (no per-benchmark clones).
   - `compute_recomb_truth.py` — per-record AF truth from ancestry tracks.
-  - `sims/data/hapfire_block_index_chr1.npz` — LD-block hotspot crossover index.
 - **Active regime sweep — `benchmarks/p80/scripts/`** (and `p231/scripts/`)
   - `06_run_sim_p80.sh` — uniform-fraction pool driver
   - `06b_run_sim_p80_skewed.sh` — dominant-individual ("selection-like") variant
@@ -22,7 +21,7 @@ per-benchmark drivers (decoupled 2026-05-30 from the former external
 
 Each simulated pool-seq dataset is generated in three stages:
 
-1. **Pool construction** (Stage 1): draw `N` founder genomes from a source population (multinomial), optionally apply `G` generations of meiotic recombination at hotspot-aligned crossover positions, and stitch consensus FASTAs at recombination breakpoints to produce `N` per-individual haploid mosaic genomes.
+1. **Pool construction** (Stage 1): draw `N` founder genomes from a source population (multinomial), optionally apply `G` generations of meiotic recombination at uniformly-random crossover positions, and stitch consensus FASTAs at recombination breakpoints to produce `N` per-individual haploid mosaic genomes.
 2. **Short-read simulation** (Stage 2): pool the `N` mosaic genomes at specified clone fractions, simulate paired-end 150 bp Illumina-like reads with VISOR SHORtS (Bolognini et al. 2020) at target cumulative coverage `D`.
 3. **Truth computation**: derive the per-record realized-pool allele frequency from the ancestry tracks via missing-at-random projection through the founder × variant matrix (`var_pa`).
 
@@ -43,7 +42,7 @@ For each of `N` pool individuals, one founder is drawn from `p_f` by independent
 For `n_generations ≥ 1`, each generation rebuilds the population: every new individual is formed by pairing two parents drawn independently and uniformly from the previous generation, then applying meiotic recombination chromosome-by-chromosome:
 
 - Number of crossovers on chromosome `c` is `~Poisson(L_c × r)` where `L_c` is the chromosome length and `r` is the per-bp recombination rate. The default `r = 4×10⁻⁸/bp/meiosis` matches the A. thaliana literature consensus of ~4 cM/Mb (Salomé et al. 2012). On Chr1 (30.4 Mb) this is ~1.2 crossovers per meiosis in expectation.
-- Crossover positions are sampled from a precomputed set of **LD-block boundaries** (BigLD on the GrENE-Net 231-panel; `hapfire_block_index_chr1.npz`), modelling the empirical concentration of A. thaliana recombination at hotspots. A uniform-position alternative is supported (`--no-hotspots`) but is not the default.
+- Crossover positions are sampled **uniformly at random** along the chromosome (the Poisson-distributed *number* of crossovers, placed at uniform-random positions). An earlier option to snap crossovers to LD-block hotspot boundaries was removed — recombination is uniform-random.
 - The offspring's chromosome alternates parent identity at each crossover; the resulting ancestry track is a sequence of (start, end, founder) intervals.
 
 At `n_generations = 0` the pool is the gen-0 set (no recombination; each individual is a single founder). At `n_generations = 3` individuals can derive ancestry from up to 8 distinct founders along the chromosome.
@@ -93,7 +92,7 @@ Per-record AF error vs the same realized-pool truth (`benchmarks/p80/scripts/com
 
 **For g0, raw-assembly and VCF-consensus reads reach the same result** — ALL-class MAE within ±0.0007 and R² within 0.0005 at both pool sizes; at the production-relevant n231 "perfect mix" the raw substrate is in fact marginally *better* (MAE 0.0047 vs 0.0048, less bias). The only visible cost of the honest substrate is a tiny new outlier tail (≤0.08% of records, vs exactly 0 for consensus) and a proportionally larger but still small SV-RMSE penalty. The EM absorbs the extra off-panel k-mer mass real assemblies carry with no meaningful loss in g0 AF accuracy.
 
-**Why we keep the VCF-consensus simulation (the recombination constraint).** For the recombinant regimes (g1, g3, dom500) the consensus path is not just convenient — it is required. A recombinant individual is a mosaic whose breakpoints are defined in **TAIR10 coordinates** (LD-block boundaries; §2.3). Consensus FASTAs are already in TAIR10 coordinates (TAIR10 + that founder's variants, near-identical length), so a mosaic is stitched by slicing each consensus FASTA at the TAIR10 breakpoint — exact and trivial. Raw assemblies are in their **own** coordinate frame (Chr1 ranges 29.5–34.6 Mb vs TAIR10's 30.4 Mb), so stitching a TAIR10-defined mosaic from raw sequence requires an assembly→TAIR10 alignment (e.g. minimap2) to project every breakpoint, plus a few-bp approximation at each crossover. Since g0 establishes that the read substrate is **not** the accuracy bottleneck, that added machinery would buy nothing for the recombinant regimes. **We therefore use VCF-consensus reads throughout the regime sweep, validated against raw-assembly reads at g0.**
+**Why we keep the VCF-consensus simulation (the recombination constraint).** For the recombinant regimes (g1, g3, dom500) the consensus path is not just convenient — it is required. A recombinant individual is a mosaic whose breakpoints are defined in **TAIR10 coordinates** (§2.3). Consensus FASTAs are already in TAIR10 coordinates (TAIR10 + that founder's variants, near-identical length), so a mosaic is stitched by slicing each consensus FASTA at the TAIR10 breakpoint — exact and trivial. Raw assemblies are in their **own** coordinate frame (Chr1 ranges 29.5–34.6 Mb vs TAIR10's 30.4 Mb), so stitching a TAIR10-defined mosaic from raw sequence requires an assembly→TAIR10 alignment (e.g. minimap2) to project every breakpoint, plus a few-bp approximation at each crossover. Since g0 establishes that the read substrate is **not** the accuracy bottleneck, that added machinery would buy nothing for the recombinant regimes. **We therefore use VCF-consensus reads throughout the regime sweep, validated against raw-assembly reads at g0.**
 
 The truth side is a separate matter: truth here is still computed through `var_pa` (§4), so this validation isolates the **read substrate**, not `var_pa` correctness. An independent, alignment-based truth would be required to close the truth-side loop and is out of scope for this framework.
 
@@ -150,7 +149,7 @@ The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `
 | Parameter | Default | Where to change |
 |---|---|---|
 | Recombination rate `r` | `4×10⁻⁸/bp/meiosis` | `--recomb-rate` on `make_recomb_mosaics.py` |
-| Crossover model | hotspot-aligned (LD-block boundaries) | `--crossovers-from-ld-blocks <npz>` (default) or `--no-hotspots` for uniform-position Poisson |
+| Crossover model | uniform-position Poisson (random) | fixed — crossovers placed uniformly at random along the chromosome |
 | Read length | 150 bp | `--length` in `VISOR SHORtS` |
 | Sequencing error | 0.001 | `--error` in `VISOR SHORtS` |
 | Coverage | 10× cumulative | `--coverage` in the sim driver (positional arg 3) |
@@ -171,7 +170,6 @@ The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `
 - **VISOR SHORtS**: Bolognini et al. 2020, *Bioinformatics* 36:1267. https://github.com/davidebolo1993/VISOR — paired-end pool-seq read simulation from haplotype FASTAs.
 - **A. thaliana recombination rate**: Salomé et al. 2012, *Heredity* 108:447 — empirical genetic map yielding ~4 cM/Mb.
 - **A. thaliana selfing rate**: Exposito-Alonso et al. 2018, *Mol Ecol* — >97% selfing in natural populations; basis for the haploid-individual assumption.
-- **LD-block hotspots**: BigLD partitioning (Kim et al. 2018, *Bioinformatics* 34:359) on the GrENE-Net 231-panel SNP set (`hapfire_block_index_chr1.npz`).
 - **Pool-seq sampling theory**: Futschik & Schlötterer 2010, *Genetics* 186:207 — variance decomposition `Var(p̂) ≈ p(1-p)[1/(2N) + 1/D]` characterising the Stage-1 + Stage-2 floor.
 - **MimicrEE2** (referenced for comparison; not used here): Vlachos & Kofler 2018, *PLoS Comp Biol* — full forward-time pool-seq simulator with drift and selection.
 - **kMate** projection math: `ALGORITHM.md` (`old_docs/CACTUS_EM_MATH.md` is the superseded version).
