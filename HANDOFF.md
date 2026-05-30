@@ -71,7 +71,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 1. **Arch 3 Chr2–5 panel build** — run A1→A5 for remaining chroms. Chr1 is validated; whole-genome needed for downstream GEA.
 2. ~~**Choose production k-mer filter**~~ — **RESOLVED 2026-05-27**: `filt2` (drop ac=1) + EM weighting $\omega_k=1/m_b$ (`--kmer-weight inv_mb`). See `docs/METHODS_TRIED_AND_RESULTS.md` §0/§3.
 3. **Re-validate SEEDMIX baselines under MAR + arch var_pa + production weighting** — prior numbers used `bcftools norm -m -any` var_pa, the (now-patched) "star2 treats `.` as REF" projection, AND unweighted EM. All star2 result TSVs without `info`/`n_called`/`se` columns are stale, as are all results that predate the `--kmer-weight inv_mb` switch.
-4. **Production scale-out on ~2,500 evolved GrENE-Net samples** — SLURM template at `tests/run_site_array_perchrom.sh`. Blocked on (1).
+4. **Production scale-out on ~2,500 evolved GrENE-Net samples** — SLURM template at `grenenet/run_site_array_perchrom.sh` (the GrENE-Net *application* of kMate; updated 2026-05-30 to the current production recipe, not yet run). Blocked on (1).
 5. **Subprojects**: `benchmarks/p80/` (homogeneous 80-cactus-founder control, all 6 regimes done; established the $\omega_k=1/m_b$ panel-conditional caveat — see `benchmarks/p80/results/FINAL_RESULTS_cov10_p80.ipynb`).
 
 ## Companion docs (still current)

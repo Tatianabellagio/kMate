@@ -68,7 +68,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 | Build `var_pa_231_arch3` for Chr2-5 | Current Chr1-only build is enough to validate; whole-genome is needed for downstream GEA |
 | ~~Choose production k-mer filter~~ | **DONE 2026-05-27**: `filt2` + `--kmer-weight inv_mb`. See §0 and `METHODS_TRIED_AND_RESULTS.md` §0/§3. |
 | Re-run SEEDMIX baselines under MAR star2 + arch var_pa + `--kmer-weight inv_mb` | Prior numbers used `norm -m -any` var_pa, the buggy "star2 treats `.` as REF" projection, AND unweighted EM; need fresh validation under the full production recipe. |
-| Production scale-out on 2,415 evolved GrENE-Net samples | SLURM template in `tests/`; ~1.5–5 days at cluster-wide concurrency |
+| Production scale-out on 2,415 evolved GrENE-Net samples | SLURM template at `grenenet/run_site_array_perchrom.sh` (GrENE-Net application of kMate); ~1.5–5 days at cluster-wide concurrency |
 
 ## 4. What's deprecated (do not use)
 

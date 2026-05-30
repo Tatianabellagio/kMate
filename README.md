@@ -22,7 +22,8 @@ The project root *is* the kMate estimator (renamed from the legacy `hapfire_sv/`
 ```
 src/          estimator code (em_solver, kmer_count, per_sample_per_chrom, kmer_pa builders); src/archive/ = retired variants
 scripts/      helper/run scripts for the estimator; scripts/archive/ = superseded
-tests/        dev/smoke tests + the production scale-out template (run_site_array_perchrom.sh)
+tests/        dev/smoke tests for the estimator (kmer-count, matrix builders, genome-wide validation); tests/archive/ = retired
+grenenet/     GrENE-Net application of kMate (production scale-out runner for the evolved cohort); the estimator itself is panel-agnostic and lives in src/
 data/         production kmer_pa matrices (kmer_pa_*, var_pa_*), sample lists, splits, small config
 
 panel/        231-founder panel construction

@@ -9,7 +9,7 @@ Pools:
 
 Solver: flat EM only. WLS via CVXPY/SCS does not scale to K~80M k-mers
 (constructs an O(K) sparse linear system that exceeds 100 GB just for problem
-data). EM is the production solver; per_sample_driver uses it for all 2,415
+data). EM is the production solver; per_sample_per_chrom.py uses it for all 2,415
 samples.
 
 Reports R² and RMSE per the user's preference.
