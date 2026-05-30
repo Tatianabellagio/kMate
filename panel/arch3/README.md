@@ -25,7 +25,8 @@ nested inside a graph bubble carries a **symbolic ID**, and per-sample genotypes
 propagated **multi-allelic → biallelic by matching those IDs** — no alignment, so
 convergence and position-shift are handled by construction.
 
-External tools (vendored under `external/`):
+External tools (expected under `external/`, which is **gitignored** — not shipped; obtain
+them per "Prerequisites" below):
 - `genotyping-pipelines/prepare-vcf-MC/.../annotate_vcf.py` — HPRC; emits the annotated
   multi-allelic VCF (each ALT tagged with `INFO/ID` = the symbolic IDs of the atomic
   variants on that ALT's graph path) **and** the biallelic catalog (one record per atomic
@@ -91,7 +92,41 @@ documented upgrade path.
   substitution, carriers unioned across every record implying it. Use for SNP-level GEA /
   comparison against linear-reference SNP callers (closed MNP-vs-SNP encoding outliers).
 
+## Prerequisites
+
+These build scripts are SLURM jobs written for the Berkeley Savio cluster; the `#SBATCH`
+headers (account/partition/qos) are site-specific. To run elsewhere, adjust those headers
+and provide the following:
+
+- **Tools** (the scripts reference absolute conda-env paths — `bcftools`, `bgzip`, `tabix`,
+  and a Python with `pysam`, `numpy`, `scipy`): edit the `BCF`/`BGZIP`/`TABIX`/`PY` vars at
+  the top of each job, or put equivalents on `$PATH`.
+- **External decomposition tools** under `external/` (gitignored, not shipped):
+  - `annotate_vcf.py` from HPRC [`eblerjana/genotyping-pipelines`](https://github.com/eblerjana/genotyping-pipelines) (`prepare-vcf-MC`).
+  - `convert-to-biallelic.py` from [`eblerjana/pangenie`](https://github.com/eblerjana/pangenie) (`pipelines/run-from-callset/scripts`).
+- **Inputs** (live outside the repo; set the paths near the top of jobA1–A3):
+  the 135-sample minigraph-cactus pangenome VCF + GFA (A1), and the haploid PG/cactus
+  side VCFs from `panel/pangenie_genotyping/` (A2/A3).
+- Override `$ARCH3_CHR1_DIR` if launching from an sbatch spool copy outside the source tree.
+
 ## Validation
+
 Use **open-loop** truth only (FASTA-lookup / independent estimators). Do **not** validate
 against `compute_recomb_truth.py`, which reads the same `var_pa` and so cannot see a
 decomposition bug (investigation doc §3, §7).
+
+`jobA7_compare_vs_hapfire.sh` is the kept open-loop check: it joins kMate per-SNP AF
+against an **independent** estimator (xwu's hapFIRE on the 1001G SNP catalog) on the
+4-tuple `(chrom, pos, ref, alt)` — joining on `pos` alone manufactures off-diagonal
+scatter at multi-allelic split records. Its `NEW` input is a per-sample AF TSV (from the
+production driver `src/per_sample_per_chrom.py`, or the archived `jobA6`); the hapFIRE
+inputs are external. Headline result on SEEDMIX_S1 / Chr1 (518,570 shared SNPs):
+
+| panel | MAE vs hapFIRE | \|Δ\|>0.10 |
+|---|---|---|
+| v3qc_v3 (`norm -m -any`) | 0.0150 | 0.88% |
+| arch3 raw | 0.0140 | 0.64% |
+| arch3 atomized | 0.0131 | 0.37% |
+
+Other one-off projection/outlier diagnostics from the Chr1 build were retired to
+`chr1/archive/` (see its README).
