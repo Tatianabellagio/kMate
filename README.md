@@ -36,7 +36,7 @@ benchmarks/   end-to-end accuracy benchmarks
   p231/  full 231-founder headline benchmark
 sims/         scripts/ — pool-seq simulation framework (mosaic builder + AF truth); see sims/README.md
 
-external/     vendored third-party tools (HapFIRE, pangenie-tools, genotyping-pipelines)
+external/     vendored third-party tools (gitignored; provenance + reconstruct steps in docs/EXTERNAL_DEPENDENCIES.md)
 docs/         analyses + methods writeups
 notebooks/    analysis notebooks
 results/ plots/ logs/   outputs (gitignored)

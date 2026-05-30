@@ -12,4 +12,5 @@ live at the project root.
 | `PIPELINE_FASTQ_PREPROCESSING.md` | Read-side FASTQ preprocessing pipeline (trim/dedup/QC) used upstream of genotyping. |
 | `MISSINGNESS_231PANEL.md` | F_MISSING characterization on the production 231-founder panel and its effect on AF estimates. |
 | `SIMULATIONS_METHODS.md` | Methods-ready description of the pool-seq VISOR simulation framework (regime matrix, parameters, citations). |
+| `EXTERNAL_DEPENDENCIES.md` | What the gitignored `external/` dir must contain (upstream URLs + pinned commits) and which production step uses each — so a fresh clone can reconstruct it. |
 | `RESULTS_LOG.md` | Chronological numerical record (large file). Useful historical reference; not authoritative for current state — see `PIPELINE_STATE.md`. |
