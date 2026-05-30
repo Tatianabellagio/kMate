@@ -7,6 +7,17 @@ et al. 2022, Nat. Genet.), but as a standalone Python tool that avoids building
 the 9 GB ancillary PanGenie graph state and accepts haploid cactus genotypes
 natively.
 
+> **Three distinct things, easy to conflate:**
+> 1. **This in-house index** (`build_kmers_tsv.py` → `ours_<chrom>_kmers.tsv.gz`):
+>    per-bubble windows + candidate unique k-mers, our reimplementation.
+> 2. **The PanGenie genotyping index** (`panel/pangenie_genotyping/data/pang_135_pangenie_index_*`):
+>    built by `PanGenie-index` to *genotype* the 153 short-read founders. It is
+>    also the `kmers.tsv.gz` source **currently used in production** (the swap to
+>    the in-house index is validated but deferred — see §7).
+> 3. **`kmer_pa`** (`src/build_kmer_pa.py` → founder × k-mer matrix): the
+>    downstream product that consumes one `kmers.tsv.gz` index **plus** the panel
+>    VCF. This doc is about (1)/(2); `kmer_pa` is built elsewhere.
+
 ## 1. Inputs
 
 | Input | Description |
@@ -17,6 +28,8 @@ natively.
 | `--cap-biallelic`, `--cap-multiallelic` | Per-allele unique k-mer caps (default 16 / 32, matching PanGenie). |
 | `--overhang-cap` | Per-side overhang k-mer cap (default 12, matching PanGenie). |
 | `--no-add-reference` | Omit the synthetic all-REF path. PanGenie includes it by default. |
+| `--jellyfish-threads`, `--jellyfish-hash` | `jellyfish count` thread count and hash size (defaults 4 / 100M; the production pang_135 run uses 8 / 3×10⁹). |
+| `--keep-tempfiles` | Retain the intermediate `path_segments.fasta` + `.jf` hash for debugging (default: removed on exit). |
 
 ## 2. Outputs
 
@@ -185,15 +198,36 @@ straddles the bubble-start position by one base (an off-by-one artefact of
 PanGenie's left-flank window construction); no bubble emits a unique-k-mer
 that is not also emitted by PanGenie.
 
+> The small-panel figure above and the `build_kmers_tsv.py` module docstring
+> report slightly different counts/mechanisms for the handful of differing
+> bubbles (99.2% / 16 bubbles / overhang off-by-one here vs 99.4% / 12 bubbles /
+> PanGenie phantom-`A` in the docstring). These predate the full-scale diff and
+> have not been reconciled; treat the full-scale Level-A result below as the
+> authoritative parity check.
+
 **Full-scale validation: done (Level A, 2026-05-29).** The in-house index was
 diffed against PanGenie's production index on the full 135-assembly pangenome
-across **all five chromosomes** (`scripts/diff_index_vs_pg.py`) and the swap
-was wired into the production `kmer_pa` builder. See `INDEX_SWAP_STATE.md` for
-the per-chromosome parity result and the production wiring. The production
-index is `panel/pangenie_index/pang_135_haploid/ours_Chr{1..5}_kmers.tsv.gz`;
-the concluded equivalence/timing experiments (diploid byte-check, cap2x, the
-2 Mb `pg_reference` panel, the comparison test scripts) now live under
-`panel/pangenie_index/archive/`.
+across **all five chromosomes** with `scripts/diff_index_vs_pg.py`. Because both
+indexes are built from the **same inputs** (`pang_1001gplus_all.vcf.gz` +
+`TAIR10.chr.fa`, k=31), any difference is attributable to the indexers alone;
+the diff confirmed parity (ours is at worst a subset of PanGenie's k-mers per
+bubble, never a wrong k-mer).
+
+**Production still uses the PanGenie-built index**, not the in-house one. The
+swap is sound in principle — pang_135 is a superset of the 231-panel's alleles,
+so every k-mer the panel needs already exists in the index — but is **deferred**
+pending Level-B (downstream `kmer_pa`/AF) validation. The single line to change
+when adopting it is `KMERS=` in `scripts/build_kmer_pa_production_v3qc_v3.sh`.
+The retired exploration (diploid byte-check, cap2x, the 2 Mb `pg_reference`
+panel, the comparison test scripts, and the original `INDEX_SWAP_STATE.md`
+working note) lives under `panel/pangenie_index/archive/`.
+
+**Known issue (carried from the index swap, not yet fixed):** `build_kmers_tsv.py`
+writes the literal `nan` for empty bubbles; `src/build_kmer_pa.py` parses a
+`kmers.tsv.gz` field with `p[3].split(",") if p[3] else []`, which keeps `"nan"`
+as a bogus 3-char "k-mer". Harmless (never matches a real 31-mer) but pollutes
+the k-mer set; the one-line fix is to skip `"nan"` in the field parser. Fixing
+it changes the `kmer_pa` build output, so it is gated behind a rebuild.
 
 ## 8. Default parameter table for paper methods
 
