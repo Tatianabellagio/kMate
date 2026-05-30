@@ -210,3 +210,23 @@ data/seedmix_S1_h_wls_*.tsv
 # --- macOS AppleDouble + Jupyter checkpoints (junk, never tracked) ---
 ._*
 .ipynb_checkpoints/
+
+# =============================================================================
+# 2026-05-29: close big-file gaps after the cn_full->kmer_pa / cn_var->var_pa
+# rename + leftover analysis working dirs. Goal: NO large/data file is ever
+# stageable. Policy unchanged: track code/docs/notebooks/plots/small-config only.
+# =============================================================================
+# renamed production matrix dirs (parallel to the old data/cn_full_*/ + cn_var_*)
+data/kmer_pa_*/
+data/var_pa_*
+# bcftools/htslib index + targets sidecars (data, regeneratable)
+*.csi
+*.targets
+*.targets.gz
+*.targets.targets
+# contamination_test/: untracked analysis working dir (~60 MB of AF/site TSVs).
+# Nothing in it is tracked; it's regeneratable scratch. Ignore wholesale — if a
+# specific script there ever needs tracking, force-add it explicitly.
+contamination_test/
+# belt-and-suspenders: AF result TSVs anywhere (one per sample, MB-scale)
+*.af.tsv
