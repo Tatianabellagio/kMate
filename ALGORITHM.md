@@ -88,18 +88,27 @@ PanGenie bubble:
 4. $(K_{\mathrm{pa}})_{f,k} = 1$ iff the bubble's k-mer $k$ is in founder $f$'s
    canonical k-mer set.
 
-**Haploid panel input.** The panel VCF that feeds both $K_{\mathrm{pa}}$ and $V_{\mathrm{pa}}$ is
-*pre-haploidized* (e.g. `panel/pangenie_genotyping/data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz`):
-each GT field contains a single allele, `0`, `1`, ..., or `.`. PanGenie outputs
-diploid GTs for the 153 short-read–genotyped founders, which we haploidize
-before merging with the 78 long-read–assembled cactus founders, so the resulting
-231-founder panel is entirely haploid. Under pysam this surfaces as
-single-element tuples (`(0,)`, `(1,)`, `(None,)`); `build_kmer_pa.py:189-194`
-reads `gt[0]`, which is the only allele.
+**Haploid panel input — the SOLE production VCF.** The panel VCF that feeds
+**both** $K_{\mathrm{pa}}$ and $V_{\mathrm{pa}}$ is the **arch3 canonical biallelic panel
+`panel/arch3/chr{N}/merged_231_chr{N}_final.vcf.gz`** (produced by the arch3
+A1–A5 decomposition; `panel/arch3/README.md`). This is the only production panel
+VCF — the older `founders_231_v3qc*.haploid.vcf.gz` naive-`norm` merges are
+archived (`docs/PIPELINE_STATE.md` §0). It is pre-haploidized and biallelic: each
+GT field is a single allele `0`, `1`, or `.` (PanGenie's diploid GTs for the 153
+short-read founders are het-masked `het→.` and haploidized by arch3 A2 before the
+cactus-78 merge, so the 231-founder panel is entirely haploid). Under pysam this
+surfaces as single-element tuples (`(0,)`, `(1,)`, `(None,)`);
+`build_kmer_pa.py:189-194` reads `gt[0]`.
+
+> K_pa is *representation-invariant* — reconstructing a founder's haplotype from
+> multi-allelic GTs or their decomposed biallelic equivalents yields the same
+> sequence, hence identical k-mers (~100% carrier agreement,
+> `benchmarks/p231/scripts/03c_compare_kmer_pa.py`). We build K_pa from the same
+> merged_231 VCF as V_pa for single-source provenance.
 
 **Missing-GT handling (`build_kmer_pa.py:189-204`):** controlled by
-`--treat-missing-as-n`. Production `kmer_pa_v3qc_v3` was built with
-`treat_missing_as_n=True`: `./.` → N over the variant's REF span, so every k-mer
+`--treat-missing-as-n`. The production `kmer_pa` (now `kmer_pa_231_arch3_filt2inv`)
+is built with `treat_missing_as_n=True`: `./.` → N over the variant's REF span, so every k-mer
 overlapping that span is dropped from that founder's reconstructed haplotype (the
 founder gets neither REF nor ALT credit at the missing site). The `./.` → REF
 alternative is **deliberately rejected** — imputing reference from a low-quality
@@ -142,25 +151,21 @@ This drops three useless classes in one cut:
 On Chr1 (raw 22,673,541 columns) the filter drops 5,057,036 dead + 6,465,089
 private + 216,980 invariant → **10,934,436 kept (48.2%)**. The keep rule is the
 single source of truth `filter_kmer_pa_production.production_keep_mask`; it is applied
-in-line by the production builder `build_kmer_pa_production_v3qc_v3.sh`
+in-line by the production builder `scripts/build_kmer_pa_production_arch3.sh`
 (`--filter-production`), and `filter_kmer_pa_production.py` applies the same rule to a
-pre-built matrix. The production matrix is **`kmer_pa_231_v3qc_v3_filt2inv`**
-(supersedes the older `_filt2`, which lacked the invariant cut); all $K_{\mathrm{pa}}$
-references in §3–§4 use it.
-
-> **Build status (2026-05-30):** `_filt2inv` is the *decided* production filter,
-> but the matrix has **not yet been materialized on disk** — the matrix currently
-> present is `_filt2` (filt2 only, no invariant cut). The `_filt2inv` rebuild is
-> deferred to the next full production rerun. Until then, run commands point at
-> `_filt2`. See memory `filt2inv-not-on-disk`.
+pre-built matrix. The production matrix is **`data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr{N}`**
+(built from the arch3 `merged_231_chr{N}_final.vcf.gz` + the in-house index); all
+$K_{\mathrm{pa}}$ references in §3–§4 use it.
 
 ### 2.2 $V_{\mathrm{pa}}$ (`var_pa`) — founder × variant alt-allele presence (the projection target)
 
 $$V_{\mathrm{pa}} \in \{0,1\}^{F \times R}, \quad (V_{\mathrm{pa}})_{f,r} = \mathbb{1}[\text{any allele of founder } f \text{'s GT at } r \text{ is alt}]$$
 
-Built by `build_var_pa.py:30-109` from the same haploid biallelic-decomposed
-panel VCF used for $K_{\mathrm{pa}}$, processed with `bcftools norm -m -`. A founder is
-marked as an alt-carrier iff any allele in its GT field is non-zero
+Built by `build_var_pa.py:30-109` from the **same arch3 `merged_231_chr{N}_final.vcf.gz`**
+used for $K_{\mathrm{pa}}$ — **NOT** `bcftools norm -m -any`, which scatters/drops
+carriers at co-located multi-allelic sites; arch3's symbolic-ID decomposition is
+exactly the fix (`panel/arch3/README.md`; `docs/INVESTIGATION_CN_VAR_DECOMPOSITION.md`).
+A founder is marked as an alt-carrier iff any allele in its GT field is non-zero
 (`build_var_pa.py:68`: `any(a is not None and a > 0 for a in gt)`). On a
 haploid GT (`(0,)`, `(1,)`, ...) this is equivalent to checking `gt[0] > 0`,
 so the alt-carrier definitions in $K_{\mathrm{pa}}$ and $V_{\mathrm{pa}}$ agree exactly under the
@@ -473,8 +478,8 @@ was unaffected (it doesn't form discrete classes). See
 Current production:
 - **Per-bubble de-replication weight $\omega_k = 1/m_b$ (§4.2)** is the
   production EM weighting on the 231 heterogeneous panel, selected via
-  `--kmer-weight inv_mb`. The `kmer_pa_231_v3qc_v3_filt2` singleton-filtered
-  matrix (§2.1) is the production kmer_pa base.
+  `--kmer-weight inv_mb`. The `kmer_pa_231_arch3_filt2inv` filtered matrix
+  (§2.1) is the production kmer_pa base.
 - **Global anchor (`--global-anchor-weight`) and HMM smoothing
   (`--hmm-smooth-*`, §8.3)** are part of the production *window* recipe — they
   are the window-mode defaults (anchor 0.3, passes 5, α 0.5; see §7), not
@@ -569,7 +574,7 @@ The following are issues / assumptions worth knowing about. Severity tags:
 | C1 | CRITICAL | Old AF projection formula in `ALGORITHM.md` and `CACTUS_EM_MATH.md` (`AF = h^T V_pa`) silently treats `./.` as REF and under-counts AF on records with high `F_MISSING`. **Fixed in production**: §6 above is the correct formula. The old MDs are why this single source of truth was needed. |
 | H1 | HIGH | Production runs **one EM per chromosome**, not a single genome-wide EM. Empirically per-chrom $\hat{\mathbf{h}}_c$ agrees to ~0.1% with genome-wide $\hat{\mathbf{h}}$, but methods text must say "per-chromosome" not "genome-wide". |
 | H2 | HIGH | The EM filters to $c_k > 0$ k-mers before solving. Mathematically equivalent under the M-step, but the matrix actually fed to EM is ~5–30% the size of $K$ depending on coverage. State this so reviewers don't get confused by "80M k-mer EM" claims. |
-| H3 | ~~HIGH~~ → resolved | The kmer_pa-vs-var_pa heterozygote-handling asymmetry in code (`GT[0]`-only vs `any(a > 0)`) is **not active** for the production panel: `founders_231_v3qc_v3.haploid.vcf.gz` is pre-haploidized (only `.`, `0`, `1` tokens; verified 2026-05-22). pysam returns 1-tuples, both definitions agree. **Latent hazard closed 2026-05-22**: both `build_kmer_pa.py:189-202` and `build_var_pa.py:62-73` now raise `ValueError` on any GT with `len(gt) != 1`, so feeding a diploid VCF fails fast instead of silently producing inconsistent matrices. |
+| H3 | ~~HIGH~~ → resolved | The kmer_pa-vs-var_pa heterozygote-handling asymmetry in code (`GT[0]`-only vs `any(a > 0)`) is **not active** for the production panel: the arch3 `merged_231_chr{N}_final.vcf.gz` is pre-haploidized (only `.`, `0`, `1` tokens; verified 2026-05-22). pysam returns 1-tuples, both definitions agree. **Latent hazard closed 2026-05-22**: both `build_kmer_pa.py:189-202` and `build_var_pa.py:62-73` now raise `ValueError` on any GT with `len(gt) != 1`, so feeding a diploid VCF fails fast instead of silently producing inconsistent matrices. |
 | H4 | HIGH | The per-record `se` (`per_sample_per_chrom.py:662-666`) is a **panel-side** binomial SE: $\sqrt{p(1-p)/n_{\text{called}}}$ with effective N = number of genotyped founders. It captures panel completeness / AC-AN sampling only, and **omits** EM-$\hat{\mathbf{h}}$ estimation error, read-coverage Poisson noise, and pool finite-$N$ sampling. Safe to use for **filtering/flagging** low-support records; **not** safe to inverse-variance-weight on as if it were the full AF precision (that weights by panel completeness). Documented in §6.1; a coverage/EM-aware uncertainty is not implemented. |
 | M1 | MEDIUM | The old MD coverage formula "$\lambda$ = total read length / genome size" doesn't match production code, which uses $\hat\lambda = F \cdot \sum c_k / \sum_{f,k} (K_{\mathrm{pa}})_{f,k}$ (uniform-h estimate). Cosmetic since $\lambda$ cancels; fixed in §3 above. |
 | M2 | ~~MEDIUM~~ → resolved | Production tolerance is $\varepsilon = 10^{-7}$ throughout (`per_sample_per_chrom.py:225`, `block_em.py:362`); §4 above uses that single value. |

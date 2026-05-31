@@ -11,11 +11,11 @@ The project root *is* the kMate estimator (renamed from the legacy `hapfire_sv/`
 
 | Doc | What it is |
 |---|---|
-| [`HANDOFF.md`](HANDOFF.md) | Current session state + the production recipe (read first). |
-| [`ALGORITHM.md`](ALGORITHM.md) | The kMate algorithm, math, and code wiring (code-verified source of truth). |
+| [`docs/PIPELINE_STATE.md`](docs/PIPELINE_STATE.md) | **THE single source of truth — read first.** Production inputs (§0), run recipe (§0.1), environment (§0.2), what's deprecated. |
+| [`ALGORITHM.md`](ALGORITHM.md) | The kMate algorithm, math, and code wiring (defers to PIPELINE_STATE for production paths). |
 | [`BACKGROUND.md`](BACKGROUND.md) | Project framing, known biases, and design decisions. |
-| [`SAVIO_HPC.md`](SAVIO_HPC.md) | Running on the Berkeley Savio cluster (partitions, sbatch recipes). |
-| [`docs/`](docs/) | Analyses, investigations, methods writeups. `docs/PIPELINE_STATE.md` is the production-state source of truth. |
+| [`SAVIO_HPC.md`](SAVIO_HPC.md) | Cluster ops (partitions, sbatch recipes). |
+| [`HANDOFF.md`](HANDOFF.md) | Redirect stub — merged into `docs/PIPELINE_STATE.md` (2026-05-30). |
 
 ## Layout
 
@@ -51,14 +51,17 @@ old_docs/     superseded docs (historical; not authoritative)
 
 ## Production recipe (one-liner)
 
+Everything derives from the arch3 panel VCF `merged_231_chr{N}_final.vcf.gz` — see
+`docs/PIPELINE_STATE.md` §0. Env: `kmate`.
+
 ```bash
-python src/per_sample_per_chrom.py \
-    --kmer-pa-prefix data/kmer_pa_231_v3qc_v3_filt2inv/kmer_pa \
-    --var-pa        panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz \
+/global/home/users/tbellg/miniforge3/envs/kmate/bin/python src/per_sample_per_chrom.py \
+    --kmer-pa-prefix data/kmer_pa_231_arch3_filt2inv/kmer_pa \
+    --var-pa     panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz \
     --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
     --var-meta   panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <out.tsv> \
     --threads 8 --chroms Chr1 --block-mode global --kmer-weight inv_mb
 ```
 
-See `HANDOFF.md` for `global` vs `window` modes and the full production-state context.
+See `docs/PIPELINE_STATE.md` §0.1 for `global` vs `window` modes and the full production-state context.
