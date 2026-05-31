@@ -65,7 +65,7 @@ Direction: 99% of cell [d] outliers are **under-prediction** — classic carrier
 
 ### 3.1 What `compute_recomb_truth.py` actually does
 
-The simulation truth computation (`sims/visor_freqk/scripts/compute_recomb_truth.py`) computes truth-AF by literally reading the same `var_pa` matrix that cactus_em uses for AF projection:
+The simulation truth computation (`sims/scripts/compute_recomb_truth.py`; formerly under the removed `sims/visor_freqk/`) computes truth-AF by literally reading the same `var_pa` matrix that kMate uses for AF projection:
 
 ```python
 kmer_pa = load_npz(args.var_pa).tocsr()  # SAME var_pa as cactus_em

@@ -18,8 +18,11 @@ Everything traces to the current **v3qc + arch3** lineage; nothing stale is forc
 - **kmer_pa** `data/kmer_pa_p231[_filt2]/`: rebuilt from the SAME VCF via
   `build_kmer_pa.py` + the pang_135 k-mer dictionary (135-asm graph, matches
   merged_231's annotation topology), `--treat-missing-as-n`. Validated against the
-  production `kmer_pa_231_v3qc_v3_filt2` by `03c_compare_kmer_pa.py` (kmer_pa is
-  consensus-derived ⇒ representation-invariant ⇒ expected ~identical).
+  then-current `kmer_pa_231_v3qc_v3_filt2` by `03c_compare_kmer_pa.py` (kmer_pa is
+  consensus-derived ⇒ representation-invariant ⇒ expected ~identical). *(Note: that
+  v3qc_v3 matrix is now archived; current production is `kmer_pa_231_arch3_filt2inv`,
+  in-house index + filt2inv — `docs/PIPELINE_STATE.md` §0. This benchmark intentionally
+  uses plain `filt2` and the pang_135 PG dictionary, not the production filt2inv/in-house index.)*
 - **var_pa** (projection + truth target): REUSED `panel/arch3/chr1/var_pa_231_arch3_chr1`
   in TWO arms — `_atomized` (7.46M per-base records, SNP-level GEA benchmark) and
   raw (2.62M records, SNP/indel/SV classes). Both built from the canonical VCF.

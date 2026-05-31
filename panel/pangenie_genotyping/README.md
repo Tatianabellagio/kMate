@@ -1,18 +1,20 @@
 # pangenie_genotyping — building the 231-founder haploid panel VCF
 
 Genotypes the **153 short-read founders** (no long-read assembly) with PanGenie,
-QCs and het-masks them, then merges with the **78 long-read cactus founders** to
-produce the production haploid panel VCF that feeds both `kmer_pa` (via
-`src/build_kmer_pa.py`) and `var_pa` (via the `panel/arch3/` decomposition).
+QCs and het-masks them. This is the **short-read genotyping side** of the panel:
+its per-side VCFs (under `data/v3qc_tmp/`) are the inputs that the `panel/arch3/`
+decomposition ingests (A2/A3) and re-merges by symbolic-ID into the production
+panel VCF `panel/arch3/chr{N}/merged_231_chr{N}_final.vcf.gz`.
 
-**Production output:** `data/v3qc_v3/founders_231_v3qc_v3.haploid.vcf.gz`
-(78 cactus + 153 PG, fully haploid).
-
-> This dir builds the **panel VCF**. The biallelic per-record matrices
-> (`var_pa`/`var_called`) are built downstream in `panel/arch3/` — which
-> *consumes* this haploid VCF and does **not** rebuild the panel. The k-mer index
-> used for *genotyping* (`data/pang_135_pangenie_index`) is distinct from the
-> in-house `kmer_pa` k-mer index in `panel/pangenie_index/`.
+> **Production panel VCF = `panel/arch3/chr{N}/merged_231_chr{N}_final.vcf.gz`**
+> (`docs/PIPELINE_STATE.md` §0), NOT the v3qc_v3 outputs below. arch3 does **not**
+> consume `founders_231_v3qc_v3.haploid.vcf.gz` — it re-merges the haploid
+> biallelic *side* VCFs (cactus-78 + het-masked-haploid PG-153) from
+> `data/v3qc_tmp/` via `bcftools merge --merge none`. The old
+> `founders_231_v3qc*.vcf.gz` naive-`norm` merge is **archived / superseded** by
+> arch3 (§0). The k-mer index used here for *genotyping*
+> (`data/pang_135_pangenie_index`) is also distinct from the in-house production
+> `kmer_pa` index in `panel/pangenie_index/`.
 
 ## Production chain (`scripts/`)
 
@@ -39,8 +41,13 @@ haploidize_pg_hetmasked.sh                    → pangenie_153_hetmasked_haploid
    │
 build_v3qc_v3_phase_b.sh                      merge cactus_78_bi + hetmasked_haploid; re-decompose; drop AC=0
    │                                            → v3qc_v3/founders_231_v3qc_v3.vcf.gz
-haploidize_v3qc_v3_vcf.sh                     → founders_231_v3qc_v3.haploid.vcf.gz   ← PRODUCTION PANEL
+haploidize_v3qc_v3_vcf.sh                     → founders_231_v3qc_v3.haploid.vcf.gz   ← SUPERSEDED naive-norm merge (archived; arch3 re-merges the v3qc_tmp side VCFs instead)
 ```
+
+The **production** 231-founder panel VCF is built downstream by `panel/arch3/`
+(symbolic-ID merge of the `v3qc_tmp/` side VCFs) → `merged_231_chr{N}_final.vcf.gz`.
+The `founders_231_v3qc_v3.haploid.vcf.gz` produced by the last step above is the
+old single-VCF `norm -m -any` merge, retained for provenance only.
 
 ### Cactus side (78 founders) and the 151 → 153 count
 

@@ -41,7 +41,7 @@ p80 uses the production **`pang_135_pangenie_index_Chr1_kmers.tsv.gz`** for kmer
 - The arch3 A1 catalog used here was annotated against `pang_1001gplus_all.gfa.gz` (135-asm production graph). Our p80 VCF inherits that graph's bubble structure.
 - `kmers_p82/` was built from the standalone 82-acc minigraph-cactus run — a different cactus invocation with different bubble topology and k-mer dictionary.
 
-Mixing them would have `build_kmer_pa.py` reconstruct haplotypes from 135-asm records inside 82-acc-defined bubble regions — a silent inconsistency that exactly mirrors the v3 sim-FASTA bug (`memory/project_v3_singleton_kmer_bug`). The pang_135 PG-index is the matching one and is already what production v3qc kmer_pa uses.
+Mixing them would have `build_kmer_pa.py` reconstruct haplotypes from 135-asm records inside 82-acc-defined bubble regions — a silent inconsistency that exactly mirrors the v3 sim-FASTA bug (`memory/project_v3_singleton_kmer_bug`). The pang_135 PG-index is the topology-matching one; production `kmer_pa` is built on the same pang_135 graph (but from the in-house index, not the PG-index — `docs/PIPELINE_STATE.md` §0). This benchmark uses the pang_135 PG-index, which shares that graph topology.
 
 ## Auditor caveats to call out in any writeup
 
@@ -79,7 +79,7 @@ benchmarks/p80/
 │   └── FINAL_RESULTS_cov10_p80.ipynb          # TODO (Phase D)
 ├── scripts/
 │   ├── 01_build_biallelic_p80.sh              # subset 135-asm annotated to 80 + convert-to-biallelic + fill-tags + reheader
-│   ├── 03_build_kmer_pa_p80.sh                # kmer_pa_p80 (REUSES control_p82 PG-index)
+│   ├── 03_build_kmer_pa_p80.sh                # kmer_pa_p80 (uses the pang_135 PG-index, NOT control_p82's)
 │   ├── 04_build_var_pa_p80.sh                 # var_pa_p80
 │   ├── 05_build_fastas_p80.sh                 # 80-founder consensus FASTAs (array 1-80)
 │   ├── 06_run_sim_p80.sh                      # recomb sim per regime

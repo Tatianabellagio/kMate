@@ -1,13 +1,17 @@
 # 231-panel missingness by variant class
 
 **Generated**: 2026-05-21
-**Source data**: `data/var_pa_231_v3qc_v3.var_called.npz` + `var_pa_231_v3qc_v3.meta.npz`
+**Source data**: `data/var_pa_231_v3qc_v3.var_called.npz` + `var_pa_231_v3qc_v3.meta.npz` — the
+v3qc_v3 `norm`-merge matrix, now **superseded/archived** (`docs/PIPELINE_STATE.md` §0). The
+production matrix is `panel/arch3/chr{N}/var_pa_231_arch3_chr{N}`. arch3 reproduces the same
+per-cell genotype QC (het→`.`, GQ≥20), so the class-level missingness characterization below
+carries over; the absolute record counts will differ under the arch3 biallelic catalog.
 **Plot**: `benchmarks/p80/results/missingness_by_var_class_231panel.png`
 **SLURM log**: `benchmarks/p80/logs/miss_231_63224.out`
 
 ## TL;DR
 
-PanGenie SV genotyping is the limiting factor on the production 231-panel. PG side has **25% missing on SVs** vs 3% on SNPs. Cactus side is ~95% called for every variant class. The "treat-`.`-as-REF" projection convention used by `cactus_em` window/star2 mode would silently under-call SV AF at production scale — this is not a defensible default for SVs.
+PanGenie SV genotyping is the limiting factor on the 231-panel. PG side has **25% missing on SVs** vs 3% on SNPs. Cactus side is ~95% called for every variant class. The "treat-`.`-as-REF" projection convention used by `cactus_em` window/star2 mode would silently under-call SV AF at production scale — this is not a defensible default for SVs.
 
 ## Numbers
 

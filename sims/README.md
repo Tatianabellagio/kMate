@@ -49,6 +49,9 @@ evaluation tooling, not the simulation framework.
 
 ## Reproducibility
 
-Python ≥3.10 in conda env `hapfm`; VISOR + samtools/bcftools in env `pang`. All
+Conda env `kmate` (the only env; `hapfm`/`pang` were removed in the cluster
+migration — `docs/PIPELINE_STATE.md` §0.2): Python ≥3.10 + samtools/bcftools +
+wgsim/bbmap/minimap2. **VISOR is not yet in `kmate`** — install it / put it on
+`$PATH` on the current cluster. All
 randomness is seed-controlled — same seed + params reproduce bit-identically.
 See `docs/SIMULATIONS_METHODS.md` §10.

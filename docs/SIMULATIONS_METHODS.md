@@ -101,7 +101,7 @@ The truth side is a separate matter: truth here is still computed through `var_p
 Truth allele frequencies are computed deterministically from the ancestry tracks and the founder × variant matrix `var_pa` (and its called-mask `var_called`). For each variant record `r`, the missing-at-random projection over the realised pool is:
 
 $$
-\text{truth\_af}[r] = \frac{\sum_i w_i \cdot \text{kmer_pa\_var}[\text{anc}_i(r),\ r]}{\sum_i w_i \cdot \text{kmer_pa\_var\_called}[\text{anc}_i(r),\ r]}
+\text{truth\_af}[r] = \frac{\sum_i w_i \cdot \text{var\_pa}[\text{anc}_i(r),\ r]}{\sum_i w_i \cdot \text{var\_called}[\text{anc}_i(r),\ r]}
 $$
 
 where `w_i` is the pool-weight of individual `i`, `anc_i(r)` is the founder owning the ancestry segment containing record `r`'s position in individual `i`, and `var_pa[f, r]`, `var_called[f, r]` are the carrier and called indicators (1 if founder `f` carries the ALT at record `r` / has a non-missing GT, 0 otherwise).
@@ -176,7 +176,7 @@ The truth TSV is the join target for evaluating estimator outputs (`alt_freq`, `
 
 ## 10. Reproducibility
 
-- Python ≥3.10 in conda env `hapfm`; VISOR + `samtools`/`bcftools` in conda env `pang` (paths at top of driver scripts).
+- Conda env `kmate` (the only env; `hapfm`/`pang` were removed in the cluster migration — see `docs/PIPELINE_STATE.md` §0.2). It provides Python ≥3.10, `samtools`/`bcftools`, wgsim, bbmap, minimap2. **VISOR is not yet in `kmate`** and must be installed / put on `$PATH` on the current cluster. (Driver scripts may still hard-code the retired `hapfm`/`pang` paths at the top — repoint them.)
 - All randomness is controlled by the seed argument. With the same seed + parameters, sims reproduce bit-identically.
 - All sim output paths are deterministic from `(coverage, N_INDIV, N_GEN, SEED, panel, chrom, optional DOMINANT_FRAC)`.
 

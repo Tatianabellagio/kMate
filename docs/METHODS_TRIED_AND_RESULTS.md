@@ -12,7 +12,12 @@ and complements `RESULTS_LOG.md` (chronological numbers) and `archive/README.md`
 kMate (legacy name `cactus_em`): per-sample Poisson k-mer EM on the 231-founder simplex
 → h → project through var_pa → per-record AF.
 
-- **EM kmer_pa (k-mer index):** `kmer_pa_231_v3qc_v3_filt2` (drop ac=1 singletons). ★
+- **EM kmer_pa (k-mer index):** `kmer_pa_231_arch3_filt2inv` — built from the arch3
+  `merged_231_chr{N}_final.vcf.gz` + the **in-house** `ours_Chr{N}` index, filter **filt2inv**
+  (drop ac=1 singletons AND ac=F invariants; the ac=F drop was added 2026-05-29). ★
+  *(Supersedes the `kmer_pa_231_v3qc_v3_filt2` named in the lineage tables below, which is now
+  archived; see `docs/PIPELINE_STATE.md` §0. The §1–§2 tables are the historical sweep that
+  selected `filt2`.)*
 - **EM weighting:** `--kmer-weight inv_mb` (ω_k = 1/m_b, per-bubble de-replication), GLOBAL mode. ★ for the heterogeneous 231 panel — but **panel-conditional** (see §3).
 - **Projection var_pa:** arch3 — `var_pa_231_arch3_chr1_atomized` (SNP-level GEA) + raw `var_pa_231_arch3_chr1` (SNP/indel/SV). ★
 - **Canonical VCF:** `panel/arch3/chr1/merged_231_chr1_final.vcf.gz` (v3qc QC: GQ≥20 + 5772/9947 dropped; arch biallelic; unimputed; het→missing).

@@ -12,9 +12,10 @@ natively.
 > 1. **This in-house index** (`build_kmers_tsv.py` → `ours_<chrom>_kmers.tsv.gz`):
 >    per-bubble windows + candidate unique k-mers, our reimplementation.
 > 2. **The PanGenie genotyping index** (`panel/pangenie_genotyping/data/pang_135_pangenie_index_*`):
->    built by `PanGenie-index` to *genotype* the 153 short-read founders. It is
->    also the `kmers.tsv.gz` source **currently used in production** (the swap to
->    the in-house index is validated but deferred — see §7).
+>    built by `PanGenie-index` to *genotype* the 153 short-read founders. It can
+>    also serve as a `kmers.tsv.gz` source for `kmer_pa`, but is now kept only as
+>    a **reference comparator** — production `kmer_pa` is built from the in-house
+>    index (1); see §7.
 > 3. **`kmer_pa`** (`src/build_kmer_pa.py` → founder × k-mer matrix): the
 >    downstream product that consumes one `kmers.tsv.gz` index **plus** the panel
 >    VCF. This doc is about (1)/(2); `kmer_pa` is built elsewhere.
@@ -214,11 +215,13 @@ indexes are built from the **same inputs** (`pang_1001gplus_all.vcf.gz` +
 the diff confirmed parity (ours is at worst a subset of PanGenie's k-mers per
 bubble, never a wrong k-mer).
 
-**Production still uses the PanGenie-built index**, not the in-house one. The
-swap is sound in principle — pang_135 is a superset of the 231-panel's alleles,
-so every k-mer the panel needs already exists in the index — but is **deferred**
-pending Level-B (downstream `kmer_pa`/AF) validation. The single line to change
-when adopting it is `KMERS=` in `scripts/build_kmer_pa_production_v3qc_v3.sh`.
+**Production now uses the in-house index.** After Level-A parity (above), the
+swap is live: `scripts/build_kmer_pa_arch3.sh` defaults to the in-house
+`ours_${CHR}_kmers.tsv.gz` (`INDEX=ours` → `data/kmer_pa_231_arch3_filt2inv`).
+The pang_135 superset guarantees every k-mer the panel needs is present, so the
+in-house index is a safe drop-in. The PanGenie-built index is kept only as a
+**reference comparator** — `INDEX=pg sbatch scripts/build_kmer_pa_arch3.sh`
+rebuilds the same matrix off the PG index into `data/kmer_pa_231_arch3_pgidx_filt2inv`.
 The retired exploration (diploid byte-check, cap2x, the 2 Mb `pg_reference`
 panel, the comparison test scripts, and the original `INDEX_SWAP_STATE.md`
 working note) lives under `panel/pangenie_index/archive/`.

@@ -86,7 +86,7 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 - **K-mer filter / kmer_pa build**: `filt2inv` (drop ac=1 + ac=F, inline `--filter-production`) + EM weighting $\omega_k=1/m_b$ (`--kmer-weight inv_mb`).
 - **Projection**: MAR — `(h @ var_pa) / (h @ var_called)` in both global and window modes. Patched 2026-05-21.
 - **Modes**: both `global` (one h per chrom) and `★★` (window 10kb + global anchor 0.3 + HMM smooth 5α0.5) are production; pick per-regime.
-- **Naming**: the method is **kMate** (algorithm + math: `ALGORITHM.md`). Legacy code, result-dir paths (`*/cactus_em_*`), and the `sims/visor_freqk` sub-repo still use the prior name `cactus_em`; with the k-mer-filter decision now closed, the rename is unblocked but not yet executed.
+- **Naming**: the method is **kMate** (algorithm + math: `ALGORITHM.md`). Legacy code and result-dir paths (`*/cactus_em_*`) still use the prior name `cactus_em`; with the k-mer-filter decision now closed, the rename is unblocked but not yet executed. (The former `sims/visor_freqk` sub-repo was absorbed into `sims/` 2026-05-30; see `sims/README.md`.)
 
 ## What changed since the last pipeline-state doc (2026-05-19)
 
@@ -128,8 +128,8 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 
 | Task | Why |
 |---|---|
-| **Extend arch3 (A1–A5) to Chr2–5 → merged_231_chr{N}_final.vcf.gz** | Only Chr1 built so far; whole-genome needed for K_pa+V_pa and downstream GEA. **This is the active production run (2026-05-30).** |
-| **Build K_pa `kmer_pa_231_arch3_filt2inv` + V_pa `var_pa_231_arch3` for all 5 chroms** | Off the merged_231 VCFs above. Replaces every v3qc-named matrix. |
+| **Validate arch3 Chr2–5 → merged_231_chr{N}_final.vcf.gz** | All 5 chroms now built on disk (2026-05-30/31). Confirm the Chr2–5 decompositions match the Chr1-validated quality before relying on them for downstream GEA. |
+| **Verify K_pa `kmer_pa_231_arch3_filt2inv` + V_pa `var_pa_231_arch3` for all 5 chroms** | All 5 chroms of both matrices are present on disk (off the merged_231 VCFs above), replacing every v3qc-named matrix. Sanity-check counts/coverage before the cohort run. |
 | Re-run SEEDMIX / evolved baselines under the full production recipe | Any TSV predating arch3 var_pa + MAR projection + `--kmer-weight inv_mb` is stale. |
 | Production scale-out on ~2,415 evolved GrENE-Net samples | SLURM template at `grenenet/run_site_array_perchrom.sh`; ~1.5–5 days at cluster-wide concurrency |
 
@@ -156,7 +156,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 ## 6. Subprojects (own subfolder READMEs)
 
 - `benchmarks/p80/` — homogeneous 80-cactus-founder control experiment. See `benchmarks/p80/README.md`.
-- `sims/visor_freqk/` — pool-seq simulation framework. See `sims/visor_freqk/README.md` and `RECOMB_SIM.md`.
+- `sims/` — pool-seq simulation framework (self-contained as of 2026-05-30; the former `visor_freqk` sub-repo was absorbed here). See `sims/README.md` and `docs/SIMULATIONS_METHODS.md`.
 
 ## 7. Historical record
 

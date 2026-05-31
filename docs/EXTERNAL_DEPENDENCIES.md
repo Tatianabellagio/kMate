@@ -38,8 +38,11 @@ git -C HapFIRE checkout a573877
 ## Related runtime dependencies (not in `external/`)
 
 - **PanGenie** binary + **Jellyfish 2** + **bcftools** — panel genotyping / k-mer
-  counting (conda env `hapfm`; see `HANDOFF.md` Reproducibility).
-- **VISOR SHORtS** — pool-seq read simulation (conda env `pang`; see
-  `docs/SIMULATIONS_METHODS.md` §10).
+  counting. The production env is `kmate` (the only env — `hapfm`/`pang`/
+  `sequencing_pipeline` were removed in the cluster migration; see
+  `docs/PIPELINE_STATE.md` §0.2). `kmate` provides Jellyfish + bcftools;
+  **PanGenie is not in `kmate`** and must be supplied separately.
+- **VISOR SHORtS** — pool-seq read simulation. **Not in `kmate`** — install /
+  put on `$PATH` on the current cluster (see `docs/SIMULATIONS_METHODS.md` §10).
 - **HARP** binary — required on `PATH` for HapFIRE comparator runs only
   (`BACKGROUND.md` References).

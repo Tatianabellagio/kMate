@@ -1,7 +1,15 @@
 # Pipeline FASTQ preprocessing — runbook for future big runs
 
 **Status:** Established 2026-05-20 after audit of FASTQ-trim provenance and methodological-consistency review.
-**Scope:** Applies to all pool-seq runs (SEEDMIX, GrENE-Net evolution samples) projected through cactus_em.
+**Scope:** Applies to all pool-seq runs (SEEDMIX, GrENE-Net evolution samples) projected through kMate (legacy name `cactus_em`).
+
+> **Cluster-migration note (2026-05-30):** the absolute tool paths below are from
+> the retired Carnegie cluster (`/home/tbellagio/...`) and the envs
+> `sequencing_pipeline`/`pang` — both **gone** (the only env now is `kmate`; see
+> `docs/PIPELINE_STATE.md` §0.2). `kmate` has Clumpify/BBMap (`clumpify.sh`,
+> `bbduk.sh`); **Trimmomatic is not in `kmate`** and must be re-resolved on the
+> current cluster. The trim/dedup *configs* below are unchanged; only the
+> paths/envs need updating.
 
 ---
 
@@ -56,10 +64,10 @@ This matches `panel/pangenie_genotyping/scripts/preprocess_one.sh`.
 
 **Why this doesn't break apples-to-apples** vs kmer_pa: kmer_pa's founder k-mers are **FASTA-derived** (consensus sequences from VCFs), not FASTQ-derived. The trim choice on founder FASTQs only propagates indirectly through PanGenie GT calls for the 151 PG founders. See `memory/project_kmer_pipeline_provenance.md`.
 
-**Tool path**:
+**Tool path** *(RETIRED Carnegie paths — env `sequencing_pipeline` is gone; Trimmomatic is not in `kmate`, re-resolve on the current cluster)*:
 - jar: `/home/tbellagio/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/trimmomatic.jar`
 - adapter PE: `/home/tbellagio/miniforge3/envs/sequencing_pipeline/share/trimmomatic-0.39-2/adapters/TruSeq3-PE-2.fa`
-- env: `sequencing_pipeline`
+- env: `sequencing_pipeline` *(retired)*
 
 **Resources**: 4 CPU, 4 GB RAM, ~30 min per sample at typical SEEDMIX coverage.
 
@@ -80,7 +88,7 @@ clumpify.sh in=$TRIM_R1 in2=$TRIM_R2 \
 - `dupesubs=0` — exact-match dedup (no allowance for sequencing errors creating "near-duplicate" pairs; conservative)
 - `optical=f` — disable optical-duplicate detection; we want **all PCR duplicates** (typically ~30-40%), not just optical (~1-2%)
 
-**Tool path**: `/home/tbellagio/miniforge3/envs/pang/bin/clumpify.sh` (BBTools install in `pang` conda env)
+**Tool path**: `/global/home/users/tbellg/miniforge3/envs/kmate/bin/clumpify.sh` (BBTools/BBMap is in the `kmate` env). *(Old Carnegie path was `/home/tbellagio/miniforge3/envs/pang/bin/clumpify.sh`; env `pang` retired.)*
 
 **Resources**: 4 CPU, 32 GB RAM, ~30-60 min per sample.
 

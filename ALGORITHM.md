@@ -1,7 +1,7 @@
 # kMate — algorithm, math, and production wiring (code-verified)
 
-Single source of truth for the kMate algorithm. Replaces `ALGORITHM.md` (out-of-date
-prose) and `CACTUS_EM_MATH.md` (out-of-date math). Every formula and pipeline step
+Single source of truth for the kMate algorithm. Supersedes the earlier prose
+algorithm doc and `old_docs/CACTUS_EM_MATH.md` (out-of-date math). Every formula and pipeline step
 below has been cross-checked against the production code; references are
 `file:line` so they stay traceable.
 
@@ -23,8 +23,9 @@ Last verified: 2026-05-27.
 > cleanup and may have shifted. The authoritative file list and invocation
 > recipes now live in `src/README.md`.
 >
-> **Note (2026-05-27 production decision):** the kmer_pa singleton filter
-> `filt2` (drop k-mers with column-sum < 2; §2.1) and the per-k-mer EM weight
+> **Note (2026-05-27 production decision):** the kmer_pa production filter
+> `filt2inv` (drop k-mers with column-sum < 2 — the original `filt2` singleton
+> rule — **and** column-sum = F invariants, the latter added 2026-05-29; §2.1) and the per-k-mer EM weight
 > $\omega_k = 1/m_b$ (per-bubble de-replication; §4.2) are now production
 > defaults on the heterogeneous 231-founder panel. Both are documented inline
 > below; the panel-conditional caveat for $\omega_k=1/m_b$ is in §10 (M6) and
@@ -318,9 +319,12 @@ identically in the global and window modes.
 
 **Why this helps the 231 panel.** The mixed panel (78 long-read cactus + 153
 PG-genotyped short-read founders) has a structural imbalance: cactus founders
-carry roughly 2× as many private k-mers per founder as PG founders, and they
-disproportionately populate large bubbles (multi-allelic / repetitive
-regions). Under unweighted EM, "h proportional to k-mer count" then becomes "h
+carry roughly 2× as many private k-mers *per founder* as PG founders (median
+8.7K vs 4.5K; §8.1), and they disproportionately populate large bubbles
+(multi-allelic / repetitive regions). *(This per-founder count ratio is a
+different metric from the ~16× cactus/PG **modality-private** ratio measured in
+fully-called Chr1 bubbles in §2.1/M3 — both quantify the same assembly-vs-short-read
+asymmetry, at per-founder vs per-bubble-singleton granularity respectively.)* Under unweighted EM, "h proportional to k-mer count" then becomes "h
 proportional to k-mer-rich-region count", over-crediting cactus founders by
 $\sim 41\%$ in balanced ground truth (`docs/METHODS_TRIED_AND_RESULTS.md` §2).
 $\omega_k = 1/m_b$ turns the estimand into "h proportional to *locus* count,"
@@ -501,7 +505,9 @@ active production-EM weighting is documented in §4.2, not in §8.
 Empirically, the 78 cactus founders carry roughly 2× as many private k-mers
 per founder as the 153 PanGenie-imputed founders (median 8.7K vs 4.5K),
 producing a +41% h-bias toward cactus founders even in a balanced ground
-truth. The mitigation
+truth. *(Per-founder count ratio; distinct from the ~16× modality-private
+ratio in §2.1/M3, which counts cactus- vs PG-private singletons within
+fully-called bubbles.)* The mitigation
 (`per_sample_per_chrom.py:111-121, 153-183`):
 
 1. Pre-EM: $(K_{\mathrm{pa}})_{f,k} \leftarrow (K_{\mathrm{pa}})_{f,k} / K_f$ where
@@ -532,8 +538,10 @@ universally-shared k-mer, which over-amplifies private k-mers. Off by default.
 Post-EM Li-Stephens-style smoothing of $\hat{\mathbf{h}}_w$ across adjacent
 windows, with recombination-rate-weighted neighbor averaging
 (`per_sample_per_chrom.py:375-391`; `block_haplotype_em.smooth_h_across_blocks`).
-Best params from `clean_smooth`: 10 passes, $\alpha = 0.2$, recomb rate
-$4 \times 10^{-8}$/bp.
+The **production window defaults** are 5 passes, $\alpha = 0.5$ (the `★★` recipe;
+§7, §8, and `docs/PIPELINE_STATE.md` §0.1). An earlier `clean_smooth` sweep found
+10 passes / $\alpha = 0.2$ / recomb rate $4 \times 10^{-8}$/bp best on that test;
+the production defaults (5 / 0.5) supersede it.
 
 ### 8.4 Contamination ω (`em_solver.solve_em_with_omega`)
 
@@ -578,7 +586,7 @@ The following are issues / assumptions worth knowing about. Severity tags:
 | H4 | HIGH | The per-record `se` (`per_sample_per_chrom.py:662-666`) is a **panel-side** binomial SE: $\sqrt{p(1-p)/n_{\text{called}}}$ with effective N = number of genotyped founders. It captures panel completeness / AC-AN sampling only, and **omits** EM-$\hat{\mathbf{h}}$ estimation error, read-coverage Poisson noise, and pool finite-$N$ sampling. Safe to use for **filtering/flagging** low-support records; **not** safe to inverse-variance-weight on as if it were the full AF precision (that weights by panel completeness). Documented in §6.1; a coverage/EM-aware uncertainty is not implemented. |
 | M1 | MEDIUM | The old MD coverage formula "$\lambda$ = total read length / genome size" doesn't match production code, which uses $\hat\lambda = F \cdot \sum c_k / \sum_{f,k} (K_{\mathrm{pa}})_{f,k}$ (uniform-h estimate). Cosmetic since $\lambda$ cancels; fixed in §3 above. |
 | M2 | ~~MEDIUM~~ → resolved | Production tolerance is $\varepsilon = 10^{-7}$ throughout (`per_sample_per_chrom.py:225`, `block_em.py:362`); §4 above uses that single value. |
-| M3 | MEDIUM | `--treat-missing-as-n` in `build_kmer_pa.py`. **Corrected 2026-05-29:** production `v3qc_v3` (and `v3qc_v2`) were built with this **ON** (`./.` → N, every k-mer over the span dropped), *not* OFF as this table previously stated. Verified from build scripts + build logs; no N-off build exists on disk. N-on is the deliberate choice — `./.`→REF would fabricate confident reference genotypes from low-quality no-calls. **Hypothesis tested and REJECTED 2026-05-29:** we suspected N-on *causes* the cactus/PG private-k-mer imbalance via PG SV missingness (dropped PG k-mers → cactus-skewed survivors). The missingness-causation test (`notebooks/MISSINGNESS_CAUSES_IMBALANCE.ipynb`, `scripts/run_missingness_test.py`) shows otherwise: in *fully-called* Chr1 bubbles (where N-on ≡ N-off, so missingness cannot contribute) the private ratio is **16.5×**, *higher* than the all-bubble 15.5×, and flat across PG-missingness strata (16.3× at 0% → 15.3× at >40%); cactus privates are no more enriched in missing bubbles (81.9%) than PG privates (82.7%). The imbalance is **real biology** — long-read cactus assemblies realize ~16× more private k-mers/founder than short-read PG-genotyped founders. **Consequences:** (1) the proposed per-founder `kmer_pa` call-mask / dosage fix is **shelved** — it would not reduce the imbalance, which is what `filt2`/ω=1/m_b (§2.1, §4.2) already target; (2) N-on remains the correct modeling choice on its own merits; (3) `kmer_pa` is still not missing-aware the way the §6 projection is (`var_called`) — a latent correctness nuance, but not the imbalance driver. For the paper: state the panel is N-on and that the cactus/PG private skew is a genotyping-modality (assembly vs short-read) effect, not a missingness artifact. |
+| M3 | MEDIUM | `--treat-missing-as-n` in `build_kmer_pa.py`. **Corrected 2026-05-29:** the then-production `v3qc_v3` (and `v3qc_v2`) builds — and the current arch3 `kmer_pa` — were/are built with this **ON** (`./.` → N, every k-mer over the span dropped), *not* OFF as this table previously stated. Verified from build scripts + build logs; no N-off build exists on disk. N-on is the deliberate choice — `./.`→REF would fabricate confident reference genotypes from low-quality no-calls. **Hypothesis tested and REJECTED 2026-05-29:** we suspected N-on *causes* the cactus/PG private-k-mer imbalance via PG SV missingness (dropped PG k-mers → cactus-skewed survivors). The missingness-causation test (`notebooks/MISSINGNESS_CAUSES_IMBALANCE.ipynb`, `scripts/run_missingness_test.py`) shows otherwise: in *fully-called* Chr1 bubbles (where N-on ≡ N-off, so missingness cannot contribute) the private ratio is **16.5×**, *higher* than the all-bubble 15.5×, and flat across PG-missingness strata (16.3× at 0% → 15.3× at >40%); cactus privates are no more enriched in missing bubbles (81.9%) than PG privates (82.7%). The imbalance is **real biology** — long-read cactus assemblies realize ~16× more private k-mers/founder than short-read PG-genotyped founders. **Consequences:** (1) the proposed per-founder `kmer_pa` call-mask / dosage fix is **shelved** — it would not reduce the imbalance, which is what `filt2`/ω=1/m_b (§2.1, §4.2) already target; (2) N-on remains the correct modeling choice on its own merits; (3) `kmer_pa` is still not missing-aware the way the §6 projection is (`var_called`) — a latent correctness nuance, but not the imbalance driver. For the paper: state the panel is N-on and that the cactus/PG private skew is a genotyping-modality (assembly vs short-read) effect, not a missingness artifact. |
 | M4 | MEDIUM | `denom = max(h @ kmer_pa, 1e-7)` numerical floor in EM (`em_solver.py:87`). Kicks in only at simplex boundaries; mention if you want to be precise. |
 | M5 | MEDIUM | `samtools fastq -F 0x900` filters secondary+supplementary but **not** PCR duplicates (`kmer_count.py:72`). SEEDMIX is PCR-free (memory: `seedmix_is_pcr_free`) so no dedup needed. **Evolved GrENE-Net samples are not PCR-free and require an upstream dedup step** (clumpify or equivalent) before kMate; otherwise PCR-duplicate reads inflate k-mer counts and bias the EM. State the preprocessing distinction in the paper's per-sample pipeline section. |
 | M6 | MEDIUM | Production weighting $\omega_k = 1/m_b$ (§4.2) is **panel-conditional**: it wins per-record AF MAE on the heterogeneous 231 panel (where it cancels the cactus/PG imbalance) but slightly under-performs $\omega_k=1$ on the homogeneous 80-cactus control panel (+2% to +41% MAE, `benchmarks/p80/results/filt2_mb_vs_uniform_summary.tsv`). For the GrENE-Net 231 application the win is decisive; the paper treats $\omega_k=1/m_b$ as the method default. Code preserves both via `--kmer-weight {uniform,inv_mb}` so balanced-panel users can opt out. See `docs/METHODS_TRIED_AND_RESULTS.md` §3. |

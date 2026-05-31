@@ -9,7 +9,7 @@ This file captures the reasoning that led to the current method. `HANDOFF.md` is
 Estimate **structural variant (SV) and SNP allele frequencies** in evolved Pool-seq populations from the **GrENE-Net** experiment.
 
 - 2,415 evolved Pool-seq libraries (`MLFH*`), 8 SEEDMIX founder-pool replicates.
-- Founder panel: 231 *A. thaliana* ecotypes, of which **80 have long-read assemblies** in the cactus pangenome; the remaining **151 are PanGenie-genotyped** from public 1001 Genomes short reads.
+- Founder panel: 231 *A. thaliana* ecotypes, of which **78 have long-read assemblies** in the cactus pangenome (80 minus 2 duplicate assemblies); the remaining **153 are PanGenie-genotyped** from public 1001 Genomes short reads.
 - Existing SV frequency method: **freqk** (k-mer-based per-sample AF). Suffers at low coverage and for SVs with non-unique flanking k-mers.
 
 Goal: a more accurate per-sample SV allele-frequency table that slots into the downstream GEA pipeline.
@@ -25,7 +25,7 @@ c_k ~ Poisson( λ · h^T · kmer_pa[:, k] )   for each panel k-mer k
 AF_r = h^T · var_pa[:, r]                  for each VCF record r
 ```
 
-Joint EM across all ~80M panel k-mers buys identifiability for the 231-vector `h`, then a linear projection through `var_pa` gives per-record SNP + INS + DEL + SV alt frequencies in one pass. See `ALGORITHM.md` (prose) and `CACTUS_EM_MATH.md` (math).
+Joint EM across all ~80M panel k-mers buys identifiability for the 231-vector `h`, then a linear projection through `var_pa` gives per-record SNP + INS + DEL + SV alt frequencies in one pass. See `ALGORITHM.md` (algorithm + math; the old `CACTUS_EM_MATH.md` is folded into it, in `old_docs/`).
 
 The current kMate pipeline **replaced** an earlier hapFIRE-projection approach (run hapFIRE on SNPs, project its founder-frequency vector onto SVs via a founder × SV genotype matrix). The architectural pattern — recover `h` once, project to many variants — is the same; the inference is now k-mer-EM rather than HARP per-LD-block + CVXPY.
 
@@ -56,7 +56,7 @@ kMate and hapFIRE agree at R²=0.996 on SNPs in real SEEDMIX_S1 — same inverse
 In rough priority for downstream GrENE-Net analysis (current kMate era):
 
 1. **Recombination violates the "every haplotype = a clean founder" assumption.** Evolved GrENE-Net samples have 1–3 generations of recombination → per-block ancestry. The window-mode + global-anchor + HMM-smooth (`★★`) recipe mitigates this; window_200kb still wins on the hardest n50_g3 regime by a narrow margin.
-2. **Cactus-vs-PG k-mer asymmetry (+41% cactus h-bias).** Cactus founders have richer k-mer fingerprints (CV 2.6% across founders) than PanGenie-genotyped founders. The EM weighs k-mer evidence and over-credits cactus founders. Hurts the ~0.58% of records where carrier rates differ extremely (PG-specific variants, mostly Chr1q knob Mb 21-23). Mitigation strategies explored in `old_docs/BALANCING_KMERS.md`; production k-mer filter is **undecided** (see `docs/PIPELINE_STATE.md`).
+2. **Cactus-vs-PG k-mer asymmetry (+41% cactus h-bias).** Cactus founders have richer k-mer fingerprints (CV 2.6% across founders) than PanGenie-genotyped founders. The EM weighs k-mer evidence and over-credits cactus founders. Hurts the ~0.58% of records where carrier rates differ extremely (PG-specific variants, mostly Chr1q knob Mb 21-23). Mitigation strategies explored in `old_docs/BALANCING_KMERS.md`; production k-mer handling is **decided** — filter `filt2inv` + EM weight $\omega_k=1/m_b$ (chosen 2026-05-27, invariant-drop added 2026-05-29; see `docs/PIPELINE_STATE.md` §0).
 3. **`var_pa` GT disagreement at multi-allelic atomization sites.** `bcftools norm -m -any` produced spurious per-founder carrier calls at SNPs adjacent to INDELs/SVs (`old_docs/OUTLIERS_SUMMARY.md`). **Fix in current production**: arch decomposition (annotate_vcf + convert-to-biallelic) avoids `norm -m -any` entirely. See `docs/INVESTIGATION_CN_VAR_DECOMPOSITION.md`.
 4. **231-simplex identifiability.** With many near-identical founder haplotypes, multiple `h` solutions are near-optimal. Per-ecotype recovery is noisy; aggregates (sums over multiple carriers) are accurate.
 5. **Beagle imputation hard-rejected for SVs.** LOO testing showed −25 to −30 pp concordance loss on small/medium SVs. Production VCF keeps PanGenie SV calls unimputed. See `panel/pangenie_genotyping/data/merged/README_GOLDEN_STANDARD.md`.
@@ -69,8 +69,8 @@ In rough priority for downstream GrENE-Net analysis (current kMate era):
 - **Production panel VCF**: `panel/arch3/chr1/merged_231_chr1_final.vcf.gz` — Arch 3 231-founder biallelic haploid panel (Chr1; graph-annotated, symbolic-ID decomposed). `panel/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz` is the pre-Arch 3 mixed-ploidy catalog *(archive)*; see `panel/pangenie_genotyping/data/merged/README_GOLDEN_STANDARD.md`.
 - **GrENE-Net SNP VCF** (`greneNet_final_v1.1.recode.vcf`): 231 founders, ~3.24M SNPs. Used by hapFIRE in the methods-comparison column and as a `var_pa` second-source in the Fix 2 hybrid `var_pa`. Note: the VCF header lists 232 names but the 232nd is blank.
 - **Cactus pangenome**: `/home/tbellagio/scratch/pang/pang_1001gplus/pang/output/pang_1001gplus_82acc.vcf.gz` — minigraph-cactus on 82 long-read assemblies (80 unique GrENE-Net Accession_IDs after dedup; the two known-duplicate pairs are 5772/6150 and 6915/8387 — historical labeling query at `old_docs/CACTUS_ASSEMBLY_LABELING_QUERY.md`; resolved by dropping 5772 + 9947 in v3qc).
-- **PanGenie genotypes**: 148 of the 151 missing founders genotyped from ENA fastqs (PRJNA273563 + PRJNA30811), 2 from xwu BAMs (100001, 100002), 1 absent.
-- **Production kmer_pa matrices**: var_pa — `panel/arch3/chr1/var_pa_231_arch3_chr1.{var_pa,var_called,meta}.npz` (Arch 3). **kmer_pa is the OPEN k-mer-filter decision** — many candidate builds under `data/kmer_pa_231_v3qc_v3*` (raw, `_filt2`, `_mixedloose` [deprecated], `_subsampMedian_refilt2`, `_subsampProtect{1,2}_refilt2`, …) under active test (2026-05-26); see `docs/PIPELINE_STATE.md` §1/§3. Earlier `kmer_pa_231_v3`, `var_pa_231_v3` etc. are *(archive)*.
+- **PanGenie genotypes**: the 153 short-read (PG) founders — 151 genotyped from public short reads (ENA PRJNA273563 + PRJNA30811; incl. 100001/100002 via xwu BAMs) plus 2 leave-one-out genotyped founders (5772, 9947). See `panel/pangenie_genotyping/README.md` for the 151→153 breakdown.
+- **Production kmer_pa matrices**: var_pa — `panel/arch3/chr{N}/var_pa_231_arch3_chr{N}.{var_pa,var_called,meta}.npz` (Arch 3); kmer_pa — `data/kmer_pa_231_arch3_filt2inv/` (in-house index + filt2inv). The k-mer-filter decision is **closed** (filt2inv + $\omega_k=1/m_b$); see `docs/PIPELINE_STATE.md` §0. The earlier candidate builds under `data/kmer_pa_231_v3qc_v3*` (raw, `_filt2`, `_mixedloose`, `_subsamp*`, …) and `kmer_pa_231_v3`/`var_pa_231_v3` are all *(archived)*.
 - **Existing hapFIRE outputs from Xing Wu** for the SEEDMIX samples: `/carnegie/nobackup/scratch/xwu/GrENE_net/hapFIRE_frequencies/seed_mix/s{1..8}_ecotype_frequency.txt`. For the 2,415 evolved samples: `…/hapFIRE_frequencies/samples/ecotype_frequency/MLFH*_ecotype_frequency.txt`.
 
 ---

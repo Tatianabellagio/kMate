@@ -121,12 +121,12 @@ What is preserved in the haploid file:
 
 Neither file is directly consumable by hapFIRE. hapFIRE requires phased diploid GTs (regex `[0-9]\|[0-9]`) and one biallelic record per `(chrom, pos)` (HARP per-base likelihood is biallelic). Both files here are unphased / multi-allelic-atomized.
 
-For the hapFIRE methods-comparison column on the v3 panel, the conversion pipeline is:
+For the hapFIRE methods-comparison column on the v3 panel, the conversion pipeline was:
 
-1. `sims/visor_freqk/scripts/build_chr1_panel_v3.sh` — Chr1 biallelic SNPs; chrom rename `Chr1`→`1`; collapse to phased homozygous diploid carrier-status (`0|0`/`1|1`); rebuild fixed-window block-index.
-2. `sims/visor_freqk/scripts/dedup_panel_v3.sh` — keep one biallelic record per `(chrom, pos)`; rebuild block-index against the dedup'd panel.
+1. `build_chr1_panel_v3.sh` — Chr1 biallelic SNPs; chrom rename `Chr1`→`1`; collapse to phased homozygous diploid carrier-status (`0|0`/`1|1`); rebuild fixed-window block-index.
+2. `dedup_panel_v3.sh` — keep one biallelic record per `(chrom, pos)`; rebuild block-index against the dedup'd panel.
 
-See `sims/visor_freqk/chr1_only_panel_v3/README.md` for the full processing write-up.
+> **Stale paths:** these scripts lived under the former `sims/visor_freqk/` sub-repo, which was **removed 2026-05-30** (`sims/` is now self-contained — `sims/README.md`). This whole doc is the SUPERSEDED v1 golden-standard note (header above); the pipeline is retained for historical reference only.
 
 ## Stats locations
 

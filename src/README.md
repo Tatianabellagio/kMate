@@ -58,9 +58,9 @@ production estimator.
 | `batch_runner.py`, `calibrate_alt_freqs.py` | helpers that depended on `per_sample_driver.py` |
 | `per_sample_bigld_haplotype.py` | BigLD per-haplotype estimator (hapFIRE comparison) |
 | `block_haplotype_bigld.py` | BigLD per-block-haplotype EM driver, moved out of `block_haplotype_em.py` (which now keeps only `smooth_h_across_blocks` for window mode) |
-| `build_kmer_pa_from_fastas.py` | alt kmer_pa builder from founder FASTAs; no production caller (production kmer_pa uses `build_kmer_pa.py` from the PanGenie index) |
+| `build_kmer_pa_from_fastas.py` | alt kmer_pa builder from founder FASTAs; no production caller (production kmer_pa uses `build_kmer_pa.py` from the in-house `ours_Chr{N}` index; the PanGenie index is a comparator only — see `scripts/build_kmer_pa_arch3.sh`) |
 | `em_fixes/` | experimental H-estimation variant sweep (combined/balanced/balancedbubble/perbubble/whitening/invac/correlation/normalizer_factorial + score_*/run_* drivers); tried, documented in `docs/METHODS_TRIED_AND_RESULTS.md` |
-| `build_subsampled_cn.py` | kmer_pa k-mer-balancing transform (per-stratum subsample / cactus-vs-PG class-match). **Tested and rejected** — all subsample variants lost to plain `filt2` on AF MAE (`docs/METHODS_TRIED_AND_RESULTS.md` §1–2). Production filter is **filt2 only** (drop ac=1). Kept for provenance. |
+| `build_subsampled_cn.py` | kmer_pa k-mer-balancing transform (per-stratum subsample / cactus-vs-PG class-match). **Tested and rejected** — all subsample variants lost to plain `filt2` on AF MAE (`docs/METHODS_TRIED_AND_RESULTS.md` §1–2). Production filter is **filt2inv** (drop ac=1 singletons AND ac=F invariants; `--filter-production`, see `docs/PIPELINE_STATE.md` §0). Kept for provenance. |
 | `validate_seedmix_recipe.py` | recipe-validation helper |
 | `block_solver.py`, `joint_solver.py`, `hapfire_solver.py` | earlier solver prototypes |
 | `sweep_shape_norm_h_only.py` | a one-off k-mer-rebalancing sweep |
