@@ -18,8 +18,10 @@ the filtered matrix + correspondingly subset meta.
 
 Usage:
   python src/filter_kmer_pa_production.py \
-      --in-prefix  data/kmer_pa_231_v3qc_v3/kmer_pa_Chr1 \
-      --out-prefix data/kmer_pa_231_v3qc_v3_filt2inv/kmer_pa_Chr1
+      --in-prefix  data/kmer_pa_231_arch3_raw/kmer_pa_Chr1 \
+      --out-prefix data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1
+  (Production normally applies this inline via build_kmer_pa.py --filter-production;
+   this standalone path is for filtering a pre-built raw matrix.)
 Optional:
   --min-ac N            lower keep bound (default 2).
   --invariant-margin M  drop ac > F-M (default 1 -> drop only ac==F;
