@@ -29,19 +29,27 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from scipy.sparse import load_npz
 from em_solver import solve_em
-from kmer_count import count_kmers_in_bam, count_kmers_in_fasta
+from kmer_count import count_kmers_in_bam, count_kmers_in_fasta, query_kmer_db
 from block_em import (define_windows, assign_kmers_to_blocks,
                       assign_records_to_blocks, solve_em_per_block,
                       project_blocks_to_records, BlockSpec)
 from block_haplotype_em import smooth_h_across_blocks
 
 
-def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads):
+def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads,
+                                  kmer_db=None):
     """Load one chrom's kmer_pa + meta, count k-mers in reads, densify to float32.
 
     Shared between global and window modes. Returns
     (kmer_pa_dense, counts, meta, cov, F, K) or
     (None, None, None, 0.0, 0, 0) if the chrom is missing.
+
+    kmer_db: optional path to a prebuilt Jellyfish DB (from build_kmer_db over
+    the full read pool). When given, this chrom's k-mers are *queried* against
+    it instead of re-scanning the reads — the count-once / query-per-chrom path
+    that avoids the ~5x redundant read scan across chroms. Counts are identical
+    to the per-chrom count path (same canonical hash). When None, falls back to
+    counting the reads directly (legacy behavior, unchanged).
     """
     cn_path = kmer_pa_prefix + f"_{chrom}.kmer_pa.npz"
     meta_path = kmer_pa_prefix + f"_{chrom}.meta.npz"
@@ -56,12 +64,17 @@ def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads):
     print(f"  [{chrom}] kmer_pa F={F}, K={K:,}", flush=True)
 
     t = time.time()
-    if isinstance(reads_input, str) and reads_input.endswith(".bam"):
+    if kmer_db is not None:
+        cd = query_kmer_db(kmer_db, list(kmer_index), k=31)
+        verb = "query"
+    elif isinstance(reads_input, str) and reads_input.endswith(".bam"):
         cd = count_kmers_in_bam(reads_input, list(kmer_index), k=31, threads=threads, hash_size="3G")
+        verb = "count"
     else:
         cd = count_kmers_in_fasta(reads_input, list(kmer_index), k=31, threads=threads, hash_size="3G")
+        verb = "count"
     counts = np.array([cd[km] for km in kmer_index], dtype=np.int64)
-    print(f"  [{chrom}] {time.time()-t:.0f}s count: nonzero {(counts>0).sum():,}/{K:,}", flush=True)
+    print(f"  [{chrom}] {time.time()-t:.0f}s {verb}: nonzero {(counts>0).sum():,}/{K:,}", flush=True)
 
     kmer_pa_dense = np.asarray(kmer_pa.todense() if hasattr(kmer_pa, "todense") else kmer_pa).astype(np.float32)
     del kmer_pa
@@ -99,15 +112,17 @@ def _project_with_called_mask(var_pa_chrom, h, idx):
 
 
 def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
-                         em_max_iter=200, kmer_weight="uniform"):
+                         em_max_iter=200, kmer_weight="uniform", kmer_db=None):
     """Global-mode (single h per chrom) EM + projection.
 
     kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
     de-replication; m_b = #k-mers sharing the k-mer's bubble_id).
+    kmer_db: optional prebuilt Jellyfish DB (count-once path; see
+    _count_and_load_kmer_pa_dense).
     """
     t_chrom = time.time()
     kmer_pa_dense, counts, meta, cov, F, K = _count_and_load_kmer_pa_dense(
-        chrom, kmer_pa_prefix, reads_input, threads)
+        chrom, kmer_pa_prefix, reads_input, threads, kmer_db=kmer_db)
     if kmer_pa_dense is None:
         return None, None, None, 0.0
 
@@ -151,7 +166,7 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
                          hmm_smooth_passes=5,
                          hmm_smooth_alpha=0.5,
                          hmm_smooth_recomb_rate=4e-8,
-                         kmer_weight="uniform"):
+                         kmer_weight="uniform", kmer_db=None):
     """Window-mode per-chrom EM + smooth projection (production "star2" recipe).
 
     Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
@@ -161,7 +176,7 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     """
     t_chrom = time.time()
     kmer_pa_dense, counts, meta, cov, F, K = _count_and_load_kmer_pa_dense(
-        chrom, kmer_pa_prefix, reads_input, threads)
+        chrom, kmer_pa_prefix, reads_input, threads, kmer_db=kmer_db)
     if kmer_pa_dense is None:
         return None, None, None, None, 0.0
 
@@ -252,6 +267,13 @@ def main():
                          "uses (h@var_pa)/(h@var_called) to correctly handle "
                          "./. cells. Auto-detected next to --var-pa if not given.")
     ap.add_argument("--reads", required=True, nargs="+")
+    ap.add_argument("--kmer-db", default=None,
+                    help="Path to a prebuilt Jellyfish DB (build_kmer_db) over the "
+                         "full read pool. When given, each chrom QUERIES it instead of "
+                         "re-counting the reads — the count-once / query-per-chrom "
+                         "speedup. Counts are identical to the per-chrom count path. "
+                         "When omitted, the reads in --reads are counted per chrom "
+                         "(legacy behavior).")
     ap.add_argument("--sample", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--threads", type=int, default=4)
@@ -309,6 +331,13 @@ def main():
 
     reads_input = args.reads if len(args.reads) > 1 else args.reads[0]
 
+    kmer_db = args.kmer_db
+    if kmer_db is not None:
+        if not os.path.exists(kmer_db):
+            sys.exit(f"ERROR: --kmer-db {kmer_db} does not exist")
+        print(f"  kmer_db: {kmer_db} (count-once: querying prebuilt DB per chrom)",
+              flush=True)
+
     freqs_global = np.full(n_records, np.nan, dtype=np.float32)
     info_global  = np.full(n_records, np.nan, dtype=np.float32)
     h_save = {}  # global: h_per_chrom[chrom] = h. window: per-chrom block packs.
@@ -325,7 +354,8 @@ def main():
         if args.block_mode == "global":
             idx, freqs, info, h, _ = run_one_chrom_global(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
-                reads_input, args.threads, kmer_weight=args.kmer_weight)
+                reads_input, args.threads, kmer_weight=args.kmer_weight,
+                kmer_db=kmer_db)
             if idx is None:
                 continue
             h_save[chrom] = h
@@ -339,6 +369,7 @@ def main():
                 hmm_smooth_alpha=args.hmm_smooth_alpha,
                 hmm_smooth_recomb_rate=args.hmm_smooth_recomb_rate,
                 kmer_weight=args.kmer_weight,
+                kmer_db=kmer_db,
             )
             if idx is None:
                 continue

@@ -15,11 +15,30 @@ For batch use across many samples sharing the same query set, prefer
 count_kmers_batch() which reuses the query file.
 """
 from __future__ import annotations
-import os, subprocess, tempfile, shutil
+import os, sys, subprocess, tempfile, shutil
 from pathlib import Path
 
-JELLYFISH = "/global/home/users/tbellg/miniforge3/envs/pangenie/bin/jellyfish"
-SAMTOOLS = "/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools"
+
+def _resolve_tool(name: str) -> str:
+    """Locate an external binary robustly across cluster/env changes.
+
+    Order: (1) the same env as the running Python interpreter (the driver runs
+    under `kmate`, which ships jellyfish + samtools), (2) PATH, (3) bare name
+    (let the shell resolve). Replaces the previous hardcoded Carnegie-era paths
+    (`envs/pangenie`, `envs/sequencing_pipeline`) that broke after the migration.
+    Override with env vars KMATE_JELLYFISH / KMATE_SAMTOOLS if needed.
+    """
+    env_override = os.environ.get(f"KMATE_{name.upper()}")
+    if env_override:
+        return env_override
+    cand = os.path.join(os.path.dirname(sys.executable), name)
+    if os.path.exists(cand):
+        return cand
+    return shutil.which(name) or name
+
+
+JELLYFISH = _resolve_tool("jellyfish")
+SAMTOOLS = _resolve_tool("samtools")
 
 
 def _write_query_fasta(kmers: list[str], path: str) -> None:
@@ -147,6 +166,78 @@ def count_kmers_in_fasta(
             raise RuntimeError(f"jellyfish query failed:\n{rc.stderr}")
 
         result = {}
+        for line in rc.stdout.strip().split("\n"):
+            parts = line.split()
+            if len(parts) >= 2:
+                result[parts[0]] = int(parts[1])
+        for kmer in query_kmers:
+            result.setdefault(kmer, 0)
+        return result
+
+
+def build_kmer_db(
+    reads: str | list[str],
+    jf_db: str,
+    k: int = 31,
+    threads: int = 4,
+    hash_size: str = "3G",
+) -> str:
+    """Build a canonical Jellyfish k-mer-count DB from reads, ONCE.
+
+    Scanning the full read pool is the expensive step (~minutes for a ~5 GB
+    pool). When the same reads are queried against several disjoint k-mer sets
+    (e.g. one per chromosome), build the DB once with this and query each set
+    with `query_kmer_db`, instead of re-scanning the reads N times. The counts
+    are byte-identical to what `count_kmers_in_fasta`/`count_kmers_in_bam`
+    return, because the hash (canonical, same `-s`) is identical.
+
+    Args:
+        reads:      FASTA/FASTQ path or list of them (plain or .gz), or a single
+                    .bam (streamed via `samtools fastq -F 0x900`).
+        jf_db:      output DB path (persistent; the caller owns/cleans it).
+        k:          k-mer length (default 31).
+        threads:    jellyfish threads.
+        hash_size:  initial Jellyfish hash size (auto-grows).
+
+    Returns:
+        jf_db (the path written).
+    """
+    files = [reads] if isinstance(reads, str) else list(reads)
+    if len(files) == 1 and files[0].endswith(".bam"):
+        cmd = (
+            f"{SAMTOOLS} fastq -F 0x900 {files[0]} 2>/dev/null | "
+            f"{JELLYFISH} count -m {k} -s {hash_size} -t {threads} -C -o {jf_db} /dev/fd/0"
+        )
+    else:
+        # zcat -f transparently handles plain + gzipped inputs.
+        files_arg = " ".join(f'"{f}"' for f in files)
+        cmd = (
+            f"set -o pipefail; zcat -f {files_arg} | "
+            f"{JELLYFISH} count -m {k} -s {hash_size} -t {threads} -C -o {jf_db} /dev/fd/0"
+        )
+    rc = subprocess.run(cmd, shell=True, executable="/bin/bash",
+                        capture_output=True, text=True)
+    if rc.returncode != 0:
+        raise RuntimeError(f"jellyfish count failed:\n{rc.stderr}")
+    return jf_db
+
+
+def query_kmer_db(jf_db: str, query_kmers: list[str], k: int = 31) -> dict[str, int]:
+    """Query a prebuilt Jellyfish DB for each k-mer's canonical count.
+
+    Pairs with `build_kmer_db` for the count-once / query-per-chrom pattern.
+    Returns a dict {kmer: count} with every query k-mer present (0 if absent).
+    """
+    with tempfile.TemporaryDirectory() as workdir:
+        query_fa = os.path.join(workdir, "query.fa")
+        _write_query_fasta(query_kmers, query_fa)
+        rc = subprocess.run(
+            f"{JELLYFISH} query {jf_db} -s {query_fa}",
+            shell=True, capture_output=True, text=True
+        )
+        if rc.returncode != 0:
+            raise RuntimeError(f"jellyfish query failed:\n{rc.stderr}")
+        result: dict[str, int] = {}
         for line in rc.stdout.strip().split("\n"):
             parts = line.split()
             if len(parts) >= 2:

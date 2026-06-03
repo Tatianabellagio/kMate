@@ -173,7 +173,17 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
         global_h: (F,) — fallback value
     """
     from concurrent.futures import ThreadPoolExecutor
-    from threadpoolctl import threadpool_limits
+    try:
+        from threadpoolctl import threadpool_limits
+    except ImportError:
+        # threadpoolctl only bounds BLAS oversubscription across the parallel
+        # per-block fits; the EM is still correct without it (just potentially
+        # thread-greedy). Degrade gracefully rather than hard-crash a cohort run
+        # if the env is missing the package.
+        from contextlib import contextmanager
+        @contextmanager
+        def threadpool_limits(limits=None):
+            yield
 
     F = kmer_pa_dense.shape[0]
     h_blocks = np.zeros((n_blocks, F), dtype=np.float32)
