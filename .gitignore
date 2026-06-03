@@ -233,3 +233,25 @@ data/var_pa_*
 contamination_test/
 # belt-and-suspenders: AF result TSVs anywhere (one per sample, MB-scale)
 *.af.tsv
+
+# =============================================================================
+# 2026-06-03: close remaining data leaks found in a pre-GEA repo audit. A bare
+# `git add -A` was staging ~2.1 GB of regeneratable data. Policy unchanged:
+# track code/docs/notebooks/plots/small-config, never bulk data. Rules are
+# SURGICAL — small tracked summary/weight .tsv under benchmarks/ stay tracked.
+# =============================================================================
+# pickled caches (e.g. results/grenenet_gea/group_means.pkl 1.3G, p0_*.pkl); the
+# .npz twins were already ignored — the .pkl siblings slipped through
+*.pkl
+# SAM (intermediate alignment text; *.bam/*.cram already ignored)
+*.sam
+# the root results/**/*.tsv rule did NOT cover gzipped result tables
+results/**/*.tsv.gz
+# benchmarks/ has nested results/ dirs the root-anchored results/** rules miss.
+# Target only the bulky regeneratable outputs, not the small tracked summaries.
+# (3x 95M per-record AF TSVs):
+benchmarks/p231/results/seedmix_grid/
+# (95M kMate AF tables):
+benchmarks/speed_vs_hapfire/results/*.tsv
+# (16M hapFIRE SNP-freq dump):
+benchmarks/speed_vs_hapfire/results/*_frequency.txt
