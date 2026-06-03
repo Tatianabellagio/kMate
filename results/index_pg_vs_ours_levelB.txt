@@ -1,0 +1,66 @@
+
+======================================================================
+Chr1
+======================================================================
+  ours : F=231 K=10,950,663 nnz=461,069,206
+  pg   : F=231 K=10,992,946 nnz=467,720,695
+  founders identical order: True
+  k-mer sets: ours=10,950,663 pg=10,992,946 shared=10,915,077 (99.29% of larger)  ours-only=35,586 pg-only=77,869
+  per-founder k-mer count corr(ours,pg)=0.998741  median|Δ|=30161
+  carrier agreement on 200,000 shared k-mers: per-cell 100.0000%  fully-identical cols 100.0000%
+  => Chr1: REVIEW (see numbers above)
+
+======================================================================
+Chr2
+======================================================================
+  ours : F=231 K=6,572,088 nnz=290,853,996
+  pg   : F=231 K=6,638,649 nnz=300,433,847
+  founders identical order: True
+  k-mer sets: ours=6,572,088 pg=6,638,649 shared=6,545,790 (98.60% of larger)  ours-only=26,298 pg-only=92,859
+  per-founder k-mer count corr(ours,pg)=0.994339  median|Δ|=44263
+  carrier agreement on 200,000 shared k-mers: per-cell 100.0000%  fully-identical cols 100.0000%
+  => Chr2: REVIEW (see numbers above)
+
+======================================================================
+Chr3
+======================================================================
+  ours : F=231 K=8,345,796 nnz=363,287,704
+  pg   : F=231 K=8,392,209 nnz=369,866,019
+  founders identical order: True
+  k-mer sets: ours=8,345,796 pg=8,392,209 shared=8,316,356 (99.10% of larger)  ours-only=29,440 pg-only=75,853
+  per-founder k-mer count corr(ours,pg)=0.995232  median|Δ|=31605
+  carrier agreement on 200,000 shared k-mers: per-cell 100.0000%  fully-identical cols 100.0000%
+  => Chr3: REVIEW (see numbers above)
+
+======================================================================
+Chr4
+======================================================================
+  ours : F=231 K=6,419,044 nnz=261,034,789
+  pg   : F=231 K=6,443,440 nnz=264,491,695
+  founders identical order: True
+  k-mer sets: ours=6,419,044 pg=6,443,440 shared=6,392,251 (99.21% of larger)  ours-only=26,793 pg-only=51,189
+  per-founder k-mer count corr(ours,pg)=0.989297  median|Δ|=18251
+  carrier agreement on 200,000 shared k-mers: per-cell 100.0000%  fully-identical cols 100.0000%
+  => Chr4: REVIEW (see numbers above)
+
+======================================================================
+Chr5
+======================================================================
+  ours : F=231 K=9,962,773 nnz=425,757,403
+  pg   : F=231 K=10,045,754 nnz=439,044,129
+  founders identical order: True
+  k-mer sets: ours=9,962,773 pg=10,045,754 shared=9,930,414 (98.85% of larger)  ours-only=32,359 pg-only=115,340
+  per-founder k-mer count corr(ours,pg)=0.999019  median|Δ|=58518
+  carrier agreement on 200,000 shared k-mers: per-cell 100.0000%  fully-identical cols 100.0000%
+  => Chr5: PASS (equivalent)
+
+======================================================================
+SUMMARY
+======================================================================
+  Chr1: REVIEW
+  Chr2: REVIEW
+  Chr3: REVIEW
+  Chr4: REVIEW
+  Chr5: PASS
+
+PASS on all chroms => PanGenie and our index produce the same K_pa (downstream-equivalent); arch3 K_pa can use the in-house index.

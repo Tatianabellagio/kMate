@@ -1,0 +1,115 @@
+[init] vcf=/global/scratch/users/tbellg/kmate/results/overhang_timing/pang_135_chr1.vcf.gz ref=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa k=31 haploid=True add_ref=True no_caps=False
+[stage 1] parsing VCF + building bubbles
+  skip variant at Chr1:0 (too close to chrom end)
+  skip variant at Chr1:1889 (non-ACGT ALT)
+  skip variant at Chr1:71585 (non-ACGT ALT)
+  skip variant at Chr1:267644 (non-ACGT ALT)
+  skip variant at Chr1:1100621 (non-ACGT ALT)
+  skip variant at Chr1:3506094 (non-ACGT ALT)
+  skip variant at Chr1:4014226 (non-ACGT ALT)
+  skip variant at Chr1:5068271 (non-ACGT ALT)
+  skip variant at Chr1:6127750 (non-ACGT ALT)
+  skip variant at Chr1:6951311 (non-ACGT ALT)
+  skip variant at Chr1:8643869 (non-ACGT ALT)
+  skip variant at Chr1:8726651 (non-ACGT ALT)
+  skip variant at Chr1:8737586 (non-ACGT ALT)
+  skip variant at Chr1:9023336 (non-ACGT ALT)
+  skip variant at Chr1:9078319 (non-ACGT ALT)
+  skip variant at Chr1:9175291 (non-ACGT ALT)
+  skip variant at Chr1:9184328 (non-ACGT ALT)
+  skip variant at Chr1:9184539 (non-ACGT ALT)
+  skip variant at Chr1:9340798 (non-ACGT ALT)
+  skip variant at Chr1:9345865 (non-ACGT ALT)
+  skip variant at Chr1:9563959 (non-ACGT ALT)
+  skip variant at Chr1:9831330 (non-ACGT ALT)
+  skip variant at Chr1:10787005 (non-ACGT ALT)
+  skip variant at Chr1:10816429 (non-ACGT ALT)
+  skip variant at Chr1:11403763 (non-ACGT ALT)
+  skip variant at Chr1:11453334 (non-ACGT ALT)
+  skip variant at Chr1:11809318 (non-ACGT ALT)
+  skip variant at Chr1:11845548 (non-ACGT ALT)
+  skip variant at Chr1:12091007 (non-ACGT ALT)
+  skip variant at Chr1:12091616 (non-ACGT ALT)
+  skip variant at Chr1:12424686 (non-ACGT ALT)
+  skip variant at Chr1:12555055 (non-ACGT ALT)
+  skip variant at Chr1:13097730 (non-ACGT ALT)
+  skip variant at Chr1:13405380 (non-ACGT ALT)
+  skip variant at Chr1:13433111 (non-ACGT ALT)
+  skip variant at Chr1:13492452 (non-ACGT ALT)
+  skip variant at Chr1:13901052 (non-ACGT ALT)
+  skip variant at Chr1:13924957 (non-ACGT ALT)
+  skip variant at Chr1:14232257 (non-ACGT ALT)
+  skip variant at Chr1:14499235 (non-ACGT ALT)
+  skip variant at Chr1:15215225 (non-ACGT ALT)
+  skip variant at Chr1:15389995 (non-ACGT ALT)
+  skip variant at Chr1:15644649 (non-ACGT ALT)
+  skip variant at Chr1:15948910 (non-ACGT ALT)
+  skip variant at Chr1:16373683 (non-ACGT ALT)
+  skip variant at Chr1:16666124 (non-ACGT ALT)
+  skip variant at Chr1:16866607 (non-ACGT ALT)
+  skip variant at Chr1:16922207 (non-ACGT ALT)
+  skip variant at Chr1:17034120 (non-ACGT ALT)
+  skip variant at Chr1:17102311 (non-ACGT ALT)
+  skip variant at Chr1:17134822 (non-ACGT ALT)
+  skip variant at Chr1:17339352 (non-ACGT ALT)
+  skip variant at Chr1:19115357 (non-ACGT ALT)
+  skip variant at Chr1:19121468 (non-ACGT ALT)
+  skip variant at Chr1:19451590 (non-ACGT ALT)
+  skip variant at Chr1:19452527 (non-ACGT ALT)
+  skip variant at Chr1:20040092 (non-ACGT ALT)
+  skip variant at Chr1:21268445 (non-ACGT ALT)
+  skip variant at Chr1:21498692 (non-ACGT ALT)
+  skip variant at Chr1:21627231 (non-ACGT ALT)
+  skip variant at Chr1:21851287 (non-ACGT ALT)
+  skip variant at Chr1:22311952 (non-ACGT ALT)
+  skip variant at Chr1:22351246 (non-ACGT ALT)
+  skip variant at Chr1:22657694 (non-ACGT ALT)
+  skip variant at Chr1:22839247 (non-ACGT ALT)
+  skip variant at Chr1:22991903 (non-ACGT ALT)
+  skip variant at Chr1:23684527 (non-ACGT ALT)
+  skip variant at Chr1:23746779 (non-ACGT ALT)
+  skip variant at Chr1:24765593 (non-ACGT ALT)
+  skip variant at Chr1:25659516 (non-ACGT ALT)
+  skip variant at Chr1:25977522 (non-ACGT ALT)
+  skip variant at Chr1:27067871 (non-ACGT ALT)
+  skip variant at Chr1:27352268 (non-ACGT ALT)
+  skip variant at Chr1:28132589 (non-ACGT ALT)
+  skip variant at Chr1:28896377 (non-ACGT ALT)
+  skip variant at Chr1:30081209 (non-ACGT ALT)
+  skip variant at Chr1:30427616 (too close to chrom end)
+  skip variant at Chr1:30427625 (too close to chrom end)
+  skip variant at Chr1:30427628 (too close to chrom end)
+  skip variant at Chr1:30427640 (too close to chrom end)
+  skip variant at Chr1:30427661 (too close to chrom end)
+  skip variant at Chr1:30427668 (too close to chrom end)
+  1320718 variants accepted
+  190569 bubbles
+[stage 2] enumerating alleles + writing path_segments FASTA
+  /global/scratch/users/tbellg/kmate/results/overhang_timing/withOH_tmp/path_segments.fasta
+[stage 3] jellyfish count + open query handle
+  [jellyfish] jellyfish count -m 31 -s 3000000000 -t 8 -C -o /global/scratch/users/tbellg/kmate/results/overhang_timing/withOH_tmp/panel.jf /global/scratch/users/tbellg/kmate/results/overhang_timing/withOH_tmp/path_segments.fasta
+[stage 4] selecting unique kmers + writing TSV
+[done]
+	Command being timed: "/global/home/users/tbellg/miniforge3/envs/kmate/bin/python -u /global/scratch/users/tbellg/kmate/panel/pangenie_index/scripts/build_kmers_tsv.py --vcf /global/scratch/users/tbellg/kmate/results/overhang_timing/pang_135_chr1.vcf.gz --ref /global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.fa --out /global/scratch/users/tbellg/kmate/results/overhang_timing/withOH -k 31 --haploid --emit-overhang --jellyfish-threads 8 --jellyfish-hash 3000000000"
+	User time (seconds): 1507.37
+	System time (seconds): 63.28
+	Percent of CPU this job got: 26%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:37:52
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 24242604
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 256109
+	Minor (reclaiming a frame) page faults: 12848233
+	Voluntary context switches: 297266
+	Involuntary context switches: 5240
+	Swaps: 0
+	File system inputs: 3353168
+	File system outputs: 4899064
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

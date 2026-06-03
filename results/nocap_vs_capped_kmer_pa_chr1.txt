@@ -1,0 +1,20 @@
+
+======================================================================
+Chr1
+======================================================================
+  nocap   : F=231 K=18,486,760 nnz=654,387,165
+  capped  : F=231 K=10,950,663 nnz=461,069,206
+  ΔK (nocap-capped) = +7,536,097  (+68.82% vs capped)   Δnnz = +193,317,959
+  founders identical order: True
+  k-mer sets: nocap=18,486,760 capped=10,950,663 shared=10,950,663
+    nocap-only=7,536,097   capped-only=0
+    fraction of capped retained in nocap (subset check): 100.0000%
+  per-founder k-mer count corr(nocap,capped)=0.969018  median|Δ|=838902  mean nocap/capped ratio=1.4193
+  carrier agreement on 200,000 shared k-mers: per-cell 100.0000%  fully-identical cols 100.0000%
+
+======================================================================
+NOTE
+======================================================================
+  'capped-only' = k-mers the caps DROPPED that no-caps keeps (expected ~0 if capped ⊆ nocap).
+  'nocap-only' = extra k-mers no-caps adds over capped.
+  100% per-cell carrier agreement on shared k-mers => caps only change k-mer COUNT, not which founder carries which shared k-mer.

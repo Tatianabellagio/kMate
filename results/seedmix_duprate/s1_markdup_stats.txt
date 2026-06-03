@@ -1,0 +1,17 @@
+COMMAND: /global/home/users/tbellg/miniforge3/envs/kmate/bin/samtools markdup -@ 8 -s -f /global/scratch/users/tbellg/kmate/results/seedmix_duprate/s1_markdup_stats.txt - /global/scratch/users/tbellg/kmate/results/seedmix_duprate/s1.markdup.bam
+READ: 78680528
+WRITTEN: 78680528
+EXCLUDED: 10730202
+EXAMINED: 67950326
+PAIRED: 66062756
+SINGLE: 1887570
+DUPLICATE PAIR: 6594163
+DUPLICATE SINGLE: 1125890
+DUPLICATE PAIR OPTICAL: 0
+DUPLICATE SINGLE OPTICAL: 0
+DUPLICATE NON PRIMARY: 0
+DUPLICATE NON PRIMARY OPTICAL: 0
+DUPLICATE PRIMARY TOTAL: 7720053
+DUPLICATE TOTAL: 7720053
+ESTIMATED_LIBRARY_SIZE: 154256153
+

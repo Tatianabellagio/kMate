@@ -1,0 +1,18 @@
+
+======================================================================
+Chr1
+======================================================================
+  ours : F=231 K=10,950,663 nnz=461,069,206
+  pg   : F=231 K=10,992,946 nnz=467,720,695
+  founders identical order: True
+  k-mer sets: ours=10,950,663 pg=10,992,946 shared=10,915,077 (99.29% of larger)  ours-only=35,586 pg-only=77,869
+  per-founder k-mer count corr(ours,pg)=0.998741  median|Δ|=30161
+  carrier agreement on 200,000 shared k-mers: per-cell 100.0000%  fully-identical cols 100.0000%
+  => Chr1: REVIEW (see numbers above)
+
+======================================================================
+SUMMARY
+======================================================================
+  Chr1: REVIEW
+
+PASS on all chroms => PanGenie and our index produce the same K_pa (downstream-equivalent); arch3 K_pa can use the in-house index.
