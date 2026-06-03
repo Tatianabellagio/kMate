@@ -151,7 +151,17 @@ from the per-allele std::map of unique forward k-mers).
 A per-bubble total cap of `max(n_paths, 301)` k-mers is applied (matching
 PanGenie). Bubbles with zero surviving k-mers emit `nan`.
 
-## 5. Stage 3 — Overhang k-mer selection
+## 5. Stage 3 — Overhang k-mer selection (OPTIONAL — OFF by default)
+
+> **Disabled by default (2026-06-01).** kMate's `K_pa` (`src/build_kmer_pa.py`)
+> consumes only the within-bubble `unique_kmers` column and **ignores**
+> `unique_kmers_overhang`; overhang selection is the dominant cost of the index
+> build, so `build_kmers_tsv.py` now skips it unless `--emit-overhang` is passed
+> (kept for PanGenie-format parity / the index-vs-PG validation). When skipped,
+> column 5 is written as the `nan` sentinel, preserving the 5-column schema. The
+> overhang k-mers are a PanGenie genotyper construct (local coverage anchoring),
+> not used anywhere in kMate. The description below documents what
+> `--emit-overhang` computes.
 
 For each bubble, a left and right **overhang region** of `2·k` bp is taken
 immediately outside the bubble boundary, clipped to the previous/next

@@ -17,9 +17,9 @@ matrices (`var_pa`) the estimator projects through:
 
 1. **Long-read / cactus side** → 78 cactus founders (pang_135 → pang_82 → QC-filtered), haploid biallelic side VCF.
 2. **Short-read / PanGenie side** (`pangenie_genotyping/`) → 153 PG founders, het-masked + haploidized side VCF (`data/v3qc_tmp/`).
-3. **arch3 symbolic-ID merge** (`arch3/`, A2–A4, `bcftools merge --merge none`) → `arch3/chr{N}/merged_231_chr{N}_final.vcf.gz` (231 founders; the canonical production panel VCF).
+3. **arch3 symbolic-ID merge** (`arch3/`, A2–A4, `bcftools merge --merge none`) → `arch3/chr{N}/merged_231_chr{N}_final.vcf.gz` (231 founders; the canonical production panel VCF). **Segregating-only** since 2026-06-02 — A4 drops monomorphic records (`AC=0 || AC=AN`); 8,489,646 records genome-wide. See `docs/PIPELINE_STATE.md` §0.
 4. **arch decomposition** (`arch3/`, A5/D1) → `var_pa_231_arch3_chr{N}.{var_pa,var_called,meta}.npz`
-   and the atomized (per-base) `*_atomized.*` variants.
+   and the atomized (per-base) `*_atomized.*` variants (the on-disk atomized is Chr1-only and **stale** vs the segregating filter — rebuild before use).
 
 The resulting `var_pa` (this folder) plus `kmer_pa` (k-mer presence/absence, in `data/`) are the
 two inputs to `src/per_sample_per_chrom.py`. See `docs/PIPELINE_STATE.md` §0/§0.1 for the production recipe.

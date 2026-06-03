@@ -61,9 +61,10 @@ documented upgrade path.
               └───────────┬───────────┘
                           ▼
                           A4  bcftools merge --merge none  (→ 231, stays biallelic)
-                          │   fill-tags ; drop AN=0
+                          │   fill-tags ; drop monomorphic (AC=0 || AC=AN)
                           ▼
                  merged_231_chr1_final.vcf.gz   ← canonical biallelic panel
+                                                  (SEGREGATING-ONLY: 0 < AC < AN)
                           │
               ┌───────────┴────────────┐
               ▼                         ▼
@@ -81,7 +82,7 @@ documented upgrade path.
 | A1 | `jobA1_annotate_chr1.sh` | `annotate_vcf` on the 135-sample graph VCF → annotated multi-allelic + biallelic catalog with symbolic `INFO/ID` | the big/slow step (~30 min, ~20 GB); outputs feed both A2 and A3 |
 | A2 | `jobA2_pg_chr1.sh` | PG-153 side: subset → `transfer_id` → `convert-to-biallelic` → fill-tags → **haploidize (het→`.`)** | het→missing follows the Arouisse 2020 *A. thaliana* precedent; no V4 filter (per-cell het→missing covers it) |
 | A3 | `jobA3_cactus_chr1.sh` | cactus-78 side: subset → `transfer_id` → `convert-to-biallelic` → sort/bgzip | already haploid (long-read assemblies) — no haploidize step |
-| A4 | `jobA4_merge_chr1.sh` | merge the two haploid biallelic sides → 231; fill-tags; drop `AN=0` | **`--merge none`**: keep records biallelic — a multi-allelic merge would make `build_var_pa` store `ALT[0]` only but count any non-zero allele as its carrier (mis-attribution) |
+| A4 | `jobA4_merge_chr1.sh` | merge the two haploid biallelic sides → 231; fill-tags; **drop monomorphic** (`-e 'INFO/AC=0 \|\| INFO/AC=INFO/AN'`, subsumes the old `AN=0`-only filter) → **segregating-only panel** | **`--merge none`**: keep records biallelic — a multi-allelic merge would make `build_var_pa` store `ALT[0]` only but count any non-zero allele as its carrier (mis-attribution). **Monomorphic filter (2026-06-02):** the merge emits ~17.8% records where the ALT is carried by no founder (AC=0; graph alleles no panel founder traverses, plus carriers lost to A2 het→`.`) or by all called (AC=AN); these are non-segregating and now dropped at creation. |
 | A5 | `jobA5_build_cnvar.sh` | `build_var_pa.py` on the merged panel | → `var_pa_231_arch3_chr1.{var_pa,var_called,meta}.npz` (raw, path-aware; SNP+indel+SV) |
 | D1 | `jobD1_atomize_cnvar.sh` | `build_var_pa_atomized.py` on the same merged panel | per-base SNP catalog; carriers unioned over the aligned overlap of every source record; pure INS/DEL beyond the overlap do **not** atomize (they stay in the raw var_pa) |
 
@@ -91,6 +92,9 @@ documented upgrade path.
 - **Atomized** `var_pa_231_arch3_chr1_atomized` (D1): one column per single-base
   substitution, carriers unioned across every record implying it. Use for SNP-level GEA /
   comparison against linear-reference SNP callers (closed MNP-vs-SNP encoding outliers).
+  **STALE (2026-06-02):** the on-disk atomized (Chr1 only) was built before the
+  segregating-only filter and was *not* regenerated. Rebuild it from the filtered
+  `merged_231_chr1_final.vcf.gz` (re-run D1) before using it.
 
 ## Prerequisites
 

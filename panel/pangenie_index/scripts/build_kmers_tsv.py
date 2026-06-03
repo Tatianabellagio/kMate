@@ -36,10 +36,13 @@ Algorithm (mirrors PanGenie-index):
      bubble, and not elsewhere in the panel). Round-robin select up to
      --cap-biallelic (default 16) or --cap-multiallelic (default 32) k-mers
      per allele, with per-bubble total cap of max(nr_paths, 301).
-  6. Overhang: per bubble, for each ±2k flanking region, select up to
-     --overhang-cap (default 12) unique-genome-wide k-mers.
+  6. Overhang (OPTIONAL — OFF by default; pass --emit-overhang to enable): per
+     bubble, for each ±2k flanking region, select up to --overhang-cap (default
+     12) unique-genome-wide k-mers. kMate does NOT consume this column (see the
+     note at select_overhang_kmers); it is the dominant cost of this script, so
+     it is skipped by default.
   7. Write `<prefix>_<chrom>_kmers.tsv.gz` with the same 5-column schema as
-     PanGenie-index.
+     PanGenie-index (column 5 = `nan` when overhang is skipped).
 
 Parameters not in PG:
   --haploid             accept haploid GT (single integer, no `|`). Each sample
@@ -48,6 +51,13 @@ Parameters not in PG:
   --cap-biallelic       per-allele kmer cap in biallelic bubbles (PG: 16)
   --cap-multiallelic    per-allele kmer cap in multi-allelic bubbles (PG: 32)
   --overhang-cap        max kmers per flanking side (PG: 12)
+  --no-caps             lift ALL THREE in-bubble caps: per-allele biallelic (16),
+                        per-allele multiallelic (32), and the per-bubble total
+                        max(nr_paths, 301). Every k-mer that passes the
+                        uniqueness filter (genomic_count==1 AND in exactly one
+                        allele) is emitted. Does NOT touch --overhang-cap (a
+                        separate flanking-region cap). Diagnostic: measures what
+                        the caps cost vs PanGenie-parity defaults.
   --no-add-reference    omit the all-REF synthetic path. PG includes it by default.
 
 Validation strategy: byte-compare emitted TSV against PG's on a small panel
@@ -339,6 +349,7 @@ def select_unique_kmers(
     cap_biallelic: int,
     cap_multiallelic: int,
     k: int,
+    no_caps: bool = False,
 ) -> dict[int, list[bytes]]:
     """Mirror PG's stepwise_unique_kmers + select_kmers logic.
 
@@ -384,6 +395,12 @@ def select_unique_kmers(
     # Per-bubble total cap: max(nr_paths, 301). nr_paths ≈ n_alleles (we don't
     # have the original path count here; use n_alleles which is conservative)
     max_alleles_total = max(n_alleles, 301)
+    if no_caps:
+        # Lift both the per-allele cap and the per-bubble total. inf works with
+        # the while/break conditions below: the loop now terminates only when
+        # keep_adding goes False (no unique k-mer left to emit).
+        max_kmers = float("inf")
+        max_alleles_total = float("inf")
 
     result: dict[int, list[bytes]] = defaultdict(list)
     nr_selected = 0
@@ -476,7 +493,14 @@ def select_overhang_kmers(
 ) -> list[bytes]:
     """For each side (left, right) flank, select up to `overhang_cap` k-mers
     unique genome-wide. PG clips the overhang to the adjacent bubble's
-    boundary so the same ref region is never counted in two bubbles."""
+    boundary so the same ref region is never counted in two bubbles.
+
+    NOTE (kMate): RETAINED but DISABLED by default. The `unique_kmers_overhang`
+    column this produces is used by PanGenie's own genotyper (local coverage
+    anchoring), but kMate's K_pa (src/build_kmer_pa.py) reads only the
+    within-bubble `unique_kmers` column and ignores this one. It is the dominant
+    per-bubble cost, so the driver calls it only when --emit-overhang is passed
+    (kept for PanGenie-format parity / the index-vs-PG validation)."""
     # left: max(bubble_start - overhang_size, prev_bubble_end) .. bubble_start
     left_start = max(bubble_start - overhang_size, prev_bubble_end)
     left_seq = ref_fasta.fetch(bubble_chrom, left_start, bubble_start).upper()
@@ -518,6 +542,14 @@ def main():
     ap.add_argument("--cap-biallelic", type=int, default=16)
     ap.add_argument("--cap-multiallelic", type=int, default=32)
     ap.add_argument("--overhang-cap", type=int, default=12)
+    ap.add_argument("--emit-overhang", action="store_true",
+                    help="also compute the unique_kmers_overhang (flanking) column. "
+                         "OFF by default: kMate's build_kmer_pa.py does not use it and "
+                         "computing it is the dominant cost of this script. Enable only to "
+                         "reproduce PanGenie-format parity / the index-vs-PG validation.")
+    ap.add_argument("--no-caps", action="store_true",
+                    help="lift the per-allele biallelic/multiallelic caps AND the "
+                         "per-bubble total cap (overhang cap unaffected)")
     ap.add_argument("--jellyfish-threads", type=int, default=4)
     ap.add_argument("--jellyfish-hash", type=int, default=100_000_000)
     ap.add_argument("--keep-tempfiles", action="store_true")
@@ -527,7 +559,8 @@ def main():
     k = args.kmer_size
     overhang_size = 2 * k
 
-    print(f"[init] vcf={args.vcf} ref={args.ref} k={k} haploid={args.haploid} add_ref={add_reference}", file=sys.stderr)
+    print(f"[init] vcf={args.vcf} ref={args.ref} k={k} haploid={args.haploid} "
+          f"add_ref={add_reference} no_caps={args.no_caps}", file=sys.stderr)
 
     ref_fasta = pysam.FastaFile(args.ref)
 
@@ -585,10 +618,12 @@ def main():
     per_chrom_out: dict[str, gzip.GzipFile] = {}
     header = b"#chromosome\tstart\tend\tunique_kmers\tunique_kmers_overhang\n"
 
-    # Precompute per-chrom bubble index for prev/next lookups in overhang clip
+    # Precompute per-chrom bubble index for prev/next lookups in overhang clip.
+    # Only needed when --emit-overhang (see the overhang note in the loop below).
     chrom_bubble_indices: dict[str, list[int]] = defaultdict(list)
-    for bidx, bubble in enumerate(bubbles):
-        chrom_bubble_indices[bubble[0].chrom].append(bidx)
+    if args.emit_overhang:
+        for bidx, bubble in enumerate(bubbles):
+            chrom_bubble_indices[bubble[0].chrom].append(bidx)
 
     for bidx, bubble in enumerate(bubbles):
         chrom = bubble[0].chrom
@@ -600,26 +635,13 @@ def main():
         bstart = bubble[0].start
         bend = bubble[-1].end
 
-        # Determine prev/next bubble bounds ON THIS CHROM for overhang clipping
-        bidx_in_chrom = chrom_bubble_indices[chrom]
-        pos_in_chrom = bidx_in_chrom.index(bidx)
-        if pos_in_chrom == 0:
-            prev_bubble_end = 0
-        else:
-            prev_b = bubbles[bidx_in_chrom[pos_in_chrom - 1]]
-            prev_bubble_end = prev_b[-1].end
-        if pos_in_chrom == len(bidx_in_chrom) - 1:
-            next_bubble_start = ref_fasta.get_reference_length(chrom)
-        else:
-            next_b = bubbles[bidx_in_chrom[pos_in_chrom + 1]]
-            next_bubble_start = next_b[0].start
-
         unique_combos = bubble_unique_combos_all[bidx]
         is_biallelic = (len(unique_combos) == 2)
         allele_seqs = bubble_alleles_all[bidx]
         selected = select_unique_kmers(
             allele_seqs, jf.get_count, is_biallelic,
-            args.cap_biallelic, args.cap_multiallelic, k
+            args.cap_biallelic, args.cap_multiallelic, k,
+            no_caps=args.no_caps,
         )
         # flatten selection (per-allele list of k-mers) into a CSV
         # PG order: iterate allele_to_kmers ascending by allele idx; within
@@ -630,11 +652,35 @@ def main():
             flat.extend(selected[a])
         kmers_str = b",".join(flat).decode("ascii") if flat else "nan"
 
-        overhang_kmers = select_overhang_kmers(
-            chrom, bstart, bend, prev_bubble_end, next_bubble_start,
-            ref_fasta, k, overhang_size, args.overhang_cap, jf.get_count
-        )
-        oh_str = b",".join(overhang_kmers).decode("ascii") if overhang_kmers else "nan"
+        # --- Overhang (flanking) k-mers: SKIPPED by default. -----------------
+        # kMate's K_pa (src/build_kmer_pa.py) reads only column 4 (`unique_kmers`)
+        # and discards column 5 (`unique_kmers_overhang`), so computing the column
+        # is pure waste for our pipeline — and it is the dominant cost of this
+        # script (the per-bubble flanking scan plus the O(n^2) prev/next-bubble
+        # lookups it requires). We skip it unless --emit-overhang is given (kept
+        # for PanGenie-format parity / the index-vs-PG validation). The `nan`
+        # sentinel preserves the 5-column schema and build_kmer_pa's p[4] parse.
+        if args.emit_overhang:
+            # Determine prev/next bubble bounds ON THIS CHROM for overhang clipping
+            bidx_in_chrom = chrom_bubble_indices[chrom]
+            pos_in_chrom = bidx_in_chrom.index(bidx)
+            if pos_in_chrom == 0:
+                prev_bubble_end = 0
+            else:
+                prev_b = bubbles[bidx_in_chrom[pos_in_chrom - 1]]
+                prev_bubble_end = prev_b[-1].end
+            if pos_in_chrom == len(bidx_in_chrom) - 1:
+                next_bubble_start = ref_fasta.get_reference_length(chrom)
+            else:
+                next_b = bubbles[bidx_in_chrom[pos_in_chrom + 1]]
+                next_bubble_start = next_b[0].start
+            overhang_kmers = select_overhang_kmers(
+                chrom, bstart, bend, prev_bubble_end, next_bubble_start,
+                ref_fasta, k, overhang_size, args.overhang_cap, jf.get_count
+            )
+            oh_str = b",".join(overhang_kmers).decode("ascii") if overhang_kmers else "nan"
+        else:
+            oh_str = "nan"
 
         line = f"{chrom}\t{bstart}\t{bend}\t{kmers_str}\t{oh_str}\n"
         per_chrom_out[chrom].write(line.encode("ascii"))
