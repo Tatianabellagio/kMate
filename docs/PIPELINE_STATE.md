@@ -13,12 +13,20 @@ anywhere disagrees with §0, §0 wins — fix the other place.
 > the per-chrom canonical biallelic VCF **`merged_231_chr{N}_final.vcf.gz`**. That
 > VCF — and nothing else — is what every downstream matrix is built from. Both
 > production matrices derive from it.
+>
+> **The final VCF is SEGREGATING-ONLY (set 2026-06-02).** A4 drops monomorphic records
+> (`bcftools view -e 'INFO/AC=0 || INFO/AC=INFO/AN'`) — ALT carried by no founder *or* by
+> all called founders. Genome-wide **8,489,646** records (was 10,325,364 before the filter;
+> 17.8% were monomorphic, almost all AC=0). V_pa is built 1:1 from this VCF, so it is
+> segregating-only too. K_pa is unaffected (monomorphic variants contribute no k-mers;
+> filt2inv already bounds founders-per-k-mer to [2,230]). Stats + the exact commands:
+> `results/panel_stats/PANEL_STATS.md`.
 
 | What | Production artifact (the ONLY thing consumed) |
 |---|---|
 | **Panel decomposition** | `arch3` A1–A5 → `panel/arch3/chr{N}/merged_231_chr{N}_final.vcf.gz` |
 | **K_pa** (`kmer_pa`, founder×k-mer) | `build_kmer_pa.py` ← in-house index `panel/pangenie_index/pang_135_haploid/ours_Chr{N}` + **`merged_231_chr{N}_final.vcf.gz`** + `TAIR10.chr.iupacN.fa`, `--treat-missing-as-n --filter-production` → **`data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr{N}.{kmer_pa,meta}.npz`** |
-| **V_pa** (`var_pa`/`var_called`, founder×variant) | `build_var_pa.py` ← **`merged_231_chr{N}_final.vcf.gz`** → **`panel/arch3/chr{N}/var_pa_231_arch3_chr{N}.{var_pa,var_called,meta}.npz`** (+ `_atomized` for SNP-level) |
+| **V_pa** (`var_pa`/`var_called`, founder×variant) | `build_var_pa.py` ← **`merged_231_chr{N}_final.vcf.gz`** (segregating-only) → **`panel/arch3/chr{N}/var_pa_231_arch3_chr{N}.{var_pa,var_called,meta}.npz`** — 8,489,646 records genome-wide. (`_atomized` for SNP-level is **stale**: Chr1-only, predates the segregating filter — rebuild before use.) |
 | **k-mer index** | in-house `panel/pangenie_index` builder (`ours_Chr{N}`), Level-A+B validated equivalent to PanGenie's. PG index kept only as a reference comparator. |
 | **K_pa filter** | `filt2inv` (drop ac=1 singletons **and** ac=F invariants), applied inline by `--filter-production` |
 | **EM weighting** | `--kmer-weight inv_mb` ($\omega_k=1/m_b$) |
@@ -92,6 +100,7 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 
 | Change | Why |
 |---|---|
+| **Panel filtered to segregating-only (2026-06-02)** | A4 Step-3 filter widened from `AN=0`-only to `AC=0 \|\| AC=AN`. Dropped 1,835,718 monomorphic records (17.8%); VCF + V_pa overwritten in place, 10,325,364 → 8,489,646. Estimates on kept records unchanged (per-record projection). See `results/panel_stats/PANEL_STATS.md`, `scripts/apply_monomorphic_filter.py`. |
 | Arch decomposition replaces `norm -m -any` for var_pa | annotate_vcf + convert-to-biallelic produces symbolic-ID biallelic catalog with +17pp hapFIRE-SNP coverage gain (`project_arch3_chr1_validation` memory) |
 | `var_pa_atomized` added as a production deliverable | Per-base SNP catalog with carriers UNIONed across overlapping records. −23% RMSE, −43% outliers for SNP-level GEA (`project_arch3_atomization_result`) |
 | MAR projection in window mode | Previously window mode silently treated `.` as REF (different from global mode's called-mask normalization). Inconsistent semantics fixed 2026-05-21. Star2 numbers prior to this patch are stale. |
@@ -148,6 +157,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 - `old_docs/CACTUS_EM_MATH.md` — superseded formal-math doc (folded into `ALGORITHM.md`)
 - `SIMULATIONS_METHODS.md` — methods-ready description of the pool-seq simulation framework
 - `INVESTIGATION_CN_VAR_DECOMPOSITION.md` — context for the arch decomposition switch
+- `NOCAP_INDEX_INVESTIGATION.md` — why PanGenie caps per-bubble k-mers, and why kMate's `inv_mb` weight makes them unnecessary for production (verdict: keep caps; no-caps untested on accuracy)
 - `MISSINGNESS_231PANEL.md` — F_MISSING characterization on the production panel
 - `PIPELINE_FASTQ_PREPROCESSING.md` — read-side preprocessing pipeline (trim, dedup)
 - `archive/exploration/panel_overlap_135_vs_82/RESULTS.md` — panel composition analysis
@@ -155,6 +165,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 
 ## 6. Subprojects (own subfolder READMEs)
 
+- `grenenet/` — **cohort scale-out** of kMate across the ~2,415 evolved GrENE-Net pool-seq samples (SLURM). The runner, count-once DB reuse, and the shared-filesystem I/O fix (`JF_DIR` → node-local/RAM for the transient per-sample DB) are documented in `grenenet/README.md`. Production submit = single-phase `run_site_array_perchrom.sh` (`BLOCK_MODE=global`, `--mem=32G`, manifest `data/sample_manifest_usesample.tsv`).
 - `benchmarks/p80/` — homogeneous 80-cactus-founder control experiment. See `benchmarks/p80/README.md`.
 - `sims/` — pool-seq simulation framework (self-contained as of 2026-05-30; the former `visor_freqk` sub-repo was absorbed here). See `sims/README.md` and `docs/SIMULATIONS_METHODS.md`.
 

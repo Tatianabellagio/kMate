@@ -22,8 +22,10 @@ Upstream docs: https://docs-research-it.berkeley.edu/services/high-performance-c
 runtime data, intermediate `.npz`, k-mer indexes, FASTQs, result TSVs go under
 `$SCRATCH`. Only the code and the conda env live in `$HOME`.
 
-Conda env on Savio: `/global/home/users/tbellg/miniforge3/envs/hapfm/` (already
-exists — replaces the Carnegie path `/home/tbellagio/miniforge3/envs/hapfm/`).
+Conda env on Savio: **`kmate`** — `/global/home/users/tbellg/miniforge3/envs/kmate/`.
+This is the sole project env (mamba); the old `hapfm`/`gwas`/`sequencing_pipeline`/
+`pang`/`pangenie` envs were removed in the cluster migration. See
+`docs/PIPELINE_STATE.md` §0.2.
 
 ---
 

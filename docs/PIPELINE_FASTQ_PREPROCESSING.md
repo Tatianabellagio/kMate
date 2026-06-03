@@ -22,15 +22,29 @@
 | **Pool-seq** | SEEDMIX (S1..S8); GrENE evolution pools | `ILLUMINACLIP + SLIDINGWINDOW:4:20 + LEADING:5 + TRAILING:5 + MINLEN:36` | PCR-free Lucigen libraries are high-Q; stricter trimming is affordable and removes more error-prone tail bases |
 | **Single-individual short reads** | 1001G ecotype FASTQs (for PG-genotyping founder substitutes; the 151 PG_153 panel) | `ILLUMINACLIP + LEADING:5 + TRAILING:5 + MINLEN:36`  **(no SLIDINGWINDOW)** | 1001G data has lower-quality 3' tails; SLIDINGWINDOW drops ~4.7% of reads below MINLEN, losing too much coverage |
 
-**Then both classes** get the same downstream step:
+**Dedup (Clumpify) — apply BY LIBRARY TYPE, not to everything:**
 
 | Step | Tool | Params |
 |---|---|---|
 | Clumpify dedup | `clumpify.sh` (BBTools) | `dedupe=t dupesubs=0 optical=f` |
 
-**Critical hygiene point**: Clumpify dedup was **missing** from prior SEEDMIX cactus_em runs. Adding it removes ~35% PCR-duplicate k-mer inflation. This is the **principal fix**, not the Trimmomatic params (which were already correct for SEEDMIX via xwu's re-trim).
+- **SEEDMIX (PCR-free Lucigen): dedup is a ~1.5% no-op — skip it.** The raw FASTQs are
+  `PCRfreeLucigen_S{N}_*`; PCR-free prep has no PCR-amplification step, so no PCR duplicates.
+  Read-count dedup measured **1.33–1.70%** across S1–S8 (residual = optical + chance
+  collisions). The trim-only FASTQs (`seed_mix/S{N}-1.{1,2}_P.fq.gz`) are the correct kMate
+  input. Full detail in the **2026-05-20 RESOLVED** section below.
+- **GrENE-Net evolution pools: dedup IS required *if* PCR-based.** Confirm library type from
+  sample metadata; if PCR-based (typically 20–40% dups) clumpify-dedup is load-bearing. These
+  are already pre-deduped at `grenenet-phase1/trimmed_dedup/` (median ~5.6% removed; built
+  bwa→Picard MarkDuplicates-equivalent → the production input for evolved samples).
+- **151 PG founder side** already gets clumpify via `panel/pangenie_genotyping/scripts/preprocess_one.sh`.
 
-The 151 founder side already gets clumpify via `panel/pangenie_genotyping/scripts/preprocess_one.sh`.
+> ⚠️ **Superseded claim (corrected 2026-06-01):** an earlier version of this TL;DR called
+> SEEDMIX clumpify-dedup "**the principal fix**" removing "**~35% PCR-duplicate inflation**."
+> **That was wrong.** The 35% was a *file-size* shrink from clumpify **reordering** reads for
+> better gzip compression — NOT read removal (true read-count dedup ≈ 1.7%). The doc's own
+> 2026-05-20 RESOLVED section already corrected this; the top of the doc had not been
+> reconciled until now.
 
 ---
 
@@ -92,9 +106,10 @@ clumpify.sh in=$TRIM_R1 in2=$TRIM_R2 \
 
 **Resources**: 4 CPU, 32 GB RAM, ~30-60 min per sample.
 
-**Expected dedup rate**:
-- SEEDMIX: ~35% (measured: 2.9 GB → 1.9 GB on S1)
+**Expected dedup rate** (read-count, not file-size — see ⚠️ in the TL;DR):
+- SEEDMIX (PCR-free Lucigen): **~1.3–1.7%** (measured by READ COUNT on S1: 39,126,655 → 38,458,036). The oft-cited "35%" was a gzip-compression file-size artifact, not duplication.
 - 1001G ecotypes: variable, typically 10-25% depending on library prep
+- GrENE-Net evolution pools: median ~5.6% (per `grenenet-phase1/` Clumpify logs)
 
 ---
 
@@ -151,13 +166,15 @@ clumpify.sh in=$TRIM_R1 in2=$TRIM_R2 \
    4-tuple `(chrom, pos, ref, alt)` — see `scratch/arch3_chr1/jobA7_compare_vs_hapfire.sh`
    for the join template.
 
-**What to expect after dedup**:
-- Total k-mer counts drop ~35% uniformly (PCR duplicates removed).
-- Per-record AF should change MOST at SNPs in PCR-duplicate hotspots (typically
-  high-GC, near repeats, near rRNA-like loci). MAE shift vs hapFIRE is hard to
-  predict — could be 0.001-0.01 globally.
-- Effective coverage drops from ~50× to ~33× per sample. Still well above the
-  ~20× threshold where cactus_em becomes simplex-limited.
+**What to expect after dedup** — *for PCR-based pools only*. For SEEDMIX (PCR-free)
+dedup removes ~1.5%, so all three effects below are negligible (h-estimate change at
+noise level); the bullets describe a genuinely PCR-duplicated (20–40%) library:
+- Total k-mer counts drop by the dup rate (PCR duplicates removed) — ~1.5% for SEEDMIX, 20–40% for a PCR-based pool.
+- Per-record AF changes MOST at SNPs in PCR-duplicate hotspots (typically
+  high-GC, near repeats, near rRNA-like loci). For SEEDMIX this is ~0.
+- Effective coverage drops by the dup rate. For SEEDMIX, ~50× → ~49× (negligible);
+  for a 35%-duplicated pool, ~50× → ~33×. Either way well above the ~20×
+  threshold where the EM becomes simplex-limited.
 
 ---
 
@@ -265,4 +282,4 @@ The GrENE-Net evolution pool-seq samples may use PCR-based library prep, in whic
 
 1. **PG founder GT-call sensitivity to SLIDINGWINDOW** — does PanGenie's k-mer-based genotyping miscall founders when reads are not SLIDINGWINDOW-trimmed? Empirical Q-analysis shows TRAILING:5 already eats most low-Q tail, so net effect likely small, but unmeasured.
 2. **Spatial structure of duplicates** — is PCR duplication uniform across the genome, or hotspot-concentrated? Per-locus dedup rate would tell us whether the AF shift is uniform (then h-invariant) or biased.
-3. **Founder-side clumpify benefit** — `preprocess_one.sh` already clumpifies founders; verify the dedup rate is comparable to what we see on SEEDMIX (~35%) or whether 1001G libraries have different duplicate profiles.
+3. **Founder-side clumpify benefit** — *(measured 2026-06-01)* `preprocess_one.sh` clumpifies founders; clumpify's own `Duplicates Found` lines across the 235 founder prep logs (`panel/pangenie_genotyping/logs/prep_*.out`) give a **median ~4.0% read-pair dedup (mean 4.6%, IQR 0.9–6.6%, range 0.0–30.7%, none ≥35%)**. The 1001G founder libraries are PCR-based so duplicates are real, but modest — nowhere near the discredited SEEDMIX file-size "35%".
