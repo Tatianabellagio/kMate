@@ -198,6 +198,41 @@ def regime_method_panel(big_df, regimes, methods, suptitle, filename):
     print(f'saved: plots/{filename}')
 
 
+# --- compact 3x2 (generation × pool-config) grid: one method, one data arm ---
+GRID = [['n231_g0', 'n50_g0'], ['n231_g1', 'n50_g1'], ['n50_g3', 'n50_g3_dom500']]
+
+def regime_grid_panel(big_df, miss_thr, method, suptitle, filename):
+    # 3 rows = generations g0/g1/g3; 2 cols = pool config
+    # (rows 1-2: N=231 | N=50; bottom row: N=50 | N=50 dom500).
+    CELL = 4.0
+    fig, axes = plt.subplots(len(GRID), 2, figsize=(CELL * 2 + 1, CELL * len(GRID) + 0.5),
+                             sharex=True, sharey=True)
+    last_sm = None
+    for i, row in enumerate(GRID):
+        for j, regime in enumerate(row):
+            ax = axes[i, j]
+            sub = big_df[(big_df['regime'] == regime) & (big_df['method'] == method)
+                         & (big_df['missing_frac'] <= miss_thr)]
+            sm = scatter_density_aesthetic(ax, sub['truth'].to_numpy(), sub['est'].to_numpy(),
+                                           title=regime)
+            if sm is not None:
+                last_sm = sm
+            if j == 0: ax.set_ylabel('Estimated AF')
+            if i == len(GRID) - 1: ax.set_xlabel('True AF')
+    fig.subplots_adjust(bottom=0.07, top=0.95, hspace=0.30, wspace=0.10)
+    cbar_ax = fig.add_axes([0.25, 0.03, 0.50, 0.01])
+    if last_sm is not None:
+        cb = fig.colorbar(last_sm, cax=cbar_ax, orientation='horizontal',
+                          label='Local density (log count of records)')
+        cb.outline.set_edgecolor(GREY)
+        cb.ax.xaxis.set_tick_params(color=GREY, labelcolor=GREY)
+        cb.ax.xaxis.label.set_color(GREY)
+    fig.suptitle(suptitle, y=0.985, fontsize=11, color=GREY)
+    plt.savefig(PLOTS / filename, dpi=130, bbox_inches='tight')
+    plt.show(); plt.close(fig)
+    print(f'saved: plots/{filename}')
+
+
 print('Result TSVs present:')
 for m in METHODS:
     for r in REGIMES:
@@ -207,7 +242,7 @@ for m in METHODS:
 
 cells.append(nbf.v4.new_code_cell("""\
 # Load cn_var meta -> canonical (chrom, pos, ref, alt) keys, 1:1 with row indices
-meta = np.load(DATA / 'cn_var_p80.meta.npz', allow_pickle=True)
+meta = np.load(DATA / 'var_pa_p80.meta.npz', allow_pickle=True)
 N = len(meta['pos'])
 print(f'cn_var_p80: {N:,} records')
 print(f'founders ({len(meta[\"founders\"])}): {list(meta[\"founders\"][:5])} ...')
@@ -248,7 +283,7 @@ This is a panel-level QC question: **at what missingness threshold do we drop a 
 
 cells.append(nbf.v4.new_code_cell("""\
 # Load called mask, compute per-record missingness fraction (0 = fully called, 1 = nothing called).
-cn_called = sp.load_npz(DATA / 'cn_var_p80.cn_var_called.npz')
+cn_called = sp.load_npz(DATA / 'var_pa_p80.var_called.npz')
 F = cn_called.shape[0]   # 80 founders
 called_per_rec = np.asarray(cn_called.sum(axis=0)).ravel()
 missing_frac = (F - called_per_rec) / F   # 0 = fully called, 1 = all missing
@@ -395,7 +430,7 @@ def metrics(g):
     })
 
 summary = (big.groupby(['method', 'regime'])
-              .apply(metrics, include_groups=False)
+              .apply(metrics)
               .reset_index())
 print('\\n=== Headline (vs realized-pool truth, no missingness filter) ===')
 print(summary.to_string(index=False))
@@ -403,22 +438,21 @@ print(summary.to_string(index=False))
 
 
 cells.append(nbf.v4.new_code_cell("""\
-# Panel 1 of 2: NO missingness filter. All records. 6 regimes (easiest top)
-# × 2 methods (h chromosome | h 10kb window). Square cells, shared density colorbar.
-regime_method_panel(
-    big, REGIMES, METHODS,
-    suptitle='p80 — truth vs estimate (all records, no missingness filter)',
+# Paper panel: p80 control, GLOBAL h, all records (no missingness filter). Compact 3x2:
+# rows = generations g0/g1/g3; cols = pool config (N=231|N=50; bottom row N=50|N=50-dom500).
+regime_grid_panel(
+    big, miss_thr=2.0, method='global',
+    suptitle='p80 control (arch3: SNP+indel+SV), GLOBAL h — all records, no missingness filter',
     filename='panel_truth_vs_est_no_filter.png',
 )
 """))
 
 cells.append(nbf.v4.new_code_cell("""\
-# Panel 2 of 2: missingness filter (missing_frac <= 10%). Same layout.
-# Drops ~3-4% of records (the high-missingness tail) — see histogram cell above.
-regime_method_panel(
-    big[big['missing_frac'] <= 0.10], REGIMES, METHODS,
-    suptitle='p80 — truth vs estimate (missing_frac ≤ 10%)',
-    filename='panel_truth_vs_est_miss10.png',
+# Paper panel: p80 control, GLOBAL h, missing_frac <= 0.50 (matches the p231 production cut).
+regime_grid_panel(
+    big, miss_thr=0.50, method='global',
+    suptitle='p80 control (arch3: SNP+indel+SV), GLOBAL h — missing_frac ≤ 0.50',
+    filename='panel_truth_vs_est_miss50.png',
 )
 """))
 
@@ -479,7 +513,7 @@ print(f'Records dropped: {N - n_kept:,}  ({(N-n_kept)/N*100:.2f}%)')
 
 # Recompute headline summary on filtered set
 summary_f = (big_f.groupby(['method', 'regime'])
-                  .apply(metrics, include_groups=False)
+                  .apply(metrics)
                   .reset_index())
 summary_f.insert(0, 'filter', f'miss<={MAX_MISS*100:.0f}%')
 
@@ -514,9 +548,9 @@ def by_class(g):
         out.append(r)
     return pd.DataFrame(out)
 
-sc_all = (big.groupby(['method', 'regime']).apply(by_class, include_groups=False)
+sc_all = (big.groupby(['method', 'regime']).apply(by_class)
               .reset_index().drop(columns='level_2').assign(filter='all'))
-sc_f = (big_f.groupby(['method', 'regime']).apply(by_class, include_groups=False)
+sc_f = (big_f.groupby(['method', 'regime']).apply(by_class)
               .reset_index().drop(columns='level_2').assign(filter=f'miss<={MAX_MISS*100:.0f}%'))
 summary_class = pd.concat([sc_all, sc_f], ignore_index=True)
 summary_class = summary_class[['filter','method','regime','var_class','n_records','MAE','RMSE','R2','slope','|err|>0.10 frac']]
@@ -680,7 +714,7 @@ if rows_f2:
     big_with_build_f = big_with_build[big_with_build['missing_frac'] <= MAX_MISS]
 
     summary_ab = (big_with_build_f.groupby(['build','method','regime'])
-                                 .apply(metrics, include_groups=False)
+                                 .apply(metrics)
                                  .reset_index())
     print(f'=== filt2 vs no_filt2 (post missingness filter: miss<={MAX_MISS*100:.0f}%) ===\\n')
     print(summary_ab.to_string(index=False))
@@ -696,7 +730,7 @@ if rows_f2:
         return pd.DataFrame(out)
 
     sc_ab = (big_with_build_f.groupby(['build','method','regime'])
-                            .apply(by_class_filt2, include_groups=False)
+                            .apply(by_class_filt2)
                             .reset_index().drop(columns='level_3'))
     print(f'\\n=== filt2 vs no_filt2 by variant class (post missingness filter) ===\\n')
     print(sc_ab.sort_values(['method','regime','var_class','build']).to_string(index=False))

@@ -13,6 +13,12 @@ Everything traces to the current **v3qc + arch3** lineage; nothing stale is forc
   `view -s ^5772,9947` drops the 2 flagged assemblies; PG side `setGT GQ>=20`),
   arch biallelic decomposition + merge + AN=0 filter, **unimputed**, het→missing
   masked. 1.90M SNP / 637K indel / 84K SV. This is the latest QC'd arch panel.
+  > **NOTE (2026-06-02):** this benchmark predates the segregating-only filter. The
+  > production panel was later filtered to drop monomorphic records (`AC=0 || AC=AN`),
+  > so the current Chr1 `merged_231_chr1_final.vcf.gz` has 2,154,423 records
+  > (1.56M SNP / 534K indel / 59K SV), not the pre-filter counts above. The benchmark
+  > numbers below were computed on the pre-filter panel; segregating-site accuracy is
+  > unchanged by the filter (per-record projection). See `docs/PIPELINE_STATE.md` §0.
 - **FASTAs** `fastas_231/`: rebuilt by `bcftools consensus -H 1` from that VCF
   (haploid; founder order identical to var_pa). NOT the stale v3 fasta dirs.
 - **kmer_pa** `data/kmer_pa_p231[_filt2]/`: rebuilt from the SAME VCF via

@@ -1,0 +1,23 @@
+	Command being timed: "/global/home/users/tbellg/miniforge3/envs/kmate/bin/python /global/scratch/users/tbellg/kmate/src/per_sample_per_chrom.py --kmer-pa-prefix /global/scratch/users/tbellg/kmate/data/kmer_pa_231_arch3_filt2inv/kmer_pa --var-pa /global/scratch/users/tbellg/kmate/panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz --var-called /global/scratch/users/tbellg/kmate/panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz --var-meta /global/scratch/users/tbellg/kmate/panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz --reads /global/scratch/users/tbellg/visor_freqk/data/reads_var/del/rep1/cov50/var_del_1kb_n231_f30_err001/r1.fq /global/scratch/users/tbellg/visor_freqk/data/reads_var/del/rep1/cov50/var_del_1kb_n231_f30_err001/r2.fq --sample kmate_n231_chr1_cov50_f30 --out kmate_n231_chr1_cov50_f30.tsv --threads 8 --chroms Chr1 --kmer-weight inv_mb --block-mode global"
+	User time (seconds): 2040.37
+	System time (seconds): 21.81
+	Percent of CPU this job got: 1125%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:03.27
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 24243016
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 361
+	Minor (reclaiming a frame) page faults: 1096816
+	Voluntary context switches: 123366
+	Involuntary context switches: 14469
+	Swaps: 0
+	File system inputs: 911304
+	File system outputs: 3465104
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

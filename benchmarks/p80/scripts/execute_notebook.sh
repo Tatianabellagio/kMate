@@ -16,8 +16,11 @@ mkdir -p logs
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate/benchmarks/p80/results
 
-PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
-JUP=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/jupyter
+# Notebook tooling lives in the `basic` env (numpy/pandas/scipy/matplotlib +
+# jupyter/nbformat/nbconvert/ipykernel). The former `hapfm` env was removed in the
+# cluster migration.
+PY=/global/home/users/tbellg/miniforge3/envs/basic/bin/python
+JUP=/global/home/users/tbellg/miniforge3/envs/basic/bin/jupyter
 
 echo "[$(date)] rebuilding notebook from _build_notebook.py"
 $PY _build_notebook.py
@@ -25,7 +28,9 @@ $PY _build_notebook.py
 echo
 echo "[$(date)] executing notebook in-place (timeout 1500s)"
 $JUP nbconvert --to notebook --execute --inplace FINAL_RESULTS_cov10_p80.ipynb \
-    --ExecutePreprocessor.timeout=1500
+    --ExecutePreprocessor.timeout=2400 \
+    --ExecutePreprocessor.kernel_name=python3 \
+    --ExecutePreprocessor.startup_timeout=180
 
 echo
 echo "[$(date)] DONE"
