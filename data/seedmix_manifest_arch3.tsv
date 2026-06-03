@@ -1,0 +1,9 @@
+sample_id	reads_path	reads_path2
+SEEDMIX_S1	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S1-1.1_P.fq.gz	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S1-1.2_P.fq.gz
+SEEDMIX_S2	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S2-1.1_P.fq.gz	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S2-1.2_P.fq.gz
+SEEDMIX_S3	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S3-1.1_P.fq.gz	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S3-1.2_P.fq.gz
+SEEDMIX_S4	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S4-1.1_P.fq.gz	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S4-1.2_P.fq.gz
+SEEDMIX_S5	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S5-1.1_P.fq.gz	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S5-1.2_P.fq.gz
+SEEDMIX_S6	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S6-1.1_P.fq.gz	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S6-1.2_P.fq.gz
+SEEDMIX_S7	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S7-1.1_P.fq.gz	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S7-1.2_P.fq.gz
+SEEDMIX_S8	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S8-1.1_P.fq.gz	/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix/S8-1.2_P.fq.gz
