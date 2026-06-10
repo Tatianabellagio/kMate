@@ -22,9 +22,44 @@ SEEDMIX = f"{PROJ}/results/seedmix_kmate_arch3"
 GEA = f"{PROJ}/results/grenenet_gea"
 T5 = ("/global/scratch/users/tbellg/pang/grenenet_reads/"
       "Table_S5_sample_collection_sequencing_library.csv")
+# Authoritative GrENE-Net sample table (has usesample, flowerscollected,
+# fix_57_generation) — the phase-1 pooling keys. site_gen_plot pools built from
+# its usesample==True rows reproduce the phase-1 merged_hapFIRE columns exactly.
+SAMPLES_DATA = ("/global/scratch/projects/fc_moilab/projects/grenenet-phase1/"
+                "frequency/hapFIRE_frequencies/samples_data_fix57.csv")
+# per-site ERA5 bioclim (bio1-19), all 31 cohort sites (+ more); col `site`.
+BIOCLIM = ("/global/scratch/projects/fc_moilab/projects/grenenet-phase1/"
+           "drive_zenodo/data-intermediate/bioclimvars_experimental_sites_era5.csv")
+AF_STORE = f"{GEA}/af_store"             # compact per-sample NPY store (build_af_store.py)
+AF_SCALE, AF_NAN = 10000, 65535          # uint16 AF encoding (4-decimal + NaN sentinel)
+# TAIR10 gene annotation (Chr1..Chr5, matches our SV `chrom` exactly): one row per
+# gene. Sibling *_genes_transposons.gff adds TEs (the adaptive-SV class). Canonical
+# copy lives in ~/ara_key_files (stable home location).
+ARA_KEYS = "/global/home/users/tbellg/ara_key_files"
+TAIR10_GENES = f"{ARA_KEYS}/TAIR10_GFF3_genes.gff"
+TAIR10_GENES_TE = f"{ARA_KEYS}/TAIR10_GFF3_genes_transposons.gff"
+# phase-1 hapFIRE LD haploblocks: 1.05M SNPs -> 16,674 blocks (id `chrom_idx`,
+# e.g. '1_0'), TAIR10 Chr coords. The 12 kendall_* files share one SNP->block map.
+LD_BLOCKS = ("/global/scratch/users/tbellg/gea_grene-net/ARCHIVE/"
+             "linages_wza_picmin/kendall_0_w_id_n_blocks.csv")
 
 # Pilot sites (extend as the cohort grows). site -> (label, role)
 SITE_CLIMATE = {4: "hot", 54: "cold"}   # 4=Cadiz/Madrid region Spain, 54=Cologne DE
+BIO_COLS = [f"bio{i}" for i in range(1, 20)]
+
+
+def load_climate() -> pd.DataFrame:
+    """Per-site bio1-19 (ERA5), indexed by int site. The full-GEA climate axis."""
+    c = pd.read_csv(BIOCLIM)
+    c["site"] = c["site"].astype(int)
+    return c.set_index("site")[BIO_COLS]
+
+
+def decode_af(u: np.ndarray) -> np.ndarray:
+    """uint16 AF store -> float32 alt_freq in [0,1]; AF_NAN sentinel -> NaN."""
+    f = u.astype(np.float32) / AF_SCALE
+    f[u == AF_NAN] = np.nan
+    return f
 
 
 def list_samples(base: str = OUT) -> list[str]:
@@ -49,6 +84,38 @@ def sample_map(samples: list[str] | None = None) -> pd.DataFrame:
     m = m.rename(columns={"weighted_mean_coverage": "wmean_cov_plot"})
     m["climate"] = m["site"].map(SITE_CLIMATE)
     return m
+
+
+def cohort_meta(samples: list[str]) -> pd.DataFrame:
+    """Full-GEA per-sample metadata: site/plot/generation/coverage + bio1-19.
+
+    Indexed by sample_id, in the given `samples` order. Joins Table_S5 to the
+    per-site ERA5 bioclim — the continuous climate axis for the 31-site GEA
+    (supersedes the binary SITE_CLIMATE used by the 2-site pilot).
+    """
+    t5 = pd.read_csv(T5).set_index("sampleid")
+    keep = [s for s in samples if s in t5.index]
+    m = t5.loc[keep, ["site", "plot", "date", "year", "generation",
+                      "coverage", "weighted_mean_coverage"]].copy()
+    m = m.rename(columns={"weighted_mean_coverage": "wmean_cov_plot"})
+    m["site"] = m["site"].astype(int)
+    return m.join(load_climate(), on="site")
+
+
+def pool_table(store: str = AF_STORE) -> pd.DataFrame:
+    """Timepoint -> site_gen_plot pool map with flower weights, for samples in the
+    store. One row per timepoint sample; columns: sample_id, pool, site, plot,
+    generation (=fix_57_generation), flowerscollected, coverage. `pool` =
+    "{site}_{generation}_{plot}" — the phase-1 merge unit (745 pools)."""
+    sd = pd.read_csv(SAMPLES_DATA)
+    sd = sd[sd["usesample"]].copy()
+    have = {str(s) for s in np.load(f"{store}/samples.npy", allow_pickle=True)}
+    sd = sd[sd.sampleid.isin(have)]
+    sd["generation"] = sd["fix_57_generation"].astype(int)
+    sd["pool"] = (sd.site.astype(str) + "_" + sd.generation.astype(str)
+                  + "_" + sd["plot"].astype(str))
+    return sd[["sampleid", "pool", "site", "plot", "generation",
+               "flowerscollected", "coverage"]].reset_index(drop=True)
 
 
 def load_af(sample: str, base: str = OUT) -> pd.DataFrame:
@@ -218,6 +285,97 @@ def build_group_means(samples: list[str] | None = None, base: str = OUT,
             arrs[c] = a.astype("U10") if a.dtype == object else a
         np.savez(cache_path, _columns=np.array(list(out.columns)), **arrs)
     return out
+
+
+def load_genes() -> pd.DataFrame:
+    """TAIR10 protein-coding genes: chrom, start, end, gene (AT-ID), name.
+
+    chrom is 'Chr1'..'Chr5' (matches the SV records). ChrC/ChrM dropped.
+    """
+    g = pd.read_csv(TAIR10_GENES, sep="\t", header=None,
+                    names=["chrom", "src", "feat", "start", "end",
+                           "score", "strand", "frame", "attr"])
+    g = g[g.chrom.isin([f"Chr{i}" for i in range(1, 6)])].copy()
+    g["gene"] = g.attr.str.extract(r"ID=([^;]+)")
+    g["name"] = g.attr.str.extract(r"Name=([^;]+)")
+    return g[["chrom", "start", "end", "strand", "gene", "name"]].reset_index(drop=True)
+
+
+def annotate_svs(df: pd.DataFrame, flank: int = 0, genes: pd.DataFrame | None = None
+                 ) -> pd.DataFrame:
+    """Tag each SV row (needs `chrom`,`pos`) with the gene(s) it overlaps.
+
+    SV span = [pos, pos + ref_len) when ref_len present, else the point `pos`.
+    `flank` bp widens the SV span on each side (e.g. 2000 for nearby/promoter
+    hits). Adds columns: gene (first hit AT-ID), gene_name, n_genes (overlaps),
+    genes_all (';'-joined). Vectorized per chrom via sorted-interval search.
+    """
+    if genes is None:
+        genes = load_genes()
+    out_gene = np.full(len(df), "", dtype=object)
+    out_name = np.full(len(df), "", dtype=object)
+    out_n = np.zeros(len(df), dtype=int)
+    out_all = np.full(len(df), "", dtype=object)
+    pos = df["pos"].to_numpy()
+    rl = df["ref_len"].to_numpy() if "ref_len" in df else np.ones(len(df), int)
+    lo = pos - flank
+    hi = pos + np.where(rl > 1, rl, 1) + flank
+    idx = df.index.to_numpy()
+    for c, gc in genes.groupby("chrom"):
+        gs = gc.start.to_numpy(); ge = gc.end.to_numpy()
+        gid = gc.gene.to_numpy(); gnm = gc.name.fillna("").to_numpy()
+        sel = np.where(df["chrom"].to_numpy() == c)[0]
+        for j in sel:
+            ov = np.where((gs <= hi[j]) & (ge >= lo[j]))[0]
+            if ov.size:
+                out_gene[j] = gid[ov[0]]; out_name[j] = gnm[ov[0]]
+                out_n[j] = ov.size; out_all[j] = ";".join(gid[ov])
+    res = df.copy()
+    res["gene"] = out_gene; res["gene_name"] = out_name
+    res["n_genes"] = out_n; res["genes_all"] = out_all
+    return res
+
+
+def assign_ld_blocks(chrom: np.ndarray, pos: np.ndarray) -> np.ndarray:
+    """Assign each record (chrom='Chr1'..'Chr5', pos) to its phase-1 hapFIRE LD
+    block, by inheriting the block of the NEAREST genotyped SNP (per chrom).
+
+    Returns a string array of block ids ('chrom_idx'); '' where the chrom has no
+    SNP map. SNP density ~1/114 bp, so the nearest-SNP block is reliable.
+    """
+    b = pd.read_csv(LD_BLOCKS, usecols=["pos", "chrom", "block"])
+    out = np.full(len(pos), "", dtype=object)
+    pos = np.asarray(pos, dtype=np.int64)
+    for ci, g in b.groupby("chrom"):
+        m = chrom == f"Chr{ci}"
+        if not m.any():
+            continue
+        g = g.sort_values("pos")
+        sp = g.pos.to_numpy(); bl = g.block.to_numpy()
+        p = pos[m]
+        j = np.clip(np.searchsorted(sp, p), 0, len(sp) - 1)
+        jm1 = np.clip(j - 1, 0, len(sp) - 1)
+        # pick whichever flanking SNP is closer in bp
+        use_prev = (j > 0) & (np.abs(p - sp[jm1]) <= np.abs(sp[j] - p))
+        nearest = np.where(use_prev, jm1, j)
+        out[np.where(m)[0]] = bl[nearest]
+    return out
+
+
+def collapse_to_blocks(df: pd.DataFrame, stat: str = "z_emp",
+                       block_col: str = "block") -> pd.DataFrame:
+    """Collapse a per-SV GEA frame to one LEAD SV per LD block (max |stat|).
+
+    Adds n_sv_block (SVs in the block). Use for candidate dedup / Manhattan so a
+    single low-recomb block (up to ~900 correlated SVs) can't dominate the list.
+    NOTE: lead-by-|stat| is selection-biased — for unbiased GIF/QQ use a
+    stat-independent representative instead (e.g. first by pos, or .sample()).
+    """
+    d = df.copy()
+    d["_abs"] = d[stat].abs()
+    d["n_sv_block"] = d.groupby(block_col)[stat].transform("size")
+    lead = d.sort_values("_abs", ascending=False).groupby(block_col, as_index=False).first()
+    return lead.drop(columns="_abs")
 
 
 def eff_n_founders(sample: str, base: str = OUT) -> dict:
