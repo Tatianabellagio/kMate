@@ -88,6 +88,8 @@ See `docs/PIPELINE_STATE.md` §0.1 for `global` vs `window` modes and the full p
 
 kMate underlies the allele-frequency analyses of the GrENE-Net outdoor evolution experiment. If you use kMate, please cite:
 
-> Wu, X., Bellagio, T., Peng, Y., Czech, L., Lin, M., *et al.* (2026). Rapid adaptation and extinction across climates in synchronized outdoor evolution experiments of *Arabidopsis thaliana*. *Science* **391**, eadz0777. https://doi.org/10.1126/science.adz0777
+> Xing Wu, Tatiana Bellagio, Yunru Peng, Lucas Czech, Meixi Lin, *et al.* (2026). Rapid adaptation and extinction across climates in synchronized outdoor evolution experiments of *Arabidopsis thaliana*. *Science* **391**, eadz0777. https://doi.org/10.1126/science.adz0777
+>
+> Wu, Bellagio, Peng, Czech & Lin contributed equally (co-first authors).
 
 Preprint: bioRxiv 2025.05.28.654549 — https://doi.org/10.1101/2025.05.28.654549
