@@ -51,7 +51,7 @@ def top_candidate(gea, thresh):
     top_candidate_p = scipy.stats.binomtest(hits, snps, thresh, alternative="greater").pvalue
     return top_candidate_p, hits
 
-def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40):
+def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2):
     wza_df.to_csv('before_filtering_wza_df.csv')
     # remove null Z values - they won't help us
     wza_t = wza_df[~wza_df.Z.isnull()].reset_index()
@@ -70,12 +70,12 @@ def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40):
     if rolled_Z_vars.isnull().any():
         print(f"WARNING: Rolling window calculation resulted in NaN for some windows.")
 
-    # Generating weights for polynomial function with degree=2 - standard deviation
-    sd_weights = np.polyfit(rolled_mean_SNP_number, rolled_Z_sd, deg=2)
+    # Generating weights for polynomial function (deg, default 2 = canonical) - standard deviation
+    sd_weights = np.polyfit(rolled_mean_SNP_number, rolled_Z_sd, deg=deg)
     sd_polynomial_model = np.poly1d(sd_weights)
 
-    # Generating weights for polynomial function with degree=2 - mean
-    mean_weights = np.polyfit(rolled_mean_SNP_number, rolled_Z_means, deg=2)
+    # Generating weights for polynomial function (deg, default 2 = canonical) - mean
+    mean_weights = np.polyfit(rolled_mean_SNP_number, rolled_Z_means, deg=deg)
     mean_polynomial_model = np.poly1d(mean_weights)
 
 
@@ -115,6 +115,9 @@ def main():
     parser.add_argument("--no_SNP_number_correction", required=False, action="store_true", help="Provide this flag if you just want the raw WZA scores")
     parser.add_argument("--empiricalP", required=False, action="store_true", help="Flag for empirical p-values")
     parser.add_argument("--maf_filter", required=False, dest="maf_filter", type=float, default=0.0, help="[OPTIONAL] MAF cutoff applied in main (LOCAL COPY: default 0 = keep all; orig hardcoded 0.05)")
+    parser.add_argument("--poly_deg", required=False, dest="poly_deg", type=int, default=2, help="[OPTIONAL] SNP-number-correction polynomial degree (LOCAL: 2=canonical Booker; phase-1 used 7)")
+    parser.add_argument("--roller", required=False, dest="roller", type=int, default=50, help="[OPTIONAL] Rolling-window size for SNP-number correction (canonical 50)")
+    parser.add_argument("--min_entries", required=False, dest="min_entries", type=int, default=40, help="[OPTIONAL] Min entries per rolling window (canonical 40; phase-1 used 10)")
 
     args = parser.parse_args()
 
@@ -243,7 +246,7 @@ def main():
             WZA_DF_tmp.to_csv(args.output, index=False)
             return
 
-        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp)
+        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg)
     else:
         WZA_DF_tmp = pd.DataFrame(all_genes)
         if WZA_DF_tmp.SNPs.var() == 0:
@@ -256,7 +259,7 @@ def main():
             WZA_DF_tmp.to_csv(args.output, index=False)
             return
 
-        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp)
+        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg)
 
     WZA_DF.to_csv(args.output, index=False)
 
