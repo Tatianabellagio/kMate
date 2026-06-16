@@ -10,6 +10,23 @@ simplex to estimate founder frequencies (`h`), then projects through a per-recor
 presence/absence matrix (`var_pa`, the founder × variant alt-allele matrix $V_\mathrm{pa}$)
 to allele frequencies for **SNPs, indels, and SVs in a single pass** — no per-variant genotyping.
 
+## Overview
+
+<p align="center">
+  <a href="poster_PEQG/poster_peqg.pdf">
+    <img src="assets/poster_peqg.png" alt="kMate PEQG 2026 poster: tracking structural-variant trajectories across climates with alignment-free allele-frequency estimation" width="900">
+  </a>
+</p>
+
+The picture above (our [PEQG 2026 poster](poster_PEQG/poster_peqg.pdf), click to enlarge) walks through the whole idea: the
+GrENE-Net experiment evolved an equal mixture of **231 *Arabidopsis* founders** at 43 climate
+sites over 3 years, pool-sequencing the surviving populations each generation. kMate takes those
+pooled k-mer counts, solves a Poisson EM for the founder mixture against the panel's
+`kmer_pa`/`var_pa` matrices, and reads out per-record allele frequencies for **SNPs *and* SVs** at
+once. Benchmarked against simulated pools at 10× coverage, estimates track the truth closely — letting
+us follow structural-variant frequency trajectories across climates (e.g. a 181-bp insertion in
+the cold-regulated *COR413-PM2* gene, rising in cold gardens and falling in warm ones).
+
 ## Install
 
 kMate is pure Python — no build step. Create the `kmate` environment (mamba or conda) with its core dependencies:
