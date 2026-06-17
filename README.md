@@ -1,11 +1,10 @@
-<p align="center">
+<p align="left">
   <img src="assets/kMate_logo.png" alt="kMate" width="420">
 </p>
 
 # kMate
 
 [![license: MIT](https://img.shields.io/github/license/Tatianabellagio/kMate)](LICENSE)
-![top language](https://img.shields.io/github/languages/top/Tatianabellagio/kMate)
 
 Per-sample, per-record **allele-frequency estimation from pooled sequencing** against a
 multi-founder reference panel. kMate runs a weighted k-mer Poisson EM on the founder
