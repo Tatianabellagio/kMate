@@ -31,15 +31,25 @@ the cold-regulated *COR413-PM2* gene, rising in cold gardens and falling in warm
 
 ## Install
 
-kMate has no build step. Create the `kmate` environment (mamba or conda) with its dependencies:
+Create the `kmate` environment (mamba or conda) with its dependencies, then install the package:
 
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
 cd kMate
 mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam jellyfish samtools
+mamba activate kmate
+pip install -e .          # installs the `kmate` command (no compilation step)
 ```
 
-Python deps: `numpy`, `scipy`, `pysam`. kMate also calls `jellyfish` (k-mer counting) and `samtools` (read handling), both installed by the command above.
+Python deps: `numpy`, `scipy`, `pysam`. kMate also calls `jellyfish` (k-mer counting) and `samtools` (read handling), both installed by the `mamba create` above. This gives you a `kmate` command with subcommands (`kmate --help`).
+
+### Verify the install
+
+```bash
+kmate selftest
+```
+
+This runs the bundled tiny fixture (a real Chr1 panel slice + a simulated 5-founder pool) end-to-end — exercising the full k-mer-count → EM → AF-projection path through `jellyfish`/`samtools` — and checks that the planted founder mixture is recovered. It takes a few seconds, needs no network, and prints `PASS` on a correct install. Run this **before** pointing kMate at your own data.
 
 ## Usage
 
@@ -52,7 +62,7 @@ kMate processes **one pooled sample at a time, per chromosome**.
 **Run**
 
 ```bash
-python src/per_sample_per_chrom.py \
+kmate run \
     --kmer-pa-prefix data/kmer_pa_231_arch3_filt2inv/kmer_pa \
     --var-pa     panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz \
     --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
@@ -60,6 +70,8 @@ python src/per_sample_per_chrom.py \
     --reads R1.fq R2.fq --sample MYSAMPLE --out MYSAMPLE.tsv \
     --threads 8 --chroms Chr1 --kmer-weight inv_mb --block-mode global
 ```
+
+(`kmate run --help` lists every flag. Existing scripts that call `python src/per_sample_per_chrom.py ...` still work via thin shims that forward to the package.)
 
 **Estimator mode** (`--block-mode`)
 - `global`: one founder mixture per chromosome. Use for **selfing / inbred / founder (F0)** pools.
@@ -70,7 +82,7 @@ python src/per_sample_per_chrom.py \
 | chrom | pos | ref_len | alt_len | alt_freq | info | n_called | se |
 |---|---|---|---|---|---|---|---|
 
-`alt_freq` is the estimated alternate-allele frequency in the pool; `n_called` and `se` carry support/uncertainty. (`--var-called` adds a per-record called-mask; `--kmer-db` lets you count k-mers once and query per-chrom instead of re-scanning reads.)
+`alt_freq` is the estimated alternate-allele frequency in the pool; `n_called` and `se` carry support/uncertainty. (`--var-called` adds a per-record called-mask; `--kmer-db` lets you count k-mers once and query per-chrom instead of re-scanning reads; `--hash-size` tunes the Jellyfish hash, e.g. lower it to `100M` on memory-capped jobs.)
 
 ## How it works
 
@@ -91,7 +103,8 @@ in [`docs/PIPELINE_STATE.md`](docs/PIPELINE_STATE.md) §0.
 ## Repository layout
 
 ```
-src/         the kMate estimator (em_solver, kmer_count, block_em, per_sample_per_chrom)
+src/kmate/   the kMate package (em_solver, kmer_count, block_em, per_sample_per_chrom, cli, selftest)
+pyproject.toml, conda/   packaging: pip-installable `kmate` CLI + conda recipe
 panel/       founder-panel construction (var_pa builders, k-mer index)
 data/        prebuilt panel matrices (kmer_pa_*, var_pa_*) + sample lists
 grenenet/    GrENE-Net application: production scale-out over the evolved cohort
