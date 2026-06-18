@@ -1,0 +1,55 @@
+{% set name = "kmate" %}
+{% set version = "0.1.0" %}
+
+package:
+  name: {{ name }}
+  version: {{ version }}
+
+source:
+  # LOCAL build: build from the working tree.
+  path: ../
+  # BIOCONDA: replace the line above with a versioned release tarball, e.g.
+  #   url: https://github.com/Tatianabellagio/kMate/archive/refs/tags/v{{ version }}.tar.gz
+  #   sha256: <sha256 of that tarball>
+
+build:
+  noarch: python                       # pure-Python -> one build, no platform matrix
+  number: 0
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  entry_points:
+    - kmate = kmate.cli:main
+
+requirements:
+  host:
+    - python >=3.8
+    - pip
+    - setuptools >=61
+  run:
+    - python >=3.8
+    - numpy
+    - scipy
+    - pysam
+    - jellyfish                        # k-mer counter (kmer_count.py)
+    - samtools                         # BAM read access
+
+test:
+  imports:
+    - kmate
+  commands:
+    - kmate --help
+    - kmate --version
+
+about:
+  home: https://github.com/Tatianabellagio/kMate
+  license: MIT
+  license_file: LICENSE
+  summary: k-mer-based founder-mixture frequency estimation for pool-seq
+  description: |
+    kMate estimates per-founder mixture proportions (h) in a sequenced pool from
+    canonical k-mer counts against a pangenome founder x k-mer matrix, then
+    projects to per-record allele frequencies. Supports whole-chromosome (global)
+    and per-window (window) estimation and optional per-bubble k-mer weighting.
+
+extra:
+  recipe-maintainers:
+    - Tatianabellagio

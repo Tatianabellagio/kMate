@@ -24,7 +24,7 @@ import time
 from dataclasses import dataclass
 
 import numpy as np
-from em_solver import solve_em
+from .em_solver import solve_em
 
 
 @dataclass
