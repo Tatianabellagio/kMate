@@ -25,7 +25,6 @@ Output: per-record TSV (chrom, pos, ref_len, alt_len, alt_freq, info, n_called, 
 """
 from __future__ import annotations
 import argparse, gc, os, sys, time
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
 from scipy.sparse import load_npz
 from .em_solver import solve_em
