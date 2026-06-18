@@ -41,9 +41,10 @@ validated independently of this heavyweight build:
 The authoritative full build is bioconda's CI (a clean container without the NFS
 constraint).
 
-## Bioconda submission (when ready)
+## Bioconda submission
 
-1. Tag a release (`v0.1.0`) so GitHub serves a tarball; record its sha256.
-2. Swap the `source: path: ../` in `meta.yaml` for the `url:` + `sha256:` lines.
-3. Fork `bioconda/bioconda-recipes`, add `recipes/kmate/meta.yaml`, open a PR;
-   their CI builds + tests it. Then `conda install -c bioconda kmate` works.
+The submission recipe + step-by-step instructions live in
+[`bioconda/`](bioconda/): [`bioconda/meta.yaml`](bioconda/meta.yaml) (fetches the
+**PyPI sdist**, not the 185 MB GitHub auto-tarball) and
+[`bioconda/SUBMISSION.md`](bioconda/SUBMISSION.md) (publish the sdist to PyPI →
+open the bioconda-recipes PR). `v0.1.0` is already tagged.
