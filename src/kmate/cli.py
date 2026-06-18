@@ -14,6 +14,7 @@ _CMDS = {
     "run":           ("per_sample_per_chrom", "estimate founder freqs (h) + project per-record AF [the estimator]"),
     "build-kmer-pa": ("build_kmer_pa",        "build the founder x k-mer membership matrix (kmer_pa)"),
     "build-var-pa":  ("build_var_pa",         "build the founder x variant matrix (var_pa) from a panel VCF"),
+    "build-kmer-db": ("build_kmer_db",        "build a Jellyfish k-mer DB from reads once (count-once path)"),
     "filter-pa":     ("filter_kmer_pa_production", "drop private (ac<=1) / invariant (ac==F) k-mer columns"),
     "selftest":      ("selftest",              "run the bundled fixture end-to-end to verify the install"),
 }
