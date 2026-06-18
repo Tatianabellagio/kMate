@@ -255,3 +255,21 @@ benchmarks/p231/results/seedmix_grid/
 benchmarks/speed_vs_hapfire/results/*.tsv
 # (16M hapFIRE SNP-freq dump):
 benchmarks/speed_vs_hapfire/results/*_frequency.txt
+
+# =============================================================================
+# 2026-06-18: GEA results are bulk derived data (~150 GB: per-sample AF store,
+# pool/gen matrices, per-record & per-block tables, LFMM Y matrices). They are
+# pushed to the MOI-LAB Drive (push_gea_to_drive.sh), never git. A bare
+# `git add -A` was about to stage all of it. Policy unchanged: track only
+# code/docs/notebooks under analysis/.
+# =============================================================================
+results/grenenet_gea/af_store/
+results/grenenet_gea/gen_matrices/
+results/grenenet_gea/pool_matrices/
+results/grenenet_gea/sv_snp_ld/
+results/grenenet_gea/gea/
+results/grenenet_gea/lfmm/
+results/grenenet_gea/phase1_replication/
+results/grenenet_gea/wza_investigation/
+# sample manifests (regeneratable sample/path lists)
+data/sample_manifest_*.tsv
