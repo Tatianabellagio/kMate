@@ -3,6 +3,13 @@
 What's actually used to estimate founder frequencies (`h`) and project to
 per-record allele frequencies. Last cleaned: 2026-05-26.
 
+The code is now an installable package under [`kmate/`](kmate/) (`pip install -e .`
+from the repo root), exposing a `kmate` command — `kmate run` is the estimator,
+`kmate build-kmer-pa` / `build-var-pa` / `filter-pa` build the panel, and
+`kmate selftest` verifies an install on a bundled fixture. The thin `src/*.py`
+files are back-compat shims so existing `python src/<script>.py ...` callers
+still work. Module roles below are unchanged by the packaging.
+
 There are exactly **two estimators**: `global` and `window`. Nothing else.
 
 ## Active — the estimator (h estimation + AF projection)
@@ -19,7 +26,7 @@ There are exactly **two estimators**: `global` and `window`. Nothing else.
 
 ```bash
 # global — selfing / inbred / F0 pools (e.g. SEEDMIX)
-python per_sample_per_chrom.py \
+kmate run \
   --kmer-pa-prefix <kmer_pa>/kmer_pa \
   --var-pa <panel>.var_pa.npz --var-called <panel>.var_called.npz \
   --var-meta <panel>.meta.npz \
@@ -29,8 +36,9 @@ python per_sample_per_chrom.py \
 # window ("star2") — recombinant pools. The window defaults ARE this recipe,
 # so `--block-mode window` alone reproduces it:
 #   --window-bp 10000 --global-anchor-weight 0.3 --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5
-python per_sample_per_chrom.py [same inputs] --block-mode window
+kmate run [same inputs] --block-mode window
 ```
+(`python src/per_sample_per_chrom.py ...` still works via the shim.)
 (Recipe source: `benchmarks/p80/scripts/07_run_cactus_em_p80.sh`, method `star2`.)
 
 ## Active — panel / matrix / sim prep (inputs to the estimator, not h itself)

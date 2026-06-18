@@ -273,3 +273,18 @@ results/grenenet_gea/phase1_replication/
 results/grenenet_gea/wza_investigation/
 # sample manifests (regeneratable sample/path lists)
 data/sample_manifest_*.tsv
+
+# =============================================================================
+# Packaging (conda-packaging branch)
+# =============================================================================
+# Python build artifacts — never track
+build/
+dist/
+*.egg-info/
+__pycache__/
+# BUT: the tiny bundled self-test fixture (`kmate selftest`) must be committed,
+# so it ships in the wheel/conda package. Override the global *.npz / *.fq.gz
+# bulk-data rules for this one package-data dir only.
+!src/kmate/data/selftest/
+!src/kmate/data/selftest/*.npz
+!src/kmate/data/selftest/*.fq.gz

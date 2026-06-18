@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kmate"
+version = "0.1.0"
+description = "k-mer-based founder-mixture frequency estimation for pool-seq"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "Tatiana Bellagio" }]
+keywords = ["pool-seq", "k-mer", "allele-frequency", "pangenome", "EM", "GrENE-net"]
+# Python deps only. Non-Python runtime tools (jellyfish, samtools) are declared
+# in the conda recipe (conda/meta.yaml), since pip cannot install them.
+dependencies = ["numpy", "scipy", "pysam"]
+
+[project.scripts]
+kmate = "kmate.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Tatianabellagio/kMate"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["kmate*"]
+
+[tool.setuptools.package-data]
+# Ship the tiny end-to-end self-test fixture (`kmate selftest`).
+kmate = ["data/selftest/*"]
