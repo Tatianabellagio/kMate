@@ -27,10 +27,20 @@ This collapses to the same expression cactus_em projects through
 (founder_freq × var_pa), but with founder_freq varying per genomic window.
 """
 from __future__ import annotations
-import argparse, os, random, subprocess
+import argparse, os, subprocess, sys, shutil
 from pathlib import Path
 import numpy as np
 import pandas as pd
+
+
+def _default_samtools():
+    """Resolve samtools beside the running interpreter (so the conda env that
+    runs this script supplies its own samtools), else fall back to $PATH. Avoids
+    hard-coding an env path that breaks on cluster/env migrations."""
+    cand = os.path.join(os.path.dirname(sys.executable), "samtools")
+    if os.path.exists(cand):
+        return cand
+    return shutil.which("samtools") or "samtools"
 
 
 # ----- hand-rolled .fai-indexed FASTA reader (no pyfaidx dependency) -------
@@ -46,15 +56,31 @@ def load_fai(fai_path):
 
 
 def fa_fetch(fa_path, fai, name, start, end):
-    """Fetch [start, end] (1-based inclusive) from FASTA at fa_path using .fai."""
+    """Fetch [start, end] (1-based inclusive) from FASTA at fa_path using .fai.
+
+    Always returns exactly (end - start + 1) bases. The requested window is
+    given in TAIR10 coordinates, but the per-founder consensus FASTA can be
+    SHORTER than TAIR10 (net consensus deletions shorten Chr1 by up to ~430 kb,
+    81% of founders). Bytes beyond the founder sequence's real end are therefore
+    PADDED WITH 'N' — never read past the record, which previously spilled the
+    next chromosome's header + sequence (`>Chr2...`) into the mosaic tail. N tail
+    => VISOR emits no reads there (honest "no data"), and the mosaic length stays
+    equal to the requested TAIR10 span so region.bed / truth coords line up."""
     length, offset, lblen, llen = fai[name]
-    s, e = start - 1, end  # 0-based [s, e)
+    s = start - 1                      # 0-based inclusive start
+    want = end - s                     # number of bases requested
+    e = min(end, length)               # clamp end to the real sequence length
+    if e <= s:
+        return 'N' * want              # window entirely past the sequence end
     s_off = offset + (s // lblen) * llen + (s % lblen)
     e_off = offset + (e // lblen) * llen + (e % lblen)
     with open(fa_path, 'rb') as f:
         f.seek(s_off)
         raw = f.read(e_off - s_off)
-    return raw.decode('ascii').replace('\n', '').replace('\r', '').upper()
+    seq = raw.decode('ascii').replace('\n', '').replace('\r', '').upper()
+    if len(seq) < want:                # founder shorter than TAIR10 -> N-pad tail
+        seq += 'N' * (want - len(seq))
+    return seq
 
 
 class IndexedFasta:
@@ -94,29 +120,8 @@ def sample_crossovers(chrom_len, rate, rng):
     return np.sort(rng.integers(1, chrom_len, size=n))
 
 
-def make_one_mosaic(parent_a_id, parent_b_id, rate, rng):
-    """Build segment list for a 1-gen recombinant of (parent_a, parent_b).
-
-    Returns dict {chrom: [(start, end, founder_id), ...]}.
-    """
-    out = {}
-    for chrom, L in CHROM_LENGTHS.items():
-        cuts = sample_crossovers(L, rate, rng)
-        # Walk left-to-right alternating founders (random starting parent)
-        which = rng.integers(0, 2)
-        boundaries = [0] + list(cuts) + [L]
-        segs = []
-        for i in range(len(boundaries) - 1):
-            s, e = boundaries[i], boundaries[i + 1]
-            f = parent_a_id if which == 0 else parent_b_id
-            segs.append((s + 1, e, f))     # 1-based [start, end] inclusive
-            which = 1 - which
-        out[chrom] = segs
-    return out
-
-
 def make_individuals(n_indiv, n_generations, weights_dict, rate, rng,
-                     gen0_no_replace=False):
+                     gen0_no_replace=False, selfing_rate=0.0):
     """Build n_indiv recombinant haploids after n_generations.
 
     gen0_no_replace: when True, draw gen-0 founders to maximize uniformity of
@@ -155,13 +160,27 @@ def make_individuals(n_indiv, n_generations, weights_dict, rate, rng,
             # whole-chromosome single-founder
             pop.append({c: [(1, L, f)] for c, L in CHROM_LENGTHS.items()})
 
-    # n_generations of pairing + recombination
+    # n_generations of reproduction. Each offspring either SELFS (prob
+    # selfing_rate) or OUTCROSSES (prob 1 - selfing_rate).
+    #   - Selfing: A. thaliana founders are inbred/homozygous and this framework
+    #     carries one haploid mosaic per individual (no within-individual het;
+    #     §2.3/caveat #3). A self-cross of a homozygote reproduces the parent
+    #     exactly — recombination between two identical haplotypes is a no-op —
+    #     so selfing = a clonal copy of one random parent's ancestry track.
+    #   - Outcrossing: pair two random parents and recombine (legacy behaviour).
+    # selfing_rate=0.0 (default) never draws the extra random, so existing sims
+    # reproduce bit-identically.
     for gen in range(n_generations):
         new_pop = []
         for _ in range(n_indiv):
-            # pick two parents at random from pop
-            i, j = rng.integers(0, len(pop)), rng.integers(0, len(pop))
-            child = recombine_segments(pop[i], pop[j], rate, rng)
+            if selfing_rate > 0.0 and rng.random() < selfing_rate:
+                # SELF: clone one random parent (homozygous → identical offspring)
+                i = rng.integers(0, len(pop))
+                child = {c: list(segs) for c, segs in pop[i].items()}
+            else:
+                # OUTCROSS: pick two parents at random from pop
+                i, j = rng.integers(0, len(pop)), rng.integers(0, len(pop))
+                child = recombine_segments(pop[i], pop[j], rate, rng)
             new_pop.append(child)
         pop = new_pop
 
@@ -237,8 +256,9 @@ def main():
     ap.add_argument("--founders-meta", required=True,
                     help="kmer_pa meta.npz with 'founders' field")
     ap.add_argument("--out-dir", required=True)
-    ap.add_argument("--samtools", default="/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/samtools",
-                    help="samtools binary, used to index the mosaic FASTAs (default: shared install)")
+    ap.add_argument("--samtools", default=_default_samtools(),
+                    help="samtools binary used to index the mosaic FASTAs "
+                         "(default: samtools beside the running python, else $PATH)")
     ap.add_argument("--chroms", default=None,
                     help="Space-separated chroms to include (e.g. 'Chr1'). Default: all 5. "
                          "Use this for Chr1-only sims when founder FASTAs only have Chr1.")
@@ -247,6 +267,20 @@ def main():
                          "or balanced allocation (n>F) — each founder gets floor(n/F) "
                          "or ceil(n/F) individuals. Truth_h becomes uniform 1/F or "
                          "the closest possible. Default = legacy multinomial w/ replace.")
+    ap.add_argument("--selfing-rate", type=float, default=0.0,
+                    help="Per-offspring probability of SELFING (clonal copy of one parent) "
+                         "vs OUTCROSSING (recombinant of two parents) at each generation. "
+                         "A. thaliana is >97%% selfing (Exposito-Alonso et al. 2018), so "
+                         "--selfing-rate 0.97 throttles effective recombination ~30x and "
+                         "keeps most individuals pure single-founder even after g3. "
+                         "Default 0.0 = forced outcrossing (legacy; existing sims reproduce "
+                         "bit-identically). Only takes effect when --n-generations >= 1.")
+    ap.add_argument("--dominant-pure-founder", action="store_true",
+                    help="Force ind001 to a single whole-chromosome founder chosen at "
+                         "random from the source (overrides its recombination). With the "
+                         "skewed driver (06b) giving ind001 the dominant fraction, this "
+                         "models a NON-recombinant ecotype winning to high frequency on a "
+                         "recombinant background (the dom500nr 'selection' variant).")
     ap.add_argument("--source-weights", default=None,
                     help="Optional TSV (founder, prob) defining the source-population founder "
                          "probabilities. The gen-0 pool is then a Stage-1 multinomial draw of "
@@ -347,9 +381,31 @@ def main():
     print(f"  crossover model: uniform-position Poisson (random)", flush=True)
 
     # Build mosaic individuals
+    if not (0.0 <= args.selfing_rate <= 1.0):
+        raise ValueError(f"--selfing-rate must be in [0, 1]; got {args.selfing_rate}")
+    if args.selfing_rate > 0.0:
+        print(f"  reproduction: SELFING rate {args.selfing_rate:.3f} "
+              f"(outcross {1-args.selfing_rate:.3f}); selfing = clonal copy", flush=True)
+    else:
+        print(f"  reproduction: forced outcrossing (selfing rate 0.0, legacy)", flush=True)
+
     pop = make_individuals(args.n_indiv, args.n_generations, weights_dict,
                            args.recomb_rate, rng,
-                           gen0_no_replace=args.gen0_no_replace)
+                           gen0_no_replace=args.gen0_no_replace,
+                           selfing_rate=args.selfing_rate)
+
+    # Non-recombinant winner (selection variant): force ind001 to be a single
+    # whole-chromosome founder, chosen at random from the source. The skewed
+    # driver (06b) gives ind001 the dominant pool fraction, so this models a
+    # pure (non-recombinant) ecotype sweeping to high frequency on top of a
+    # recombinant background — the counterpart to the default dom500, where the
+    # dominant individual is itself a recombinant mosaic.
+    if args.dominant_pure_founder:
+        winner = str(rng.choice(founders, p=source_probs))
+        pop[0] = {c: [(1, L, winner)] for c, L in CHROM_LENGTHS.items()}
+        print(f"  dominant winner ind001 -> PURE founder {winner} "
+              f"(non-recombinant, whole chromosome)", flush=True)
+
     write_ancestry_tsv(pop, out / "ancestry.tsv")
     print(f"  wrote ancestry.tsv: {sum(len(p[c]) for p in pop for c in p):,} segments", flush=True)
 
