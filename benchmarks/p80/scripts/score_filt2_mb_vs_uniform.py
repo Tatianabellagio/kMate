@@ -9,10 +9,18 @@ import os, math
 from pathlib import Path
 import numpy as np, pandas as pd
 CTRL=str(Path(__file__).resolve().parents[1])
-REGIMES=["n50_g0","n80_g0","n50_g1","n80_g1","n50_g3","n50_g3_dom500"]
+# Rebuilt set (2026-06-18 fa_fetch fix): outcross g0/g1/g3 + 97%-selfing g1/g3.
+# Other regimes deferred until rebuilt — see sims/AUDIT_2026-06-18.md.
+REGIMES=["n50_g0","n50_g1","n50_g3","n50_g1_self97","n50_g3_self97",
+         "n50_g3_dom500","n50_g3_dom500nr","n50_g3_dom500_self97"]
 def subdir(reg):
     if reg=="n50_g3_dom500": return "cov10_n50_g3_s42_hotspots_dom500_p80_chr1"
-    n,g=reg.split("_g"); return f"cov10_{n}_g{g}_s42_hotspots_p80_chr1"
+    if reg=="n50_g3_dom500nr": return "cov10_n50_g3_s42_hotspots_dom500nr_p80_chr1"
+    if reg=="n50_g3_dom500_self97": return "cov10_n50_g3_s42_self97_hotspots_dom500_p80_chr1"
+    self_tag=""
+    if reg.endswith("_self97"):
+        reg=reg[:-len("_self97")]; self_tag="_self97"
+    n,g=reg.split("_g"); return f"cov10_{n}_g{g}_s42{self_tag}_hotspots_p80_chr1"
 def est_path(reg,w):
     od="cactus_em_global_filt2_mb" if w=="inv_mb" else "cactus_em_global_filt2_uniform"
     wt="filt2mb" if w=="inv_mb" else "filt2u"

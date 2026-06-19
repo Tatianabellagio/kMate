@@ -19,30 +19,43 @@
 #   (2) per-record TRUTH built on BOTH arch3 var_pas (atomized + raw), so each
 #       projection arm (07c) joins its truth 100% on (chrom,pos,ref_len,alt_len).
 #
-# Usage: sbatch 06_run_sim_p231.sh N_INDIV N_GEN [SEED=42]
+# Usage: sbatch 06_run_sim_p231.sh N_INDIV N_GEN [SEED=42] [SELFING_RATE=0.0]
 #   e.g. 50 0 ; 231 0 ; 50 1 ; 231 1 ; 50 3
+#   SELFING_RATE>0 (e.g. 0.97) models A. thaliana selfing: each offspring is a
+#   clonal copy of one parent w.p. SELFING_RATE, else a recombinant outcross.
+#   This throttles recombination ~30x; output dir gets a _self<pct> tag so it
+#   never collides with the forced-outcross (legacy) sims.
 # =============================================================================
 set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-}"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 
-N_INDIV=${1:?Usage: sbatch 06_run_sim_p231.sh N_INDIV N_GEN [SEED=42]}
-N_GEN=${2:?Usage: sbatch 06_run_sim_p231.sh N_INDIV N_GEN [SEED=42]}
+N_INDIV=${1:?Usage: sbatch 06_run_sim_p231.sh N_INDIV N_GEN [SEED=42] [SELFING_RATE=0.0]}
+N_GEN=${2:?Usage: sbatch 06_run_sim_p231.sh N_INDIV N_GEN [SEED=42] [SELFING_RATE=0.0]}
 SEED=${3:-42}
+SELFING_RATE=${4:-0.0}
 COVERAGE=10
 CHROMS="Chr1"
 
 ROOT=/global/scratch/users/tbellg/kmate
 CTRL=$ROOT/benchmarks/p231
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
-PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 SCRIPTS=$CTRL/scripts
 
-WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}_hotspots_p231_chr1
+# Selfing tag/flag: empty for the legacy (rate 0.0) sims so existing dir paths
+# and behaviour are byte-identical; _self<pct> otherwise.
+SELF_TAG=""; SELF_FLAG=""
+if [ "$(python3 -c "print(float('$SELFING_RATE')>0)")" = "True" ]; then
+    SELF_PCT=$(python3 -c "print(f'{float(\"$SELFING_RATE\")*100:g}')")
+    SELF_TAG="_self${SELF_PCT}"; SELF_FLAG="--selfing-rate $SELFING_RATE"
+fi
+
+WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}${SELF_TAG}_hotspots_p231_chr1
 mkdir -p $WORK $CTRL/logs
 
 CACTUS_DIR=$CTRL/fastas_231
-FOUNDERS_META=$ROOT/data/kmer_pa_231_v3qc_v3_filt2/kmer_pa_Chr1.meta.npz
+FOUNDERS_META=$ROOT/data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1.meta.npz
 # arch3 var_pas (REUSED): atomized (SNP-level) + raw (SNP/indel/SV classes)
 CN_VAR_ATOM=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.var_pa.npz
 CN_VAR_ATOM_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1_atomized.meta.npz
@@ -63,7 +76,7 @@ done
 # count is preserved).
 GEN0_FLAG="--gen0-no-replace"
 
-echo "[$(date)] STAGE 1: mosaics (RANDOM crossovers @ 4 cM/Mb, --chroms $CHROMS) $GEN0_FLAG"
+echo "[$(date)] STAGE 1: mosaics (RANDOM crossovers @ 4 cM/Mb, --chroms $CHROMS) $GEN0_FLAG ${SELF_FLAG:-(outcross)}"
 $PYTHON $ROOT/sims/scripts/make_recomb_mosaics.py \
     --n-indiv $N_INDIV \
     --n-generations $N_GEN \
@@ -72,7 +85,7 @@ $PYTHON $ROOT/sims/scripts/make_recomb_mosaics.py \
     --founders-meta $FOUNDERS_META \
     --out-dir $WORK \
     --chroms "$CHROMS" \
-    $GEN0_FLAG
+    $GEN0_FLAG $SELF_FLAG
 
 # -----------------------------------------------------------------------------
 # STAGE 2: VISOR SHORtS at cov10x, Chr1 only
@@ -113,7 +126,7 @@ print(repr(o), repr(d))
     SUM_CHK=$(echo "${FRACS[@]}" | awk '{for(i=1;i<=NF;i++) s+=$i; printf "%.6f", s}')
     echo "  sum check: $SUM_CHK% (must be exactly 100)"
 
-    source "$(mamba info --base)/etc/profile.d/conda.sh" && conda activate pang
+    source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh && conda activate kmate
     rm -rf $READS_DIR; mkdir -p $READS_DIR
     VISOR SHORtS \
         -g $REF -s "${CLONE_DIRS[@]}" -b $REGION_BED -o $READS_DIR \

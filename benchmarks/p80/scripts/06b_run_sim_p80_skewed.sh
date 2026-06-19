@@ -31,16 +31,25 @@ N_INDIV=${1:?Usage: sbatch 06b_run_sim_p80_skewed.sh N_INDIV N_GEN [SEED=42] [DO
 N_GEN=${2:?Usage: sbatch 06b_run_sim_p80_skewed.sh N_INDIV N_GEN [SEED=42] [DOMINANT_FRAC=50.0]}
 SEED=${3:-42}
 DOMINANT_FRAC=${4:-50.0}
+WINNER=${5:-recomb}   # recomb (default: don't force the winner's type) | pure (force non-recombinant winner)
+SELFING_RATE=${6:-0.0}   # background selfing rate (0.97 => winner most-probably non-recombinant, no forcing)
 COVERAGE=10
 CHROMS="Chr1"
 
 CTRL=/global/scratch/users/tbellg/kmate/benchmarks/p80
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
-PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 SCRIPTS=$CTRL/scripts
 
 DOM_TAG="dom$(echo $DOMINANT_FRAC | tr -d '.')"
-WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}_hotspots_${DOM_TAG}_p80_chr1
+PURE_FLAG=""
+if [ "$WINNER" = "pure" ]; then DOM_TAG="${DOM_TAG}nr"; PURE_FLAG="--dominant-pure-founder"; fi
+SELF_TAG=""; SELF_FLAG=""
+if [ "$(python3 -c "print(float('$SELFING_RATE')>0)")" = "True" ]; then
+    SELF_PCT=$(python3 -c "print(f'{float(\"$SELFING_RATE\")*100:g}')")
+    SELF_TAG="_self${SELF_PCT}"; SELF_FLAG="--selfing-rate $SELFING_RATE"
+fi
+WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}${SELF_TAG}_hotspots_${DOM_TAG}_p80_chr1
 mkdir -p $WORK $CTRL/logs
 
 CACTUS_DIR=$CTRL/fastas_80
@@ -67,7 +76,7 @@ $PYTHON /global/scratch/users/tbellg/kmate/sims/scripts/make_recomb_mosaics.py \
     --cactus-dir $CACTUS_DIR \
     --founders-meta $FOUNDERS_META \
     --out-dir $WORK \
-    --chroms "$CHROMS"
+    --chroms "$CHROMS" $PURE_FLAG $SELF_FLAG
 
 # -----------------------------------------------------------------------------
 # STAGE 2: VISOR SHORtS with SKEWED fractions
@@ -120,7 +129,7 @@ print(repr(o), repr(d))
         done
     } > $WORK/visor_pool_fractions.tsv
 
-    source "$(mamba info --base)/etc/profile.d/conda.sh" && conda activate pang
+    source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh && conda activate kmate
     rm -rf $READS_DIR; mkdir -p $READS_DIR
     VISOR SHORtS \
         -g $REF \

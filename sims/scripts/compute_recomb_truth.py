@@ -3,8 +3,13 @@
 Inputs:
   --ancestry        ancestry.tsv (ind_id, chrom, start, end, founder)
   --weights         pool_weights.tsv (founder, count, weight) — realized pool composition
-  --cn-var          cn_var .npz  (F × N_records sparse, rows = founders)
-  --cn-var-meta     cn_var meta .npz with 'founders', 'chrom', 'pos', 'ref_len', 'alt_len'
+  --var-pa          var_pa .npz  (F × N_records sparse, rows = founders). Legacy
+                    alias: --cn-var.
+  --var-meta        var_pa meta .npz with 'founders', 'chrom', 'pos', 'ref_len',
+                    'alt_len'. Legacy alias: --cn-var-meta.
+  --var-called      var_called mask .npz (F × N). If omitted, derived from --var-pa
+                    ('.var_pa.npz'->'.var_called.npz', or legacy
+                    '.cn_var.npz'->'.cn_var_called.npz').
   --source-weights  Optional: source_weights.tsv (founder, prob) — if absent, auto-detected
                     next to pool_weights.tsv. When present, also emits source_truth_af.
   --out             output TSV (chrom, pos, ref_len, alt_len, truth_af, info,
@@ -86,8 +91,17 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--ancestry", required=True)
     ap.add_argument("--weights", required=True)
-    ap.add_argument("--cn-var", required=True)
-    ap.add_argument("--cn-var-meta", required=True)
+    ap.add_argument("--var-pa", "--cn-var", dest="var_pa", required=True,
+                    help="founder × record alt-allele matrix (.var_pa.npz). "
+                         "(--cn-var accepted as a legacy alias.)")
+    ap.add_argument("--var-meta", "--cn-var-meta", dest="var_meta", required=True,
+                    help="matching meta .npz (founders, chrom, pos, ref_len, alt_len). "
+                         "(--cn-var-meta accepted as a legacy alias.)")
+    ap.add_argument("--var-called", default=None,
+                    help="founder × record called-mask (.var_called.npz). Required for "
+                         "MAR truth. If omitted, derived from --var-pa by swapping "
+                         "'.var_pa.npz'->'.var_called.npz' (or legacy "
+                         "'.cn_var.npz'->'.cn_var_called.npz').")
     ap.add_argument("--out", required=True)
     ap.add_argument("--source-weights", default=None,
                     help="Optional source_weights.tsv (founder, prob). If absent, "
@@ -96,19 +110,32 @@ def main():
     args = ap.parse_args()
 
     print("loading inputs...", flush=True)
-    cn = load_npz(args.cn_var).tocsr()  # F × N
-    # Auto-detect cn_var_called next to cn_var. Required for MAR truth.
-    called_path = args.cn_var.replace(".cn_var.npz", ".cn_var_called.npz")
+    cn = load_npz(args.var_pa).tocsr()  # F × N
+    # Resolve the called-mask. Explicit --var-called wins; else derive from the
+    # var_pa path by the current ('.var_pa.npz') or legacy ('.cn_var.npz') name.
+    if args.var_called is not None:
+        called_path = args.var_called
+    elif ".var_pa.npz" in args.var_pa:
+        called_path = args.var_pa.replace(".var_pa.npz", ".var_called.npz")
+    else:
+        called_path = args.var_pa.replace(".cn_var.npz", ".cn_var_called.npz")
+    if called_path == args.var_pa:
+        raise ValueError(
+            f"Could not derive a called-mask path from --var-pa={args.var_pa} "
+            f"(name doesn't contain '.var_pa.npz' or '.cn_var.npz'). "
+            f"Pass --var-called explicitly. MAR truth requires the called mask, "
+            f"never the carrier matrix itself."
+        )
     try:
         cn_called = load_npz(called_path).tocsr()
-        print(f"  cn_var_called loaded from {called_path}", flush=True)
+        print(f"  var_called loaded from {called_path}", flush=True)
     except FileNotFoundError:
         raise FileNotFoundError(
-            f"MAR truth requires cn_var_called.npz next to cn_var.npz.\n"
+            f"MAR truth requires the called-mask .npz.\n"
             f"Expected: {called_path}\n"
-            f"Rebuild cn_var with poolfreq/src/build_cn_var.py (it writes both)."
+            f"Pass --var-called explicitly or place it next to --var-pa."
         )
-    meta = np.load(args.cn_var_meta, allow_pickle=True)
+    meta = np.load(args.var_meta, allow_pickle=True)
     cn_founders = list(meta["founders"])
     founder_to_row = {f: i for i, f in enumerate(cn_founders)}
     rec_chrom = np.asarray(meta["chrom"]).astype(str)
@@ -169,9 +196,24 @@ def main():
     #      Each individual gets visor_pct/100 weight in the pool.
     weights_df = pd.read_csv(args.weights, sep='\t')
     if 'ind_id' in weights_df.columns and 'visor_pct' in weights_df.columns:
-        # Skewed mode: per-individual weights
-        ind_weight = dict(zip(weights_df['ind_id'].astype(str),
-                              weights_df['visor_pct'].astype(float) / 100.0))
+        # Skewed mode: per-individual weights. visor_pool_fractions.tsv keys
+        # individuals by the clone-dir basename ('s_ind001'); ancestry.tsv keys
+        # them as 'ind001'. Strip a leading 's_' so the two line up — otherwise
+        # every lookup below missed and silently fell back to uniform 1/n,
+        # producing a UNIFORM-pool truth for what is a skewed pool (the dominant
+        # founder's 50% was scored as 2%). [bug fixed 2026-06-18]
+        ind_weight = dict(zip(
+            weights_df['ind_id'].astype(str).str.replace(r'^s_', '', regex=True),
+            weights_df['visor_pct'].astype(float) / 100.0))
+        # Guard: refuse to silently fall back to uniform if the keys don't match
+        # the ancestry individuals.
+        missing = [i for i in inds if i not in ind_weight]
+        if missing:
+            raise ValueError(
+                f"{len(missing)}/{len(inds)} ancestry individuals have no weight in "
+                f"{args.weights} (e.g. {missing[:3]}). ind_id mismatch between "
+                f"visor_pool_fractions.tsv and ancestry.tsv — refusing to fall back "
+                f"to a uniform-pool truth for a skewed pool.")
         ws = sum(ind_weight.values())
         if abs(ws - 1.0) > 1e-3:
             print(f"  WARN: pool weights sum to {ws:.4f}, not 1.0", flush=True)

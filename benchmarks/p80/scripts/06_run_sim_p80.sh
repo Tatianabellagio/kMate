@@ -13,11 +13,16 @@
 # Phase B -- recombinant cov10 sim on the p80 panel (Chr1 only).
 #
 # Usage:
-#   sbatch 06_run_sim_p80.sh N_INDIV N_GEN [SEED=42]
+#   sbatch 06_run_sim_p80.sh N_INDIV N_GEN [SEED=42] [SELFING_RATE=0.0]
 # e.g.
 #   sbatch 06_run_sim_p80.sh 50 1   # n50_g1
 #   sbatch 06_run_sim_p80.sh 50 3   # n50_g3
 #   sbatch 06_run_sim_p80.sh 80 1   # n80_g1 (stretch; full-panel pool)
+#   sbatch 06_run_sim_p80.sh 50 3 42 0.97   # n50_g3 with 97% selfing (-> _self97 tag)
+#
+# SELFING_RATE>0 models A. thaliana selfing: each offspring is a clonal copy of
+# one parent w.p. SELFING_RATE, else a recombinant outcross. Output dir gets a
+# _self<pct> tag so it never collides with the forced-outcross (legacy) sims.
 #
 # Self-contained: clones of make_recomb_mosaics.py + VISOR SHORtS + truth, all
 # pointing at benchmarks/p80/data/* artifacts. No v3 paths.
@@ -26,18 +31,27 @@ set -euo pipefail
 export PYTHONPATH="${PYTHONPATH:-}"
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
 
-N_INDIV=${1:?Usage: sbatch 06_run_sim_p80.sh N_INDIV N_GEN [SEED=42]}
-N_GEN=${2:?Usage: sbatch 06_run_sim_p80.sh N_INDIV N_GEN [SEED=42]}
+N_INDIV=${1:?Usage: sbatch 06_run_sim_p80.sh N_INDIV N_GEN [SEED=42] [SELFING_RATE=0.0]}
+N_GEN=${2:?Usage: sbatch 06_run_sim_p80.sh N_INDIV N_GEN [SEED=42] [SELFING_RATE=0.0]}
 SEED=${3:-42}
+SELFING_RATE=${4:-0.0}
 COVERAGE=10  # locked: cov10 for this experiment
 CHROMS="Chr1"
 
 CTRL=/global/scratch/users/tbellg/kmate/benchmarks/p80
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa
-PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 SCRIPTS=$CTRL/scripts
 
-WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}_hotspots_p80_chr1
+# Selfing tag/flag: empty for the legacy (rate 0.0) sims so existing dir paths
+# and behaviour are byte-identical; _self<pct> otherwise.
+SELF_TAG=""; SELF_FLAG=""
+if [ "$(python3 -c "print(float('$SELFING_RATE')>0)")" = "True" ]; then
+    SELF_PCT=$(python3 -c "print(f'{float(\"$SELFING_RATE\")*100:g}')")
+    SELF_TAG="_self${SELF_PCT}"; SELF_FLAG="--selfing-rate $SELFING_RATE"
+fi
+
+WORK=$CTRL/sims/cov${COVERAGE}_n${N_INDIV}_g${N_GEN}_s${SEED}${SELF_TAG}_hotspots_p80_chr1
 mkdir -p $WORK $CTRL/logs
 
 CACTUS_DIR=$CTRL/fastas_80
@@ -66,7 +80,7 @@ fi
 # but the chrom-average per-founder count is preserved by the gen-0 draw).
 GEN0_FLAG="--gen0-no-replace"
 
-echo "[$(date)] STAGE 1: make mosaic FASTAs (--chroms $CHROMS) $GEN0_FLAG"
+echo "[$(date)] STAGE 1: make mosaic FASTAs (--chroms $CHROMS) $GEN0_FLAG ${SELF_FLAG:-(outcross)}"
 $PYTHON /global/scratch/users/tbellg/kmate/sims/scripts/make_recomb_mosaics.py \
     --n-indiv $N_INDIV \
     --n-generations $N_GEN \
@@ -75,7 +89,7 @@ $PYTHON /global/scratch/users/tbellg/kmate/sims/scripts/make_recomb_mosaics.py \
     --founders-meta $FOUNDERS_META \
     --out-dir $WORK \
     --chroms "$CHROMS" \
-    $GEN0_FLAG
+    $GEN0_FLAG $SELF_FLAG
 
 # -----------------------------------------------------------------------------
 # STAGE 2: VISOR SHORtS at cov10x, Chr1 only
@@ -126,7 +140,7 @@ print(repr(o), repr(d))
     SUM_CHK=$(echo "${FRACS[@]}" | awk '{for(i=1;i<=NF;i++) s+=$i; printf "%.6f", s}')
     echo "  sum check: $SUM_CHK% (must be exactly 100)"
 
-    source "$(mamba info --base)/etc/profile.d/conda.sh" && conda activate pang
+    source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh && conda activate kmate
     rm -rf $READS_DIR; mkdir -p $READS_DIR
     VISOR SHORtS \
         -g $REF \

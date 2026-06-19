@@ -10,10 +10,19 @@ import os, math
 from pathlib import Path
 import numpy as np, pandas as pd
 CTRL=str(Path(__file__).resolve().parents[1])
-REGIMES=["n50_g0","n231_g0","n50_g1","n231_g1","n50_g3","n50_g3_dom500"]
+# Rebuilt set (2026-06-18 fa_fetch fix): outcross g0/g1/g3 + 97%-selfing g1/g3.
+# Deferred/not-yet-rebuilt regimes (n231_*, n50_g3_dom500) are excluded here until
+# their sims are rebuilt — see sims/AUDIT_2026-06-18.md.
+REGIMES=["n50_g0","n50_g1","n50_g3","n50_g1_self97","n50_g3_self97",
+         "n50_g3_dom500","n50_g3_dom500nr","n50_g3_dom500_self97"]
 def subdir(reg):
     if reg=="n50_g3_dom500": return "cov10_n50_g3_s42_hotspots_dom500_p231_chr1"
-    n,g=reg.split("_g"); return f"cov10_{n}_g{g}_s42_hotspots_p231_chr1"
+    if reg=="n50_g3_dom500nr": return "cov10_n50_g3_s42_hotspots_dom500nr_p231_chr1"
+    if reg=="n50_g3_dom500_self97": return "cov10_n50_g3_s42_self97_hotspots_dom500_p231_chr1"
+    self_tag=""
+    if reg.endswith("_self97"):
+        reg=reg[:-len("_self97")]; self_tag="_self97"
+    n,g=reg.split("_g"); return f"cov10_{n}_g{g}_s42{self_tag}_hotspots_p231_chr1"
 def met(e,t):
     d=e-t; ss=np.sum(d**2); st=np.sum((t-t.mean())**2)
     return dict(n=len(d),MAE=np.mean(np.abs(d)),RMSE=math.sqrt(np.mean(d**2)),
