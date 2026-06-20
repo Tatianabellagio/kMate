@@ -78,6 +78,9 @@ PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 : ${OUT_DIR:?Set OUT_DIR to a results subdir}
 BLOCK_MODE=${BLOCK_MODE:-global}
 WINDOW_BP=${WINDOW_BP:-10000}
+BLOCKS_DIR=${BLOCKS_DIR:-}        # set (with BLOCK_MODE=window) -> per-chrom LD-unit TSVs
+                                 #   ${BLOCKS_DIR}/${chrlc}_units_dynld_K500.tsv, instead of fixed --window-bp
+MIN_KMERS=${MIN_KMERS:-50}       # min OBSERVED k-mers/block for a local fit (else global fallback)
 KMER_WEIGHT=${KMER_WEIGHT:-inv_mb}
 CHROMS=${CHROMS:-"Chr1 Chr2 Chr3 Chr4 Chr5"}
 
@@ -148,10 +151,7 @@ else
     READS_ARGS="--reads $R1"
 fi
 
-WINDOW_ARGS=""
-if [ "$BLOCK_MODE" = "window" ]; then
-    WINDOW_ARGS="--window-bp $WINDOW_BP"
-fi
+# WINDOW_ARGS is computed PER-CHROM inside the loop below (LD-unit blocks are per-chrom files).
 
 # ---- build the k-mer DB ONCE (count the read pool a single time) ----
 # Each per-chrom driver call queries this DB (--kmer-db) instead of re-scanning
@@ -180,6 +180,17 @@ fi
 PER_CHROM_OUTS=()
 for CHR in $CHROMS; do
     chrlc=${CHR,,}
+    # window-mode args (per chrom): LD-unit blocks if BLOCKS_DIR set, else fixed-bp window
+    WINDOW_ARGS=""
+    if [ "$BLOCK_MODE" = "window" ]; then
+        if [ -n "$BLOCKS_DIR" ]; then
+            BLK="${BLOCKS_DIR}/${chrlc}_units_dynld_K500.tsv"
+            [ -s "$BLK" ] || { echo "[$(date)] ERROR: missing blocks-tsv $BLK"; exit 1; }
+            WINDOW_ARGS="--blocks-tsv $BLK --min-kmers-per-block $MIN_KMERS"
+        else
+            WINDOW_ARGS="--window-bp $WINDOW_BP"
+        fi
+    fi
     VAR_PA=${VAR_PA_DIR}/${chrlc}/${VAR_PA_TAG}_${chrlc}.var_pa.npz
     VAR_CALLED=${VAR_PA_DIR}/${chrlc}/${VAR_PA_TAG}_${chrlc}.var_called.npz
     VAR_META=${VAR_PA_DIR}/${chrlc}/${VAR_PA_TAG}_${chrlc}.meta.npz

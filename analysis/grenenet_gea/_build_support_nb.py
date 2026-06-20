@@ -41,17 +41,13 @@ T5 = ("/global/scratch/users/tbellg/pang/grenenet_reads/"
       "Table_S5_sample_collection_sequencing_library.csv")
 
 
-N_OLD_PANEL = 10_325_364     # pre-segregating panel (175 pilot samples, sites 4 & 54)
 _SV_FULL = None              # full-panel (8.49M) SV row mask
-_OLD2NEW = None              # 10.33M -> 8.49M order-preserving subset mask
 
 
 def _info_sv(name):
-    """Extract the info column for SV rows of one sample TSV (handles old panel)."""
+    """Extract the info column for SV rows of one sample TSV."""
     d = pd.read_csv(f"{OUTBASE}/{name}.tsv", sep="\t", usecols=["info"])
     a = d["info"].to_numpy(dtype=np.float32)
-    if len(a) == N_OLD_PANEL and _OLD2NEW is not None:
-        a = a[_OLD2NEW]                      # 10.33M -> 8.49M segregating subset
     return a[_SV_FULL]
 
 
@@ -69,10 +65,8 @@ def precompute():
     snp_full = np.load(f"{STORE}/snp_mask.npy")           # True = SNP, over 8.49M
     sv_full = np.zeros(len(snp_full), dtype=bool)
     sv_full[~snp_full] = sv
-    o2n_path = f"{STORE}/old2new_mask.npy"
-    old2new = np.load(o2n_path) if os.path.exists(o2n_path) else None
-    global _SV_FULL, _OLD2NEW
-    _SV_FULL, _OLD2NEW = sv_full, old2new
+    global _SV_FULL
+    _SV_FULL = sv_full
     # n_called is panel-level (identical across samples) -> read one vector.
     nc = np.asarray(np.load(sorted(glob.glob(f"{STORE}/nc_nonsnp/*.npy"))[0]))
     p0 = np.load(f"{STORE}/p0_nonsnp.npy")

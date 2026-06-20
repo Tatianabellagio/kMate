@@ -78,11 +78,18 @@ def build(gen: int, cls: str, pooldir: str, store: str, out: str,
         p_bar = np.nansum(np.where(finite, sub, 0.0), axis=0) / np.maximum(n_finite, 1)
     maf = np.minimum(p_bar, 1.0 - p_bar)
 
-    keep = (n_finite >= int(np.ceil(min_finite_frac * n_pools))) & (maf >= maf_min)
+    # The finite/coverage filter is INERT on kMate data: kMate projects AF from the
+    # per-chrom founder-haplotype reconstruction (h), so every record is finite in
+    # every pool (n_finite == n_pools). Verified across all gens x classes (~8.5M
+    # records each): min n_finite == n_pools, 0 records below the 50% threshold, so
+    # MAF is the sole gatekeeper. Term commented out (kept, not deleted, so it can be
+    # re-enabled via --min-finite-frac if this is ever reused on data WITH missingness,
+    # e.g. short-read pools). n_finite is still computed and written to records.csv.
+    keep = (maf >= maf_min)  # & (n_finite >= int(np.ceil(min_finite_frac * n_pools)))
     kept = np.where(keep)[0]
     print(f"  gen{gen} {cls}: {len(cls_cols):,} {cls} records -> "
-          f"{len(kept):,} kept (MAF>={maf_min}, finite>={min_finite_frac:.0%} of "
-          f"{n_pools} pools)", flush=True)
+          f"{len(kept):,} kept (MAF>={maf_min}; finite filter inert on kMate: "
+          f"n_finite in [{int(n_finite.min())},{int(n_finite.max())}]/{n_pools})", flush=True)
     if len(kept) == 0:
         return
 

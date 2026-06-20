@@ -288,3 +288,10 @@ __pycache__/
 !src/kmate/data/selftest/
 !src/kmate/data/selftest/*.npz
 !src/kmate/data/selftest/*.fq.gz
+
+# --- 2026-06-20 window-mode unit validation outputs (bulky / regenerable) ---
+results/grenenet_gea/window_vs_global/
+results/grenenet_gea/gen9_window/
+results/grenenet_kmate_window/
+results/grenenet_kmate_arch3_oldpanel_archive/
+results/seedmix_kmate_arch3_oldpanel_archive/

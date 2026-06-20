@@ -2,9 +2,8 @@
 """Build founding (gen-0) p0 from the 8 SEEDMIX reps, aligned to the AF store.
 
 p0[record] = NaN-aware mean of alt_freq over the 8 SEEDMIX kMate reps (the
-founding seed mix; phase-1's average_seedmix_p0). The SEEDMIX TSVs were run on
-the OLD 10.33M panel, so each is subset old->new (old2new_mask) to the 8.49M
-segregating panel, then split SNP / non-SNP to match the store's index.
+founding seed mix; phase-1's average_seedmix_p0), split SNP / non-SNP to match
+the store's index.
 
 Outputs (in the store dir):
   p0_nonsnp.npy  float32 [n_nonsnp]   founding AF for the SV-GEA substrate
@@ -19,16 +18,12 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
-N_OLD = 10_325_364
-
 
 def main():
     store = lib.AF_STORE
     snp = np.load(f"{store}/snp_mask.npy")
     meta = json.load(open(f"{store}/meta.json"))
     n_full = meta["n_full"]
-    o2n = np.load(f"{store}/old2new_mask.npy") if os.path.exists(
-        f"{store}/old2new_mask.npy") else None
     fs = sorted(f for f in glob.glob(f"{lib.SEEDMIX}/SEEDMIX_S*.tsv")
                 if "_Chr" not in os.path.basename(f))
     if not fs:
@@ -36,10 +31,8 @@ def main():
     ssum = np.zeros(n_full); scnt = np.zeros(n_full)
     for f in fs:
         a = pd.read_csv(f, sep="\t", usecols=["alt_freq"]).alt_freq.to_numpy(float)
-        if len(a) == N_OLD and o2n is not None:
-            a = a[o2n]                       # 10.33M -> 8.49M segregating subset
-        elif len(a) != n_full:
-            raise SystemExit(f"{f}: {len(a):,} rows unexpected")
+        if len(a) != n_full:
+            raise SystemExit(f"{f}: {len(a):,} rows != panel {n_full:,}")
         ok = np.isfinite(a)
         ssum[ok] += a[ok]; scnt += ok
         print(f"  {os.path.basename(f)}: merged", flush=True)

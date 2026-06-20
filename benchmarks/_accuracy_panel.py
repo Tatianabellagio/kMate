@@ -69,9 +69,12 @@ def scatter_density(ax, x, y, title, s=15, alpha=0.5, subsample=150_000, seed=42
     ax.set_xlim(-0.03, 1.03); ax.set_ylim(-0.03, 1.03)
     ax.set_aspect("equal", adjustable="box")
     ax.set_xticks([0, .2, .4, .6, .8, 1.0]); ax.set_yticks([0, .2, .4, .6, .8, 1.0])
-    for sp in ("top", "right", "left", "bottom"):
-        ax.spines[sp].set_edgecolor(GREY)
-    ax.tick_params(colors=GREY, labelcolor=GREY)
+    # Publication aesthetic: light background grid, no spines.
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+    ax.set_axisbelow(True)
+    ax.grid(True, color="#d9d9d9", linewidth=0.6, alpha=0.8)
+    ax.tick_params(colors=GREY, labelcolor=GREY, length=0)
     return sm
 
 
@@ -81,11 +84,14 @@ def grid_panel(cells, suptitle, outfile, ncols=2, cell=4.0, dpi=130):
     cells: list of (title, truth_array, est_array) in row-major order. A `None`
     entry (or trailing shortfall) leaves that grid slot blank — use it to align
     a baseline panel against a comparison row.
-    Lays them out in `ncols` columns with a shared bottom colorbar + suptitle.
+    Lays them out in `ncols` columns with a shared bottom colorbar. NB: there is
+    deliberately NO figure suptitle — per-panel subtitles identify the regimes and
+    the surrounding text/filename identifies the scenario/mode/filter (`suptitle`
+    is accepted for back-compat but not drawn).
     """
     n = len(cells); nrows = (n + ncols - 1) // ncols
     fig, axes = plt.subplots(nrows, ncols,
-                             figsize=(cell * ncols + 1, cell * nrows + 0.5),
+                             figsize=(cell * ncols + 1, cell * nrows + 1.2),
                              sharex=True, sharey=True, squeeze=False)
     last_sm = None
     for k, ax in enumerate(axes.flat):
@@ -99,15 +105,16 @@ def grid_panel(cells, suptitle, outfile, ncols=2, cell=4.0, dpi=130):
             ax.set_ylabel("Estimated AF", color=GREY)
         if k // ncols == nrows - 1:
             ax.set_xlabel("True AF", color=GREY)
-    fig.subplots_adjust(bottom=0.07, top=0.95, hspace=0.30, wspace=0.10)
+    # Leave clear room at the bottom for the colorbar BELOW the x-axis labels
+    # (no suptitle, so the top can run high).
+    fig.subplots_adjust(bottom=0.11, top=0.98, hspace=0.30, wspace=0.10)
     if last_sm is not None:
-        cax = fig.add_axes([0.25, 0.03, 0.50, 0.01])
+        cax = fig.add_axes([0.30, 0.045, 0.40, 0.010])
         cb = fig.colorbar(last_sm, cax=cax, orientation="horizontal",
                           label="Local density (log count of records)")
-        cb.outline.set_edgecolor(GREY)
-        cb.ax.xaxis.set_tick_params(color=GREY, labelcolor=GREY)
+        cb.outline.set_visible(False)
+        cb.ax.xaxis.set_tick_params(color=GREY, labelcolor=GREY, length=0)
         cb.ax.xaxis.label.set_color(GREY)
-    fig.suptitle(suptitle, y=0.985, fontsize=11, color=GREY)
     fig.savefig(outfile, dpi=dpi, bbox_inches="tight")
     plt.close(fig)
     print(f"saved: {outfile}")
