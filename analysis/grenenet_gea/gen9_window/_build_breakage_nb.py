@@ -105,6 +105,56 @@ ax.plot([0,1],[0,1],"k--",lw=1); ax.set_xlabel("evolved PC1-VE (global)")
 ax.set_ylabel("evolved PC1-VE (window)"); ax.legend(); ax.set_title("global vs window by coverage")
 plt.tight_layout(); plt.show()"""))
 
+cells.append(new_markdown_cell(
+"""# Part 2 — HAPLOBLOCKS (haplotype clusters) instead of whole blocks
+
+The dynld units are coarse and bundle several founder haplotypes (84% are multi-haplotype).
+The selection test unit is the **haploblock** = a HapFM-xmeans haplotype cluster within a
+unit, carried by its **signature variants** (alt in >=50% of the cluster's founders AND >=0.5
+higher than outside). Here we recompute the same founder-vs-evolved PC1-VE breakage diagnostic
+with the haploblock as the unit (`haploblock_founder_vs_evolved.csv`). If the block-level
+"breakage" was really pre-existing multi-haplotype mixing (not LD decay), the haploblocks
+should be coherent and sit on the diagonal."""))
+cells.append(new_code_cell(
+f"""hb = pd.read_csv("{ROOT}/results/grenenet_gea/gen9_window/haploblock_founder_vs_evolved.csv")
+hb = hb[hb.founder_ve.notna() & hb.evolved_ve_global.notna() & hb.evolved_ve_window.notna()].copy()
+m = 0.2
+print(f"{{len(hb):,}} haploblocks (clusters with >=2 signature variants matched in gen9 pools)")
+print(f"{{'unit':24s}} {{'med founder_VE':>14s}} {{'med evolved_VE':>14s}} {{'breakage>0.2':>12s}}")
+print(f"{{'blocks (dynld units)':24s}} {{d.founder_ve.median():>14.3f}} {{d.evolved_ve_global.median():>14.3f}} "
+      f"{{100*((d.founder_ve-d.evolved_ve_global)>m).mean():>11.1f}}%")
+print(f"{{'haploblocks (clusters)':24s}} {{hb.founder_ve.median():>14.3f}} {{hb.evolved_ve_global.median():>14.3f}} "
+      f"{{100*((hb.founder_ve-hb.evolved_ve_global)>m).mean():>11.1f}}%")"""))
+cells.append(new_code_cell(
+"""margin = 0.2
+fig, axes = plt.subplots(1, 2, figsize=(14, 6), sharex=True, sharey=True)
+for ax, col, ed, lab in [(axes[0],"evolved_ve_global","eff_dim_global","GLOBAL-mode AF"),
+                         (axes[1],"evolved_ve_window","eff_dim_window","BLOCK-based (window) h")]:
+    sc = ax.scatter(hb.founder_ve, hb[col], c=hb[ed], s=9, cmap="viridis", alpha=.45, vmin=1, vmax=6)
+    ax.plot([0,1],[0,1], "k--", lw=1); ax.plot([margin,1],[0,1-margin], "r:", lw=1.2, label=f"drop > {margin}")
+    brk = 100*((hb.founder_ve - hb[col]) > margin).mean()
+    ax.set_xlabel("founder PC1-VE"); ax.set_title(f"HAPLOBLOCKS — {lab}\\nbelow diagonal = LD broke  ({brk:.1f}% of haploblocks)")
+    ax.legend(loc="lower right"); ax.set_xlim(0,1.02); ax.set_ylim(0,1.02)
+axes[0].set_ylabel("evolved (gen9) PC1-VE")
+plt.colorbar(sc, ax=axes, label="effective dimensionality", fraction=.046, pad=.02)
+plt.show()"""))
+cells.append(new_markdown_cell(
+"""## Block vs haploblock — the coherence lift from clustering
+
+ECDF of evolved PC1-VE: clustering each coarse block into its signature haplotypes shifts the
+whole distribution right (more coherent), and the low-VE tail that drove block-level "breakage"
+is resolved into clean single-haplotype units."""))
+cells.append(new_code_cell(
+"""fig, ax = plt.subplots(figsize=(7.5, 5))
+for v, lab, col in [(d.evolved_ve_global.dropna(), "blocks (dynld units)", "#4C72B0"),
+                    (hb.evolved_ve_global.dropna(), "haploblocks (clusters)", "#55A868")]:
+    s = np.sort(v.values); ax.plot(s, np.arange(1,len(s)+1)/len(s), color=col, lw=2.4,
+                                   label=f"{lab}  (median {np.median(s):.2f})")
+ax.axvline(0.7, ls=":", color="grey", alpha=.7)
+ax.set_xlabel("evolved (gen9) PC1-VE"); ax.set_ylabel("cumulative fraction of units")
+ax.set_title("Coherence: blocks vs haploblocks (global-mode AF)"); ax.legend(loc="upper left")
+plt.tight_layout(); plt.show()"""))
+
 nb = new_notebook(cells=cells, metadata={"kernelspec":{"name":"python3","display_name":"Python 3"}})
 import os; os.makedirs(os.path.dirname(OUT), exist_ok=True)
 nbf.write(nb, OUT)
