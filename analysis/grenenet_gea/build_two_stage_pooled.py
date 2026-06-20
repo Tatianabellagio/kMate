@@ -46,18 +46,14 @@ def sv_mask_and_meta():
 
 
 def gen0_logit_var(mask):
-    """Among-SEEDMIX-rep variance of logit(p0), /n_reps. Handles old-panel SEEDMIX TSVs
-    (10.33M) via the old2new mask. Falls back to a small floor if unavailable."""
+    """Among-SEEDMIX-rep variance of logit(p0), /n_reps. Falls back to a small
+    floor if fewer than 2 usable reps."""
     snp = np.load(f"{STORE}/snp_mask.npy")
     full_sv = np.zeros(len(snp), bool); full_sv[~snp] = mask        # SV rows in 8.49M panel
-    N_OLD = 10_325_364
-    o2n = np.load(f"{STORE}/old2new_mask.npy") if os.path.exists(f"{STORE}/old2new_mask.npy") else None
     fs = [f for f in glob.glob(f"{lib.SEEDMIX}/SEEDMIX_S*.tsv") if "_Chr" not in os.path.basename(f)]
     L = []
     for f in fs:
         a = pd.read_csv(f, sep="\t", usecols=["alt_freq"]).alt_freq.to_numpy()
-        if len(a) == N_OLD and o2n is not None:
-            a = a[o2n]                                             # 10.33M -> 8.49M subset
         if len(a) != len(full_sv):
             print(f"  [gen0] {os.path.basename(f)} len {len(a):,} != panel — skipping"); continue
         L.append(logit(a[full_sv]))

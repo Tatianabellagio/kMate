@@ -49,7 +49,6 @@ import pandas as pd
 PROJ = "/global/scratch/users/tbellg/kmate"
 OUT = f"{PROJ}/results/grenenet_kmate_arch3"
 N_FULL_EXPECTED = 8_489_646   # segregating-only arch3 panel (sanity guard)
-N_OLD_PANEL = 10_325_364      # pre-segregating panel (175 pilot samples, sites 4 & 54)
 SUBDIRS = ("af_nonsnp", "af_snp", "nc_nonsnp", "nc_snp")
 AF_SCALE = 10000        # alt_freq stored as uint16 round(af * AF_SCALE)
 AF_NAN = 65535          # uint16 sentinel for NaN/missing AF (valid range 0..10000)
@@ -138,15 +137,6 @@ def cmd_convert(args):
     base, n_full = meta["base"], meta["n_full"]
     n_snp, n_nonsnp = meta["n_snp"], meta["n_nonsnp"]
     nonsnp = ~snp
-    # 175 pilot samples were run on the OLD 10.33M panel (pre-segregating filter).
-    # The 8.49M panel is an exact order-preserving SUBSET (verified two-pointer),
-    # and kMate's AF is per-record independent with K_pa unchanged, so subsetting
-    # the old TSV to the segregating rows == re-running on the new panel. Load the
-    # old->new row mask so old-panel samples align to the same 8.49M record axis.
-    old2new = None
-    o2n_path = f"{d}/old2new_mask.npy"
-    if os.path.exists(o2n_path):
-        old2new = np.load(o2n_path)
     s, c = args.start, args.count
     end = min(s + c, len(samples))
     if s >= len(samples):
@@ -159,16 +149,10 @@ def cmd_convert(args):
             continue
         t = pd.read_csv(f"{base}/{name}.tsv", sep="\t",
                         usecols=["alt_freq", "n_called"])
+        if len(t) != n_full:
+            raise SystemExit(f"{name}: {len(t):,} rows != panel {n_full:,} — aborting")
         af_raw = t.alt_freq.to_numpy(dtype=np.float64)
         nc_raw = t.n_called.to_numpy()
-        if len(t) == N_OLD_PANEL and old2new is not None:
-            af_raw = af_raw[old2new]      # 10.33M -> 8.49M segregating subset
-            nc_raw = nc_raw[old2new]
-        elif len(t) != n_full:
-            raise SystemExit(f"{name}: {len(t):,} rows is neither the {n_full:,} "
-                             f"panel nor the {N_OLD_PANEL:,} old panel (mask "
-                             f"{'present' if old2new is not None else 'MISSING'}) "
-                             "— aborting")
         af = encode_af(af_raw)                              # u16, 4-decimal
         nc = np.clip(nc_raw, 0, 255).astype(np.uint8)
         p = _paths(d, name)

@@ -161,13 +161,24 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     return idx, freqs, info, h, elapsed
 
 
+def load_blocks_tsv(path, chrom):
+    """BlockSpec list for one chrom from an LD-block TSV
+    (cols: chrom start_pos end_pos n_variants; TAIR10 1-based)."""
+    import pandas as pd
+    bt = pd.read_csv(path, sep="\t")
+    bt = bt[bt["chrom"].astype(str) == str(chrom)]
+    return [BlockSpec(chrom=str(chrom), start=int(s), end=int(e))
+            for s, e in zip(bt["start_pos"], bt["end_pos"])]
+
+
 def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          window_bp=10_000, em_max_iter=200,
                          global_anchor_weight=0.3,
                          hmm_smooth_passes=5,
                          hmm_smooth_alpha=0.5,
                          hmm_smooth_recomb_rate=4e-8,
-                         kmer_weight="uniform", kmer_db=None, hash_size="3G"):
+                         kmer_weight="uniform", kmer_db=None, hash_size="3G",
+                         blocks_tsv=None, min_kmers_per_block=200):
     """Window-mode per-chrom EM + smooth projection (production "star2" recipe).
 
     Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
@@ -187,9 +198,13 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     bubble_start = meta["bubble_start"]
     bubble_end = meta["bubble_end"]
 
-    blocks = define_windows(bubble_chrom, bubble_start, bubble_end,
-                            window_bp=window_bp)
-    print(f"  [{chrom}] {len(blocks)} fixed windows of {window_bp:,} bp", flush=True)
+    if blocks_tsv:
+        blocks = load_blocks_tsv(blocks_tsv, chrom)
+        print(f"  [{chrom}] {len(blocks)} LD blocks from {blocks_tsv}", flush=True)
+    else:
+        blocks = define_windows(bubble_chrom, bubble_start, bubble_end,
+                                window_bp=window_bp)
+        print(f"  [{chrom}] {len(blocks)} fixed windows of {window_bp:,} bp", flush=True)
     n_blocks = len(blocks)
 
     kmer_block = assign_kmers_to_blocks(bubble_id, bubble_chrom,
@@ -207,7 +222,7 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     h_blocks, status, global_h = solve_em_per_block(
         counts.astype(np.float32), kmer_pa_dense, kmer_block, n_blocks,
         cov, em_max_iter=em_max_iter, tol=1e-7,
-        min_kmers_per_block=200, verbose=False,
+        min_kmers_per_block=min_kmers_per_block, verbose=False,
         global_anchor_weight=global_anchor_weight,
         omega=omega,
     )
@@ -295,6 +310,14 @@ def main():
                          "'star2' recipe; window defaults below reproduce it).")
     ap.add_argument("--window-bp", type=int, default=10_000,
                     help="fixed-window size for --block-mode window (production: 10 kb)")
+    ap.add_argument("--blocks-tsv", default=None,
+                    help="LD-block TSV (chrom start_pos end_pos n_variants; TAIR10 coords). "
+                         "In window mode, use these blocks as the windows instead of "
+                         "fixed --window-bp windows. Records/k-mers outside any block "
+                         "get no local fit (NaN).")
+    ap.add_argument("--min-kmers-per-block", type=int, default=200,
+                    help="min k-mers for a local per-block EM fit; below this the block "
+                         "falls back to the chrom-wide h. Lower it to probe thin LD blocks.")
     ap.add_argument("--global-anchor-weight", type=float, default=0.3,
                     help="λ for per-window EM Dirichlet anchor toward chrom-wide "
                          "h_global. 0 = pure per-window MLE; production: 0.3.")
@@ -377,6 +400,8 @@ def main():
                 hmm_smooth_recomb_rate=args.hmm_smooth_recomb_rate,
                 kmer_weight=args.kmer_weight,
                 kmer_db=kmer_db, hash_size=args.hash_size,
+                blocks_tsv=args.blocks_tsv,
+                min_kmers_per_block=args.min_kmers_per_block,
             )
             if idx is None:
                 continue
