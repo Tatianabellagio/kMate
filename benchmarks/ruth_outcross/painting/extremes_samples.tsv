@@ -1,0 +1,7 @@
+sample_id	bam	category	qb3	hapfire_ecotypes	main	sec
+MEAJM003-101_S101	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-101_S101.bam	inbred	MEAJM003-101	9526	0.955321	0.001605
+MEAJM003-472_S472	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-472_S472.bam	F1	MEAJM003-472	265|9526	0.46696	0.46696
+MEAJM003-488_S488	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-488_S488.bam	F1	MEAJM003-488	5757|7288	0.483266	0.483266
+MEAJM003-149_S149	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-149_S149.bam	recomb	MEAJM003-149	7106|9761	0.570694	0.314391
+MEAJM003-667_S667	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-667_S667.bam	recomb	MEAJM003-667	5165|5811	0.537415	0.373768
+MEAJM003-119_S119	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-119_S119.bam	complex	MEAJM003-119	7067|7120|8290|9914	0.226659	0.226659

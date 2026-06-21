@@ -112,7 +112,7 @@ def _project_with_called_mask(var_pa_chrom, h, idx):
 
 def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          em_max_iter=200, kmer_weight="uniform", kmer_db=None,
-                         hash_size="3G"):
+                         hash_size="3G", h_only=False):
     """Global-mode (single h per chrom) EM + projection.
 
     kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
@@ -125,7 +125,7 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
         chrom, kmer_pa_prefix, reads_input, threads, kmer_db=kmer_db,
         hash_size=hash_size)
     if kmer_pa_dense is None:
-        return None, None, None, 0.0
+        return None, None, None, None, 0.0
 
     # Filter to nonzero-count k-mers (the EM only needs those)
     nz = counts > 0
@@ -150,6 +150,13 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
           f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
     del kmer_pa_em, counts_em
     gc.collect()
+
+    if h_only:
+        # MOI / founder-mixture use: skip the AF projection (no var_pa load, no
+        # per-record output) — we only need h.
+        print(f"  [{chrom}] {time.time()-t_chrom:.0f}s total — h-only (projection skipped)",
+              flush=True)
+        return None, None, None, h, time.time() - t_chrom
 
     rec_chrom = np.asarray(var_meta["chrom"]).astype(str)
     idx = np.where(rec_chrom == str(chrom))[0]
@@ -276,8 +283,16 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--kmer-pa-prefix", required=True)
-    ap.add_argument("--var-pa", required=True)
-    ap.add_argument("--var-meta", required=True)
+    ap.add_argument("--var-pa", required=False,
+                    help="Required unless --h-only (the AF projection target).")
+    ap.add_argument("--var-meta", required=False,
+                    help="Required unless --h-only.")
+    ap.add_argument("--h-only", action="store_true",
+                    help="Estimate only the founder mixture h; skip the per-record "
+                         "AF projection and TSV. Writes just <out>.h_per_chrom.npz "
+                         "(founder order = kmer_pa). For MOI / outcrossing or any use "
+                         "that needs founder frequencies, not per-variant AF — faster, "
+                         "no var_pa load. Global mode only.")
     ap.add_argument("--var-called", default=None,
                     help="Path to var_called.npz (founder × variant 1/0 mask "
                          "of called genotypes). When provided, AF projection "
@@ -332,19 +347,32 @@ def main():
                          "(default 4e-8 = 4 cM/Mb, A. thaliana).")
     args = ap.parse_args()
 
-    print(f"=== {args.sample} (per-chrom {args.block_mode} mode) ===", flush=True)
+    print(f"=== {args.sample} (per-chrom {args.block_mode} mode"
+          f"{', h-only' if args.h_only else ''}) ===", flush=True)
     print(f"  reads: {args.reads}", flush=True)
     t0 = time.time()
 
-    var_pa = load_npz(args.var_pa)
-    var_meta = np.load(args.var_meta, allow_pickle=True)
-    n_records = var_pa.shape[1]
-    print(f"  var_pa: {var_pa.shape}, n_records: {n_records:,}", flush=True)
+    global _VAR_CALLED
+    if args.h_only:
+        if args.block_mode != "global":
+            sys.exit("ERROR: --h-only is supported in global mode only")
+        var_pa = None
+        var_meta = None
+        n_records = None
+        _VAR_CALLED = None
+        print("  h-only mode: skipping var_pa load + AF projection "
+              "(writing only the h vector)", flush=True)
+    else:
+        if not args.var_pa or not args.var_meta:
+            sys.exit("ERROR: --var-pa and --var-meta are required unless --h-only")
+        var_pa = load_npz(args.var_pa)
+        var_meta = np.load(args.var_meta, allow_pickle=True)
+        n_records = var_pa.shape[1]
+        print(f"  var_pa: {var_pa.shape}, n_records: {n_records:,}", flush=True)
 
     # Optional: load var_called mask for missing-aware AF projection.
-    global _VAR_CALLED
-    called_path = args.var_called
-    if called_path is None:
+    called_path = args.var_called if not args.h_only else None
+    if called_path is None and not args.h_only:
         guess = args.var_pa.replace(".var_pa.npz", ".var_called.npz")
         if guess != args.var_pa and os.path.exists(guess):
             called_path = guess
@@ -355,9 +383,10 @@ def main():
               flush=True)
     else:
         _VAR_CALLED = None
-        print(f"  var_called: NOT FOUND — AF projection treats ./. as REF "
-              f"(legacy behavior). Rebuild with build_var_pa.py for "
-              f"missing-aware projection.", flush=True)
+        if not args.h_only:
+            print(f"  var_called: NOT FOUND — AF projection treats ./. as REF "
+                  f"(legacy behavior). Rebuild with build_var_pa.py for "
+                  f"missing-aware projection.", flush=True)
 
     reads_input = args.reads if len(args.reads) > 1 else args.reads[0]
 
@@ -368,27 +397,30 @@ def main():
         print(f"  kmer_db: {kmer_db} (count-once: querying prebuilt DB per chrom)",
               flush=True)
 
-    freqs_global = np.full(n_records, np.nan, dtype=np.float32)
-    info_global  = np.full(n_records, np.nan, dtype=np.float32)
     h_save = {}  # global: h_per_chrom[chrom] = h. window: per-chrom block packs.
-
-    # Panel-level per-record called counts (h-independent QC metric). When
-    # var_called is unavailable, assume the panel size F (all called).
-    F_total = var_pa.shape[0]
-    if _VAR_CALLED is not None:
-        n_called_per_rec = np.asarray(_VAR_CALLED.sum(axis=0)).flatten().astype(np.int32)
-    else:
-        n_called_per_rec = np.full(n_records, F_total, dtype=np.int32)
+    if not args.h_only:
+        freqs_global = np.full(n_records, np.nan, dtype=np.float32)
+        info_global  = np.full(n_records, np.nan, dtype=np.float32)
+        # Panel-level per-record called counts (h-independent QC metric). When
+        # var_called is unavailable, assume the panel size F (all called).
+        F_total = var_pa.shape[0]
+        if _VAR_CALLED is not None:
+            n_called_per_rec = np.asarray(_VAR_CALLED.sum(axis=0)).flatten().astype(np.int32)
+        else:
+            n_called_per_rec = np.full(n_records, F_total, dtype=np.int32)
 
     for chrom in args.chroms:
         if args.block_mode == "global":
             idx, freqs, info, h, _ = run_one_chrom_global(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads, kmer_weight=args.kmer_weight,
-                kmer_db=kmer_db, hash_size=args.hash_size)
-            if idx is None:
+                kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only)
+            if h is None:
                 continue
             h_save[chrom] = h
+            if args.h_only:
+                gc.collect()
+                continue
         else:  # window
             idx, freqs, info, pack, _ = run_one_chrom_window(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
@@ -416,36 +448,43 @@ def main():
         info_global[idx]  = info
         gc.collect()
 
-    # SE per record (Wald, using n_called as effective N). NaN if p is NaN or
-    # n_called == 0. n_called is the integer count of called founders at each
-    # record (h-independent panel QC); info is the h-weighted version.
-    with np.errstate(invalid='ignore', divide='ignore'):
-        p_clip = np.clip(freqs_global, 0.0, 1.0)
-        se_global = np.sqrt(p_clip * (1.0 - p_clip) / np.maximum(n_called_per_rec, 1))
-        se_global = np.where(np.isfinite(freqs_global) & (n_called_per_rec > 0),
-                             se_global, np.nan).astype(np.float32)
+    if not args.h_only:
+        # SE per record (Wald, using n_called as effective N). NaN if p is NaN or
+        # n_called == 0. n_called is the integer count of called founders at each
+        # record (h-independent panel QC); info is the h-weighted version.
+        with np.errstate(invalid='ignore', divide='ignore'):
+            p_clip = np.clip(freqs_global, 0.0, 1.0)
+            se_global = np.sqrt(p_clip * (1.0 - p_clip) / np.maximum(n_called_per_rec, 1))
+            se_global = np.where(np.isfinite(freqs_global) & (n_called_per_rec > 0),
+                                 se_global, np.nan).astype(np.float32)
 
-    chrom_arr = np.asarray(var_meta["chrom"])
-    pos_arr = np.asarray(var_meta["pos"])
-    ref_arr = np.asarray(var_meta["ref_len"])
-    alt_arr = np.asarray(var_meta["alt_len"])
-    with open(args.out, "w") as f:
-        f.write("chrom\tpos\tref_len\talt_len\talt_freq\tinfo\tn_called\tse\n")
-        for i in range(n_records):
-            af = freqs_global[i]
-            af_str = f"{af:.5f}" if np.isfinite(af) else "NaN"
-            inf_str = f"{info_global[i]:.5f}" if np.isfinite(info_global[i]) else "NaN"
-            nc_str = f"{int(n_called_per_rec[i])}"
-            se_str = f"{se_global[i]:.5f}" if np.isfinite(se_global[i]) else "NaN"
-            f.write(f"{chrom_arr[i]}\t{pos_arr[i]}\t{ref_arr[i]}\t{alt_arr[i]}\t"
-                    f"{af_str}\t{inf_str}\t{nc_str}\t{se_str}\n")
-    print(f"  wrote {n_records:,} records to {args.out}", flush=True)
+        chrom_arr = np.asarray(var_meta["chrom"])
+        pos_arr = np.asarray(var_meta["pos"])
+        ref_arr = np.asarray(var_meta["ref_len"])
+        alt_arr = np.asarray(var_meta["alt_len"])
+        with open(args.out, "w") as f:
+            f.write("chrom\tpos\tref_len\talt_len\talt_freq\tinfo\tn_called\tse\n")
+            for i in range(n_records):
+                af = freqs_global[i]
+                af_str = f"{af:.5f}" if np.isfinite(af) else "NaN"
+                inf_str = f"{info_global[i]:.5f}" if np.isfinite(info_global[i]) else "NaN"
+                nc_str = f"{int(n_called_per_rec[i])}"
+                se_str = f"{se_global[i]:.5f}" if np.isfinite(se_global[i]) else "NaN"
+                f.write(f"{chrom_arr[i]}\t{pos_arr[i]}\t{ref_arr[i]}\t{alt_arr[i]}\t"
+                        f"{af_str}\t{inf_str}\t{nc_str}\t{se_str}\n")
+        print(f"  wrote {n_records:,} records to {args.out}", flush=True)
 
     suffix = ".h_per_chrom.npz" if args.block_mode == "global" else ".h_blocks_per_chrom.npz"
-    h_path = args.out.replace(".tsv", suffix)
+    h_path = args.out.replace(".tsv", suffix) if args.out.endswith(".tsv") else args.out + suffix
     if h_path != args.out:
-        founders = np.asarray(var_meta.get("founders", np.array([], dtype=object)))
+        if args.h_only:
+            # founder order = kmer_pa (the EM's founder axis); var_meta not loaded
+            km = np.load(f"{args.kmer_pa_prefix}_{args.chroms[0]}.meta.npz", allow_pickle=True)
+            founders = np.asarray(km["founders"]) if "founders" in km.files else np.array([], dtype=object)
+        else:
+            founders = np.asarray(var_meta.get("founders", np.array([], dtype=object)))
         np.savez(h_path, founders=founders, **h_save)
+        print(f"  wrote h -> {h_path}", flush=True)
 
     print(f"  TOTAL: {time.time()-t0:.0f}s", flush=True)
 

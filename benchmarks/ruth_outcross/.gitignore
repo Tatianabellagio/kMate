@@ -1,0 +1,14 @@
+# Heavy / regeneratable outputs — keep code, manifests, figures, small results.
+# kMate per-record AF TSVs (~95 MB each) + per-chrom h .npz:
+out/
+# per-window h_blocks .npz + window-mode TSVs:
+painting/out/
+logs/
+painting/logs/
+hapfire/logs/
+
+# hapFIRE outputs: keep only the small per-founder ecotype frequency + timing;
+# drop the big per-SNP frequency / partition / alone_SNPs intermediates.
+hapfire/results/*
+!hapfire/results/*_ecotype_frequency.txt
+!hapfire/results/*_time.txt
