@@ -1,0 +1,5 @@
+sample_id	bam	label
+MEAJM003-320_S320	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-320_S320.bam	outcrossed
+MEAJM003-308_S308	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-308_S308.bam	outcrossed
+MEAJM003-101_S101	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-101_S101.bam	inbred
+MEAJM003-113_S113	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-113_S113.bam	inbred

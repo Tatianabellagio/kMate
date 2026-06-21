@@ -1,0 +1,11 @@
+sample_id	reads_path	label
+MEAJM003-754_S754	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-754_S754.bam	outcrossed
+MEAJM003-320_S320	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-320_S320.bam	outcrossed
+MEAJM003-711_S711	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-711_S711.bam	outcrossed
+MEAJM003-308_S308	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-308_S308.bam	outcrossed
+MEAJM003-62_S62	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-62_S62.bam	outcrossed
+MEAJM003-101_S101	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-101_S101.bam	inbred
+MEAJM003-113_S113	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-113_S113.bam	inbred
+MEAJM003-93_S93	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-93_S93.bam	inbred
+MEAJM003-117_S117	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-117_S117.bam	inbred
+MEAJM003-202_S202	/global/home/users/ruthkepstein/moi_lab/projects/adaptest_N800_deepseq/dedup/MEAJM003-202_S202.bam	inbred
