@@ -52,7 +52,8 @@ def main():
 
     for _, r in man.iterrows():
         sample, cat = r["sample_id"], r["category"]
-        hf = [int(x) for x in str(r["hapfire_ecotypes"]).split("|") if x.isdigit()]
+        hf_ids = [x for x in str(r["hapfire_ecotypes"]).split("|") if x.isdigit()]
+        hf = [FID[x] for x in hf_ids if x in FID]   # hapFIRE ecotypes as founder INDICES
         chroms = {c: load(sample, a.tag, c) for c in CHROMS}
         chroms = {c: v for c, v in chroms.items() if v is not None}
         if not chroms:
@@ -68,17 +69,20 @@ def main():
                                  squeeze=False)
         xmax = max(CHRLEN.values())
         for ax, (c, (hb, st, en)) in zip(axes[:, 0], chroms.items()):
-            mb = (st + en) / 2 / 1e6; w = (en - st) / 1e6
-            bottom = np.zeros(len(hb))
-            for i in big:
-                ax.bar(mb, hb[:, i], width=w, bottom=bottom, align="center",
-                       color=FCOLOR[i], linewidth=0)
-                bottom += hb[:, i]
-            ax.bar(mb, 1 - bottom, width=w, bottom=bottom, align="center", color="0.85", lw=0)
+            order = np.argsort(st)                      # ensure ascending position
+            mb = ((st + en) / 2 / 1e6)[order]
+            # stacked filled areas (PolyCollection) — fast vs per-window bars
+            layers = [hb[order, i] for i in big]
+            other = 1 - np.sum([hb[order, i] for i in big], axis=0)
+            layers.append(np.clip(other, 0, 1))
+            cols = [FCOLOR[i] for i in big] + [(0.85, 0.85, 0.85)]
+            polys = ax.stackplot(mb, layers, colors=cols, linewidth=0)
+            for p in polys:
+                p.set_rasterized(True)
             ax.set_xlim(0, xmax); ax.set_ylim(0, 1); ax.set_yticks([])
             ax.set_ylabel(c, fontsize=8, rotation=0, ha="right", va="center")
         axes[-1, 0].set_xlabel("position (Mb)")
-        hf_str = "+".join(str(x) for x in hf) if hf else "-"
+        hf_str = "+".join(hf_ids) if hf_ids else "-"
         fig.suptitle(f"{sample}   hapFIRE: {cat}  (ecotypes {hf_str}; "
                      f"main={r['main']:.2f} sec={r['sec']:.2f})", fontsize=11, y=0.99)
         handles = [plt.Rectangle((0, 0), 1, 1, color=FCOLOR[i]) for i in big] + \
