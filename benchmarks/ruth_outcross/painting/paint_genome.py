@@ -81,16 +81,15 @@ def main():
                 p.set_rasterized(True)
             ax.set_xlim(0, xmax); ax.set_ylim(0, 1); ax.set_yticks([])
             ax.set_ylabel(c, fontsize=8, rotation=0, ha="right", va="center")
+            ax.spines["top"].set_visible(False)
+            ax.spines["right"].set_visible(False)
         axes[-1, 0].set_xlabel("position (Mb)")
-        hf_str = "+".join(hf_ids) if hf_ids else "-"
-        fig.suptitle(f"{sample}   hapFIRE: {cat}  (ecotypes {hf_str}; "
-                     f"main={r['main']:.2f} sec={r['sec']:.2f})", fontsize=11, y=0.99)
+        fig.suptitle(f"{sample}", fontsize=11, y=0.99)
         handles = [plt.Rectangle((0, 0), 1, 1, color=FCOLOR[i]) for i in big] + \
                   [plt.Rectangle((0, 0), 1, 1, color="0.85")]
         labels = [f"{FOUNDERS[i]}{'*' if i in set(hf) else ''}" for i in big] + ["other"]
         fig.legend(handles, labels, loc="upper center", ncol=min(len(big) + 1, 12),
-                   fontsize=7, frameon=False, bbox_to_anchor=(0.5, 0.96),
-                   title="founder (* = hapFIRE-called)")
+                   fontsize=7, frameon=False, bbox_to_anchor=(0.5, 0.96))
         fig.tight_layout(rect=[0, 0, 1, 0.90])
         outp = HERE / f"genome_{cat}_{sample}.png"
         fig.savefig(outp, dpi=150, bbox_inches="tight")
