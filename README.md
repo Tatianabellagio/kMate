@@ -6,11 +6,13 @@
 
 [![license: MIT](https://img.shields.io/github/license/Tatianabellagio/kMate)](LICENSE)
 
-Per-sample, per-record **allele-frequency estimation from pooled sequencing** against a
-multi-founder reference panel. kMate runs a weighted k-mer Poisson EM on the founder
-simplex to estimate founder frequencies (`h`), then projects through a per-record
-presence/absence matrix (`var_pa`, the founder × variant alt-allele matrix $V_\mathrm{pa}$)
-to allele frequencies for **SNPs, indels, and SVs in a single pass**, with no per-variant genotyping.
+kMate estimates **allele frequencies for SNPs, short indels, and large structural variants**
+from pooled sequencing of populations descended from a known set of founders. It follows the
+logic of HARP ([Kessner et al. 2013](https://doi.org/10.1093/molbev/mst016)) but replaces
+HARP's per-base read likelihood with a k-mer–count likelihood, making it **alignment-free and
+pangenome-native**. kMate works in two stages: it first infers the founder mixture `h` from
+observed k-mer counts by Poisson EM, then projects `ĥ` through a precomputed founder × variant
+matrix to obtain an allele frequency for every record **in a single pass**.
 
 ## Overview
 
