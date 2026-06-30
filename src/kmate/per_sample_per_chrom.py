@@ -33,6 +33,56 @@ from .block_em import (define_windows, assign_kmers_to_blocks,
                       assign_records_to_blocks, solve_em_per_block,
                       project_blocks_to_records, BlockSpec)
 from .block_haplotype_em import smooth_h_across_blocks
+from .h_uncertainty import (fisher_information_h, _tangent_pinv_on_support,
+                            af_se_from_cov)
+
+# Calibrated AF identifiability floor c for the total SE  sqrt(SE_Fisher^2 + c^2).
+# The per-record AF error is dominated by a coverage-INDEPENDENT non-identifiability
+# bias (collinear founders) that no variance term sees, so the Fisher delta-method
+# SE alone under-covers (a bare 95% Fisher interval covers truth only ~12-19%); c
+# restores ~95% interval coverage. Panel-specific — recompute with
+# benchmarks/h_uncertainty/af_calibrate_floor.py; override with --af-id-floor.
+# Calibrated on the 231 arch3 panel (closed-loop g0, cov 10/30) to cover ALL
+# defined records at 95% (c=0.0186). Note only ~33% of 231 records are well-called;
+# the well-called subset alone calibrates to a smaller c≈0.0102, but using that would
+# under-cover the 67% partially-called records (cactus-only SVs), so we take the
+# all-defined value (also matches p80's 0.018 — the floor is a stable panel property).
+AF_ID_FLOOR_DEFAULT = 0.0186
+
+
+def _resolvability_from_J(J, support):
+    """eff_rank (exp spectral entropy) + condition number of the support Fisher info
+    — the h-resolvability diagnostic (low eff_rank / high cond ⇒ collinear founders
+    recoverable only in aggregate; report instead of a per-founder h SE)."""
+    s = np.asarray(support, int)
+    if s.size <= 1:
+        return float(s.size), float("inf")
+    ev = np.clip(np.linalg.eigvalsh(J[np.ix_(s, s)]), 0, None)
+    pos = ev[ev > ev.max() * 1e-12] if ev.max() > 0 else ev[:0]
+    if pos.size == 0:
+        return 0.0, float("inf")
+    p = pos / pos.sum()
+    return float(np.exp(-(p * np.log(p)).sum())), float(pos.max() / pos.min())
+
+
+def _af_se_total_chunked(h, Sigma, support, var_pa_chrom, var_called_chrom,
+                         floor, chunk_r=200_000):
+    """Per-record total AF SE = sqrt(Fisher delta-method SE^2 + floor^2), computed in
+    record blocks so the dense F×R_chunk var slices stay bounded in memory."""
+    R = var_pa_chrom.shape[1]
+    se = np.empty(R, dtype=np.float32)
+    for s0 in range(0, R, chunk_r):
+        sl = slice(s0, min(s0 + chunk_r, R))
+        Vc = var_pa_chrom[:, sl]
+        V = Vc.toarray().astype(np.float64) if hasattr(Vc, "toarray") else np.asarray(Vc, np.float64)
+        if var_called_chrom is not None:
+            Uc = var_called_chrom[:, sl]
+            U = Uc.toarray().astype(np.float64) if hasattr(Uc, "toarray") else np.asarray(Uc, np.float64)
+        else:
+            U = np.ones_like(V)
+        _, se_f = af_se_from_cov(h, Sigma, V, U, support=support)
+        se[sl] = np.sqrt(se_f * se_f + floor * floor).astype(np.float32)
+    return se
 
 
 def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads,
@@ -130,20 +180,26 @@ def _project_with_called_mask(var_pa_chrom, h, idx):
 
 def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          em_max_iter=200, kmer_weight="uniform", kmer_db=None,
-                         hash_size="3G", h_only=False, max_kmer_cov_mult=0.0):
+                         hash_size="3G", h_only=False, max_kmer_cov_mult=0.0,
+                         emit_af_se=False, af_id_floor=0.0):
     """Global-mode (single h per chrom) EM + projection.
 
     kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
     de-replication; m_b = #k-mers sharing the k-mer's bubble_id).
     kmer_db: optional prebuilt Jellyfish DB (count-once path; see
     _count_and_load_kmer_pa_dense).
+    emit_af_se: also compute the calibrated per-record AF SE (Fisher delta-method
+    + identifiability floor) and an h-resolvability diagnostic; returned in `extra`.
+
+    Returns (idx, freqs, info, h, elapsed, extra) where extra is None unless
+    emit_af_se, else dict(af_se, eff_rank, cond, support_size).
     """
     t_chrom = time.time()
     kmer_pa_dense, counts, meta, cov, F, K = _count_and_load_kmer_pa_dense(
         chrom, kmer_pa_prefix, reads_input, threads, kmer_db=kmer_db,
         hash_size=hash_size, max_kmer_cov_mult=max_kmer_cov_mult)
     if kmer_pa_dense is None:
-        return None, None, None, None, 0.0
+        return None, None, None, None, 0.0, None
 
     # Filter to nonzero-count k-mers (the EM only needs those)
     nz = counts > 0
@@ -166,6 +222,22 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
                        omega=omega)
     print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
           f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
+
+    # AF-certainty: observed Fisher info at ĥ (while the k-mer matrix is still alive).
+    Sigma = support = af_diag = None
+    if emit_af_se and not h_only:
+        t_se = time.time()
+        chunk = 1_000_000 if F > 120 else None
+        J = fisher_information_h(h, kmer_pa_em, counts_em.astype(np.float64),
+                                 omega=omega, chunk=chunk)
+        support = np.flatnonzero(h > 1e-3)
+        Sigma = _tangent_pinv_on_support(J, support, rcond=1e-2)
+        eff_rank, cond = _resolvability_from_J(J, support)
+        af_diag = dict(eff_rank=eff_rank, cond=cond, support_size=int(support.size))
+        print(f"  [{chrom}] resolvability: eff_rank={eff_rank:.1f} of {support.size} "
+              f"support founders, cond={cond:.0f} [{time.time()-t_se:.0f}s]", flush=True)
+        del J
+
     del kmer_pa_em, counts_em
     gc.collect()
 
@@ -174,16 +246,24 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
         # per-record output) — we only need h.
         print(f"  [{chrom}] {time.time()-t_chrom:.0f}s total — h-only (projection skipped)",
               flush=True)
-        return None, None, None, h, time.time() - t_chrom
+        return None, None, None, h, time.time() - t_chrom, None
 
     rec_chrom = np.asarray(var_meta["chrom"]).astype(str)
     idx = np.where(rec_chrom == str(chrom))[0]
     var_pa_chrom = var_pa[:, idx]
     freqs, info = _project_with_called_mask(var_pa_chrom, h, idx)
     info = info.astype(np.float32)
+
+    extra = None
+    if emit_af_se and Sigma is not None:
+        var_called_chrom = _VAR_CALLED[:, idx] if _VAR_CALLED is not None else None
+        af_se = _af_se_total_chunked(h, Sigma, support, var_pa_chrom,
+                                     var_called_chrom, af_id_floor)
+        extra = dict(af_se=af_se, **af_diag)
+
     elapsed = time.time() - t_chrom
     print(f"  [{chrom}] {elapsed:.0f}s total — {len(idx):,} records projected", flush=True)
-    return idx, freqs, info, h, elapsed
+    return idx, freqs, info, h, elapsed, extra
 
 
 def load_blocks_tsv(path, chrom):
@@ -384,7 +464,21 @@ def main():
                          "panel didn't model (panel-unique ≠ genome-unique). Such k-mers "
                          "are excluded from the EM and cov is re-estimated. 0 = off "
                          "(legacy / byte-identical to pre-guard runs).")
+    ap.add_argument("--emit-af-se", action="store_true",
+                    help="GLOBAL mode only: replace the legacy binomial `se` column with "
+                         "a calibrated AF SE = sqrt(Fisher delta-method SE^2 + c^2), where "
+                         "c (--af-id-floor) is the panel identifiability floor — the per-AF "
+                         "error is bias-dominated, so the Fisher SE alone under-covers. Also "
+                         "stores an h-resolvability diagnostic (eff_rank/cond) in the h npz. "
+                         "Adds an observed-Fisher-info compute per chrom.")
+    ap.add_argument("--af-id-floor", type=float, default=AF_ID_FLOOR_DEFAULT,
+                    help=f"Identifiability floor c for --emit-af-se (default "
+                         f"{AF_ID_FLOOR_DEFAULT}, calibrated on the 231 arch3 panel; "
+                         f"recompute per panel with af_calibrate_floor.py).")
     args = ap.parse_args()
+
+    if args.emit_af_se and args.block_mode != "global":
+        sys.exit("ERROR: --emit-af-se is implemented for --block-mode global only")
 
     if args.local_only:
         if args.block_mode != "window":
@@ -448,6 +542,9 @@ def main():
     if not args.h_only:
         freqs_global = np.full(n_records, np.nan, dtype=np.float32)
         info_global  = np.full(n_records, np.nan, dtype=np.float32)
+        # Calibrated AF SE (Fisher + identifiability floor), filled per chrom when
+        # --emit-af-se; replaces the legacy binomial `se` column at write time.
+        se_af_global = np.full(n_records, np.nan, dtype=np.float32) if args.emit_af_se else None
         # Panel-level per-record called counts (h-independent QC metric). When
         # var_called is unavailable, assume the panel size F (all called).
         F_total = var_pa.shape[0]
@@ -458,14 +555,20 @@ def main():
 
     for chrom in args.chroms:
         if args.block_mode == "global":
-            idx, freqs, info, h, _ = run_one_chrom_global(
+            idx, freqs, info, h, _, extra = run_one_chrom_global(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads, kmer_weight=args.kmer_weight,
                 kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only,
-                max_kmer_cov_mult=args.max_kmer_cov_mult)
+                max_kmer_cov_mult=args.max_kmer_cov_mult,
+                emit_af_se=args.emit_af_se, af_id_floor=args.af_id_floor)
             if h is None:
                 continue
             h_save[chrom] = h
+            if extra is not None:
+                se_af_global[idx] = extra["af_se"]
+                h_save[f"{chrom}_eff_rank"] = np.float32(extra["eff_rank"])
+                h_save[f"{chrom}_cond"] = np.float32(extra["cond"])
+                h_save[f"{chrom}_support_size"] = np.int32(extra["support_size"])
             if args.h_only:
                 gc.collect()
                 continue
@@ -499,14 +602,19 @@ def main():
         gc.collect()
 
     if not args.h_only:
-        # SE per record (Wald, using n_called as effective N). NaN if p is NaN or
-        # n_called == 0. n_called is the integer count of called founders at each
-        # record (h-independent panel QC); info is the h-weighted version.
-        with np.errstate(invalid='ignore', divide='ignore'):
-            p_clip = np.clip(freqs_global, 0.0, 1.0)
-            se_global = np.sqrt(p_clip * (1.0 - p_clip) / np.maximum(n_called_per_rec, 1))
-            se_global = np.where(np.isfinite(freqs_global) & (n_called_per_rec > 0),
-                                 se_global, np.nan).astype(np.float32)
+        if args.emit_af_se:
+            # Calibrated AF SE = sqrt(Fisher delta-method SE^2 + identifiability floor^2),
+            # filled per chrom above. The principled per-record uncertainty.
+            se_global = se_af_global
+        else:
+            # Legacy SE (Wald, using n_called as effective N). NaN if p is NaN or
+            # n_called == 0. n_called is the integer count of called founders at each
+            # record (h-independent panel QC); info is the h-weighted version.
+            with np.errstate(invalid='ignore', divide='ignore'):
+                p_clip = np.clip(freqs_global, 0.0, 1.0)
+                se_global = np.sqrt(p_clip * (1.0 - p_clip) / np.maximum(n_called_per_rec, 1))
+                se_global = np.where(np.isfinite(freqs_global) & (n_called_per_rec > 0),
+                                     se_global, np.nan).astype(np.float32)
 
         chrom_arr = np.asarray(var_meta["chrom"])
         pos_arr = np.asarray(var_meta["pos"])
