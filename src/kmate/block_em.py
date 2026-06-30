@@ -143,7 +143,8 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                        min_kmers_per_block=200, verbose=False,
                        n_workers=4,
                        global_anchor_weight: float = 0.0,
-                       omega=None):
+                       omega=None,
+                       local_only: bool = False):
     """Run EM independently per block.
 
     omega: optional K-vec of per-k-mer weights ω_k (e.g. 1/m_b). Sliced per block
@@ -157,6 +158,14 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
         coverage: scalar coverage estimate
         min_kmers_per_block: blocks with fewer NONZERO-count k-mers fall
             back to a global-h estimate (their h is undefined locally).
+        local_only: if True, the model is GLOBAL-FREE. Low-evidence
+            (status 1) and empty (status 2) blocks are filled with NaN
+            instead of global_h, and the per-block EM is never anchored
+            (caller must pass global_anchor_weight=0). global_h is still
+            computed and returned for diagnostics/storage, but it never
+            enters the per-block h or (via the caller) the AF projection.
+            Records in NaN blocks project to NaN AF. Use for recombinant
+            pools where the chrom-wide mixture is the wrong prior.
         n_workers: thread workers for per-block EM (numpy releases GIL during
             BLAS, so threading shares memory. Default 4. Set to 1 for serial.)
         global_anchor_weight: λ ≥ 0. If > 0, per-block EM is solved with a
@@ -197,6 +206,8 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                               max_iter=em_max_iter, tol=tol,
                               omega=omega)
     global_h = global_h.astype(np.float32)
+    # Global-free mode: low-evidence/empty blocks get NaN, not global_h.
+    fallback_h = np.full(F, np.nan, dtype=np.float32) if local_only else global_h
     if verbose:
         print(f"    global EM: {info['iterations']} iters, {time.time()-t:.0f}s",
               flush=True)
@@ -214,10 +225,10 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
     def _fit_one(b):
         idxs = block_kmer_idx[b]
         if len(idxs) == 0:
-            return b, global_h, 2
+            return b, fallback_h, 2
         idxs_nz = idxs[nz[idxs]]
         if len(idxs_nz) < min_kmers_per_block:
-            return b, global_h, 1
+            return b, fallback_h, 1
         cn_b = np.ascontiguousarray(kmer_pa_dense[:, idxs_nz])
         c_b = counts[idxs_nz]
         omega_b = None if omega is None else omega[idxs_nz]

@@ -36,7 +36,8 @@ from .block_haplotype_em import smooth_h_across_blocks
 
 
 def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads,
-                                  kmer_db=None, hash_size="3G"):
+                                  kmer_db=None, hash_size="3G",
+                                  max_kmer_cov_mult=0.0):
     """Load one chrom's kmer_pa + meta, count k-mers in reads, densify to float32.
 
     Shared between global and window modes. Returns
@@ -49,6 +50,14 @@ def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads,
     that avoids the ~5x redundant read scan across chroms. Counts are identical
     to the per-chrom count path (same canonical hash). When None, falls back to
     counting the reads directly (legacy behavior, unchanged).
+
+    max_kmer_cov_mult: repeat-contamination guard. A panel k-mer is allele-unique
+    and (by index construction) panel-unique, so a single-copy k-mer can be hit at
+    most ~`cov` times (allele frequency <= 1). A k-mer observed > max_kmer_cov_mult
+    × cov is therefore hitting extra genomic copies it doesn't tag (panel-unique
+    != genome-unique) — its count is zeroed so the downstream `counts > 0` filter
+    DROPS it from the EM (the allele is still tagged by its other unique k-mers).
+    cov is re-estimated on the cleaned counts. 0.0 (default) = off / legacy.
     """
     cn_path = kmer_pa_prefix + f"_{chrom}.kmer_pa.npz"
     meta_path = kmer_pa_prefix + f"_{chrom}.meta.npz"
@@ -80,6 +89,15 @@ def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads,
     gc.collect()
     ac = kmer_pa_dense.sum(axis=0)
     cov = counts.sum() * F / max(1, ac.sum())
+    if max_kmer_cov_mult and max_kmer_cov_mult > 0:
+        thr = max_kmer_cov_mult * cov
+        repeat = counts > thr
+        n_rep = int(repeat.sum())
+        if n_rep:
+            counts[repeat] = 0                       # -> dropped by the counts>0 filter
+            cov = counts.sum() * F / max(1, ac.sum())  # re-estimate on cleaned counts
+        print(f"  [{chrom}] repeat-guard: zeroed {n_rep:,} k-mers with count > "
+              f"{max_kmer_cov_mult:g}×cov (={thr:.0f}); cov re-est {cov:.1f}×", flush=True)
     print(f"  [{chrom}] cov estimate: {cov:.1f}×, kmer_pa_dense: {kmer_pa_dense.nbytes/1e9:.1f} GB", flush=True)
     return kmer_pa_dense, counts, meta, cov, F, K
 
@@ -112,7 +130,7 @@ def _project_with_called_mask(var_pa_chrom, h, idx):
 
 def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          em_max_iter=200, kmer_weight="uniform", kmer_db=None,
-                         hash_size="3G", h_only=False):
+                         hash_size="3G", h_only=False, max_kmer_cov_mult=0.0):
     """Global-mode (single h per chrom) EM + projection.
 
     kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
@@ -123,7 +141,7 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     t_chrom = time.time()
     kmer_pa_dense, counts, meta, cov, F, K = _count_and_load_kmer_pa_dense(
         chrom, kmer_pa_prefix, reads_input, threads, kmer_db=kmer_db,
-        hash_size=hash_size)
+        hash_size=hash_size, max_kmer_cov_mult=max_kmer_cov_mult)
     if kmer_pa_dense is None:
         return None, None, None, None, 0.0
 
@@ -185,7 +203,8 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
                          hmm_smooth_alpha=0.5,
                          hmm_smooth_recomb_rate=4e-8,
                          kmer_weight="uniform", kmer_db=None, hash_size="3G",
-                         blocks_tsv=None, min_kmers_per_block=200):
+                         blocks_tsv=None, min_kmers_per_block=200,
+                         local_only=False, max_kmer_cov_mult=0.0):
     """Window-mode per-chrom EM + smooth projection (production "star2" recipe).
 
     Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
@@ -196,7 +215,7 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     t_chrom = time.time()
     kmer_pa_dense, counts, meta, cov, F, K = _count_and_load_kmer_pa_dense(
         chrom, kmer_pa_prefix, reads_input, threads, kmer_db=kmer_db,
-        hash_size=hash_size)
+        hash_size=hash_size, max_kmer_cov_mult=max_kmer_cov_mult)
     if kmer_pa_dense is None:
         return None, None, None, None, 0.0
 
@@ -231,11 +250,12 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
         cov, em_max_iter=em_max_iter, tol=1e-7,
         min_kmers_per_block=min_kmers_per_block, verbose=False,
         global_anchor_weight=global_anchor_weight,
-        omega=omega,
+        omega=omega, local_only=local_only,
     )
+    _low_label = "NaN'd (local-only)" if local_only else "fallbacks"
     print(f"  [{chrom}] block-EM {time.time()-t:.0f}s "
           f"({(status==0).sum()}/{n_blocks} local fits, "
-          f"{(status==1).sum()} fallbacks)", flush=True)
+          f"{(status>=1).sum()} {_low_label})", flush=True)
     del kmer_pa_dense
     gc.collect()
 
@@ -270,8 +290,12 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     # HMM-smoothed across windows above). The projection returns the AF and the
     # per-record info (h-weighted called mass) in one pass.
     rec_block = assign_records_to_blocks(rec_chrom[idx], rec_pos[idx], blocks)
+    # Global-free: records with no window (rec_block == -1) must NOT borrow
+    # global_h. Feed a NaN vector as the projection fallback so they → NaN AF.
+    # NaN h_blocks (low/empty windows) already propagate to NaN through h@var_pa.
+    proj_fallback_h = np.full_like(global_h, np.nan) if local_only else global_h
     freqs, info = project_blocks_to_records(
-        h_blocks, global_h, var_pa_chrom, rec_block,
+        h_blocks, proj_fallback_h, var_pa_chrom, rec_block,
         var_called=var_called_chrom,
     )
     info = info.astype(np.float32)
@@ -336,6 +360,13 @@ def main():
     ap.add_argument("--global-anchor-weight", type=float, default=0.3,
                     help="λ for per-window EM Dirichlet anchor toward chrom-wide "
                          "h_global. 0 = pure per-window MLE; production: 0.3.")
+    ap.add_argument("--local-only", action="store_true",
+                    help="GLOBAL-FREE window mode (recombinant pools): no global "
+                         "anchor and no global fallback. Forces "
+                         "--global-anchor-weight 0; windows below --min-kmers-per-block "
+                         "(and empty windows / unassigned records) get NaN AF instead "
+                         "of the chrom-wide h. HMM smoothing across local fits still "
+                         "applies. global_h is still stored for diagnostics only.")
     ap.add_argument("--hmm-smooth-passes", type=int, default=5,
                     help="Post-EM Li-Stephens-style smoothing passes on h_blocks. "
                          "0 = off; production: 5.")
@@ -345,7 +376,23 @@ def main():
     ap.add_argument("--hmm-smooth-recomb-rate", type=float, default=4e-8,
                     help="Recomb rate per bp for distance-weighted neighbor averaging "
                          "(default 4e-8 = 4 cM/Mb, A. thaliana).")
+    ap.add_argument("--max-kmer-cov-mult", type=float, default=5.0,
+                    help="Repeat-contamination guard (ON by default). Drop any k-mer "
+                         "observed > this multiple of the sample's estimated coverage: a "
+                         "single-copy, allele-unique k-mer caps at ~cov (allele freq ≤1), "
+                         "so a far-higher count means it recurs in a genomic repeat the "
+                         "panel didn't model (panel-unique ≠ genome-unique). Such k-mers "
+                         "are excluded from the EM and cov is re-estimated. 0 = off "
+                         "(legacy / byte-identical to pre-guard runs).")
     args = ap.parse_args()
+
+    if args.local_only:
+        if args.block_mode != "window":
+            sys.exit("ERROR: --local-only requires --block-mode window")
+        if args.global_anchor_weight != 0:
+            print(f"  [local-only] forcing --global-anchor-weight "
+                  f"{args.global_anchor_weight} → 0 (global-free mode)", flush=True)
+            args.global_anchor_weight = 0.0
 
     print(f"=== {args.sample} (per-chrom {args.block_mode} mode"
           f"{', h-only' if args.h_only else ''}) ===", flush=True)
@@ -414,7 +461,8 @@ def main():
             idx, freqs, info, h, _ = run_one_chrom_global(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads, kmer_weight=args.kmer_weight,
-                kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only)
+                kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only,
+                max_kmer_cov_mult=args.max_kmer_cov_mult)
             if h is None:
                 continue
             h_save[chrom] = h
@@ -434,6 +482,8 @@ def main():
                 kmer_db=kmer_db, hash_size=args.hash_size,
                 blocks_tsv=args.blocks_tsv,
                 min_kmers_per_block=args.min_kmers_per_block,
+                local_only=args.local_only,
+                max_kmer_cov_mult=args.max_kmer_cov_mult,
             )
             if idx is None:
                 continue
