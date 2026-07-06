@@ -1,8 +1,20 @@
-# Handoff — SNP vs non-SNP variance partition of ecotype selection
+# SNP vs non-SNP variance partition of ecotype selection — result + handoff
 
 Session date: 2026-07-03. Branch `add-kmate`. Env: `kmate`
 (`source ~/miniforge3/etc/profile.d/conda.sh && conda activate kmate`). Always `hostname`
 first — compute only on `n*.savio*`, never `ln00X` (hook-enforced).
+
+> **Consolidated 2026-07-06:** the same-day session log `SESSION_2026-07-03_CLASS_SPLIT_GWAS.md`
+> (class-split GWAS peaks, overlap tables, Manhattan PNGs, non-SNP-only candidate genes) is
+> merged into this file — see "Downstream" section below. Original preserved in git (commit
+> `5cefcfa`).
+
+**Bottom line (both threads agree):** at every resolution — genome-wide kinship, SNP-untagged
+kinship, per-marker GWAS peaks, per-site and multi-site scans, all bioclim axes — SNPs and
+non-SNP markers (indels+SVs) tell essentially the same story. **The non-SNP layer adds almost
+nothing to the polygenic selection signal**; what little it flags uniquely is scattered,
+marginal, and mostly sub-Bonferroni. (Distinct from the per-variant *temporal* SV insertion
+signal in `SV_TEMPORAL_PURGING_SUMMARY.md` — different question and unit.)
 
 ## The question (reframed this session)
 
@@ -169,7 +181,44 @@ the same *total* variance, an actual per-marker scan on each panel independently
 the same top locus and same broad regions (with real but imperfect concordance further down the
 hit list). Running this GWAS with SNPs alone tells essentially the same story as SVs/indels alone.
 
+## Downstream — overlap tables, Manhattans, candidate genes (merged from 2026-07-03 session log)
+
+**Overlap tables** (`notebooks/class_gwas_multitrait.ipynb`, `class_gwas_persite.ipynb`) mirror the
+phase-1 kendall/lfmm/binomial `overlap_df` at the **clq0.9 block level**, with both Bonferroni and
+FDR counts. JOINT: 21 Bonf / 1364 FDR (snp) vs 9 / 104 (nonsnp), 82 shared, 79% of non-SNP hits are
+also SNP hits. GLOBAL + CLIMATE_bio1: 0/0. Several temperature bioclim vars show FDR-only SNP hits
+(bio10=140, bio11=97, bio13=72, bio16=64) but they mostly vanish under Bonferroni, don't replicate
+in non-SNP, and are not corrected across the 20 collinear climate axes → **FDR-tail noise, not real
+climate adaptation.** Bug fixed en route: `lib.collapse_to_blocks` picks the block lead by MAX |stat|;
+passing `-p` made `abs(-p)` pick the *least* significant marker — switched to `-log10(p)`.
+
+**Plots:** `plot_class_gwas_pngs.py` → **318 PNGs** in `results/grenenet_gea/varexp/gwas_plots/`
+(132 multitrait = 22 contrasts × 3 classes × {manhattan,qq}; 186 per-site = 31 gardens × 3 classes ×
+{manhattan,qq}). Threshold lines drawn at the **block level** (fix: originally marker-level, so the
+FDR line silently vanished when marker-level FDR was empty); legend shows significant-block count.
+
+**Non-SNP-only candidate genes** (`nonsnp_only_genes.py` → `nonsnp_only_{blocks,genes}.csv`;
+`nonsnp_only_genes_describe.py` → `..._described.csv` via Ensembl Plants + UniProt REST): for each of
+53 contrasts, clq0.9 blocks non-SNP-FDR-significant but NOT SNP-FDR-significant → **53 blocks (8 at
+Bonferroni) → 126 genes** (71 in-block + 55 flank-only, ±2 kb promoter). Themed hits (all
+hypothesis-level):
+- **ADS2 (AT2G31360)** — Δ9 fatty-acid desaturase (membrane cold-acclimation). **Sturdiest: in-block,
+  multitrait JOINT** (the one well-calibrated contrast).
+- **GIGANTEA (GI, AT1G22770)** — clock/photoperiod/freezing regulator. Eye-catching but statistically
+  weak: garden-4 only, ±2 kb *flank* of block Chr1_4247, one marker just over FDR, well under Bonferroni.
+- Cold: SEX1/GWD, PI-4KBETA2. Heat: HSP70 (AT4G16660), HIP1, a Clp-N chaperone.
+- ABA/drought: **ERA1 (AT5G40280)** farnesyltransferase β (only Bonferroni-level themed hit), XERICO, NAC032.
+
+**Caveat carried throughout:** this is the *fragile tail* by construction (blocks one class calls and
+the other doesn't) — mostly FDR-only, per-site, and/or flank hits, inheriting the bioclim-null caveat.
+A hypothesis-generating list, not confirmed loci.
+
 ## Deliverables still TODO
+- Cross-axis multiple-testing correction on the bioclim CLIMATE hits (20 independent BH runs on
+  collinear temperature vars) to confirm they are noise.
+- Pull the actual indel/SV variants inside the ADS2 and GI blocks (size, freq, position vs gene);
+  annotated locus plot for ADS2 (as done for GI in `gwas_plots/GI_locus_site4_nonsnp.png`).
+- Annotate/inspect the shared chr2~2.34Mb top locus (what gene/region, near a known candidate?).
 - Figure notebook (`plotting` env — matplotlib HANGS in `plotting`; compute→npz, render elsewhere,
   or use `basic`): per-class VE across 31 sites + SNP→SNP+nonSNP gain panel, plus the new
   untagged-GRM gain panel, plus a SNP-vs-nonSNP Manhattan overlay.

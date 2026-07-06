@@ -1,8 +1,38 @@
-# Window-mode block unit — production run, validation, and panel cleanup (2026-06-20)
+# Block/window units — definitions, production run, validation (2026-06-19/20)
 
-The selection-test unit is now the **LD-defined block** (dynld K500 unit), and the cohort
-has been re-run in **window mode** so every sample carries a per-unit haplotype-frequency
-vector `h` (the natural selection-unit state) alongside the projected per-variant AF.
+> **Status note (added 2026-07-06).** Window-mode kMate as an **AF estimator** is **superseded** by
+> `GLOBAL_MODE_DECISION.md` (2026-07-01): evolved allele frequencies are estimated in GLOBAL mode.
+> The **LD-defined blocks / dynld units below are retained** — not for AF estimation, but as the
+> **GEA test units** (the unit selection acts on; median n_eff ≈ 2.46 haplotypes/block). The
+> window-mode cohort run and its window-vs-global AF comparison (§2–§4) stand as the validation that
+> window-local `h` does not materially change AF (median r 0.995) — i.e. GLOBAL loses little.
+> This file merges `BLOCKS_HANDOFF.md` (block definitions + benchmark handoff); original in git `5cefcfa`.
+
+The selection-test unit is the **LD-defined block** (dynld K500 unit); the cohort was also
+re-run in **window mode** so every sample carries a per-unit haplotype-frequency vector `h`
+alongside the projected per-variant AF.
+
+## 0. Block / unit definitions (the unit map)
+
+**The units** (k-mer-covered, LD-grown; = kMate h-window candidate AND selection unit):
+- genome-wide: `results/grenenet_gea/blocks_mcf90/final_units_dynld_K500.tsv`; per-chrom
+  `chr{N}_units_dynld_K500.tsv`. Cols: `chrom start_pos end_pos n_variants panel_kmers covered`.
+  **22,939 units; 72% COVERED** (panel_kmers≥500 → local-fit; 16,403 units), 28% desert (global
+  fallback). Median 32 var / 2.1 kb / 926 panel k-mers. Built by `dynamic_ld_blocks.py` (grow CLQ0.9
+  blocks along the LD gradient until ≥500 panel k-mers). Code-audited + validated (2026-06-19,
+  3-agent adversarial review; k-mer tagging byte-identical to `block_em.assign_kmers_to_blocks`).
+- Base CLQ0.9 blocks (before dynld growth): `chr{N}_clq0.9_blocks_clq0.9.tsv`, **58,376 blocks**
+  genome-wide, median 223 bp / 7 variants (many too thin for h-estimation → hence the dynld K500 grow).
+  Built by `recompute_blocks.py` (HapFM `CompleteLDPartition` corr=0.2 + `BigLD` gpart) via
+  `blocks_recompute_mcf90.sbatch` (`--corr 0.2 --clqcut 0.9 --min-called-frac 0.9`), on the all-class
+  panel `panel/arch3/chr{N}/var_pa_231_arch3_chr{N}.*`.
+- Haplotype units within blocks: each n_eff≤2 block = 1 unit (block AF); each n_eff>2 block split
+  into HapFM-xmeans clusters keeping PC1-VE≥0.7 (`block_cluster_pc1ve.py`, needs the `np.warnings`
+  shim; `block_unit_frontier.py`). Registry `final_units_ve07.csv` (66,032 units).
+- Coarsened floor maps (greedy-merge to a min-variant floor; `make_coarse_blocks.py`):
+  `blocks_mcf90/coarse/floor{8,15,25,40}.tsv`. Env gotchas: BigLD R needs
+  `export LD_LIBRARY_PATH=/usr/lib64`; xmeans needs the numpy-warnings shim; run heavy jobs via sbatch.
+  Characterization: `notebooks/blocks_units_decision.ipynb`.
 
 ## 1. Production window-mode run
 - Runner: `grenenet/run_site_array_perchrom.sh` with `BLOCK_MODE=window`,
