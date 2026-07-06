@@ -17,6 +17,10 @@ Self-contained subtree: **all code in this folder** (`run_binomial.py` +
 `reblock.py` + `compare_clq90.py` + `plot_clq90_manhattan.py` + the two sbatch
 drivers), **all outputs under `results/grenenet_gea/phase1_replication/clq90/`**.
 
+> **Consolidated 2026-07-06:** the session log `SESSION_20260703.md` is merged into this file —
+> its Kendall-inflation decision, the 20-axis extension, and the nonSNP-specific candidate-gene
+> deliverable are appended below (§3–§5). Original in git (`5cefcfa`).
+
 ---
 
 ## What changed vs the phase-1-block run (3 asks)
@@ -236,4 +240,57 @@ over-fit in `../wza_investigation/`, honest poly-free p≈1.6e-4, matching here)
   unaffected here only because it already capped at 2000 — any other caller of
   `wza_script.py`'s deg-2 path without a cap should be audited).
 - Optional: other r² thresholds (clq0.5/0.7 tsvs exist in `blocks_mcf90/`).
-- Optional: bio2–19 (only bio1 here, as in the phase-1-block run).
+- Optional: bio2–19 (only bio1 here, as in the phase-1-block run). **DONE — see §4 below (20 axes).**
+
+---
+
+# §3–§5 (merged from SESSION_20260703.md) — Kendall decision, multi-axis, candidate genes
+
+## §3. Kendall-τ inflation → left AS-IS (no honest correction preserves signal)
+Pool-level Kendall is the worst-inflated model: GIF ~9.2, **52% of the genome at p<0.05** (1e-16
+floor). Corrections tested (`clq90/kendall_fix_test/`, `notebooks/kendall_fix_compare.ipynb`):
+
+| method | GIF | max −log10p | verdict |
+|---|---|---|---|
+| pool-level (current) | 9.2 | 16 (floor) | inflated |
+| site-collapse (31 sites) parametric | 2.26 | 2.9 | residual structure, coarse |
+| MSR structure-preserving null | 1.3 | 4.0 (perm floor) | flat-ceiling |
+| pool + genomic control | 1.0 | 2.4 | flattens |
+| site + genomic control | 1.0 | 2.9 | flattens |
+
+**Every honest correction flattens Kendall** — the tall peaks *were* the pseudoreplication (355
+fake-independent pools; only ~31 independent climate sites). Decision: keep Kendall as the
+raw/structure-uncorrected phase-1 reference; **LFMM is the model to trust for calibrated climate
+signal** (structure-corrected via latent factors, keeps resolution). No production change to Kendall.
+
+## §4. Multi-axis extension — all 20 axes (bio1–19 + PC1)
+Ran the full clq0.9 pipeline (kendall + lfmm + quasi-binomial → reblock → WZA deg-2, caps 1000/350)
+for **20 climate axes × 3 models × 2 classes = 120 WZA outputs**.
+- PC1 = PC1 of 19 standardized bioclim (47% var; r=+0.83 temp, −0.81 precip; warm-dry↔cool-wet),
+  added as `pc1` col to `class_matrices/gen9.pools.csv`.
+- Code `multiaxis/` (axes.sh, ma_{kendall,lfmm,quasibinom,wza}.sbatch, reblock_multiaxis.py,
+  run_lfmm_nogif.R); outputs `clq90/multiaxis/`. Jobs COMPLETED (40/40 each): kendall 35517083,
+  quasibinom 35517085, lfmm-no-gif 35517329, wza 35517330. Summary `multiaxis/multiaxis_summary.csv`.
+- **LFMM `calibrate="gif"` DROPPED (per user):** gif divides by λ=median(z²)/0.456, only valid when
+  λ>1; where K=16 over-corrects (λ<1, e.g. bio19 λ=0.931 snp) it would *inflate*. `run_lfmm_nogif.R`
+  writes RAW p + logs λ per axis (range 0.931–2.536) → raw LFMM p is inflated on high-λ axes; λ
+  recorded if a guarded recalibration is wanted later.
+
+## §5. Deliverables — cross-axis overlap + nonSNP-specific candidate genes
+**(a) Cross-axis SNP↔nonSNP hit-block overlap** (`multiaxis/overlap_table.py` →
+`overlap_snp_nonsnp_by_axis.csv`): consistent across axes — **SNP hits ≈ 2× nonSNP, Jaccard
+~0.22–0.32, 23–59 nonSNP-only blocks/axis** (most nonSNP signal not shared with SNP).
+
+**(b) nonSNP-specific hit blocks → genes** (`multiaxis/nonsnp_specific_genes.py`, Ensembl Plants
+REST → `nonsnp_specific_genes{,_table}.csv`, notebook `notebooks/nonsnp_specific_genes.ipynb`):
+**437 blocks** BH-sig in nonSNP not SNP (305 never a SNP hit anywhere), **548 genes**.
+- **Functional read — HEAT-STRESS dominates; flowering/circadian essentially ABSENT.**
+  Heat (11 genes, in CALIBRATED models not just Kendall): **HSBP** (10 axes, all 3 models),
+  **HSFA2** (master thermotolerance TF), **HSP20-like small-HSP cluster** Chr1_9404 (5 axes, all 3),
+  HEAT-repeat Chr5_2542, HSP17.4, DNAJ. Drought/ABA (5): **RAS1** (5 axes), ERD, senescence.
+  Cold (1): COR15A. Flowering/circadian: only VRN2 (1 axis) — no FT/FLC/CO/GI/CCA1/TOC1/PRR/ELF/PIF4/PHYB.
+- Takeaway: the SV/indel-borne climate signal points at heat-shock/stress-tolerance machinery, NOT
+  the flowering-time pathway that dominates classic Arabidopsis climate GWAS, across temp + precip axes.
+
+Open (from the session log): nothing git-committed at the time (now snapshotted); LFMM raw p inflated
+on high-λ axes (λ logged); optional cross-axis overlap heatmap + calibrated-only nonSNP gene table.
