@@ -12,9 +12,10 @@ Data:
   - sample metadata (site/plot/generation/coverage): Table_S5.
 """
 from __future__ import annotations
-import os, glob
+import os, glob, json
 import numpy as np
 import pandas as pd
+from scipy import stats
 
 PROJ = "/global/scratch/users/tbellg/kmate"
 OUT = f"{PROJ}/results/grenenet_kmate_arch3"
@@ -42,6 +43,12 @@ TAIR10_GENES_TE = f"{ARA_KEYS}/TAIR10_GFF3_genes_transposons.gff"
 # e.g. '1_0'), TAIR10 Chr coords. The 12 kendall_* files share one SNP->block map.
 LD_BLOCKS = ("/global/scratch/users/tbellg/gea_grene-net/ARCHIVE/"
              "linages_wza_picmin/kendall_0_w_id_n_blocks.csv")
+# Finer LD blocks from BigLD on the 231-founder panel (kMate mcf90 recompute):
+# per-chrom TSVs (chrom, start_pos, end_pos, n_variants), one r2 threshold each.
+# clq0.9 = 58,376 blocks (vs 16,674 hapFIRE) -> the finer window definition for the
+# phase-1 GEA re-run. Interval-based (unlike hapFIRE's nearest-SNP map), so they do
+# NOT tile the genome: variants in inter-block gaps are unassigned (return '').
+CLQ_BLOCKS_DIR = f"{GEA}/blocks_mcf90"
 
 # Pilot sites (extend as the cohort grows). site -> (label, role)
 SITE_CLIMATE = {4: "hot", 54: "cold"}   # 4=Cadiz/Madrid region Spain, 54=Cologne DE
@@ -252,6 +259,16 @@ def build_group_means(samples: list[str] | None = None, base: str = OUT,
     if samples is None:
         samples = list_samples(base)
     m = sample_map(samples)
+    # group_means is the hot/cold 2-site pilot aggregation (the Δp foundation): only
+    # climate-classified samples (SITE_CLIMATE: hot/cold sites) contribute. Every other
+    # site has climate=NaN and would KeyError the (climate,gen) accumulator below — and
+    # groupby() silently drops NaN groups, so they were never meant to be aggregated.
+    # (Old cache built clean only because list_samples then returned the pilot alone;
+    # it now returns all 2168.) Drop NaN-climate samples up front.
+    samples = [s for s in samples if s in m.index and pd.notna(m.loc[s, "climate"])]
+    if not samples:
+        raise ValueError("group_means: no climate-classified (hot/cold) samples found")
+    m = m.loc[samples]
     meta = pd.read_csv(f"{base}/{samples[0]}.tsv", sep="\t",
                        usecols=["chrom", "pos", "ref_len", "alt_len"])
     N = len(meta)
@@ -261,7 +278,16 @@ def build_group_means(samples: list[str] | None = None, base: str = OUT,
           if "_Chr" not in os.path.basename(f)]
     s_sum = np.zeros(N); s_cnt = np.zeros(N)
     for f in sm:
-        a = _af_array(f); ok = np.isfinite(a)
+        a = _af_array(f)
+        # GUARD: by-position aggregation REQUIRES every TSV on the SAME segregating
+        # panel. The stale 06-02 cache was built on the old 10.33M panel (a superset
+        # carrying AC=0 monomorphic records) — a record-count mismatch here means an
+        # old-panel TSV slipped in and would silently misalign the sum. Fail loudly.
+        if len(a) != N:
+            raise ValueError(
+                f"panel mismatch: {f} has {len(a):,} records, expected {N:,} "
+                f"(all TSVs must share the segregating panel order)")
+        ok = np.isfinite(a)
         s_sum[ok] += a[ok]; s_cnt += ok
     out = meta.copy()
     out["p0"] = s_sum / np.where(s_cnt > 0, s_cnt, np.nan)
@@ -271,11 +297,25 @@ def build_group_means(samples: list[str] | None = None, base: str = OUT,
     acc = {k: [np.zeros(N), np.zeros(N), 0] for k in keys}
     for s in samples:
         k = (m.loc[s, "climate"], m.loc[s, "generation"])
-        a = _af_array(f"{base}/{s}.tsv"); ok = np.isfinite(a)
+        a = _af_array(f"{base}/{s}.tsv")
+        if len(a) != N:                                    # same panel-alignment guard
+            raise ValueError(
+                f"panel mismatch: {s} has {len(a):,} records, expected {N:,} "
+                f"(segregating panel); refusing to misalign by-position aggregation")
+        ok = np.isfinite(a)
         acc[k][0][ok] += a[ok]; acc[k][1] += ok; acc[k][2] += 1
     for (clim, gen), (gsum, gcnt, n) in acc.items():
         out[f"{clim}_g{gen}"] = gsum / np.where(gcnt > 0, gcnt, np.nan)
         out[f"{clim}_g{gen}_n"] = n
+
+    # NOTE on monomorphic sites: the AC=0 panel scaffolding that contaminated the old
+    # cache came from the PRE-segregating 10.33M panel. It is excluded simply by reading
+    # the segregating-panel TSVs (the input record set has no AC=0 records) — guaranteed
+    # upstream, not here. We deliberately do NOT drop "all-absent" rows: on the segregating
+    # panel those are founder-segregating variants merely unobserved in the 175-sample
+    # hot/cold pilot (p0=0, dp=0) — legitimate panel records, kept so group_means stays
+    # one-row-per-segregating-record and any key-join resolves. The alignment assertions
+    # above are the real guard against a stale/mixed-panel input.
 
     if cache:
         os.makedirs(GEA, exist_ok=True)
@@ -362,6 +402,38 @@ def assign_ld_blocks(chrom: np.ndarray, pos: np.ndarray) -> np.ndarray:
     return out
 
 
+def assign_clq_blocks(chrom: np.ndarray, pos: np.ndarray, r2: float = 0.9) -> np.ndarray:
+    """Assign each record (chrom='Chr1'..'Chr5', pos) to its BigLD clq{r2} block.
+
+    Reads the per-chrom interval TSVs in CLQ_BLOCKS_DIR (chrom, start_pos,
+    end_pos, n_variants). Unlike the hapFIRE nearest-SNP map, these are LD islands
+    that do NOT tile the genome, so a variant landing in an inter-block gap gets ''
+    (drop it upstream of WZA). Block ids are 'Chr{n}_{idx}', idx = the block's rank
+    by start_pos within its chrom (stable, unique). Returns a string object array.
+    """
+    out = np.full(len(pos), "", dtype=object)
+    pos = np.asarray(pos, dtype=np.int64)
+    chrom = np.asarray(chrom, dtype=str)
+    tag = f"clq{r2}"
+    for ci in range(1, 6):
+        c = f"Chr{ci}"
+        f = f"{CLQ_BLOCKS_DIR}/chr{ci}_{tag}_blocks_{tag}.tsv"
+        if not os.path.exists(f):
+            continue
+        g = pd.read_csv(f, sep="\t").sort_values("start_pos").reset_index(drop=True)
+        st = g["start_pos"].to_numpy(np.int64)
+        en = g["end_pos"].to_numpy(np.int64)
+        m = np.where(chrom == c)[0]
+        if len(m) == 0:
+            continue
+        p = pos[m]
+        j = np.searchsorted(st, p, "right") - 1          # candidate block (last start <= p)
+        inb = (j >= 0) & (p <= en[np.clip(j, 0, len(en) - 1)])
+        idx = np.where(inb)[0]
+        out[m[idx]] = [f"{c}_{int(j[k])}" for k in idx]
+    return out
+
+
 def collapse_to_blocks(df: pd.DataFrame, stat: str = "z_emp",
                        block_col: str = "block") -> pd.DataFrame:
     """Collapse a per-SV GEA frame to one LEAD SV per LD block (max |stat|).
@@ -376,6 +448,143 @@ def collapse_to_blocks(df: pd.DataFrame, stat: str = "z_emp",
     d["n_sv_block"] = d.groupby(block_col)[stat].transform("size")
     lead = d.sort_values("_abs", ascending=False).groupby(block_col, as_index=False).first()
     return lead.drop(columns="_abs")
+
+
+def bh(pv: np.ndarray) -> np.ndarray:
+    """Benjamini-Hochberg q-values."""
+    m = len(pv); o = pv.argsort(); q = np.empty(m)
+    q[o] = np.minimum.accumulate((pv[o] * m / (np.arange(m) + 1))[::-1])[::-1]
+    return np.clip(q, 0, 1)
+
+
+def lamgc(pv: np.ndarray) -> float:
+    """Genomic-control lambda from a p-value vector (median chi2_1 / expected median)."""
+    return float(np.median(stats.chi2.isf(np.clip(pv, 1e-300, 1), 1)) / stats.chi2.ppf(0.5, 1))
+
+
+def multisite_gwas_raw(tag: str = "clq90_pc1") -> dict:
+    """Load the multisite founder-GWAS Z/C (+recomputed JOINT/GLOBAL/CLIMATE) for further
+    C-whitened contrasts (e.g. climate-cluster, locality-index) without a new GWAS run.
+
+    Recomputes chi2_joint/p_joint/z_global/z_clim from the raw Z (M markers x S sites,
+    genomic-controlled) and cross-site null covariance C in
+    results/grenenet_gea/hapfreq/multisite_founder_gwas_{tag}.npz, using the identical
+    formulas as founder_gwas_multisite.py. Self-checks the recomputed JOINT lambda_GC
+    against the saved _meta.json so a silent Z/C misread can't drift unnoticed (the npz
+    doesn't store the derived per-marker stats, and the sibling .csv is p_joint-sorted so
+    it can't be joined back to Z positionally).
+    """
+    h = f"{GEA}/hapfreq"
+    z = np.load(f"{h}/multisite_founder_gwas_{tag}.npz", allow_pickle=True)
+    meta = json.load(open(f"{h}/multisite_founder_gwas_{tag}_meta.json"))
+    Z, C, sites, bio1 = z["Z"], z["C"], z["sites"], z["bio1"]
+    chrom, start, end, mac = z["chrom"], z["start"], z["end"], z["mac"]
+    M, S = Z.shape
+    Cinv = np.linalg.pinv(C)
+    one = np.ones(S)
+    dg = float(one @ Cinv @ one)
+    z_global = (Z @ Cinv @ one) / np.sqrt(dg)
+    c0 = (bio1 - bio1.mean()) / bio1.std()
+    c = c0 - (float(one @ Cinv @ c0) / dg) * one
+    z_clim = (Z @ Cinv @ c) / np.sqrt(float(c @ Cinv @ c))
+    chi2_joint = np.einsum("mi,ij,mj->m", Z, Cinv, Z)
+    p_joint = stats.chi2.sf(chi2_joint, S)
+    lam = lamgc(p_joint)
+    assert abs(lam - meta["tests"]["JOINT"]["lam"]) < 1e-3, (
+        f"recomputed JOINT lambda {lam:.4f} != saved meta {meta['tests']['JOINT']['lam']:.4f} "
+        "-- Z/C recompute drifted from the original GWAS run")
+    return dict(Z=Z, C=C, Cinv=Cinv, sites=sites, bio1=bio1, one=one, dg=dg,
+                unit=np.array([f"{c_}:{s}-{e}" for c_, s, e in zip(chrom, start, end)]),
+                chrom=chrom, mac=mac, chi2_joint=chi2_joint, p_joint=p_joint, q_joint=bh(p_joint),
+                z_global=z_global, z_clim=z_clim, M=M, S=S, meta=meta)
+
+
+# founder MAC count matching build_sv_landscape.py's MAF>=0.05 floor (~5.2% of 231
+# founders) -- the bar that already defines the LD blocks and the SV landscape. Default for
+# founder_panel_keep below; independent of maf_filter's own min_maf (used by the
+# climate-cluster / locality-index marker ranking, currently 1% per project decision).
+COMMON_MAC = 12
+
+
+def maf_filter(raw: dict, min_maf: float = 0.01) -> dict:
+    """Restrict a lib.multisite_gwas_raw() dict to markers with founder MAF >= min_maf.
+
+    Rare-founder-allele markers have noisier kinship-corrected z-scores, so any NEW
+    per-marker contrast (not already lambda-validated the way JOINT/GLOBAL/CLIMATE were)
+    should be ranked only among markers clearing a standard MAF floor (default 1%, the
+    common GWAS QC convention). min_maf is converted to a founder MAC via the cohort's
+    n_founders (in raw["meta"]) so it's independent of the founder count. Per-site fields
+    (S-length: sites/bio1/one/C/Cinv) are untouched; per-marker fields (M-length) are
+    masked and M is updated.
+    """
+    min_mac = int(np.ceil(min_maf * raw["meta"]["n_founders"]))
+    keep = raw["mac"] >= min_mac
+    out = dict(raw)
+    for k in ("Z", "unit", "chrom", "mac", "chi2_joint", "p_joint", "q_joint", "z_global", "z_clim"):
+        out[k] = raw[k][keep]
+    out["M"] = int(keep.sum())
+    return out
+
+
+def founder_panel_keep(chrom: np.ndarray, pos: np.ndarray, min_mac: int = COMMON_MAC,
+                       called_min: float = 0.9) -> np.ndarray:
+    """Founder-panel MAC/call-rate mask for arbitrary (chrom,pos) records.
+
+    Same floor as COMMON_MAC / build_sv_landscape.py (MAF>=0.05, called-frac>=0.9 among
+    the 231 founders) -- the bar that already defines the LD blocks and the SV landscape.
+    Use to floor any OTHER per-variant catalog (e.g. the raw per-sample/pool kMate variant
+    calls behind site_variant_temporal_scoef.py) before counting SV/indel/SNP composition
+    or scoring selection on it: unlike the founder panel, that catalog carries no MAF floor
+    of its own (only a noisy pool-level p0 reachability check), so >50% of its SV-class
+    calls are literal founder singletons -- see KINSHIP_TEMPORAL_METHODS_RESEARCH context.
+    Positions absent from the founder panel entirely do not pass (conservative: no MAC to
+    vouch for them). Returns a bool array aligned to (chrom,pos), True where at least one
+    panel record at that exact position passes.
+    """
+    import scipy.sparse as sp
+    out = np.zeros(len(pos), bool)
+    chrom = np.asarray(chrom); pos = np.asarray(pos, dtype=np.int64)
+    for ch in ("Chr1", "Chr2", "Chr3", "Chr4", "Chr5"):
+        m = chrom == ch
+        if not m.any():
+            continue
+        cl = ch.lower()
+        base = f"{PROJ}/panel/arch3/{cl}/var_pa_231_arch3_{cl}"
+        meta = np.load(f"{base}.meta.npz", allow_pickle=True)
+        lpos = meta["pos"].astype(np.int64)
+        vp = sp.load_npz(f"{base}.var_pa.npz"); vc = sp.load_npz(f"{base}.var_called.npz")
+        n_alt = np.asarray(vp.sum(0)).ravel(); n_cal = np.asarray(vc.sum(0)).ravel()
+        passmaf = (n_alt >= min_mac) & (n_alt <= vp.shape[0] - min_mac) & (n_cal >= called_min * vp.shape[0])
+        order = np.argsort(lpos); lpos_s = lpos[order]; pass_s = passmaf[order]
+        p = pos[m]
+        j = np.searchsorted(lpos_s, p)
+        found = (j < len(lpos_s)) & (lpos_s[np.clip(j, 0, len(lpos_s) - 1)] == p)
+        res = np.zeros(len(p), bool)
+        res[found] = pass_s[np.clip(j[found], 0, len(lpos_s) - 1)]
+        out[m] = res
+    return out
+
+
+def matched_perm_test(values: np.ndarray, bins: np.ndarray, idx: np.ndarray,
+                      nperm: int = 10000, seed: int = 0) -> tuple[float, float, float, float]:
+    """Size-matched permutation test (the design used throughout sv_adaptive/): is
+    mean(values[idx]) higher than expected from len(idx) draws matched on `bins` (e.g.
+    block-size bin)?
+
+    Each idx item's null draws come from its OWN bin, `nperm` times, so bigger/smaller
+    items are compared to same-size controls. Returns (observed, null_mean, obs/null,
+    one-sided p = P(null_mean_over_draws >= observed)).
+    """
+    rng = np.random.default_rng(seed)
+    bin_members = {b: np.where(bins == b)[0] for b in np.unique(bins)}
+    obs = values[idx].mean()
+    null = np.empty((len(idx), nperm))
+    for k, i in enumerate(idx):
+        null[k] = rng.choice(values[bin_members[bins[i]]], nperm)
+    nm = null.mean(0)
+    p = (1 + (nm >= obs).sum()) / (nperm + 1)
+    ratio = obs / nm.mean() if nm.mean() != 0 else np.nan
+    return float(obs), float(nm.mean()), float(ratio), float(p)
 
 
 def eff_n_founders(sample: str, base: str = OUT) -> dict:

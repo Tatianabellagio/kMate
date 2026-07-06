@@ -65,8 +65,9 @@ def run(in_csv: str, out_csv: str, min_snps: int, verbose: bool,
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", default="kendall", choices=["kendall", "lfmm", "binomial"])
-    ap.add_argument("--class", dest="cls", required=True, choices=["snp", "sv", "smallindel"])
+    ap.add_argument("--model", default="kendall", choices=["kendall", "lfmm", "binomial", "betabinom"])
+    ap.add_argument("--class", dest="cls", required=True,
+                    choices=["snp", "sv", "smallindel", "nonsnp"])
     ap.add_argument("--gen", type=int, required=True)
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--indir", default=None, help="dir of the model result CSV (default: ../<model>)")
@@ -84,9 +85,12 @@ def main():
     args = ap.parse_args()
 
     indir = args.indir or f"{lib.GEA}/phase1_replication/{args.model}"
-    in_csv = f"{indir}/{args.model}_{args.cls}_gen{args.gen}_{args.climate}.csv"
+    in_csv = os.path.abspath(f"{indir}/{args.model}_{args.cls}_gen{args.gen}_{args.climate}.csv")
     if not os.path.exists(in_csv):
         sys.exit(f"missing model result: {in_csv}")
+    # run() sets the WZA subprocess cwd to the output dir, so the output path MUST be
+    # absolute (a relative --out would resolve against that new cwd and land nowhere).
+    args.out = os.path.abspath(args.out)
     os.makedirs(args.out, exist_ok=True)
 
     df = pd.read_csv(in_csv)

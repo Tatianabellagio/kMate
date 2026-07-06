@@ -47,6 +47,12 @@ building & validating the framework, and a 2-climate preview:
 - **GEA methods** (full cohort, later): `lfmm_env` (LFMM), `baypass` (BayPass),
   `r_env` (the MCMCglmm selection model / WZA in R) — already on this system.
 
+## Key decisions
+- **`GLOBAL_MODE_DECISION.md`** — why evolved AF is estimated in GLOBAL mode (not
+  window/block): the recombination-detection test is circular on projected AF,
+  underpowered (~3 gens, 97% selfing), and its sim noise floor doesn't transfer
+  (panel-incompleteness confound). Includes the methods sentence to cite.
+
 ## Layout
 - `lib.py` — loaders, SV filter, rec_key, p0, eff_n_founders.
 - `notebooks/01_pilot_qc.ipynb` — per-sample QC + data-readiness (run first).

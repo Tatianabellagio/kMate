@@ -38,15 +38,16 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
 SV_MIN_BP = 50
-CLASSES = ("snp", "sv", "smallindel")
+CLASSES = ("snp", "sv", "smallindel", "nonsnp")
 # which pool-matrix kind + af_store index each class is carved from
-_SRC = {"snp": "snp", "sv": "nonsnp", "smallindel": "nonsnp"}
+_SRC = {"snp": "snp", "sv": "nonsnp", "smallindel": "nonsnp", "nonsnp": "nonsnp"}
 
 
 def class_mask(kind_idx: dict, cls: str) -> np.ndarray:
     """Boolean over the records of the source pool matrix selecting class `cls`."""
-    if cls == "snp":
-        return np.ones(len(kind_idx["pos"]), dtype=bool)   # snp pool matrix is all-SNP
+    if cls in ("snp", "nonsnp"):
+        # snp source is all-SNP, nonsnp source is all-non-SNP (indel+SV pooled)
+        return np.ones(len(kind_idx["pos"]), dtype=bool)
     dlen = np.abs(kind_idx["alt_len"].astype("int64") - kind_idx["ref_len"].astype("int64"))
     return dlen > SV_MIN_BP if cls == "sv" else dlen <= SV_MIN_BP
 

@@ -217,3 +217,21 @@ multi-axis/temporal/site-permutation two-stage design (project plan).
   so BH still 0 hits. Diffuse λ>1 + 0 FDR = classic polygenic-or-structure signature.
 Two failure modes shown cleanly: WZA = a tall artifactual TAIL; PC1+site-perm = no tail,
 just an unresolved mild genome-wide shift needing LFMM.
+
+## RECURRENCE (2026-07-03) — the same SD-floor bug resurfaced on clq0.9 blocks
+
+The `phase1_replication/clq90` run initially assumed the finer clq0.9 blocks (max
+5,168 SNPs vs the 9,158 here) were small enough that canonical deg-2 wouldn't need
+this section's cap/floor fix at all. It still hit the exact bug documented above
+(negative-SD extrapolation in the sparse large-block tail, silently floored to
+fabricated significance) — just at a smaller absolute block size (~1,150+ SNPs snp,
+~400+ nonsnp instead of ~4,700+). It drove most of that run's "cross-model
+reproducible core" headline. Fixed there by applying this section's own
+recommendation (drop the floor hack, cap within the polynomial's support) with
+class-specific caps (1000/350) rather than reusing 2000. See
+`../phase1_replication/STATUS_clq90.md` §0 BUG + FIX for the full writeup.
+**Takeaway for future WZA runs on any new block definition: do not assume a smaller
+max block size means the floor hack is safe — check the negative-SD count
+directly** (`wza_core.apply_correction(..., sd_floor=False)`, count `neg_sd`) rather
+than trusting "0 NaN" from the floored production script, which cannot distinguish
+"clean fit" from "floor hack papering over a bad fit."

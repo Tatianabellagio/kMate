@@ -20,12 +20,14 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-_P0 = {"snp": "p0_snp.npy", "sv": "p0_nonsnp.npy", "smallindel": "p0_nonsnp.npy"}
+_P0 = {"snp": "p0_snp.npy", "sv": "p0_nonsnp.npy", "smallindel": "p0_nonsnp.npy",
+       "nonsnp": "p0_nonsnp.npy"}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--class", dest="cls", required=True, choices=["snp", "sv", "smallindel"])
+    ap.add_argument("--class", dest="cls", required=True,
+                    choices=["snp", "sv", "smallindel", "nonsnp"])
     ap.add_argument("--gen", type=int, default=9)
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")

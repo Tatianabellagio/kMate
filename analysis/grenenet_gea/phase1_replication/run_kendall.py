@@ -50,7 +50,7 @@ def _chunk(rng):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--class", dest="cls", required=True,
-                    choices=["snp", "sv", "smallindel"])
+                    choices=["snp", "sv", "smallindel", "hap", "nonsnp"])
     ap.add_argument("--gen", type=int, required=True)
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")
@@ -84,8 +84,10 @@ def main():
     recs = recs.assign(tau=tau, pval=pv)
     recs = recs.rename(columns={"maf": "MAF"})
     out = f"{args.out}/kendall_{args.cls}_gen{args.gen}_{args.climate}.csv"
-    recs[["chrom", "pos", "ref_len", "alt_len", "MAF", "block",
-          "tau", "pval"]].to_csv(out, index=False)
+    # keep hap_id when present (haploblock unit) so rows stay joinable to the registry
+    cols = (["hap_id"] if "hap_id" in recs.columns else []) + \
+           ["chrom", "pos", "ref_len", "alt_len", "MAF", "block", "tau", "pval"]
+    recs[cols].to_csv(out, index=False)
     fin = np.isfinite(pv)
     print(f"  tested {int(fin.sum()):,}/{n_rec:,} | p<0.05: {int((pv[fin]<0.05).sum()):,} "
           f"| min p={np.nanmin(pv):.2e}\n  -> {out}", flush=True)

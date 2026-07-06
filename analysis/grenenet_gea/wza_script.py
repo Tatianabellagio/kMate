@@ -80,17 +80,22 @@ def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2):
 
 
     sd_predictions = sd_polynomial_model(wza_df["SNPs"])
-    # SAFETY FLOOR (kMate local fix; see Booker email thread): in sparse large-window
-    # tails the degree-2 polynomial can predict negative/zero SD -> norm.cdf returns NaN.
-    # Floor the predicted SD at the smallest strictly-positive prediction (fallback: the
-    # empirical SD of Z). Distribution-agnostic; avoids switching the polynomial degree.
-    _pos = sd_predictions[sd_predictions > 0]
-    _floor = _pos.min() if _pos.size else np.nanstd(wza_df["Z"].to_numpy())
-    sd_predictions = np.clip(sd_predictions, a_min=_floor, a_max=None)
-
+    # NO SAFETY FLOOR (kMate local fix, REMOVED 2026-07-03 — see
+    # analysis/grenenet_gea/wza_investigation/RESULTS.md "drop the SD safety-floor
+    # hack"): in sparse large-window tails the degree-2 polynomial can predict
+    # negative/zero SD. Flooring that to a value borrowed from elsewhere on the
+    # curve does NOT recover a valid correction — it fabricates an arbitrary
+    # normalized deviation, which silently produced Z_pVal=0 for windows with
+    # unremarkable raw Z (confirmed on the clq0.9 replication: negative-SD windows
+    # got 9-56 sigma "significance" regardless of true Z). Leave the SD negative;
+    # norm.cdf yields NaN for those windows (invalid-value warning suppressed
+    # below) and they are correctly excluded from all downstream FDR calls instead
+    # of contaminating them. The real fix is keeping --sample_snps within the
+    # rolling-window's supported SNP-count range so this NaN tail is empty/small.
     mean_predictions = mean_polynomial_model(wza_df["SNPs"])
 
-    wza_p_values = [1 - norm.cdf(wza_df["Z"][i], loc=mean_predictions[i], scale=sd_predictions[i]) for i in range(wza_df.shape[0])]
+    with np.errstate(invalid="ignore"):
+        wza_p_values = [1 - norm.cdf(wza_df["Z"][i], loc=mean_predictions[i], scale=sd_predictions[i]) for i in range(wza_df.shape[0])]
     wza_df["Z_pVal"] = wza_p_values
 
     return wza_df

@@ -45,6 +45,11 @@ import lib
 _X = None       # design matrix [pools x 2]: const + scaled climate
 _SUCC = None    # successes (alt counts) [records x pools]
 _FAIL = None    # failures  (ref counts) [records x pools]
+_W = None       # per-pool var_weights (None = ordinary binomial)
+
+# WZA's z-transform (norm.ppf(1-p)) breaks for p<~1e-16 (float64 1-p precision) and
+# NaN/0 poison the aggregation, so floor here at a tiny positive value.
+P_FLOOR = 1e-300
 
 warnings.filterwarnings("ignore")          # statsmodels PerfectSeparation / convergence noise
 
@@ -68,10 +73,14 @@ def _chunk(rng):
         if np.ptp(X[:, 1]) == 0:                     # no climate gradient among observed pools
             continue
         y = np.column_stack([s, f])
+        # var_weights is a GLM *constructor* arg (NOT a .fit() arg — .fit silently
+        # ignores unknown kwargs, leaving the fit unweighted).
+        kw = {} if _W is None else {"var_weights": _W[ok]}
         try:
-            res = sm.GLM(y, X, family=sm.families.Binomial()).fit()
+            res = sm.GLM(y, X, family=sm.families.Binomial(), **kw).fit()
             slope[i - a] = res.params[1]
-            pv[i - a] = res.pvalues[1]
+            p = res.pvalues[1]
+            pv[i - a] = max(p, P_FLOOR) if np.isfinite(p) else np.nan
         except Exception:
             pass
     return a, slope, pv
@@ -80,12 +89,20 @@ def _chunk(rng):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--class", dest="cls", required=True,
-                    choices=["snp", "sv", "smallindel"])
+                    choices=["snp", "sv", "smallindel", "nonsnp"])
     ap.add_argument("--gen", type=int, required=True)
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")
     ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/binomial")
     ap.add_argument("--threads", type=int, default=8)
+    ap.add_argument("--effective-n", dest="eff_n", default="none",
+                    choices=["none", "site"],
+                    help="deflate the pool binomial's over-precision at source. "
+                         "'none'=phase-1 (N=flowers*2, pools independent); "
+                         "'site'=var_weights 1/pools-per-site so the information "
+                         "scales to the ~31 independent climates, not the 355 "
+                         "pseudoreplicated pools (fixes the p-underflow: p<0.05 "
+                         "84%->48%, p<1e-15 41%->1.4%, 0 exact-0/NaN).")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
@@ -111,12 +128,25 @@ def main():
     fail = np.where(finite, np.round((1.0 - aft) * N[None, :]), 0.0)
     succ[~finite] = 0.0; fail[~finite] = 0.0
 
+    # effective-N: down-weight each pool by 1/(pools in its site) so the total
+    # binomial information equals the number of independent climates (~31 sites),
+    # not the 355 pools (pools within a site share one climate -> pseudoreplicated).
+    # Within-site flower-weighting is retained via the per-pool N. See STATUS_clq90.
+    w = None
+    if args.eff_n == "site":
+        site = pools["site"].to_numpy()
+        ppsite = pd.Series(site).map(pd.Series(site).value_counts()).to_numpy(float)
+        w = 1.0 / ppsite
+        print(f"  effective-N=site: {len(np.unique(site))} sites, "
+              f"pools/site {int(ppsite.min())}-{int(ppsite.max())}, "
+              f"sum(var_weights)={w.sum():.1f} (~n_sites)", flush=True)
+
     print(f"{args.cls} gen{args.gen}: {len(clim)} pools x {n_rec:,} records vs "
           f"{args.climate} (range {np.nanmin(clim):.1f}-{np.nanmax(clim):.1f}); "
           f"N(genomes) {int(N.min())}-{int(N.max())}", flush=True)
 
-    global _X, _SUCC, _FAIL
-    _X = X; _SUCC = succ; _FAIL = fail
+    global _X, _SUCC, _FAIL, _W
+    _X = X; _SUCC = succ; _FAIL = fail; _W = w
 
     step = 5000
     ranges = [(a, min(a + step, n_rec)) for a in range(0, n_rec, step)]
