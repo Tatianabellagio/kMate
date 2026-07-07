@@ -1,10 +1,20 @@
 # Do we need PanGenie's per-bubble k-mer caps? (no-caps investigation)
 
 **Date:** 2026-05-31 · **Status:** index-level result in; EM-accuracy test pending
-**Verdict (current):** **Probably NOT necessary for production kMate.** The caps'
-statistical role is already played — more precisely — by our `inv_mb` EM weight.
-Removing them is a compute-vs-marginal-variance tradeoff, not a correctness fix.
-Default stays capped pending an empirical accuracy check.
+**Verdict (current):** **Probably NOT necessary in `inv_mb` (window) mode.** The
+caps' statistical role is already played — more precisely — by our `inv_mb` EM
+weight. Removing them is a compute-vs-marginal-variance tradeoff, not a
+correctness fix. Default stays capped pending an empirical accuracy check.
+
+> **Update 2026-07-06 (global-mode production weighting changed — see
+> `docs/FOUNDER_NORMALIZATION_FIX.md`, ALGORITHM.md §4.3).** Global mode (the
+> GrENE-Net production estimator) now uses `--kmer-weight uniform` +
+> `--normalize per_founder`, superseding the `inv_mb`-for-global default this
+> doc assumed. That flips the premise below: under `uniform` there is **no**
+> per-bubble normalization, so by §3's own logic the caps **do** matter for
+> global-mode production. Net effect: the "keep caps" recommendation is
+> **reinforced** for global mode; the "`inv_mb` subsumes the caps" argument now
+> applies to **window mode** only.
 
 ---
 
@@ -110,7 +120,9 @@ runtime cost, revisit; otherwise the caps stay. **Until that test is run, the
 recommendation is: keep caps.**
 
 Artifacts (Chr1 only; gitignored): index `panel/pangenie_index/pang_135_haploid_nocap/`,
-K_pa `data/kmer_pa_231_arch3_nocap_filt2inv/`.
+K_pa `data/kmer_pa_231_arch3_nocap_filt2inv/` — archived 2026-07-07 to
+`panel/pangenie_index/archive/kmer_pa_231_arch3_nocap_filt2inv/` (still regenerable at the
+original `data/` path via `scripts/nocap_chr1_canary.sh` if the accuracy test above is ever run).
 
 ## 6. See also
 - `ALGORITHM.md` §4.2 (the `inv_mb` de-replication weight) and §10 M6 (uniform vs inv_mb)
