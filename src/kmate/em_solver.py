@@ -42,6 +42,11 @@ def solve_em(
     prior_weight: float = 0.0,            # NEW: λ — strength of anchor toward prior_h
     omega: np.ndarray | None = None,      # NEW: per-k-mer weight ω_k (e.g. 1/m_b)
     normalize: str = "per_founder",       # "per_founder" (default, Kf_w fix) | "global" (legacy)
+    kfw: np.ndarray | None = None,        # per_founder normalizer Σ_k ω_k·kmer_pa[f,k] over the FULL
+                                          # estimation unit (ALL k-mers, incl. c_k=0). MUST be passed
+                                          # when the caller pre-slices kmer_pa to observed k-mers,
+                                          # else the normalizer is (wrongly) conditioned on which
+                                          # k-mers happened to get reads (survivorship bias → collapse).
 ) -> tuple[np.ndarray, dict]:
     """Run EM until h converges.
 
@@ -112,18 +117,24 @@ def solve_em(
     else:
         anchor_term = None
 
-    # Per-founder normalization (the Kf_w fix): each founder's own weighted content
-    # over OBSERVED (c_k>0) k-mers — the coefficient of h_f in raw_f at the fixed
-    # point. Computed with an explicit c_k>0 mask so it is exact whether or not the
-    # caller pre-filtered to nonzero-count k-mers (global path does; block_em's
-    # global fallback does not). Floored to avoid divide-by-zero for founders with
-    # no observed k-mers (e.g. an empty window).
+    # Per-founder normalization (the Kf_w fix): each founder's own weighted marker
+    # content Kf_w_f = Σ_k ω_k·kmer_pa[f,k] over the FULL estimation unit — ALL
+    # k-mers, INCLUDING those with c_k=0 this run. This is the correct (unbiased)
+    # normalizer: since E[c_k/μ_k]=λ for every carried k-mer regardless of whether it
+    # realizes zero, E[raw_f] = λ·h_f·Kf_full, so raw_f/Kf_full is unbiased for h_f.
+    # Conditioning Kf_w on the OBSERVED set (Σ_{c_k>0}) is a survivorship bias — it
+    # shrinks specifically for founders with a bad-luck run of zero-count (low-μ,
+    # discriminative) markers, reintroducing the founder collapse the fix targets.
+    # Callers that pre-slice kmer_pa to observed k-mers MUST pass `kfw` (computed over
+    # the full panel/window); otherwise Kf_w is taken over the columns received, which
+    # is correct only when the full matrix (with zero-count columns) is passed in.
     per_founder = (normalize == "per_founder")
     if per_founder:
-        obs_w = (counts > 0).astype(np.float32)
-        if omega is not None:
-            obs_w = obs_w * omega.astype(np.float32)
-        Kf_w = np.maximum((kmer_pa @ obs_w).astype(np.float32), np.float32(1e-12))
+        if kfw is not None:
+            Kf_w = np.maximum(kfw.astype(np.float32), np.float32(1e-12))
+        else:
+            w = np.ones(kmer_pa.shape[1], np.float32) if omega is None else omega.astype(np.float32)
+            Kf_w = np.maximum((kmer_pa @ w).astype(np.float32), np.float32(1e-12))
 
     history = []
     for it in range(max_iter):

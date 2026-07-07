@@ -233,16 +233,21 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
         cn_b = np.ascontiguousarray(kmer_pa_dense[:, idxs_nz])
         c_b = counts[idxs_nz]
         omega_b = None if omega is None else omega[idxs_nz]
+        # per_founder normalizer over the FULL window (all its k-mers, incl. c_k=0),
+        # not just the observed idxs_nz — else it's conditioned on this run's zero draws.
+        w_full = (np.ones(len(idxs), np.float32) if omega is None
+                  else omega[idxs].astype(np.float32))
+        kfw_b = (kmer_pa_dense[:, idxs] @ w_full).astype(np.float32)
         if global_anchor_weight > 0:
             h_b, _ = solve_em(c_b, cn_b, coverage,
                               max_iter=em_max_iter, tol=tol,
                               prior_h=global_h,
                               prior_weight=global_anchor_weight,
-                              omega=omega_b, normalize=normalize)
+                              omega=omega_b, normalize=normalize, kfw=kfw_b)
         else:
             h_b, _ = solve_em(c_b, cn_b, coverage,
                               max_iter=em_max_iter, tol=tol,
-                              omega=omega_b, normalize=normalize)
+                              omega=omega_b, normalize=normalize, kfw=kfw_b)
         return b, h_b.astype(np.float32), 0
 
     # Limit per-thread BLAS to avoid oversubscription. n_workers × inner_threads

@@ -29,8 +29,9 @@ anywhere disagrees with §0, §0 wins — fix the other place.
 | **V_pa** (`var_pa`/`var_called`, founder×variant) | `build_var_pa.py` ← **`merged_231_chr{N}_final.vcf.gz`** (segregating-only) → **`panel/arch3/chr{N}/var_pa_231_arch3_chr{N}.{var_pa,var_called,meta}.npz`** — 8,489,646 records genome-wide. (`_atomized` for SNP-level is **stale**: Chr1-only, predates the segregating filter — rebuild before use.) |
 | **k-mer index** | in-house `panel/pangenie_index` builder (`ours_Chr{N}`), Level-A+B validated equivalent to PanGenie's. PG index kept only as a reference comparator. |
 | **K_pa filter** | `filt2inv` (drop ac=1 singletons **and** ac=F invariants), applied inline by `--filter-production` |
-| **EM weighting** | `--kmer-weight inv_mb` ($\omega_k=1/m_b$) |
-| **Driver** | `per_sample_per_chrom.py --block-mode {global|window} --kmer-weight inv_mb` |
+| **EM normalization** | **`per_founder` (default, set 2026-07-06)** — M-step divides each founder by its own effective k-mer content $K^w_f$ (RSEM effective-length correction). Fixes global-mode founder-$h$ collapse (~19–49/231 founders driven to ~0). Legacy multinomial kept as `--normalize global` (deprecated). See `docs/FOUNDER_NORMALIZATION_FIX.md`, `ALGORITHM.md` §4.3. |
+| **EM weighting** | **GLOBAL mode (the GrENE-Net production estimator — heavily-selfing cohort, so global not window; emits BOTH per-sample founder $\mathbf h$ and per-record SNP/SV AF):** `--kmer-weight uniform` (drop $\omega=1/m_b$) + keep filt2inv — **supersedes** the old "$\omega=1/m_b$ production" note (per_founder + uniform wins both AF and $\mathbf h$: AF-MAE 0.0036 vs 0.0096, 0 vs 33 absorbed). **WINDOW mode** (recombinant pools only, not the selfing production path): `--kmer-weight inv_mb` as before. |
+| **Driver** | `per_sample_per_chrom.py --block-mode {global|window} --normalize per_founder` — GLOBAL (production) adds `--kmer-weight uniform`; WINDOW keeps `--kmer-weight inv_mb`. (`per_founder` is the default; `--normalize global` reproduces legacy.) |
 | **Conda env** | **`kmate`** (mamba; `/global/home/users/tbellg/miniforge3/envs/kmate`) — the only env. `hapfm`/`gwas`/`sequencing_pipeline`/`pang`/`pangenie`/`basic` are gone (cluster migration). |
 
 **ARCHIVED — DO NOT CONSUME (these are the recurring confusion; they live under `archive/`):**
@@ -64,8 +65,9 @@ $PY src/per_sample_per_chrom.py \
     --var-called panel/arch3/${CHR,,}/var_pa_231_arch3_${CHR,,}.var_called.npz \
     --var-meta   panel/arch3/${CHR,,}/var_pa_231_arch3_${CHR,,}.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <name>.tsv \
-    --threads 8 --chroms $CHR --kmer-weight inv_mb \
-    --block-mode global       # or: --block-mode window  (recombinant pools)
+    --threads 8 --chroms $CHR --normalize per_founder --kmer-weight uniform \
+    --block-mode global       # GLOBAL (production): per_founder + uniform.
+                              # For recombinant pools: --block-mode window --kmer-weight inv_mb
 ```
 
 Output TSV (8 cols): `chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se`.
@@ -86,14 +88,14 @@ Also writes `*.h_per_chrom.npz` (global) or `*.h_blocks_per_chrom.npz` (window).
 
 ## TL;DR (historical framing; §0 is authoritative)
 
-For each panel record, estimate per-record ALT allele frequency from pool-seq reads via a per-sample **weighted** Poisson EM on the 231-founder simplex (production $\omega_k = 1/m_b$), then project through `var_pa` to per-record AF. Production pipeline as of today:
+For each panel record, estimate per-record ALT allele frequency from pool-seq reads via a per-sample Poisson EM on the 231-founder simplex (M-step normalization `per_founder`, the default; window-mode weighting $\omega_k = 1/m_b$, global-mode weighting uniform — superseded 2026-07-06 for global mode, see `docs/FOUNDER_NORMALIZATION_FIX.md`), then project through `var_pa` to per-record AF. Production pipeline as of today:
 
 - **Panel**: 231 founders (78 cactus + 153 PG), decomposed by **arch3** → `merged_231_chr{N}_final.vcf.gz` (the only panel VCF; §0)
 - **Decomposition**: **arch3 ONLY** (annotate_vcf + convert-to-biallelic), NOT `bcftools norm -m -any`
 - **Matrices**: K_pa `kmer_pa_231_arch3_filt2inv` + V_pa `var_pa_231_arch3` (SV-level) AND `var_pa_231_arch3_atomized` (per-base, SNP-level GEA) — all from merged_231 (§0/§1)
-- **K-mer filter / kmer_pa build**: `filt2inv` (drop ac=1 + ac=F, inline `--filter-production`) + EM weighting $\omega_k=1/m_b$ (`--kmer-weight inv_mb`).
+- **K-mer filter / kmer_pa build**: `filt2inv` (drop ac=1 + ac=F, inline `--filter-production`). EM weighting: window-mode $\omega_k=1/m_b$ (`--kmer-weight inv_mb`); global-mode (production) `--kmer-weight uniform` + `--normalize per_founder` (superseded 2026-07-06 for global mode — see §0 and `docs/FOUNDER_NORMALIZATION_FIX.md`).
 - **Projection**: MAR — `(h @ var_pa) / (h @ var_called)` in both global and window modes. Patched 2026-05-21.
-- **Modes**: both `global` (one h per chrom) and `★★` (window 10kb + global anchor 0.3 + HMM smooth 5α0.5) are production; pick per-regime.
+- **Modes**: `global` (one h per chrom) is **the GrENE-Net production estimator** (heavy selfing; emits both founder h and per-record AF). Window mode (`★★`: 10kb + anchor 0.3 + HMM smooth 5α0.5) is **NOT in production use** — the existing `grenenet_kmate_window*` window-mode cohort outputs are **STALE** (old multinomial EM, not regenerated under the per_founder fix; decision 2026-07-07) and should not be used. The window-mode *code path* still works if ever revived. See `docs/RERUN_AFTER_FIX.md` Group D.
 - **Naming**: the method is **kMate** (algorithm + math: `ALGORITHM.md`). Legacy code and result-dir paths (`*/cactus_em_*`) still use the prior name `cactus_em`; with the k-mer-filter decision now closed, the rename is unblocked but not yet executed. (The former `sims/visor_freqk` sub-repo was absorbed into `sims/` 2026-05-30; see `sims/README.md`.)
 
 ## What changed since the last pipeline-state doc (2026-05-19)
@@ -131,7 +133,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 - `n_called` = integer count of called founders at record r (h-independent panel QC)
 - `se` = Wald SE using `n_called` as effective sample size
 
-Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use the same projection semantics. **After the 2026-05-26 cleanup the window-mode defaults *are* the ★★ recipe** (window-bp 10000, global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5), so `--block-mode window` alone reproduces it. **Pass `--kmer-weight inv_mb` in both modes** (production EM weighting; see §0 and `ALGORITHM.md` §4.2). The LD-block modes, overlapping windows, and the older k-mer-budget rebalancing / carrier-weighting / contamination-ω variants were archived to `src/archive/`; the authoritative file list + recipes are in `src/README.md`.
+Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use the same projection semantics. **After the 2026-05-26 cleanup the window-mode defaults *are* the ★★ recipe** (window-bp 10000, global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5), so `--block-mode window` alone reproduces it. **EM weighting is mode-specific:** window mode uses `--kmer-weight inv_mb`, global (production) uses `--kmer-weight uniform` + `--normalize per_founder` (superseded 2026-07-06 for global mode — see §0 and `ALGORITHM.md` §4.3). The LD-block modes, overlapping windows, and the older k-mer-budget rebalancing / carrier-weighting / contamination-ω variants were archived to `src/archive/`; the authoritative file list + recipes are in `src/README.md`.
 
 ## 3. Outstanding production work
 
@@ -139,7 +141,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 |---|---|
 | **Validate arch3 Chr2–5 → merged_231_chr{N}_final.vcf.gz** | All 5 chroms now built on disk (2026-05-30/31). Confirm the Chr2–5 decompositions match the Chr1-validated quality before relying on them for downstream GEA. |
 | **Verify K_pa `kmer_pa_231_arch3_filt2inv` + V_pa `var_pa_231_arch3` for all 5 chroms** | All 5 chroms of both matrices are present on disk (off the merged_231 VCFs above), replacing every v3qc-named matrix. Sanity-check counts/coverage before the cohort run. |
-| Re-run SEEDMIX / evolved baselines under the full production recipe | Any TSV predating arch3 var_pa + MAR projection + `--kmer-weight inv_mb` is stale. |
+| Re-run SEEDMIX / evolved baselines under the full production recipe | Any TSV predating arch3 var_pa + MAR projection is stale — and (2026-07-06) any predating the global-mode switch to `--normalize per_founder` + `--kmer-weight uniform` must be re-run under it (see §0). |
 | Production scale-out on ~2,415 evolved GrENE-Net samples | SLURM template at `grenenet/run_site_array_perchrom.sh`; ~1.5–5 days at cluster-wide concurrency |
 
 ## 4. What's deprecated / archived (DO NOT USE — see §0)
@@ -157,7 +159,7 @@ Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use t
 - `old_docs/CACTUS_EM_MATH.md` — superseded formal-math doc (folded into `ALGORITHM.md`)
 - `SIMULATIONS_METHODS.md` — methods-ready description of the pool-seq simulation framework
 - `INVESTIGATION_CN_VAR_DECOMPOSITION.md` — context for the arch decomposition switch
-- `NOCAP_INDEX_INVESTIGATION.md` — why PanGenie caps per-bubble k-mers, and why kMate's `inv_mb` weight makes them unnecessary for production (verdict: keep caps; no-caps untested on accuracy)
+- `NOCAP_INDEX_INVESTIGATION.md` — why PanGenie caps per-bubble k-mers, and why kMate's `inv_mb` weight makes them unnecessary in window mode (verdict: keep caps; global-mode production now uses `uniform` + per_founder, where the caps do matter — see that doc's 2026-07-06 note; no-caps untested on accuracy)
 - `MISSINGNESS_231PANEL.md` — F_MISSING characterization on the production panel
 - `PIPELINE_FASTQ_PREPROCESSING.md` — read-side preprocessing pipeline (trim, dedup)
 - `archive/exploration/panel_overlap_135_vs_82/RESULTS.md` — panel composition analysis

@@ -47,6 +47,10 @@ from .h_uncertainty import (fisher_information_h, _tangent_pinv_on_support,
 # the well-called subset alone calibrates to a smaller c≈0.0102, but using that would
 # under-cover the 67% partially-called records (cactus-only SVs), so we take the
 # all-defined value (also matches p80's 0.018 — the floor is a stable panel property).
+# NOTE (2026-07-07): this c was calibrated under the legacy "global" normalization.
+# After the per_founder (Kf_w) fix it should be RE-calibrated on per_founder outputs
+# (benchmarks/h_uncertainty/af_calibrate_floor.py) as part of the post-rerun refresh;
+# left at 0.0186 until that calibration is actually run. Override with --af-id-floor.
 AF_ID_FLOOR_DEFAULT = 0.0186
 
 
@@ -201,6 +205,18 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     if kmer_pa_dense is None:
         return None, None, None, None, 0.0, None
 
+    # Per-k-mer weight ω_k = 1/m_b (or uniform) — computed over ALL k-mers first.
+    omega_full = None
+    if kmer_weight == "inv_mb":
+        bid = np.asarray(meta["bubble_id"]).astype(np.int64)
+        m_b = np.bincount(bid)[bid].astype(np.float32)        # #k-mers per bubble
+        omega_full = (1.0 / m_b).astype(np.float32)
+    # per_founder normalizer over the FULL panel (all k-mers, incl. c_k=0) — must be
+    # computed BEFORE the nonzero filter so it is not conditioned on which k-mers got
+    # reads this run (that survivorship bias reintroduces founder collapse). See em_solver.
+    w_full = np.ones(kmer_pa_dense.shape[1], np.float32) if omega_full is None else omega_full
+    kfw_full = (kmer_pa_dense @ w_full).astype(np.float32)
+
     # Filter to nonzero-count k-mers (the EM only needs those)
     nz = counts > 0
     kmer_pa_em = np.ascontiguousarray(kmer_pa_dense[:, nz])
@@ -208,18 +224,14 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     del kmer_pa_dense
     gc.collect()
 
-    # Optional per-bubble de-replication weight ω_k = 1/m_b (on nz k-mers).
-    omega = None
-    if kmer_weight == "inv_mb":
-        bid = np.asarray(meta["bubble_id"]).astype(np.int64)
-        m_b = np.bincount(bid)[bid].astype(np.float32)        # #k-mers per bubble
-        omega = (1.0 / m_b[nz]).astype(np.float32)
-        print(f"  [{chrom}] ω_k=1/m_b weighting: m_b median={np.median(m_b[nz]):.0f} "
-              f"max={m_b[nz].max():.0f}", flush=True)
+    omega = None if omega_full is None else omega_full[nz]
+    if omega is not None:
+        print(f"  [{chrom}] ω_k=1/m_b weighting: m_b median={np.median(1.0/omega):.0f} "
+              f"max={(1.0/omega).max():.0f}", flush=True)
 
     t = time.time()
     h, info = solve_em(counts_em, kmer_pa_em, cov, max_iter=em_max_iter, tol=1e-7,
-                       omega=omega, normalize=normalize)
+                       omega=omega, normalize=normalize, kfw=kfw_full)
     print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
           f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
 

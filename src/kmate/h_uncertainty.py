@@ -137,13 +137,20 @@ def bootstrap_cov_h(h_hat, kmer_pa, counts, omega=None, B=200,
     lam = counts.sum() / max(mu.sum(), 1e-12)      # depth-match expected total
     rate = lam * mu
     F = h_hat.size
+    # Full-panel per-founder normalizer (over ALL k-mers, incl. those that draw
+    # c*=0 in a given bootstrap replicate) — must be computed here and passed to
+    # solve_em, since each replicate pre-slices kmer_pa to its own observed set.
+    w_full = np.ones(kmer_pa.shape[1], np.float32) if omega is None \
+        else np.asarray(omega, dtype=np.float32)
+    kfw_full = (kmer_pa.astype(np.float32) @ w_full).astype(np.float32)
     samples = np.empty((B, F), dtype=np.float64)
     for b in range(B):
         c_star = rng.poisson(rate).astype(np.float32)
         nz = c_star > 0
         om = None if omega is None else np.asarray(omega)[nz]
         h_b, _ = solve_em(c_star[nz], kmer_pa[:, nz], coverage or lam,
-                          max_iter=max_iter, tol=tol, omega=om, normalize=normalize)
+                          max_iter=max_iter, tol=tol, omega=om,
+                          normalize=normalize, kfw=kfw_full)
         samples[b] = h_b
     Sigma = np.cov(samples.T)
     return (Sigma, samples if return_samples else None)
