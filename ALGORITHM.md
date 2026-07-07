@@ -434,6 +434,46 @@ RMSE; the difference under the full `star2` recipe is a marginal bias-variance
 effect). Full rationale, factorial ablation, and seed-mix / hapFIRE comparison:
 `docs/FOUNDER_NORMALIZATION_FIX.md`.
 
+### 4.4 Haploblock collapse — fit the distinct haplotypes, not all $F$ (default 2026-07-07)
+
+Before the EM runs on a **unit** (a window in window mode, or the whole
+chromosome in global mode), kMate **computes** how many distinct haplotypes the
+panel actually resolves over that unit's k-mers, and fits the EM over those
+$K_b \le F$ haplotypes rather than *assuming* all $F$ founders are separately
+identifiable. Founders whose k-mer presence pattern over the unit is identical
+(exact, `--haploblock-eps 0`, the default) are one haplotype; the EM fits a
+$K_b$-vector $\hat{\mathbf h}^{\,c}$ and each class frequency is split **equally**
+back to its member founders,
+$\hat h_f = \hat h^{\,c}_{\text{class}(f)} / |\text{class}(f)|$.
+This is the hapFIRE-like *block → haploblock → EM* design and removes the
+flat-likelihood ridge among k-mer-indistinguishable founders (which is what
+drove the multiplicative EM to spurious sparse vertices — cf. `HANDOFF`
+non-identifiability). Implemented in `em_solver.haploblock_collapse_indices`
+(packbits presence signature → grouping) and applied in both
+`block_em.solve_em_per_block` and `per_sample_per_chrom.run_one_chrom_global`;
+**on by default** (`haploblock_collapse=True`).
+
+- **$K_b = F$ is an EXACT (byte-identical) no-op.** When every founder is
+  distinct over the unit, the code fits the founders directly in native order (no
+  permutation, no split), so it is bit-for-bit the pre-collapse result. On the
+  231-founder arch3 panel at r²=0.1+ / whole-chromosome units, $K_b$ is
+  essentially always 230–231 (the accessions are *not* k-mer-identical over
+  regions large enough to carry many k-mers), so **for the GrENE-Net global
+  production path the collapse is numerically inert** — it is the *framework*
+  (derive haplotypes from data, don't assume) that matters, and it is what makes
+  window mode well-posed where a 10 kb window may carry only a handful of
+  haplotypes.
+- **Uncertainty is computed on the same $K_b$ parametrization.** For `--emit-af-se`
+  and the parametric bootstrap (`h_uncertainty.bootstrap_cov_h`), the covariance
+  is estimated on the $K_b$ haplotype classes and mapped to founder space by the
+  deterministic equal-split $\mathbf h = A\,\mathbf h^{\,c}$ (so
+  $\Sigma_{\mathbf h} = A\,\Sigma_c\,A^{\top}$), never on the singular full-$F$
+  Fisher information across identical class members. (Again a no-op at $K_b=F$.)
+- **`--haploblock-eps` > 0** additionally merges founders whose presence differs
+  in $\le \varepsilon\cdot(\text{unit k-mers})$ — an *approximate*, order-dependent,
+  representative-based clustering for merging near-indistinguishable founders. The
+  production default is $\varepsilon = 0$ (exact, lossless).
+
 ---
 
 ## 5. Per-chromosome execution (production)
@@ -539,17 +579,29 @@ where $w(r)$ is the window containing record $r$.
 - `global` (default): one $\hat{\mathbf{h}}_c$ per chromosome — for selfers /
   inbreds / F0 pools (SEEDMIX).
 - `window` (fixed-bp): hard cuts every `--window-bp` (production default 10 kb).
-  Per-window EM is anchored to the chromosome-wide $\hat{\mathbf{h}}_c$ and
-  smoothed across windows (§8); each record takes the $\hat{\mathbf{h}}$ of its
-  window (hard assignment).
+  Each window is fit **unit → haploblock collapse (§4.4) → EM**; each record takes
+  the $\hat{\mathbf{h}}$ of its window (hard assignment).
 
 The earlier `ld_gabriel`, `ld_complete`, `bigld_panel` modes and the
 overlapping-window variant were archived to `src/archive/`.
 
-**Anchoring** (`--global-anchor-weight`): per-window EM can be anchored to
-the chromosome-wide $\hat{\mathbf{h}}_c$ via the Dirichlet anchor of §4.1 with
-$\beta$ = `--global-anchor-weight`. Used when low-evidence windows would
-otherwise collapse onto a single founder.
+**Window mode defaults to LOCAL-ONLY (2026-07-07):** `--local-only` is the
+window-mode default. It is GLOBAL-FREE — **no** global anchor prior, **no**
+fallback to the chromosome-wide $\hat{\mathbf h}_c$ (thin/empty windows and
+unassigned records → NaN AF), and **no** cross-window smoothing. Rationale: a
+recombinant window carries only a few haplotypes (§4.4), so the chromosome-wide
+mixture is the wrong prior for it, and each window is fit purely on its own
+k-mers over the $K_b$ haplotypes it actually contains. $\hat{\mathbf h}_c$ is
+still computed and stored for diagnostics only. This supersedes the earlier
+anchored+smoothed "star2" default.
+
+**Legacy "star2" recipe** (`--no-local-only`): per-window EM anchored to the
+chromosome-wide $\hat{\mathbf{h}}_c$ via the Dirichlet anchor of §4.1
+(`--global-anchor-weight`, star2 value 0.3) and smoothed across windows (§8,
+`--hmm-smooth-passes` 5). Available for reproducing old runs. Caveat: under a
+genuine within-window haploblock collapse (§4.4) the anchor is summed per class
+and split *equally* across k-mer-indistinguishable members, so it cannot preserve
+intra-class prior asymmetry — one more reason local-only is the default.
 
 **Window-mode caveat.** A 100 kb hard-window mode on the 827k-SNP panel
 (hapFIRE-equivalent fine-scale) blew up haplotype-class count to 196/231 →
@@ -570,10 +622,13 @@ Current production:
   GrENE-Net production estimator) it was superseded 2026-07-06 by
   `--kmer-weight uniform` + per_founder (§4.3). The `kmer_pa_231_arch3_filt2inv`
   filtered matrix (§2.1) is the production kmer_pa base in both modes.
-- **Global anchor (`--global-anchor-weight`) and HMM smoothing
-  (`--hmm-smooth-*`, §8.3)** are part of the production *window* recipe — they
-  are the window-mode defaults (anchor 0.3, passes 5, α 0.5; see §7), not
-  experimental.
+- **Haploblock collapse (§4.4)** — fit the $K_b\le F$ distinct haplotypes per
+  unit, not all $F$ — is **on by default** in both modes (`--haploblock-eps 0`,
+  exact; an exact no-op at $K_b=F$, i.e. inert on the 231-founder global path).
+- **Window mode defaults to `--local-only` (§7, 2026-07-07)**: no global anchor,
+  no global fallback, no smoothing. Global anchor (`--global-anchor-weight`) and
+  HMM smoothing (`--hmm-smooth-*`, §8.3) are now only reached via the legacy
+  `--no-local-only` "star2" recipe (anchor 0.3, passes 5, α 0.5), not the default.
 
 Removed / archived (do not use):
 - **K-mer-budget balancing (§8.1)** — earlier row-normalization +

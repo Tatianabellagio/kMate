@@ -3,10 +3,16 @@ Per-chromosome kMate driver — founder-mixture (h) estimation + AF projection.
 
 Two estimators only:
   * global  — one h per chromosome (selfing / inbred / F0 pools, e.g. SEEDMIX).
-  * window  — per-window h for recombinant pools (the production "star2" recipe:
-              --block-mode window --window-bp 10000 --global-anchor-weight 0.3
-              --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5). These are the
-              defaults below, so `--block-mode window` alone reproduces it.
+  * window  — per-window h for recombinant pools. Defaults to LOCAL-ONLY: each
+              window fit purely on its own k-mers, no global anchor prior, no
+              global fallback (thin windows → NaN AF), no cross-window smoothing.
+              `--block-mode window` alone gives this. Pass --no-local-only to
+              restore the legacy anchored+smoothed "star2" recipe (--window-bp
+              10000 --global-anchor-weight 0.3 --hmm-smooth-passes 5 α 0.5).
+
+Both modes fit each unit as: unit → distinct-haplotype collapse (K_b ≤ F) → EM →
+equal-split back to members (on by default; --haploblock-eps 0 = exact, a no-op
+when all founders are distinct). See ALGORITHM.md §4.4.
 
 Memory note: instead of loading the genome-wide kmer_pa matrix (~74 GB dense
 float32 for 80M k-mers × 231 founders), we process one chromosome at a time
@@ -27,7 +33,7 @@ from __future__ import annotations
 import argparse, gc, os, sys, time
 import numpy as np
 from scipy.sparse import load_npz
-from .em_solver import solve_em
+from .em_solver import solve_em, haploblock_collapse_indices
 from .kmer_count import count_kmers_in_bam, count_kmers_in_fasta, query_kmer_db
 from .block_em import (define_windows, assign_kmers_to_blocks,
                       assign_records_to_blocks, solve_em_per_block,
@@ -185,7 +191,8 @@ def _project_with_called_mask(var_pa_chrom, h, idx):
 def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          em_max_iter=200, kmer_weight="uniform", kmer_db=None,
                          hash_size="3G", h_only=False, max_kmer_cov_mult=0.0,
-                         emit_af_se=False, af_id_floor=0.0, normalize="per_founder"):
+                         emit_af_se=False, af_id_floor=0.0, normalize="per_founder",
+                         haploblock_eps=0.0):
     """Global-mode (single h per chrom) EM + projection.
 
     kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
@@ -217,6 +224,18 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     w_full = np.ones(kmer_pa_dense.shape[1], np.float32) if omega_full is None else omega_full
     kfw_full = (kmer_pa_dense @ w_full).astype(np.float32)
 
+    # kMate design (block → haploblock → EM, here the "block" is the whole chromosome):
+    # COMPUTE the distinct haplotypes the panel resolves (eps=0 exact k-mer identity)
+    # instead of ASSUMING all F founders are separately identifiable. Fit the EM over
+    # the K_b ≤ F distinct haplotypes, then split each class frequency equally to its
+    # member founders. K_b == F (the usual whole-chromosome case) is an EXACT no-op —
+    # identical numbers, but data-derived rather than assumed.
+    F_founders = kmer_pa_dense.shape[0]
+    lab, reps, csize, Kb = haploblock_collapse_indices(kmer_pa_dense, eps=haploblock_eps)
+    print(f"  [{chrom}] haploblocks: {Kb} distinct of {F_founders} founders "
+          f"({'no collapse (K_b=F)' if Kb == F_founders else f'{F_founders-Kb} merged'})",
+          flush=True)
+
     # Filter to nonzero-count k-mers (the EM only needs those)
     nz = counts > 0
     kmer_pa_em = np.ascontiguousarray(kmer_pa_dense[:, nz])
@@ -230,8 +249,16 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
               f"max={(1.0/omega).max():.0f}", flush=True)
 
     t = time.time()
-    h, info = solve_em(counts_em, kmer_pa_em, cov, max_iter=em_max_iter, tol=1e-7,
-                       omega=omega, normalize=normalize, kfw=kfw_full)
+    h_c = None
+    if Kb == F_founders:
+        # fast no-op path: no distinct-haplotype merging, fit founders directly
+        # (byte-identical to the collapse path by permutation-equivariance).
+        h, info = solve_em(counts_em, kmer_pa_em, cov, max_iter=em_max_iter, tol=1e-7,
+                           omega=omega, normalize=normalize, kfw=kfw_full)
+    else:
+        h_c, info = solve_em(counts_em, kmer_pa_em[reps], cov, max_iter=em_max_iter, tol=1e-7,
+                             omega=omega, normalize=normalize, kfw=kfw_full[reps])
+        h = (h_c / csize)[lab].astype(np.float32)     # split haplotype freq to member founders
     print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
           f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
 
@@ -240,14 +267,35 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
     if emit_af_se and not h_only:
         t_se = time.time()
         chunk = 1_000_000 if F > 120 else None
-        J = fisher_information_h(h, kmer_pa_em, counts_em.astype(np.float64),
-                                 omega=omega, chunk=chunk)
-        support = np.flatnonzero(h > 1e-3)
-        Sigma = _tangent_pinv_on_support(J, support, rcond=1e-2)
-        eff_rank, cond = _resolvability_from_J(J, support)
-        af_diag = dict(eff_rank=eff_rank, cond=cond, support_size=int(support.size))
-        print(f"  [{chrom}] resolvability: eff_rank={eff_rank:.1f} of {support.size} "
-              f"support founders, cond={cond:.0f} [{time.time()-t_se:.0f}s]", flush=True)
+        if Kb == F_founders:
+            # no collapse: uncertainty on the founders directly (unchanged path).
+            J = fisher_information_h(h, kmer_pa_em, counts_em.astype(np.float64),
+                                     omega=omega, chunk=chunk)
+            support = np.flatnonzero(h > 1e-3)
+            Sigma = _tangent_pinv_on_support(J, support, rcond=1e-2)
+            eff_rank, cond = _resolvability_from_J(J, support)
+            support_size = int(support.size)
+        else:
+            # COLLAPSED estimator: the point estimate is h = A·h_c with A[f,c] =
+            # 1[lab[f]==c]/csize[c], so the correct sampling covariance is on the K_b
+            # haplotype classes (h_c), mapped to founder space by Cov(h)=A·Σ_c·Aᵀ.
+            # Computing the Fisher info on the full F founders instead would be singular
+            # across k-mer-identical class members (the flat ridge the collapse removes).
+            Jc = fisher_information_h(h_c, kmer_pa_em[reps], counts_em.astype(np.float64),
+                                      omega=omega, chunk=chunk)
+            support_c = np.flatnonzero(h_c > 1e-3)
+            Sigma_c = _tangent_pinv_on_support(Jc, support_c, rcond=1e-2)
+            eff_rank, cond = _resolvability_from_J(Jc, support_c)   # over the K_b classes
+            support_size = int(support_c.size)
+            A = np.zeros((F_founders, Kb), dtype=np.float64)
+            A[np.arange(F_founders), lab] = 1.0 / csize[lab]
+            Sigma = A @ Sigma_c @ A.T
+            support = np.flatnonzero(h > 1e-3)                     # founder-space support
+            J = Jc
+        af_diag = dict(eff_rank=eff_rank, cond=cond, support_size=support_size)
+        print(f"  [{chrom}] resolvability: eff_rank={eff_rank:.1f} of {support_size} "
+              f"support {'founders' if Kb == F_founders else 'haploblocks'}, "
+              f"cond={cond:.0f} [{time.time()-t_se:.0f}s]", flush=True)
         del J
 
     del kmer_pa_em, counts_em
@@ -296,15 +344,38 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
                          hmm_smooth_recomb_rate=4e-8,
                          kmer_weight="uniform", kmer_db=None, hash_size="3G",
                          blocks_tsv=None, min_kmers_per_block=200,
-                         local_only=False, max_kmer_cov_mult=0.0, normalize="per_founder"):
-    """Window-mode per-chrom EM + smooth projection (production "star2" recipe).
+                         local_only=True, max_kmer_cov_mult=0.0, normalize="per_founder",
+                         haploblock_eps=0.0):
+    """Window-mode per-chrom EM + projection.
 
-    Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
-    h_global (global_anchor_weight) and post-smoothed across windows
-    (Li-Stephens-style, hmm_smooth_*). Each window's h projects its records
-    through var_pa with the missing-aware (called-mask) normalization.
+    Each window is fit independently: unit → haploblock collapse → per-window EM,
+    then projected through var_pa with the missing-aware (called-mask) normalization.
+
+    local_only (default True): the PRODUCTION window recipe — GLOBAL-FREE. No global
+    anchor prior, no fallback to the chrom-wide h (thin/empty windows → NaN AF), and
+    NO cross-window smoothing. A recombinant pool carries only a handful of
+    haplotypes per window; fitting each window purely on its own k-mers (over the K_b
+    haplotypes present) is what the data supports, and the chrom-wide mixture is the
+    wrong prior for a local window. When local_only, global_anchor_weight and
+    hmm_smooth_passes are FORCED to 0 regardless of the values passed.
+
+    Set local_only=False to restore the legacy "star2" recipe (per-window EM anchored
+    toward the chrom-wide h_global by global_anchor_weight, then Li-Stephens-style
+    smoothed across windows by hmm_smooth_*). NOTE that under a genuine within-window
+    haploblock collapse the anchor is split equally across k-mer-indistinguishable
+    class members (see block_em._fit_one), so the anchored recipe cannot preserve
+    intra-class prior asymmetry — another reason local-only is the default.
     """
     t_chrom = time.time()
+    if local_only:
+        if global_anchor_weight != 0.0:
+            print(f"  [{chrom}] local-only: forcing global_anchor_weight "
+                  f"{global_anchor_weight} → 0 (no global prior)", flush=True)
+            global_anchor_weight = 0.0
+        if hmm_smooth_passes != 0:
+            print(f"  [{chrom}] local-only: forcing hmm_smooth_passes "
+                  f"{hmm_smooth_passes} → 0 (no cross-window smoothing)", flush=True)
+            hmm_smooth_passes = 0
     kmer_pa_dense, counts, meta, cov, F, K = _count_and_load_kmer_pa_dense(
         chrom, kmer_pa_prefix, reads_input, threads, kmer_db=kmer_db,
         hash_size=hash_size, max_kmer_cov_mult=max_kmer_cov_mult)
@@ -343,6 +414,7 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
         min_kmers_per_block=min_kmers_per_block, verbose=False,
         global_anchor_weight=global_anchor_weight,
         omega=omega, local_only=local_only, normalize=normalize,
+        haploblock_eps=haploblock_eps,
     )
     _low_label = "NaN'd (local-only)" if local_only else "fallbacks"
     print(f"  [{chrom}] block-EM {time.time()-t:.0f}s "
@@ -458,17 +530,22 @@ def main():
                          "falls back to the chrom-wide h. Lower it to probe thin LD blocks.")
     ap.add_argument("--global-anchor-weight", type=float, default=0.3,
                     help="λ for per-window EM Dirichlet anchor toward chrom-wide "
-                         "h_global. 0 = pure per-window MLE; production: 0.3.")
-    ap.add_argument("--local-only", action="store_true",
-                    help="GLOBAL-FREE window mode (recombinant pools): no global "
-                         "anchor and no global fallback. Forces "
-                         "--global-anchor-weight 0; windows below --min-kmers-per-block "
-                         "(and empty windows / unassigned records) get NaN AF instead "
-                         "of the chrom-wide h. HMM smoothing across local fits still "
-                         "applies. global_h is still stored for diagnostics only.")
+                         "h_global. ONLY applies with --no-local-only (the legacy "
+                         "'star2' recipe); local-only (the default) forces it to 0.")
+    ap.add_argument("--local-only", action=argparse.BooleanOptionalAction, default=True,
+                    help="GLOBAL-FREE window mode (DEFAULT, production recipe for "
+                         "recombinant pools): no global anchor prior, no global "
+                         "fallback, and NO cross-window smoothing. Forces "
+                         "--global-anchor-weight and --hmm-smooth-passes to 0; windows "
+                         "below --min-kmers-per-block (and empty windows / unassigned "
+                         "records) get NaN AF instead of the chrom-wide h. global_h is "
+                         "still stored for diagnostics only. Pass --no-local-only to "
+                         "restore the legacy anchored+smoothed 'star2' recipe. "
+                         "(Ignored in --block-mode global.)")
     ap.add_argument("--hmm-smooth-passes", type=int, default=5,
                     help="Post-EM Li-Stephens-style smoothing passes on h_blocks. "
-                         "0 = off; production: 5.")
+                         "ONLY applies with --no-local-only; local-only (the default) "
+                         "forces it to 0. Legacy 'star2': 5.")
     ap.add_argument("--hmm-smooth-alpha", type=float, default=0.5,
                     help="α for HMM smoothing: h_b' = α·h_b + (1-α)·neighbor_avg. "
                          "Smaller = more smoothing. Production: 0.5.")
@@ -494,18 +571,21 @@ def main():
                     help=f"Identifiability floor c for --emit-af-se (default "
                          f"{AF_ID_FLOOR_DEFAULT}, calibrated on the 231 arch3 panel; "
                          f"recompute per panel with af_calibrate_floor.py).")
+    ap.add_argument("--haploblock-eps", type=float, default=0.0,
+                    help="Haplotype-merge tolerance for the block→haploblock→EM collapse, "
+                         "as a FRACTION of a unit's k-mers. 0.0 (default) = exact "
+                         "byte-identical k-mer presence patterns are one haplotype "
+                         "(lossless; K_b==F is an exact no-op). >0 = also merge founders "
+                         "whose presence differs in ≤ eps·(unit k-mers) — APPROXIMATE, "
+                         "merges near-indistinguishable founders (both modes).")
     args = ap.parse_args()
 
     if args.emit_af_se and args.block_mode != "global":
         sys.exit("ERROR: --emit-af-se is implemented for --block-mode global only")
 
-    if args.local_only:
-        if args.block_mode != "window":
-            sys.exit("ERROR: --local-only requires --block-mode window")
-        if args.global_anchor_weight != 0:
-            print(f"  [local-only] forcing --global-anchor-weight "
-                  f"{args.global_anchor_weight} → 0 (global-free mode)", flush=True)
-            args.global_anchor_weight = 0.0
+    # --local-only is a window-mode concept (default True). It is a no-op in global
+    # mode (run_one_chrom_global never reads it). run_one_chrom_window does the
+    # anchor/smoothing forcing itself, so nothing to force here.
 
     print(f"=== {args.sample} (per-chrom {args.block_mode} mode"
           f"{', h-only' if args.h_only else ''}) ===", flush=True)
@@ -580,7 +660,7 @@ def main():
                 kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only,
                 max_kmer_cov_mult=args.max_kmer_cov_mult,
                 emit_af_se=args.emit_af_se, af_id_floor=args.af_id_floor,
-                normalize=args.normalize)
+                normalize=args.normalize, haploblock_eps=args.haploblock_eps)
             if h is None:
                 continue
             h_save[chrom] = h
@@ -608,6 +688,7 @@ def main():
                 local_only=args.local_only,
                 max_kmer_cov_mult=args.max_kmer_cov_mult,
                 normalize=args.normalize,
+                haploblock_eps=args.haploblock_eps,
             )
             if idx is None:
                 continue

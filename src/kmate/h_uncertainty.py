@@ -29,7 +29,7 @@ delta method on the projection AF_r = (ĥᵀv_r)/(ĥᵀu_r):
 from __future__ import annotations
 import numpy as np
 
-from .em_solver import solve_em
+from .em_solver import solve_em, haploblock_collapse_indices
 
 
 def fisher_information_h(h, kmer_pa, counts, omega=None, eps_mu=1e-7, chunk=None):
@@ -120,13 +120,23 @@ def identifiability(h, kmer_pa, counts, omega=None, support_eps=1e-6):
 
 def bootstrap_cov_h(h_hat, kmer_pa, counts, omega=None, B=200,
                     coverage=None, seed=0, max_iter=200, tol=1e-7,
-                    rate_h=None, return_samples=False, normalize="per_founder"):
+                    rate_h=None, return_samples=False, normalize="per_founder",
+                    collapse=True, haploblock_eps=0.0):
     """Parametric Poisson bootstrap covariance of ĥ.
 
     Resimulate c* ~ Poisson(λ̂ μ_k(rate_h)) — depth-matched to Σcounts — and
     refit the EM B times. rate_h defaults to h_hat (standard bootstrap); pass
     the TRUE h to get the gold Monte-Carlo sampling distribution instead.
     Returns (Sigma, samples|None). SE = sqrt(diag(Sigma)).
+
+    collapse (default True): each replicate is refit through the SAME
+    block→haploblock→EM collapse the production estimator uses — fit the K_b
+    distinct haplotypes over `kmer_pa` (eps=`haploblock_eps`), then equal-split each
+    class frequency to its members — so the bootstrap measures the variance of the
+    DEPLOYED estimator, not a different uncollapsed one. When every founder is
+    distinct (K_b==F, e.g. the 231-founder whole-chromosome panel) this is an exact
+    no-op and byte-identical to the legacy uncollapsed refit. Set collapse=False to
+    force the legacy always-fit-F bootstrap.
     """
     rng = np.random.default_rng(seed)
     h_hat = np.asarray(h_hat, dtype=np.float64)
@@ -143,14 +153,27 @@ def bootstrap_cov_h(h_hat, kmer_pa, counts, omega=None, B=200,
     w_full = np.ones(kmer_pa.shape[1], np.float32) if omega is None \
         else np.asarray(omega, dtype=np.float32)
     kfw_full = (kmer_pa.astype(np.float32) @ w_full).astype(np.float32)
+    # Haploblock collapse is a PANEL property (independent of which k-mers a given
+    # replicate observes), so compute it once over the full panel here.
+    lab = reps = csize = None
+    Kb = F
+    if collapse:
+        lab, reps, csize, Kb = haploblock_collapse_indices(kmer_pa, eps=haploblock_eps)
+    do_collapse = collapse and Kb < F
     samples = np.empty((B, F), dtype=np.float64)
     for b in range(B):
         c_star = rng.poisson(rate).astype(np.float32)
         nz = c_star > 0
         om = None if omega is None else np.asarray(omega)[nz]
-        h_b, _ = solve_em(c_star[nz], kmer_pa[:, nz], coverage or lam,
-                          max_iter=max_iter, tol=tol, omega=om,
-                          normalize=normalize, kfw=kfw_full)
+        if do_collapse:
+            h_c, _ = solve_em(c_star[nz], kmer_pa[reps][:, nz], coverage or lam,
+                              max_iter=max_iter, tol=tol, omega=om,
+                              normalize=normalize, kfw=kfw_full[reps])
+            h_b = (h_c / csize)[lab]                # split class freq equally to members
+        else:
+            h_b, _ = solve_em(c_star[nz], kmer_pa[:, nz], coverage or lam,
+                              max_iter=max_iter, tol=tol, omega=om,
+                              normalize=normalize, kfw=kfw_full)
         samples[b] = h_b
     Sigma = np.cov(samples.T)
     return (Sigma, samples if return_samples else None)

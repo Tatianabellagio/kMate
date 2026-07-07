@@ -70,14 +70,18 @@ kmate run \
     --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
     --var-meta   panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \
     --reads R1.fq R2.fq --sample MYSAMPLE --out MYSAMPLE.tsv \
-    --threads 8 --chroms Chr1 --kmer-weight inv_mb --block-mode global
+    --threads 8 --chroms Chr1 --kmer-weight uniform --block-mode global
 ```
 
 (`kmate run --help` lists every flag. Existing scripts that call `python src/per_sample_per_chrom.py ...` still work via thin shims that forward to the package.)
 
 **Estimator mode** (`--block-mode`)
-- `global`: one founder mixture per chromosome. Use for **selfing / inbred / founder (F0)** pools.
-- `window`: per-window mixture with HMM smoothing, for **recombinant** pools. `--block-mode window` alone reproduces the production "star2" recipe (10 kb windows, 5 smoothing passes).
+- `global`: one founder mixture per chromosome. Use for **selfing / inbred / founder (F0)** pools. Recommended weighting is `--kmer-weight uniform` (the per-founder M-step normalization — kMate's default — removes the panel-completeness imbalance at its source, so the old `--kmer-weight inv_mb` de-replication is now redundant here; superseded 2026-07-06 for global mode — see [`docs/FOUNDER_NORMALIZATION_FIX.md`](docs/FOUNDER_NORMALIZATION_FIX.md)).
+- `window`: per-window mixture for **recombinant** pools. Defaults to **`--local-only`**: each window is fit purely on its own k-mers, with no global-mixture prior, no fallback to the chromosome-wide mixture, and no cross-window smoothing (a recombinant window carries only a few haplotypes, so the chromosome-wide mixture is the wrong prior for it). Pass `--no-local-only` to restore the legacy anchored + HMM-smoothed "star2" recipe (10 kb windows, anchor 0.3, 5 smoothing passes). Window mode keeps `--kmer-weight inv_mb`.
+
+**Haploblock collapse** (both modes, on by default): before each EM, kMate computes the distinct k-mer haplotypes the panel actually resolves over the unit (window, or whole chromosome) and fits those `K_b ≤ 231` haplotypes rather than assuming all 231 founders are separately identifiable, splitting each haplotype's frequency equally back to its members. `--haploblock-eps` sets the merge tolerance (default `0` = exact k-mer-identical, an exact no-op when all founders are distinct). This is the *block → haploblock → EM* design (like HARP/hapFIRE); it chiefly benefits window mode, where a small window may carry only a handful of haplotypes. See [`ALGORITHM.md`](ALGORITHM.md) §4.4.
+
+The M-step normalization defaults to `--normalize per_founder`; pass `--normalize global` only to reproduce legacy (pre-2026-07-06) runs.
 
 **Output**: a per-record TSV, one row per panel variant (SNP / indel / SV):
 

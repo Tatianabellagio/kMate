@@ -24,7 +24,7 @@ import time
 from dataclasses import dataclass
 
 import numpy as np
-from .em_solver import solve_em
+from .em_solver import solve_em, haploblock_collapse_indices
 
 
 @dataclass
@@ -145,11 +145,31 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                        global_anchor_weight: float = 0.0,
                        omega=None,
                        local_only: bool = False,
-                       normalize: str = "per_founder"):
+                       normalize: str = "per_founder",
+                       haploblock_collapse: bool = True,
+                       haploblock_eps: float = 0.0):
     """Run EM independently per block.
 
     omega: optional K-vec of per-k-mer weights ω_k (e.g. 1/m_b). Sliced per block
     and passed to solve_em (omega=None → unweighted MLE; identical to old behavior).
+
+    haploblock_collapse (default True): before fitting each block, collapse the F
+    founders into the DISTINCT HAPLOTYPES present in that block (founders with a
+    byte-identical k-mer presence pattern over the block's k-mers — exact identity,
+    eps=0). The EM is then solved over the K_b ≤ F distinct haplotypes, not the full
+    founder set, and each class frequency is split equally back to its member
+    founders. This is the general kMate design (block → haploblock → EM, hapFIRE-like):
+    it removes the flat-likelihood ridge from k-mer-indistinguishable founders and
+    fits only what the data can resolve. When every founder is distinct in a block
+    (K_b == F, e.g. coarse r2=0.1 windows) it is an EXACT no-op vs fitting F directly
+    (the Kb==F branch fits founders in native order, no permutation), so
+    coarse-block/global-style runs are byte-unchanged. Set False for the legacy
+    always-fit-F behaviour.
+
+    haploblock_eps (default 0.0): haplotype-merge tolerance passed to
+    haploblock_collapse_indices — 0.0 = exact byte-identical presence patterns
+    (lossless); >0 = merge founders whose presence differs in ≤ eps·(block k-mers),
+    approximate, see haploblock_collapse_indices.
 
     Args:
         counts: K-vec of observed counts (already filtered to block coverage)
@@ -230,24 +250,50 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
         idxs_nz = idxs[nz[idxs]]
         if len(idxs_nz) < min_kmers_per_block:
             return b, fallback_h, 1
-        cn_b = np.ascontiguousarray(kmer_pa_dense[:, idxs_nz])
         c_b = counts[idxs_nz]
         omega_b = None if omega is None else omega[idxs_nz]
         # per_founder normalizer over the FULL window (all its k-mers, incl. c_k=0),
         # not just the observed idxs_nz — else it's conditioned on this run's zero draws.
         w_full = (np.ones(len(idxs), np.float32) if omega is None
                   else omega[idxs].astype(np.float32))
-        kfw_b = (kmer_pa_dense[:, idxs] @ w_full).astype(np.float32)
+        kfw_full = (kmer_pa_dense[:, idxs] @ w_full).astype(np.float32)   # F-vec
+
+        if haploblock_collapse:
+            # block -> distinct haplotypes present -> EM over K_b (not F). Members of a
+            # class match over idxs (⊇ idxs_nz), so any representative row stands in.
+            lab, reps, csize, Kb = haploblock_collapse_indices(kmer_pa_dense[:, idxs],
+                                                               eps=haploblock_eps)
+            if Kb < F:                                        # genuine collapse
+                cn_c = np.ascontiguousarray(kmer_pa_dense[reps][:, idxs_nz])   # K_b × n_nz
+                kfw_c = kfw_full[reps]
+                if global_anchor_weight > 0:
+                    # NOTE: anchor is summed per class then split EQUALLY back to members
+                    # (h_b below), so any INTRA-class prior asymmetry in global_h is lost.
+                    # Acceptable because members are (≤eps) k-mer-indistinguishable here so
+                    # the data can't separate them anyway; but this is why the production
+                    # window recipe is LOCAL-ONLY (global_anchor_weight=0) — see
+                    # per_sample_per_chrom.run_one_chrom_window.
+                    prior_c = np.bincount(lab, weights=global_h, minlength=Kb).astype(np.float32)
+                    h_c, _ = solve_em(c_b, cn_c, coverage, max_iter=em_max_iter, tol=tol,
+                                      prior_h=prior_c, prior_weight=global_anchor_weight,
+                                      omega=omega_b, normalize=normalize, kfw=kfw_c)
+                else:
+                    h_c, _ = solve_em(c_b, cn_c, coverage, max_iter=em_max_iter, tol=tol,
+                                      omega=omega_b, normalize=normalize, kfw=kfw_c)
+                h_b = (h_c / csize)[lab]                      # split class freq equally to members
+                return b, h_b.astype(np.float32), 0
+            # Kb == F: no distinct-haplotype merging — fall through to the direct
+            # F-founder fit (EXACT no-op, avoids a needless row permutation + reorder).
+
+        # direct fit over the full founder set (legacy path, and the Kb==F no-op above)
+        cn_b = np.ascontiguousarray(kmer_pa_dense[:, idxs_nz])
         if global_anchor_weight > 0:
-            h_b, _ = solve_em(c_b, cn_b, coverage,
-                              max_iter=em_max_iter, tol=tol,
-                              prior_h=global_h,
-                              prior_weight=global_anchor_weight,
-                              omega=omega_b, normalize=normalize, kfw=kfw_b)
+            h_b, _ = solve_em(c_b, cn_b, coverage, max_iter=em_max_iter, tol=tol,
+                              prior_h=global_h, prior_weight=global_anchor_weight,
+                              omega=omega_b, normalize=normalize, kfw=kfw_full)
         else:
-            h_b, _ = solve_em(c_b, cn_b, coverage,
-                              max_iter=em_max_iter, tol=tol,
-                              omega=omega_b, normalize=normalize, kfw=kfw_b)
+            h_b, _ = solve_em(c_b, cn_b, coverage, max_iter=em_max_iter, tol=tol,
+                              omega=omega_b, normalize=normalize, kfw=kfw_full)
         return b, h_b.astype(np.float32), 0
 
     # Limit per-thread BLAS to avoid oversubscription. n_workers × inner_threads

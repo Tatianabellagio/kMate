@@ -29,6 +29,76 @@ from __future__ import annotations
 import numpy as np
 
 
+def haploblock_collapse_indices(kmer_pa_sig, eps: float = 0.0):
+    """Collapse founders into DISTINCT HAPLOTYPES over a unit's k-mers.
+
+    The kMate design: before running the EM over a unit (a block, or the whole
+    chromosome in global mode), *compute* how many distinct haplotypes the panel
+    actually resolves there — founders whose k-mer presence pattern over the unit
+    matches (see `eps`) are one haplotype — rather than *assuming* the full founder
+    count. The EM is then fit over the K_b ≤ F distinct haplotypes and each class
+    frequency split equally back to its members. K_b == F is an exact no-op vs
+    fitting F.
+
+    Args:
+        kmer_pa_sig: F × M presence matrix over the unit's panel k-mers (M can be
+            the full panel of the unit; c_k=0 k-mers included — the signature is a
+            panel property, not conditioned on which k-mers got reads).
+        eps: haplotype-merge tolerance, as a FRACTION of the unit's M k-mers.
+            eps=0 (default) → EXACT byte-identical presence patterns are one
+            haplotype (an equivalence relation; the representative row is exact for
+            every member, so the collapse is lossless). eps>0 → APPROXIMATE: greedy
+            single-representative clustering — a founder joins an existing class iff
+            its presence pattern differs from that class's representative in ≤ eps·M
+            k-mers, else it starts a new class. Membership is thus "within eps of the
+            row actually used as your stand-in in the EM," which is the exact quantity
+            the collapse approximates. Order-dependent (founders scanned 0..F-1) and
+            lossy by construction — use only to merge founders the data cannot
+            distinguish; eps=0 is the production default.
+    Returns:
+        lab   (F,)   int  — haploblock class of each founder (0-based)
+        reps  (K_b,) int  — a representative founder index per class (first member)
+        csize (K_b,) float32 — number of founders in each class
+        Kb    int         — number of distinct haplotypes
+    """
+    F = kmer_pa_sig.shape[0]
+    packed = np.packbits(kmer_pa_sig > 0, axis=1)          # F × ceil(M/8) uint8 signature
+    if eps <= 0:
+        # exact identity: byte-equal signatures are one haplotype (fast, via np.unique).
+        _, lab = np.unique([packed[f].tobytes() for f in range(F)], return_inverse=True)
+        Kb = int(lab.max()) + 1
+        reps = np.zeros(Kb, dtype=np.int64)
+        reps[lab[::-1]] = np.arange(F)[::-1]                # first founder in each class
+        csize = np.bincount(lab, minlength=Kb).astype(np.float32)
+        return lab, reps, csize, Kb
+
+    # eps>0: greedy representative-based clustering. A founder joins the first
+    # existing class whose representative it is within eps of (Hamming over the
+    # presence signature), else opens a new class. The representative row is exactly
+    # the row substituted for the class in the EM, so this bounds the substitution
+    # error at eps·M differing k-mers per member.
+    M = kmer_pa_sig.shape[1]
+    thresh = eps * M
+    popcount = np.array([bin(i).count("1") for i in range(256)], dtype=np.int64)
+    lab = np.full(F, -1, dtype=np.int64)
+    rep_list = []
+    for f in range(F):
+        assigned = -1
+        for c, r in enumerate(rep_list):
+            ham = int(popcount[np.bitwise_xor(packed[f], packed[r])].sum())
+            if ham <= thresh:
+                assigned = c
+                break
+        if assigned < 0:
+            assigned = len(rep_list)
+            rep_list.append(f)
+        lab[f] = assigned
+    reps = np.asarray(rep_list, dtype=np.int64)
+    Kb = len(rep_list)
+    csize = np.bincount(lab, minlength=Kb).astype(np.float32)
+    return lab, reps, csize, Kb
+
+
 def solve_em(
     counts: np.ndarray,            # K-vector of observed counts
     kmer_pa: np.ndarray,                # F × K binary presence/absence matrix (K_pa)
