@@ -181,7 +181,7 @@ def _project_with_called_mask(var_pa_chrom, h, idx):
 def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          em_max_iter=200, kmer_weight="uniform", kmer_db=None,
                          hash_size="3G", h_only=False, max_kmer_cov_mult=0.0,
-                         emit_af_se=False, af_id_floor=0.0):
+                         emit_af_se=False, af_id_floor=0.0, normalize="per_founder"):
     """Global-mode (single h per chrom) EM + projection.
 
     kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
@@ -219,7 +219,7 @@ def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
 
     t = time.time()
     h, info = solve_em(counts_em, kmer_pa_em, cov, max_iter=em_max_iter, tol=1e-7,
-                       omega=omega)
+                       omega=omega, normalize=normalize)
     print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
           f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
 
@@ -284,7 +284,7 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
                          hmm_smooth_recomb_rate=4e-8,
                          kmer_weight="uniform", kmer_db=None, hash_size="3G",
                          blocks_tsv=None, min_kmers_per_block=200,
-                         local_only=False, max_kmer_cov_mult=0.0):
+                         local_only=False, max_kmer_cov_mult=0.0, normalize="per_founder"):
     """Window-mode per-chrom EM + smooth projection (production "star2" recipe).
 
     Fixed-bp windows; per-window EM optionally anchored toward the chrom-wide
@@ -330,7 +330,7 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
         cov, em_max_iter=em_max_iter, tol=1e-7,
         min_kmers_per_block=min_kmers_per_block, verbose=False,
         global_anchor_weight=global_anchor_weight,
-        omega=omega, local_only=local_only,
+        omega=omega, local_only=local_only, normalize=normalize,
     )
     _low_label = "NaN'd (local-only)" if local_only else "fallbacks"
     print(f"  [{chrom}] block-EM {time.time()-t:.0f}s "
@@ -423,6 +423,13 @@ def main():
                     help="Per-k-mer EM weight ω_k. 'uniform' = MLE; 'inv_mb' = 1/m_b "
                          "per-bubble de-replication (removes imbalanced-design over-credit). "
                          "Applied in both global and window modes.")
+    ap.add_argument("--normalize", default="per_founder", choices=["per_founder", "global"],
+                    help="EM M-step normalization. 'per_founder' (DEFAULT) divides each founder's "
+                         "update by its own observed k-mer content Kf_w (RNA-seq effective-length "
+                         "correction) — removes the completeness bias that otherwise collapses "
+                         "k-mer-poor founders to ~0. 'global' is the LEGACY multinomial "
+                         "normalization by the global count total (kept for reproducing old runs; "
+                         "under-calls founder frequencies). Applied in both global and window modes.")
     ap.add_argument("--block-mode", default="global", choices=["global", "window"],
                     help="global: one h per chrom (selfing / inbred / F0 pools). "
                          "window: per-window h for recombinant pools (production "
@@ -560,7 +567,8 @@ def main():
                 reads_input, args.threads, kmer_weight=args.kmer_weight,
                 kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only,
                 max_kmer_cov_mult=args.max_kmer_cov_mult,
-                emit_af_se=args.emit_af_se, af_id_floor=args.af_id_floor)
+                emit_af_se=args.emit_af_se, af_id_floor=args.af_id_floor,
+                normalize=args.normalize)
             if h is None:
                 continue
             h_save[chrom] = h
@@ -587,6 +595,7 @@ def main():
                 min_kmers_per_block=args.min_kmers_per_block,
                 local_only=args.local_only,
                 max_kmer_cov_mult=args.max_kmer_cov_mult,
+                normalize=args.normalize,
             )
             if idx is None:
                 continue

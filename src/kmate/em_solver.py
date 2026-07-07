@@ -41,6 +41,7 @@ def solve_em(
     prior_h: np.ndarray | None = None,    # NEW: anchor h to prior (per-window EM)
     prior_weight: float = 0.0,            # NEW: λ — strength of anchor toward prior_h
     omega: np.ndarray | None = None,      # NEW: per-k-mer weight ω_k (e.g. 1/m_b)
+    normalize: str = "per_founder",       # "per_founder" (default, Kf_w fix) | "global" (legacy)
 ) -> tuple[np.ndarray, dict]:
     """Run EM until h converges.
 
@@ -67,6 +68,25 @@ def solve_em(
     turns "h ∝ k-mer count" into "h ∝ locus count" and removes the imbalanced-
     design over-credit. omega=None reproduces the unweighted MLE exactly.
 
+    normalize:
+      "per_founder" (DEFAULT — the fix; see below) is recommended everywhere.
+      "global" (LEGACY) — the M-step numerator raw_f = h_f·Σ_k kmer_pa[f,k]·ω_k·c_k/μ_k
+        is normalized by the GLOBAL scalar total_c = Σ_k ω_k·c_k. At the noiseless
+        fixed point raw_f = h_f·Kf_w_f, where Kf_w_f = Σ_{k:c_k>0} ω_k·kmer_pa[f,k] is
+        founder f's own (weighted) content over OBSERVED k-mers. So the global
+        normalization converges to ĥ_f ∝ h_true_f·Kf_w_f — founders with more k-mers
+        (cactus/long-read) are over-credited, k-mer-poor founders collapse to ~0.
+      "per_founder" (the fix) — divide raw_f by Kf_w_f (each founder's OWN observed
+        content) before renormalizing to the simplex:
+            B_f = total_c · (raw_f/Kf_w_f) / Σ_f'(raw_f'/Kf_w_f')
+        (scaled so Σ_f B_f = total_c, keeping the Dirichlet/anchor denominators
+        below unchanged). This makes h_true an EXACT fixed point for ANY Kf_w
+        heterogeneity — the RNA-seq effective-length correction (RSEM/kallisto/salmon:
+        τ_i = (θ_i/ℓ_i)/Σ_j(θ_j/ℓ_j)) that "global" omits. The Dirichlet (α) and
+        prior_h anchor pseudocounts stay OUTSIDE the /Kf_w division (they must pull
+        toward prior_h with a strength set by prior_weight, independent of Kf_w).
+        Reduces byte-for-byte to "global" when Kf_w is constant across founders.
+
     Returns (h, info_dict).
     """
     K = counts.shape[0]
@@ -92,11 +112,29 @@ def solve_em(
     else:
         anchor_term = None
 
+    # Per-founder normalization (the Kf_w fix): each founder's own weighted content
+    # over OBSERVED (c_k>0) k-mers — the coefficient of h_f in raw_f at the fixed
+    # point. Computed with an explicit c_k>0 mask so it is exact whether or not the
+    # caller pre-filtered to nonzero-count k-mers (global path does; block_em's
+    # global fallback does not). Floored to avoid divide-by-zero for founders with
+    # no observed k-mers (e.g. an empty window).
+    per_founder = (normalize == "per_founder")
+    if per_founder:
+        obs_w = (counts > 0).astype(np.float32)
+        if omega is not None:
+            obs_w = obs_w * omega.astype(np.float32)
+        Kf_w = np.maximum((kmer_pa @ obs_w).astype(np.float32), np.float32(1e-12))
+
     history = []
     for it in range(max_iter):
         denom = np.maximum(h @ kmer_pa, np.float32(1e-7))
         cw = wc / denom
         em_term = h * (kmer_pa @ cw)
+        if per_founder:
+            t = em_term / Kf_w
+            t_sum = t.sum()
+            if t_sum > 0:
+                em_term = np.float32(total_c) * t / t_sum   # B_f, Σ_f B_f = total_c
         if anchor_term is not None:
             em_term = em_term + anchor_term
         if prior_pseudo > 0:

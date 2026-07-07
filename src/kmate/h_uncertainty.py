@@ -120,7 +120,7 @@ def identifiability(h, kmer_pa, counts, omega=None, support_eps=1e-6):
 
 def bootstrap_cov_h(h_hat, kmer_pa, counts, omega=None, B=200,
                     coverage=None, seed=0, max_iter=200, tol=1e-7,
-                    rate_h=None, return_samples=False):
+                    rate_h=None, return_samples=False, normalize="per_founder"):
     """Parametric Poisson bootstrap covariance of ĥ.
 
     Resimulate c* ~ Poisson(λ̂ μ_k(rate_h)) — depth-matched to Σcounts — and
@@ -143,7 +143,7 @@ def bootstrap_cov_h(h_hat, kmer_pa, counts, omega=None, B=200,
         nz = c_star > 0
         om = None if omega is None else np.asarray(omega)[nz]
         h_b, _ = solve_em(c_star[nz], kmer_pa[:, nz], coverage or lam,
-                          max_iter=max_iter, tol=tol, omega=om)
+                          max_iter=max_iter, tol=tol, omega=om, normalize=normalize)
         samples[b] = h_b
     Sigma = np.cov(samples.T)
     return (Sigma, samples if return_samples else None)

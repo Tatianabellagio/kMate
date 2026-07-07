@@ -144,7 +144,8 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                        n_workers=4,
                        global_anchor_weight: float = 0.0,
                        omega=None,
-                       local_only: bool = False):
+                       local_only: bool = False,
+                       normalize: str = "per_founder"):
     """Run EM independently per block.
 
     omega: optional K-vec of per-k-mer weights ω_k (e.g. 1/m_b). Sliced per block
@@ -204,7 +205,7 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
     t = time.time()
     global_h, info = solve_em(counts, kmer_pa_dense, coverage,
                               max_iter=em_max_iter, tol=tol,
-                              omega=omega)
+                              omega=omega, normalize=normalize)
     global_h = global_h.astype(np.float32)
     # Global-free mode: low-evidence/empty blocks get NaN, not global_h.
     fallback_h = np.full(F, np.nan, dtype=np.float32) if local_only else global_h
@@ -237,11 +238,11 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                               max_iter=em_max_iter, tol=tol,
                               prior_h=global_h,
                               prior_weight=global_anchor_weight,
-                              omega=omega_b)
+                              omega=omega_b, normalize=normalize)
         else:
             h_b, _ = solve_em(c_b, cn_b, coverage,
                               max_iter=em_max_iter, tol=tol,
-                              omega=omega_b)
+                              omega=omega_b, normalize=normalize)
         return b, h_b.astype(np.float32), 0
 
     # Limit per-thread BLAS to avoid oversubscription. n_workers × inner_threads
