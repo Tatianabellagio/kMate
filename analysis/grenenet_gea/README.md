@@ -77,8 +77,8 @@ which we mirror for SVs:
 ## Data
 
 - kMate per-sample AF: `results/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/`
-  (production AF dir, regenerated under `--unit chrom` + full-panel Kf_w; `grenenet_kmate_arch3` is
-  retired). Columns `chrom pos ref_len alt_len alt_freq info n_called se`. SVs = `ref_len!=1 | alt_len!=1`.
+  (production AF dir, regenerated under `--unit chrom` + full-panel Kf_w; the old-panel
+  `grenenet_kmate_arch3` was deleted 2026-07-08). Columns `chrom pos ref_len alt_len alt_freq info n_called se`. SVs = `ref_len!=1 | alt_len!=1`.
 - Founding p0 (gen 0): mean alt_freq over the 8 SEEDMIX kMate reps (`lib.build_p0`).
 - Sample → site/plot/generation/coverage: Table_S5 (`samples_data_fix57.csv`).
 - Analysis unit = `site_gen_plot` pool; timepoints merged by flower-weighted mean AF.

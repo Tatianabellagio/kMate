@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 """Build BayPass TEMPORAL-contrast inputs on haploblocks (default site 4 smoke test).
 
+⚠️ RETIRED INPUTS (2026-07-08): this reads `hapfreq/hapfreq_matrix.npy` +
+`hapfreq_registry.csv`, which are STALE products of the retired hapfreq/Pipeline-B
+chain (archived under archive/pipelineB_hapfreq_retired/; built on the pre-Kf_w window
+`h`, not the corrected --unit chrom cohort). Do NOT run this as-is — the BayPass plan
+(BAYPASS_TEMPORAL_PLAN.md) must first be repointed to a haploblock frequency table
+regenerated under the corrected estimator, or retired.
+
 Populations = 8 seedmix reps (founding, gen0) + site-SITE gen-3 plots (evolved).
 Markers = testable haploblock one-vs-rest haplotypes, k-1 per block (drop the max-panel-freq
 reference), same set logic as the founder GWAS. Per pop the allele counts are

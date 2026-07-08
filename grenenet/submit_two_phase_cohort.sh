@@ -21,9 +21,9 @@
 #   grenenet/submit_two_phase_cohort.sh MANIFEST OUT_DIR DB_DIR \
 #       [WAVE_SIZE=200] [BLOCK_MODE=global] [THROTTLE=200]
 #
-# Example (full evolved cohort, global mode — the production set):
+# Example (full evolved cohort, --unit chrom — the production set):
 #   grenenet/submit_two_phase_cohort.sh data/sample_manifest_usesample.tsv \
-#       results/grenenet_kmate_arch3 $SCRATCH/kmate_dbs 200 global 200
+#       results/grenenet_gea/rerun_kfw_hb/evolved $SCRATCH/kmate_dbs 200 chrom 200
 # ============================================================================
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate

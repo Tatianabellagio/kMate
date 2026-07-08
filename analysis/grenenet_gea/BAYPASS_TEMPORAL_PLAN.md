@@ -1,5 +1,12 @@
 # BayPass TEMPORAL (founding→evolved) on haploblocks — execution plan
 
+> **⚠️ STALE INPUTS (2026-07-08).** This plan's haploblock-frequency inputs come from the
+> hapfreq/Pipeline-B chain, now RETIRED (archived under `archive/pipelineB_hapfreq_retired/`;
+> it read the deleted `results/grenenet_kmate_window` store and was built on the pre-Kf_w window
+> `h`). `hapfreq/hapfreq_matrix.npy` + `hapfreq_registry.csv` are therefore stale. Before executing,
+> repoint to a haploblock frequency table regenerated under the corrected `--unit chrom` + Kf_w
+> cohort (or retire this plan). `baypass_build_inputs.py` carries the same warning.
+
 > **Status (2026-07-06): PLAN, not a completed analysis.** Only the CORE (Omega) model was
 > smoke-tested at site 4 (`results/grenenet_gea/hapfreq/baypass_temporal_site4/core_baypass.log`);
 > **no C2 contrast results exist yet.** The method-research doc

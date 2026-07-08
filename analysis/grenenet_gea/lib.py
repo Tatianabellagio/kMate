@@ -6,7 +6,8 @@ dependent directional selection — and ask whether SVs add adaptive signal SNPs
 miss. See README.md.
 
 Data:
-  - kMate per-sample AF TSVs: results/grenenet_kmate_arch3/<MLFH...>.tsv
+  - kMate per-sample AF TSVs: results/grenenet_gea/rerun_kfw_hb/evolved/<MLFH...>.tsv
+      (--unit chrom + full-panel Kf_w; old-panel grenenet_kmate_arch3 deleted 2026-07-08)
       cols: chrom pos ref_len alt_len alt_freq info n_called se
   - founding p0 (gen 0): the SEEDMIX kMate outputs (mean over 8 reps).
   - sample metadata (site/plot/generation/coverage): Table_S5.

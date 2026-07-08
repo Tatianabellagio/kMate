@@ -43,7 +43,9 @@ Cohort launch: seed-mix `35549607` (8) + evolved `35549608/609/647` (2168), glob
 ## Step 0 — repoint + clear caches  ✅ DONE (2026-07-06)
 - Repointed `analysis/grenenet_gea/lib.py` `OUT`/`SEEDMIX`, `build_af_store.py` `OUT`, and
   `_build_support_nb.py` `OUTBASE` → `results/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`.
-  (Old multinomial outputs remain at `results/grenenet_kmate_arch3` / `seedmix_kmate_arch3`.)
+  (Old multinomial outputs `results/grenenet_kmate_arch3` / `seedmix_kmate_arch3` were
+  DELETED 2026-07-08 (~1.6 TB) so they can't be used by mistake; the old-panel scripts that
+  read them are archived under `analysis/grenenet_gea/archive/oldpanel_arch3_retired/`.)
 - Moved stale on-existence caches aside (suffix `preFix_multinomial`, reversible — they would
   otherwise silently return old data): `af_store/`, `group_means.npz`, `p0_seedmix_all.pkl`,
   `pilot_qc.csv`, `ecotype_fitness/sample_global_h.npz`, `varexp/selection_s_matrix.npz`.
