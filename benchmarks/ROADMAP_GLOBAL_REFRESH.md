@@ -62,43 +62,33 @@ benchmark family below.
 
 ---
 
-## Phase 0 — Unify the estimator under `--unit` + panel (PREREQUISITE, do first)
+## Phase 0 — Unify the estimator under `--unit` + panel (PREREQUISITE)
 
-**0a. Unify global/window into one `--unit`-parameterized estimator** (decided
-2026-07-07: full unify). There is one algorithm — `partition → per-unit
-(haploblock-collapse → local EM) → project` — so collapse the two driver functions
-into it and select the unit with a single flag:
+**0a. DONE (commits `a9bf1c0` + tidy pass).** The estimator is unified under one
+`--unit` flag — one algorithm (`partition → per-unit haploblock-collapse → local EM
+→ project`), unit-selected:
 
 ```
 --unit ld    [--ld-r2 0.1]     CompleteLDPartition LD blocks   (DEFAULT, r2=0.1)
 --unit chrom                   one unit = whole chromosome     (former "global")
 --unit bp    [--window-bp N]   fixed-bp windows                (former "window")
---unit tsv:<path>              explicit block TSV
+--unit tsv    (--blocks-tsv P) explicit block TSV
 ```
 
-Implementation:
-  - **One code path.** `run_one_chrom_global` and `run_one_chrom_window` merge into a
-    single `run_one_chrom(unit, ...)`. `chrom` is the degenerate partition `[whole
-    chromosome]` fed to the same per-unit block-EM path that already does eps=0
-    haploblock collapse + local fit. No anchor / no smoothing / no fallback is the
-    only behavior (local-only becomes intrinsic, not a flag).
-  - **`--unit ld`** computes CompleteLDPartition blocks from `var_pa` at `--ld-r2`
-    (reuse `gen_ld_partitions.py`'s partitioner; cache the block TSV per panel/chrom).
-  - **Port the two global-only features onto the unified path:** `--h-only` (skip the
-    projection; trivial) and `--emit-af-se` (already collapse-aware — compute the
-    K_b-class Fisher covariance per unit and equal-split-map to founders; lift the
-    logic from the current global path). Both are per-unit now.
-  - **Back-compat aliases (do not break production / the running cohort):** keep
-    `--block-mode global` → `--unit chrom` and `--block-mode window` → `--unit bp`
-    as deprecated aliases. The grenenet selfing cohort currently invokes
-    `--block-mode global`; it must keep running byte-identically (unit=chrom is the
-    exact whole-chromosome path, K_b==F no-op).
-  - **Verify invariants after the merge:** `kmate selftest` PASS; `--unit chrom`
-    byte-identical to the old `--block-mode global`; `--unit bp` reproduces the old
-    window path; `--unit ld` runs and logs per-block K_b.
-  - Update `cli.py`, driver docstring, ALGORITHM.md §5/§7, PIPELINE_STATE.md,
-    README once merged. Window-mode *recipe* content (anchor/smoothing) is not
-    reintroduced — it stays as the deprecated `--no-local-only` path only if kept.
+- New `src/kmate/ld_partition.py` computes CompleteLDPartition blocks from `var_pa`
+  at `--ld-r2` (pure-numpy; panel property, cached next to var_pa or via `--ld-blocks`).
+- `--block-mode global|window` kept as **deprecated aliases** (global→chrom,
+  window→bp). `--unit chrom` is **byte-identical** to the old `--block-mode global`
+  (verified `cmp -s`), so the in-flight grenenet selfing cohort is unaffected.
+- Internals: two focused fit helpers behind the one `--unit` dispatch —
+  `_fit_unit_chrom` (one-h; the only unit with `--h-only` / `--emit-af-se`, which are
+  intrinsically one-h features) and `_fit_unit_blocks` (per-block, local-only). A
+  literal single-function merge was deliberately NOT done — it would be a worse
+  200-line two-branch body given the projection + feature asymmetry; the unification
+  lives at the `--unit` interface, which is the meaningful layer.
+- Verified: `kmate selftest` PASS; `--unit chrom` == `--block-mode global`
+  byte-identical; `--unit {bp,ld}` and the default (→ld) run end-to-end; LD blocks
+  compute+cache+reload. Docs updated (ALGORITHM §7, README, PIPELINE_STATE).
 
 **0b. Generate the r²=0.1 LD blocks per chromosome** (already done for Chr1–5):
 `results/grenenet_gea/hap_blocks/ld_blocks_r2_0.10_<Chr>.tsv` (+ `_genome.tsv`),
@@ -111,14 +101,15 @@ Founder order verified identical across `data/kmer_pa_231_arch3_filt2inv`,
 `var_pa_231_arch3`, and the benchmark-local build (231, same order) — safe to swap.
   - p231: set `--kmer-pa-prefix data/kmer_pa_231_arch3_filt2inv/kmer_pa` (replaces
     the benchmark-local `kmer_pa_p231_filt2inv`).
-  - p80: production panel is the 231-founder arch3 index; the p80 control needs its
-    OWN 80-cactus-founder filt2inv in-house index. **Decision:** either (i) build a
-    p80 filt2inv in-house-index kmer_pa from the p80 VCF (matches production
-    construction on the homogeneous panel), or (ii) keep p80 on its existing
-    `kmer_pa_p80_filt2` and treat p80 as the balanced-panel *control* only. p80's
-    role is isolating panel imbalance, not shipping a production panel — (ii) is
-    acceptable if you just want the control; (i) if you want p80 fully
-    production-faithful. **Confirm.**
+  - p80 (DECIDED 2026-07-07): **rebuild a p80 in-house-index kmer_pa** from the p80
+    VCF (matches production construction → apples-to-apples with the new p231). Then
+    benchmark p80 in **two arms: with and without filt2inv**. Rationale: the private
+    (ac=1) k-mer drop in filt2/filt2inv was a **guard against the UNEVEN (cactus vs
+    PanGenie) panel**; p80 is a homogeneous cactus panel, so the drop may be
+    unnecessary there. Expectation is ~identical accuracy between the two arms —
+    running both *confirms* the private-k-mer filter is only doing work on the
+    heterogeneous panel. (So p80's k-mer axis = {in-house raw, in-house filt2inv};
+    both use `--kmer-weight uniform`.)
 
 **0d. Verification gates** (must pass before trusting any number):
   - founder order: kmer_pa == var_pa (verified for p231; re-check for p80 build).
@@ -210,10 +201,16 @@ Update `benchmark_table_4tool.tsv` / `benchmark_4tool_RMSE_*.png` kMate rows onl
 
 ## Open checkpoints to confirm before I start executing
 
-1. **Phase 0c:** p80 panel — build a p80 filt2inv in-house index (production-faithful)
-   vs keep `kmer_pa_p80_filt2` (control-only).
+*(none — all decisions resolved below)*
 
 ## Resolved
+
+- **p80 panel** (2026-07-07) — rebuild a p80 **in-house-index** kmer_pa (apples-to-apples
+  with the new p231 production panel), and benchmark **two arms: in-house raw vs
+  in-house filt2inv**. The private-k-mer (ac=1) drop was a guard against the uneven
+  cactus/PG panel; on the homogeneous p80 it may be unnecessary, so running both
+  confirms whether filt2inv matters on a balanced panel (expected ~identical). See
+  Phase 0c.
 
 - **Estimator unified under `--unit`** (2026-07-07) — full unify: one code path,
   `--unit {ld,chrom,bp,tsv}`, default `ld:0.1`; `--block-mode global/window` kept as

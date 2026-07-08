@@ -272,7 +272,7 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                     # Acceptable because members are (≤eps) k-mer-indistinguishable here so
                     # the data can't separate them anyway; but this is why the production
                     # window recipe is LOCAL-ONLY (global_anchor_weight=0) — see
-                    # per_sample_per_chrom.run_one_chrom_window.
+                    # per_sample_per_chrom._fit_unit_blocks.
                     prior_c = np.bincount(lab, weights=global_h, minlength=Kb).astype(np.float32)
                     h_c, _ = solve_em(c_b, cn_c, coverage, max_iter=em_max_iter, tol=tol,
                                       prior_h=prior_c, prior_weight=global_anchor_weight,

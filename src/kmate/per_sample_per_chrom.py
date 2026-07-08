@@ -1,18 +1,20 @@
 """
 Per-chromosome kMate driver — founder-mixture (h) estimation + AF projection.
 
-Two estimators only:
-  * global  — one h per chromosome (selfing / inbred / F0 pools, e.g. SEEDMIX).
-  * window  — per-window h for recombinant pools. Defaults to LOCAL-ONLY: each
-              window fit purely on its own k-mers, no global anchor prior, no
-              global fallback (thin windows → NaN AF), no cross-window smoothing.
-              `--block-mode window` alone gives this. Pass --no-local-only to
-              restore the legacy anchored+smoothed "star2" recipe (--window-bp
-              10000 --global-anchor-weight 0.3 --hmm-smooth-passes 5 α 0.5).
-
-Both modes fit each unit as: unit → distinct-haplotype collapse (K_b ≤ F) → EM →
-equal-split back to members (on by default; --haploblock-eps 0 = exact, a no-op
-when all founders are distinct). See ALGORITHM.md §4.4.
+ONE estimator, selected by the estimation UNIT (`--unit`). Every unit is fit the
+same way: unit → distinct-haplotype collapse (K_b ≤ F, --haploblock-eps 0 = exact,
+a no-op when all founders are distinct) → local EM → equal-split back to members →
+project (see ALGORITHM.md §4.4). Two internal fit helpers back the units — they
+differ only because the whole-chromosome one-h estimand supports extra outputs:
+  * `_fit_unit_chrom`   — --unit chrom: a single h over the whole chromosome
+        (selfing / inbred / F0 pools, e.g. SEEDMIX). The only unit that supports
+        --h-only and --emit-af-se. (Deprecated alias: --block-mode global.)
+  * `_fit_unit_blocks`  — --unit {ld,bp,tsv}: an independent h per block, LOCAL-ONLY
+        (no anchor prior, no fallback → thin/empty blocks give NaN AF, no smoothing),
+        projected per block. `ld` = r²-LD CompleteLDPartition blocks (production);
+        `bp` = fixed --window-bp windows; `tsv` = explicit --blocks-tsv. (Deprecated
+        alias: --block-mode window → bp.) Pass --no-local-only for the legacy
+        anchored+smoothed "star2" recipe.
 
 Memory note: instead of loading the genome-wide kmer_pa matrix (~74 GB dense
 float32 for 80M k-mers × 231 founders), we process one chromosome at a time
@@ -188,12 +190,13 @@ def _project_with_called_mask(var_pa_chrom, h, idx):
     return (freqs / safe).astype(freqs.dtype), called_weight.astype(freqs.dtype)
 
 
-def run_one_chrom_global(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
+def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          em_max_iter=200, kmer_weight="uniform", kmer_db=None,
                          hash_size="3G", h_only=False, max_kmer_cov_mult=0.0,
                          emit_af_se=False, af_id_floor=0.0, normalize="per_founder",
                          haploblock_eps=0.0):
-    """Global-mode (single h per chrom) EM + projection.
+    """Fit --unit chrom: one founder mixture h over the whole chromosome + AF
+    projection. (Also reached via the deprecated --block-mode global alias.)
 
     kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
     de-replication; m_b = #k-mers sharing the k-mer's bubble_id).
@@ -336,7 +339,7 @@ def load_blocks_tsv(path, chrom):
             for s, e in zip(bt["start_pos"], bt["end_pos"])]
 
 
-def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
+def _fit_unit_blocks(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
                          window_bp=10_000, em_max_iter=200,
                          global_anchor_weight=0.3,
                          hmm_smooth_passes=5,
@@ -346,7 +349,8 @@ def run_one_chrom_window(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, t
                          blocks_tsv=None, min_kmers_per_block=200,
                          local_only=True, max_kmer_cov_mult=0.0, normalize="per_founder",
                          haploblock_eps=0.0):
-    """Window-mode per-chrom EM + projection.
+    """Fit --unit {ld,bp,tsv}: an independent h per block + per-block AF projection.
+    (Also reached via the deprecated --block-mode window alias → bp.)
 
     Each window is fit independently: unit → haploblock collapse → per-window EM,
     then projected through var_pa with the missing-aware (called-mask) normalization.
@@ -618,7 +622,7 @@ def main():
         sys.exit("ERROR: --unit tsv requires --blocks-tsv <path>")
 
     # --local-only (default True) forces no anchor / no smoothing / no fallback in the
-    # per-unit (non-chrom) path; run_one_chrom_window does that forcing itself.
+    # per-unit (non-chrom) path; _fit_unit_blocks does that forcing itself.
 
     print(f"=== {args.sample} (per-chrom unit={unit}"
           f"{', h-only' if args.h_only else ''}) ===", flush=True)
@@ -687,7 +691,7 @@ def main():
 
     for chrom in args.chroms:
         if unit == "chrom":
-            idx, freqs, info, h, _, extra = run_one_chrom_global(
+            idx, freqs, info, h, _, extra = _fit_unit_chrom(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads, kmer_weight=args.kmer_weight,
                 kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only,
@@ -724,7 +728,7 @@ def main():
                           flush=True)
                     blocks_tsv = _ld_tsv(vp_prefix, chrom, args.ld_r2, cache,
                                          window=args.ld_window)
-            idx, freqs, info, pack, _ = run_one_chrom_window(
+            idx, freqs, info, pack, _ = _fit_unit_blocks(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads,
                 window_bp=args.window_bp,
