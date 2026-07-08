@@ -82,6 +82,7 @@ def load_h_matrix(sample_ids, base):
     founders = None
     H = {}      # sample -> (231,) mean-over-chrom h
     SD = {}     # sample -> (231,) sd-over-chrom h
+    dropped = []
     for s in sample_ids:
         chr_hs = []
         ok = True
@@ -97,8 +98,18 @@ def load_h_matrix(sample_ids, base):
         if not ok or not chr_hs:
             continue
         M = np.vstack(chr_hs)               # 5 x 231
+        # Drop degenerate samples: near-zero-coverage / failed libraries whose EM has no
+        # data (all counts removed by the repeat-guard) produce all-NaN h. Including them
+        # NaN-poisons every pool/site they touch. NaN is the honest "no data" output; the
+        # sample is excluded from all downstream (via the cache -> pt.isin(smap) filter).
+        if not np.isfinite(M).all():
+            dropped.append(s)
+            continue
         H[s] = M.mean(0)
         SD[s] = M.std(0)
+    if dropped:
+        print(f"  load_h_matrix: dropped {len(dropped)} degenerate (non-finite h) samples: "
+              f"{', '.join(dropped)}", flush=True)
     return founders, H, SD
 
 

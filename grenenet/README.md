@@ -64,7 +64,7 @@ peak compute + ~3 GB DB); the exit trap frees it even on preemption.
 ### Env knobs
 `BLOCK_MODE` (**global**, default; `window` only if explicitly set) ·
 `JF_DIR` (auto; override to force DB location) ·
-`KMER_WEIGHT` (`inv_mb`) · `CHROMS` · `KMER_PA_PREFIX` · `VAR_PA_DIR`/`VAR_PA_TAG` ·
+`KMER_WEIGHT` (global/production: `uniform` + `--normalize per_founder`; window: `inv_mb` — superseded 2026-07-06 for global mode, see `docs/FOUNDER_NORMALIZATION_FIX.md`) · `CHROMS` · `KMER_PA_PREFIX` · `VAR_PA_DIR`/`VAR_PA_TAG` ·
 `OFFSET` (see chunking).
 
 ### Chunking past MaxArraySize (=1001 here)

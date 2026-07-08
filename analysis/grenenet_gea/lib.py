@@ -18,8 +18,11 @@ import pandas as pd
 from scipy import stats
 
 PROJ = "/global/scratch/users/tbellg/kmate"
-OUT = f"{PROJ}/results/grenenet_kmate_arch3"
-SEEDMIX = f"{PROJ}/results/seedmix_kmate_arch3"
+# Repointed 2026-07-07 to the full-panel-Kf_w + haploblock (--unit chrom) rerun.
+# Prev: rerun_perfounder (pre-Kf_w-fullpanel, 2026-07-06 — STALE). See
+# results/grenenet_gea/rerun_kfw_hb/README.md.
+OUT = f"{PROJ}/results/grenenet_gea/rerun_kfw_hb/evolved"
+SEEDMIX = f"{PROJ}/results/grenenet_gea/rerun_kfw_hb/seedmix"
 GEA = f"{PROJ}/results/grenenet_gea"
 T5 = ("/global/scratch/users/tbellg/pang/grenenet_reads/"
       "Table_S5_sample_collection_sequencing_library.csv")
@@ -69,10 +72,29 @@ def decode_af(u: np.ndarray) -> np.ndarray:
     return f
 
 
+# QC exclusion: samples with too little USABLE panel data (Chr1 nonzero-k-mer
+# fraction < 0.10) — dead/contaminated libraries whose h/AF are garbage. NOT a
+# sequencing-depth cut (depth doesn't isolate them; corr(depth,nzfrac)~0.57). See
+# results/grenenet_gea/qc_coverage_audit.{csv,ipynb}. Applied globally so no pool/
+# site/analysis sees them. Set 2026-07-07.
+QC_EXCLUDE_FILE = f"{os.path.dirname(os.path.abspath(__file__))}/../../data/qc_lowcov_exclude.txt"
+def qc_excluded() -> set[str]:
+    """Sample IDs excluded by the low-usable-data QC (see QC_EXCLUDE_FILE)."""
+    try:
+        with open(QC_EXCLUDE_FILE) as fh:
+            return {ln.split("\t")[0].strip() for ln in fh
+                    if ln.strip() and not ln.startswith("#")}
+    except FileNotFoundError:
+        return set()
+
+
 def list_samples(base: str = OUT) -> list[str]:
-    """Genome-wide per-sample TSVs present in `base` (excludes per-chrom files)."""
-    return sorted(os.path.basename(p)[:-4] for p in glob.glob(f"{base}/*.tsv")
-                  if "_Chr" not in os.path.basename(p))
+    """Genome-wide per-sample TSVs present in `base` (excludes per-chrom files and
+    QC-excluded low-usable-data samples)."""
+    excl = qc_excluded()
+    return sorted(s for s in (os.path.basename(p)[:-4] for p in glob.glob(f"{base}/*.tsv")
+                              if "_Chr" not in os.path.basename(p))
+                  if s not in excl)
 
 
 def sample_map(samples: list[str] | None = None) -> pd.DataFrame:
@@ -117,6 +139,7 @@ def pool_table(store: str = AF_STORE) -> pd.DataFrame:
     sd = pd.read_csv(SAMPLES_DATA)
     sd = sd[sd["usesample"]].copy()
     have = {str(s) for s in np.load(f"{store}/samples.npy", allow_pickle=True)}
+    have -= qc_excluded()                       # drop low-usable-data / contaminated libraries
     sd = sd[sd.sampleid.isin(have)]
     sd["generation"] = sd["fix_57_generation"].astype(int)
     sd["pool"] = (sd.site.astype(str) + "_" + sd.generation.astype(str)

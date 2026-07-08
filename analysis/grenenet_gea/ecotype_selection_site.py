@@ -36,8 +36,10 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
-WIN = "results/grenenet_kmate_window"
-SEED = "results/grenenet_kmate_window_seedmix"
+# Repointed 2026-07-07 to the --unit chrom cohort (was the stale window store
+# results/grenenet_kmate_window[_seedmix]). genome_h below reads the chrom format.
+WIN = lib.OUT
+SEED = lib.SEEDMIX
 OUT = "results/grenenet_gea/hapfreq"
 SITE = int(os.environ.get("SITE", 4))
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
@@ -55,13 +57,18 @@ def logit(p):
 
 
 def genome_h(samp, base):
-    """genome-wide global founder h for one sample = mean over chroms of Chr*_global_h."""
+    """genome-wide founder h for one sample = mean over chroms of the per-chrom h.
+
+    Reads the --unit chrom cohort format `{base}/{samp}_{ch}.h_per_chrom.npz`, key
+    `{ch}` (a single 231-vector per chrom). (Was the window store's
+    `_ch.h_blocks_per_chrom.npz` key `{ch}_global_h` — same quantity, different file.)
+    """
     gs = []
     for ch in CHROMS:
-        f = f"{base}/{samp}_{ch}.h_blocks_per_chrom.npz"
+        f = f"{base}/{samp}_{ch}.h_per_chrom.npz"
         if not os.path.exists(f):
             return None
-        gs.append(np.load(f, allow_pickle=True)[f"{ch}_global_h"].astype(np.float64))
+        gs.append(np.load(f, allow_pickle=True)[ch].astype(np.float64))
     return np.mean(gs, 0)
 
 
@@ -71,13 +78,13 @@ def slope(y):
 
 
 def main():
-    founders = np.load(glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")[0],
+    founders = np.load(glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")[0],
                        allow_pickle=True)["founders"].astype(str)
     nF = len(founders)
 
     # ---- founding p0 + uncertainty over the 8 seedmix reps ----
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
-                    for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+                    for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     P0 = np.vstack([genome_h(s, SEED) for s in seeds])
     p0 = P0.mean(0); v0 = P0.var(0, ddof=1)
     print(f"founding seed mix: eff_n {1/(p0**2).sum():.0f}, max {p0.max():.3f} "
@@ -87,7 +94,7 @@ def main():
     pt = lib.pool_table()
     s = pt[pt.site == SITE].copy()
     s = s[s.sampleid.astype(str).apply(
-        lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_blocks_per_chrom.npz"))]
+        lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_per_chrom.npz"))]
     cell = {}
     for (gen, plot), g in s.groupby(["generation", "plot"]):
         hs, ws = [], []

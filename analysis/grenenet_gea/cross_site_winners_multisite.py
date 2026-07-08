@@ -25,7 +25,7 @@ from ecotype_selection_site import genome_h
 from founder_gwas_multisite import build_trait_site, EXCLUDE_SITES, TRAIT_GENS
 
 H = "results/grenenet_gea/hapfreq"
-WIN = "results/grenenet_kmate_window"; SEED = "results/grenenet_kmate_window_seedmix"
+WIN = lib.OUT; SEED = lib.SEEDMIX
 N_PERM = int(os.environ.get("N_PERM", 10000))
 PERM_SEED = int(os.environ.get("PERM_SEED", 0))
 SUFFIX = os.environ.get("OUT_SUFFIX", "")   # "_clq90" pairs with the clq0.9 GWAS/membership run
@@ -33,11 +33,11 @@ SUFFIX = os.environ.get("OUT_SUFFIX", "")   # "_clq90" pairs with the clq0.9 GWA
 
 def main():
     G, founders, reg = build_genotype(); nF = len(founders)
-    seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+    seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     p0 = np.mean([genome_h(s, SEED) for s in seeds], 0)
     clim = lib.load_climate()
     pt = lib.pool_table()
-    pt = pt[pt.sampleid.astype(str).apply(lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_blocks_per_chrom.npz"))]
+    pt = pt[pt.sampleid.astype(str).apply(lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_per_chrom.npz"))]
     gh_cache = {}
     def gh(s):
         if s not in gh_cache: gh_cache[s] = genome_h(s, WIN)

@@ -26,7 +26,7 @@ from founder_genotype import build_genotype
 from ecotype_selection_site import genome_h
 import founder_gwas_multisite as FG          # build_trait_site, loco_emmax, lamgc
 
-WIN = "results/grenenet_kmate_window"; SEED = "results/grenenet_kmate_window_seedmix"
+WIN = lib.OUT; SEED = lib.SEEDMIX
 PANEL = "panel/arch3"; CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 MAC_MIN, MAC_GRM = 3, 12
 
@@ -53,7 +53,7 @@ cache = np.load(f"{lib.GEA}/fitness/sample_genome_h.npz", allow_pickle=True)
 H = cache["H"]; csamp = {s: i for i, s in enumerate(cache["samples"].astype(str))}
 assert list(cache["founders"].astype(str)) == list(founders), "founder order mismatch"
 gh = lambda s: (H[csamp[s]] if s in csamp else None)
-seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
 p0 = np.mean([genome_h(s, SEED) for s in seeds], 0)
 # spot-check the cache equals live WIN genome_h for a couple samples (trait-source audit)
 pt = lib.pool_table(); pt = pt[pt.sampleid.astype(str).isin(csamp)]

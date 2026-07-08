@@ -29,7 +29,7 @@ from founder_genotype import build_genotype, emma_reml_delta
 from ecotype_selection_site import genome_h
 
 H = "results/grenenet_gea/hapfreq"
-WIN = "results/grenenet_kmate_window"; SEED = "results/grenenet_kmate_window_seedmix"
+WIN = lib.OUT; SEED = lib.SEEDMIX
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 SUFFIX = os.environ.get("OUT_SUFFIX", "")   # e.g. "_clq90" to keep the K500 and clq0.9 runs side by side
 MAC_MIN = int(os.environ.get("MAC_MIN", 3))                # TEST set ~MAF>=1%
@@ -111,11 +111,11 @@ def lamgc(pv): return np.median(stats.chi2.isf(np.clip(pv, 1e-300, 1), 1)) / sta
 def main():
     G, founders, reg = build_genotype(); nF = len(founders)
     reg["unit"] = reg.chrom + ":" + reg.start.astype(str) + "-" + reg.end.astype(str)
-    seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+    seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     p0 = np.mean([genome_h(s, SEED) for s in seeds], 0)
     clim = lib.load_climate()
     pt = lib.pool_table()
-    pt = pt[pt.sampleid.astype(str).apply(lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_blocks_per_chrom.npz"))]
+    pt = pt[pt.sampleid.astype(str).apply(lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_per_chrom.npz"))]
     gh_cache = {}
     def gh(s):
         if s not in gh_cache: gh_cache[s] = genome_h(s, WIN)
@@ -146,8 +146,9 @@ def main():
             continue
         yq = stats.norm.ppf((stats.rankdata(s_f) - 0.5) / nF)
         z, _ = loco_emmax(yq, Gp, chrom_m, Gg, chrom_g, nF)
-        lg = np.nanmedian(z ** 2) / stats.chi2.ppf(0.5, 1)              # genomic-control factor
-        Zcols.append(z / np.sqrt(max(lg, 1e-9))); lam_site.append(float(lg))
+        lg = np.nanmedian(z ** 2) / stats.chi2.ppf(0.5, 1)              # genomic-control factor (diagnostic only)
+        # NO genomic control: kinship already corrects structure; stack raw z, record lg to inspect.
+        Zcols.append(z); lam_site.append(float(lg))
         sites.append(int(site)); gens_used.append(present); traitvec[int(site)] = s_f
         sg = (s_f - np.median(s_f)) / (stats.median_abs_deviation(s_f) + 1e-12)
         print(f"  site {int(site):>2}: gens {present}, bio1={b1:.1f}C, lambda={lg:.2f}, "

@@ -50,8 +50,8 @@ from ecotype_selection_site import genome_h
 
 H = "results/grenenet_gea/hapfreq"
 GEA = "/global/scratch/users/tbellg/gea_grene-net"
-WIN = "results/grenenet_kmate_window"
-SEED = "results/grenenet_kmate_window_seedmix"
+WIN = lib.OUT
+SEED = lib.SEEDMIX
 Tg = np.array([0.0, 1.0, 2.0, 3.0]); EPS = 1e-3
 BIOS = [f"bio{i}" for i in range(1, 20)]
 
@@ -77,12 +77,12 @@ def build_S(founders):
         z = np.load(cache, allow_pickle=True)
         return z["S"], list(z["sites"]), z["founders"]
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
-                    for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+                    for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     p0 = np.mean([genome_h(s, SEED) for s in seeds], 0)
     lp0 = logit(p0)
     pt = lib.pool_table()
     pt = pt[pt.sampleid.astype(str).apply(
-        lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_blocks_per_chrom.npz"))]
+        lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_per_chrom.npz"))]
     gh_cache = {}
     def gh(s):
         if s not in gh_cache:

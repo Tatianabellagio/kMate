@@ -43,8 +43,12 @@ hg["unit"] = hg.chrom + ":" + hg.unit_start.astype(str) + "-" + hg.unit_end.asty
 # k-1 INDEPENDENT (non-reference) haplotypes per block (drop the single highest-panel_freq
 # member = the 'rest' reference; k=2 -> keep the minor only).  Matches build_hap_gea.
 hg = hg[hg.covered & hg.panel_freq.between(0.05, 0.95)].copy()
-hg = hg.groupby("unit", group_keys=False).apply(
-    lambda g: g.drop(g.panel_freq.idxmax()) if len(g) > 1 else g)
+# drop the single highest-panel_freq member per unit (the 'rest' reference), keeping
+# units with only one member intact. (pandas 3.0: groupby(...).apply drops the grouping
+# column, so build the drop-index explicitly instead of returning trimmed groups.)
+_sizes = hg.groupby("unit").size()
+_drop = hg.groupby("unit")["panel_freq"].idxmax()
+hg = hg.drop(index=_drop[_sizes > 1].to_numpy())
 
 df = hg.merge(L, left_on="unit", right_on="block_id", how="inner").reset_index(drop=True)
 df["bin"] = pd.cut(df.n_kept, EDGES, right=False, labels=False)

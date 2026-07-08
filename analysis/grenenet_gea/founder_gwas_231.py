@@ -43,8 +43,8 @@ from founder_genotype import build_genotype, emma_reml_delta
 from ecotype_selection_site import genome_h
 
 H = "results/grenenet_gea/hapfreq"
-WIN = "results/grenenet_kmate_window"
-SEED = "results/grenenet_kmate_window_seedmix"
+WIN = lib.OUT
+SEED = lib.SEEDMIX
 SITE = int(os.environ.get("SITE", 4))
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 Tg = np.array([0.0, 1.0, 2.0, 3.0]); coef = (Tg - 1.5)
@@ -55,10 +55,10 @@ MAC_GRM = int(os.environ.get("MAC_GRM", 12))               # GRM set: ~MAF>=5% (
 def build_trait(nF):
     """Per-founder LINEAR genome-wide selection slope, flower-weighted across replicate plots."""
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
-                    for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+                    for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     p0 = np.mean([genome_h(s, SEED) for s in seeds], 0)               # founding freqs (231)
     pt = lib.pool_table(); s = pt[pt["site"] == SITE].copy()
-    s = s[s.sampleid.astype(str).apply(lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_blocks_per_chrom.npz"))]
+    s = s[s.sampleid.astype(str).apply(lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_per_chrom.npz"))]
     cellH = {}
     for (gen, plot), g in s.groupby(["generation", "plot"]):
         hs, ws = [], []

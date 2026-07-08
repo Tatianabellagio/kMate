@@ -30,7 +30,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 PROJ = "/global/scratch/users/tbellg/kmate"
 GEA = f"{PROJ}/results/grenenet_gea"
 STORE = f"{GEA}/af_store"
-OUTBASE = f"{PROJ}/results/grenenet_kmate_arch3"
+OUTBASE = f"{PROJ}/results/grenenet_gea/rerun_kfw_hb/evolved"  # repointed 2026-07-07 (full-panel-Kf_w + --unit chrom rerun)
 NBDIR = f"{PROJ}/analysis/grenenet_gea/notebooks"
 OUT = f"{NBDIR}/06_sv_support_filter.ipynb"
 CACHE = f"{STORE}/sv_support_cache.npz"

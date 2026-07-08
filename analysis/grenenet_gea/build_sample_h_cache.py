@@ -12,13 +12,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 from ecotype_selection_site import genome_h, CHROMS
 
-WIN = "results/grenenet_kmate_window"
+WIN = lib.OUT
 OUT = "results/grenenet_gea/fitness"
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
-    founders = np.load(glob.glob(f"{WIN}/*_Chr1.h_blocks_per_chrom.npz")[0],
+    founders = np.load(glob.glob(f"{WIN}/*_Chr1.h_per_chrom.npz")[0],
                        allow_pickle=True)["founders"].astype(str)
     pt = lib.pool_table()
     samples = sorted(pt.sampleid.astype(str).unique())

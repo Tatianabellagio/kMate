@@ -24,8 +24,8 @@ from scipy import stats
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
-WIN = "results/grenenet_kmate_window"
-SEED = "results/grenenet_kmate_window_seedmix"
+WIN = lib.OUT
+SEED = lib.SEEDMIX
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 Tg = np.array([0.0, 1.0, 2.0, 3.0])
 PANEL = "panel/arch3"
@@ -36,10 +36,10 @@ SVL = f"{lib.GEA}/sv_adaptive/sv_landscape_clq0.9.csv"
 def genome_h(samp, base):
     gs = []
     for ch in CHROMS:
-        f = f"{base}/{samp}_{ch}.h_blocks_per_chrom.npz"
+        f = f"{base}/{samp}_{ch}.h_per_chrom.npz"
         if not os.path.exists(f):
             return None
-        gs.append(np.load(f, allow_pickle=True)[f"{ch}_global_h"].astype(np.float64))
+        gs.append(np.load(f, allow_pickle=True)[ch].astype(np.float64))
     return np.mean(gs, 0)
 
 
@@ -50,7 +50,7 @@ def per_founder_global_fitness():
     H = cache["H"]; samples = cache["samples"].astype(str); founders = cache["founders"].astype(str)
     hmap = {s: i for i, s in enumerate(samples)}
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
-                    for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+                    for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     p0 = np.mean([genome_h(s, SEED) for s in seeds], 0)
     pt = lib.pool_table()
     pt = pt[pt.sampleid.astype(str).isin(hmap)]

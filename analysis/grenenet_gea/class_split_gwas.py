@@ -200,7 +200,10 @@ def main():
                 z = b / se
                 lg = np.nanmedian(z ** 2) / stats.chi2.ppf(0.5, 1)
                 lam_site[si] = lg
-                Zmat[:, si] = z / np.sqrt(max(lg, 1e-9))
+                # NO genomic control: the LOCO kinship GRM already corrects structure. Record lg
+                # as a diagnostic only and stack the RAW kinship-corrected z. (Per-site GC was
+                # inconsistent with founder_gwas_231, and self-inflated wherever lambda<1.)
+                Zmat[:, si] = z
             per_class[clsname].append((d["pos"][idx], np.array([cl] * len(idx)), Zmat))
             lam_track[clsname].append(lam_site)
             print(f"  {cl} {clsname}: {len(idx):,} markers done ({time.time()-t0:.0f}s)", flush=True)

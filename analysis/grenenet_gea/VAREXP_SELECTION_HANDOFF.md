@@ -181,6 +181,55 @@ the same *total* variance, an actual per-marker scan on each panel independently
 the same top locus and same broad regions (with real but imperfect concordance further down the
 hit list). Running this GWAS with SNPs alone tells essentially the same story as SVs/indels alone.
 
+## Design A (2026-07-06): Zhou-2022 (Nature) analog — SV h²/prediction of founder ORIGIN CLIMATE
+
+Motivation: Zhou et al. 2022 (`papers/Zhou et al. 2022 - Nature.pdf`, repo `YaoZhou89/TGG`) show a
+graph pangenome (SNP+indel+SV) captures more trait heritability (0.41 vs 0.33 linear, +24%) and
+higher genomic-prediction accuracy than a single linear reference, driven by SVs resolving
+incomplete LD / allelic heterogeneity. User asked whether kMate's short-read→long-read (78 cactus
+long-read + 153 PanGenie) panel can show the same.
+
+**Key design decision (why this is NOT the null above):** in a POOL experiment there is no
+independently-measured per-ecotype field fitness — the only per-ecotype "fitness" is `s` (the pooled
+logit-slope), which is exactly the trait the variance-partition above already found null. To make a
+genuinely Zhou-faithful individual-level test, the phenotype must come from OUTSIDE the pool.
+Chosen phenotype = per-founder **origin climate bio1–19** (worldclim), keyed to founders by
+`ecotypeid`. Genome predicts provenance via local adaptation; independent of the pool.
+
+- Phenotype source: `gea_grene-net/key_files/1001g_regmap_grenet_ecotype_info_corrected_bioclim_2024May16.csv`
+  (1871 ecotypes × bio1-19; **all 231 GRM founders matched, complete bioclim**).
+- Genotype "two ways" = short-read→long-read contrast INSIDE the arch3 panel, reusing the prebuilt
+  GRMs: SNP arm `K_snp` vs pangenome arm `K_all`/`+K_sv` (the indel+SV layers need the long-read
+  graph). Marginals K_indel/K_sv/K_nonsnp, control K_snp_matched, mechanism `K_untagged_r02`.
+- Methods: reuse `varexp_selection.py` estimators verbatim (AI-REML marginal h²+SE+LRT, joint 2-GRM
+  partition + LRT for the SV/non-SNP layer beyond SNP, repeated 6-fold×10 GBLUP CV predictive R²).
+  Headline gain = CV R²(SNP+SV) − R²(SNP), across bio1-19 × {raw, RINT}.
+- Script `varexp_bioclim.py` → `results/grenenet_gea/varexp/bioclim_varexp.csv` +
+  `bioclim_varexp_summary.json`. Env kmate. GRM corrs at the matched set: **corr(K_snp,K_sv)=0.955,
+  corr(K_snp,K_nonsnp)=0.998, corr(K_snp,K_untagged_r02)=0.364.**
+- **Prior expectation (honest):** aggregate GRM gain likely small — origin climate is heavily
+  predicted by genome-wide relatedness (structure = geography), and K_snp≈K_all, same as the `s`
+  result. The place a positive could still appear is single-SV LASSO (allelic heterogeneity at
+  big-effect climate loci) — deferred to a follow-up (needs raw marker genotypes vs bioclim, not
+  just GRMs). RESULT: see below once `logs/varexp_bioclim.out` completes.
+
+**Step 1 (GRM/GBLUP) status:** `varexp_bioclim.py` running (bg). Reports, per bio1-19 × {raw,RINT}:
+marginal h² (snp/nonsnp/indel/sv/all/snp_matched/untagged_r02), joint 2-GRM LRT for SV- and
+non-SNP-beyond-SNP AND untagged-beyond-SNP, and GBLUP CV gains **`gain_sv` = R²(snp+sv)−R²(snp)**
+and **`gain_nonsnp` = R²(snp+nonsnp)−R²(snp)** (non-SNP layer as a whole, per user request — indels
+are the bulk of it). Early (bio1): R²(snp)=+0.56, gain_sv=−0.005, gain_nonsnp=−0.003 → tracking the
+predicted null (origin climate ~56% genome-predictable from SNPs, SV/non-SNP layer adds ~0).
+
+**Step 2 (multilocus LASSO) — BUILT & QUEUED (hold until step 1 confirms null):**
+`lasso_bioclim.py` + `lasso_bioclim.sbatch` (savio4_htc/co_moilab, 32c/96G/12h). Python/sklearn
+ElasticNetCV (l1_ratio=1 = LASSO; glmnet not in r_env). Per bio-trait, arms = LD-pruned SNP
+backbone (r²<0.9, ±50kb, cap 150k) vs +SV vs +all-nonSNP (non-SNP kept UNPRUNED so an untagged SV
+can't be pruned away); SNP backbone identical across arms so any gain = the non-SNP layer, not
+marker count. Reports CV R² gain + every non-SNP marker with nonzero coef, its SNP-tag r² (from
+`nonsnp_tagging_chr*.npz`) and gene — an untagged (r²<0.2) selected marker = the incomplete-LD
+smoking gun (Zhou Fig.3 mechanism). Reuses `build_class_grms._load_chrom/_classes` for the exact
+marker filter. LD-prune + tagging loader unit-tested OK. → `lasso_bioclim{.csv,_selected.csv,_summary.json}`.
+
 ## Downstream — overlap tables, Manhattans, candidate genes (merged from 2026-07-03 session log)
 
 **Overlap tables** (`notebooks/class_gwas_multitrait.ipynb`, `class_gwas_persite.ipynb`) mirror the

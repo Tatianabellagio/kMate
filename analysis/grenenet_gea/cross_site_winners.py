@@ -26,7 +26,7 @@ from founder_genotype import build_genotype
 from ecotype_selection_site import genome_h
 
 H = "results/grenenet_gea/hapfreq"
-WIN = "results/grenenet_kmate_window"; SEED = "results/grenenet_kmate_window_seedmix"
+WIN = lib.OUT; SEED = lib.SEEDMIX
 Tg = np.array([0.0, 1.0, 2.0, 3.0]); EPS = 1e-3
 
 
@@ -36,11 +36,11 @@ def logit(p):
 
 def main():
     G, founders, reg = build_genotype(); nF = len(founders)
-    seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+    seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     p0 = np.mean([genome_h(s, SEED) for s in seeds], 0)
     clim = lib.load_climate()                                  # site-indexed bio1..19
     pt = lib.pool_table()
-    pt = pt[pt.sampleid.astype(str).apply(lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_blocks_per_chrom.npz"))]
+    pt = pt[pt.sampleid.astype(str).apply(lambda x: os.path.exists(f"{WIN}/{x}_Chr1.h_per_chrom.npz"))]
 
     coef = (Tg - 1.5); gh_cache = {}
     def gh(samp):

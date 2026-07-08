@@ -18,10 +18,12 @@ Design (matches ecotype_selection_site.py, extended to all sites, GLOBAL-mode h)
     flower-weighted), gen0 := p0; OLS slope of logit(h) over gens present; s_{f,site} = mean over
     plots. Requires the gen1 anchor. Plot replicates averaged (not pooled) so a plot with few
     flowers does not dominate.
-  * ANALYZABLE founder mask = p0 > FLOOR (present at founding above the logit clip): drops the
-    ~8% twin-absorbed founders (h0 ~1e-15) whose log-odds is undefined; keeps rare-start winners
-    (small but non-zero h0 that rise). NO reliability/cross-chrom weighting (user decision:
-    chrom-averaging already regularizes h).
+  * ALL 231 founders kept analyzable (decision 2026-07-07): the ESTIMATED seed-mix p0 is FLOORED
+    at P0_FLOOR (a small additive number, NOT forced uniform 1/231) so no ecotype disappears — the
+    single hardest founder 9977 (p0~4e-6 under uniform ω) gets a defined near-zero slope instead of
+    being dropped. Every other founder has p0 >> P0_FLOOR (floor is a no-op). Supersedes the old
+    p0>1e-3 drop-floor that discarded ~19 legitimate rare-start founders (was 212 analyzable).
+    NO reliability/cross-chrom weighting (chrom-averaging regularizes h).
 
 Output -> results/grenenet_gea/varexp/selection_s_matrix.npz
   S[n_site x 231] logit-slope, sites, founders, bio1, p0, analyzable(bool 231), n_plots[n_site],
@@ -38,8 +40,16 @@ import lib
 OUT = f"{lib.GEA}/varexp"
 HCACHE = f"{lib.GEA}/ecotype_fitness/sample_global_h.npz"
 CHROMS = [f"Chr{i}" for i in range(1, 6)]
-EPS = 1e-4            # logit clip (below the analyzable floor so p0>FLOOR is never clipped)
-FLOOR = 1e-3         # analyzable: present at founding above this
+EPS = 1e-4            # logit clip
+# p0 FLOOR (decision 2026-07-07): rather than DROP near-zero founders, floor the
+# estimated seed-mix p0 at P0_FLOOR so no ecotype disappears — a small additive
+# floor, NOT forcing uniform 1/231. Under the per_founder fix + uniform ω, the
+# single hardest founder 9977 reads p0~4e-6 (uniform ω sacrifices it; ω=1/m_b kept
+# it ~1.9e-4). Flooring p0 keeps ALL 231 founders analyzable: 9977 gets a defined
+# (near-zero, ~flat) selection slope instead of being excluded. Every other founder
+# has p0 >> P0_FLOOR so the floor is a no-op for them. (The old 1e-3 drop-floor
+# discarded ~19 legitimate rare-start founders → only 212; we keep all 231.)
+P0_FLOOR = EPS       # = 1e-4
 TRAIT_GENS = (1, 2, 3)   # anchor gen1 required; use gens 1..3 (+ gen0=p0)
 
 
@@ -67,6 +77,7 @@ def seedmix_p0():
 def main():
     os.makedirs(OUT, exist_ok=True)
     founders, p0 = seedmix_p0()
+    p0 = np.maximum(p0, P0_FLOOR)   # floor so near-zero founders don't disappear (see P0_FLOOR)
     z = np.load(HCACHE, allow_pickle=True)
     assert (z["founders"].astype(str) == founders).all(), "founder order mismatch"
     Hs = z["H"].astype(float)                                  # n_samp x 231 global-mode h
@@ -117,7 +128,7 @@ def main():
     sites = np.array(sites, int)
     S = np.vstack(Srows)                                        # n_site x nF
     bio1 = clim.loc[sites, "bio1"].to_numpy(float)
-    analyzable = p0 > FLOOR
+    analyzable = np.ones(nF, dtype=bool)   # keep ALL founders (p0 floored; none dropped)
 
     np.savez(f"{OUT}/selection_s_matrix.npz", S=S, sites=sites, founders=founders,
              bio1=bio1, p0=p0, analyzable=analyzable,
@@ -125,8 +136,8 @@ def main():
 
     from scipy import stats
     sa = S[:, analyzable].ravel()
-    print(f"sites={len(sites)}  founders total={nF}  analyzable(p0>{FLOOR})={int(analyzable.sum())}"
-          f"  dropped={int((~analyzable).sum())}")
+    print(f"sites={len(sites)}  founders total={nF}  analyzable(all, p0 floored@{P0_FLOOR:.0e})="
+          f"{int(analyzable.sum())}  n_p0_floored={int((p0<=P0_FLOOR).sum())}")
     print(f"plots/site: min={min(nplots)} median={int(np.median(nplots))} max={max(nplots)}")
     print(f"bio1 {bio1.min():.1f}..{bio1.max():.1f} C")
     print(f"s (analyzable pooled): mean={sa.mean():+.3f} sd={sa.std():.3f} "

@@ -6,7 +6,6 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=192G
 #SBATCH --time=6:00:00
-#SBATCH --dependency=afterok:35492923
 #SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/exp2_climate_scan_%j.out
 #SBATCH --error=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/exp2_climate_scan_%j.out
 set -euo pipefail

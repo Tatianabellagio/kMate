@@ -777,7 +777,14 @@ def main():
         pos_arr = np.asarray(var_meta["pos"])
         ref_arr = np.asarray(var_meta["ref_len"])
         alt_arr = np.asarray(var_meta["alt_len"])
-        with open(args.out, "w") as f:
+        # ATOMIC write: build the full per-chrom TSV in a .tmp then os.replace() it
+        # into place. Under preemptible (lowprio + --requeue) array runs, a task
+        # killed mid-write must NOT leave a partial-but-non-empty ${SAMPLE}_${CHR}.tsv
+        # — the runner's resume guard is a non-empty check, so a truncated file would
+        # be skipped as "done" and silently concatenated into a chrom-truncated
+        # genome-wide TSV. os.replace is atomic on the same filesystem.
+        tmp_out = args.out + ".tmp"
+        with open(tmp_out, "w") as f:
             f.write("chrom\tpos\tref_len\talt_len\talt_freq\tinfo\tn_called\tse\n")
             for i in range(n_records):
                 af = freqs_global[i]
@@ -787,6 +794,7 @@ def main():
                 se_str = f"{se_global[i]:.5f}" if np.isfinite(se_global[i]) else "NaN"
                 f.write(f"{chrom_arr[i]}\t{pos_arr[i]}\t{ref_arr[i]}\t{alt_arr[i]}\t"
                         f"{af_str}\t{inf_str}\t{nc_str}\t{se_str}\n")
+        os.replace(tmp_out, args.out)
         print(f"  wrote {n_records:,} records to {args.out}", flush=True)
 
     suffix = ".h_per_chrom.npz" if unit == "chrom" else ".h_blocks_per_chrom.npz"

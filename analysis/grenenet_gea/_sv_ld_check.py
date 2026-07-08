@@ -18,7 +18,7 @@ import scipy.sparse as sp
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
-SEED = "results/grenenet_kmate_window_seedmix"
+SEED = lib.SEEDMIX
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 PANEL = "panel/arch3"
 FG = f"{lib.GEA}/hapfreq/multisite_founder_gwas_clq90_pc1"
@@ -90,14 +90,14 @@ def main():
     def genome_h(samp, base):
         gs = []
         for c in CHROMS:
-            f = f"{base}/{samp}_{c}.h_blocks_per_chrom.npz"
+            f = f"{base}/{samp}_{c}.h_per_chrom.npz"
             if not os.path.exists(f):
                 return None
-            gs.append(np.load(f, allow_pickle=True)[f"{c}_global_h"].astype(np.float64))
+            gs.append(np.load(f, allow_pickle=True)[c].astype(np.float64))
         return np.mean(gs, 0)
     cache = np.load(f"{lib.GEA}/fitness/sample_genome_h.npz", allow_pickle=True)
     H = cache["H"]; samps = cache["samples"].astype(str); hmap = {s: i for i, s in enumerate(samps)}
-    seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+    seeds = sorted({p.split("/")[-1].split("_Chr")[0] for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     h0 = np.mean([genome_h(s, SEED) for s in seeds], 0)
     pt = lib.pool_table(); pt = pt[pt.sampleid.astype(str).isin(hmap)]
     # genome-wide mean founder h change (founding -> all evolved, flower-weighted)

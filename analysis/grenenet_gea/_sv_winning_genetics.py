@@ -43,7 +43,7 @@ from ecotype_selection_site import genome_h
 os.chdir("/global/scratch/users/tbellg/kmate")
 CH = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 PANEL = "panel/arch3"
-SEED = "results/grenenet_kmate_window_seedmix"
+SEED = lib.SEEDMIX
 nF = 231
 MAC_MIN = 12                      # common founder floor (MAF>=5%), matches sv_landscape / LD blocks
 SNP_SAMPLE = 300_000             # random common-SNP pool for the matched null (plenty for binning)
@@ -57,7 +57,7 @@ def per_founder_selection():
     H = c["H"]; samples = c["samples"].astype(str); founders = c["founders"].astype(str)
     hmap = {s: i for i, s in enumerate(samples)}
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
-                    for p in glob.glob(f"{SEED}/*_Chr1.h_blocks_per_chrom.npz")})
+                    for p in glob.glob(f"{SEED}/*_Chr1.h_per_chrom.npz")})
     p0 = np.mean([genome_h(s, SEED) for s in seeds], 0)
     pt = lib.pool_table(); pt = pt[pt.sampleid.astype(str).isin(hmap)]
     dh_rows, slope_rows, g1_rows, sites = [], [], [], []
