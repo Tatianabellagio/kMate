@@ -277,7 +277,7 @@ def main():
         # Filter invariant/private/dead columns at generation, so the production
         # kmer_pa is written already-filtered (single source of truth for the
         # rule lives in filter_kmer_pa_production.production_keep_mask).
-        from filter_kmer_pa_production import report_filter
+        from .filter_kmer_pa_production import report_filter
         kmer_index = np.asarray(kmer_index)
         F = kmer_pa.shape[0]
         ac = np.asarray(kmer_pa.sum(axis=0)).flatten()
