@@ -98,6 +98,29 @@ fraction of `h` on the 181 founders NOT in the n50 pool (flattening tripwire):
   blocks + averaging + multi-random-start**, NOT regularization. kMate should stay
   prior-free and lean on structural conditioning (chrom / coarse blocks).
 
+## HARP's two prior-free mechanisms, tested on kMate — both fail (2026-07-08)
+
+HARP's `harp freq` has two prior-free robustness knobs kMate lacks: multi-random-start
+(best-of-likelihood) and `em_min_freq_cutoff`. Tested on the centromere block:
+
+| n231_g0 centromere | eff_n | AF-MAE |
+|---|---|---|
+| baseline (uniform init) | 33.6 | 0.0197 |
+| multi-start best-of-8 | 33.4 | 0.0197 |
+| cutoff 1e-3 | 32.2 | 0.0203 |
+| cutoff 5e-3 | 19.6 | 0.0293 |
+
+- **Multi-start does nothing**: all 8 Dirichlet-random inits collapse to eff_n 33–34
+  with ~identical likelihood. The surface is NOT multimodal — the sparse collapse is
+  the genuine global ML optimum, reachable from any init.
+- **`em_min_freq_cutoff` only hurts**: zeroing small founders removes more of the
+  already-collapsed mass (AF-MAE degrades monotonically).
+
+**Conclusion: the centromere collapse is the maximum-likelihood solution given kMate's
+weak/redundant binary-k-mer evidence there. No prior-free mechanism (multi-start,
+direct NNLS, min-freq cutoff) fixes it — it is the evidence, not the algorithm.** Only
+a prior (anchor→global) recovers it, and that must stay an opt-in flag (never uniform).
+
 ## Provenance
 
 Scripts/logs under `benchmarks/p231/scripts/` and `benchmarks/p231/logs/`:
