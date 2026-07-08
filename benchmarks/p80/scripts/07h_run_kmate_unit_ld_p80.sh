@@ -43,6 +43,10 @@ case "$REGIME" in
     n231_g1) SUB="cov10_n231_g1_s42_hotspots_p80_chr1" ;;
     n50_g3)  SUB="cov10_n50_g3_s42_hotspots_p80_chr1" ;;
     n50_g3_dom500) SUB="cov10_n50_g3_s42_hotspots_dom500_p80_chr1" ;;
+    n50_g1_self97)  SUB="cov10_n50_g1_s42_self97_hotspots_p80_chr1" ;;
+    n231_g1_self97) SUB="cov10_n231_g1_s42_self97_hotspots_p80_chr1" ;;
+    n50_g3_self97)  SUB="cov10_n50_g3_s42_self97_hotspots_p80_chr1" ;;
+    n50_g3_dom500_self97) SUB="cov10_n50_g3_s42_self97_hotspots_dom500_p80_chr1" ;;
     *) echo "ERROR: unknown REGIME '$REGIME'" >&2; exit 1 ;;
 esac
 
