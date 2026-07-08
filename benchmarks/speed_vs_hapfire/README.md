@@ -14,7 +14,9 @@ so this measures it directly on identical input.
 - **Scope:** Chr1 only (the simulated reads are Chr1-only).
 - **kMate panel:** production arch3 matrices `kmer_pa_231_arch3_filt2inv` (K=10.95M
   k-mers) + `var_pa_231_arch3_chr1` (2,154,423 records). Recipe: `--kmer-weight
-  inv_mb --block-mode global`, `--threads 8`, BLAS/OMP pinned to 8.
+  uniform --unit chrom` (scripts updated; the old `inv_mb --block-mode global`
+  is superseded — `--block-mode global` is a deprecated alias for `--unit chrom`),
+  `--threads 8`, BLAS/OMP pinned to 8.
 - **hapFIRE panel:** `greneNet_final_v1.1` subset to Chr1 = **827,765 phased SNPs ×
   231 founders**. BAM contigs reheadered `Chr1→1` to match the VCF + Ensembl
   reference (TAIR10, identical sequence/coords). Phases 1–2 only (`-haplotype`

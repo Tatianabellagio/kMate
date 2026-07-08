@@ -70,14 +70,14 @@ kmate run \
     --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
     --var-meta   panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \
     --reads R1.fq R2.fq --sample MYSAMPLE --out MYSAMPLE.tsv \
-    --threads 8 --chroms Chr1 --kmer-weight uniform --unit ld --ld-r2 0.1
+    --threads 8 --chroms Chr1 --kmer-weight uniform      # --unit chrom is the default
 ```
 
 (`kmate run --help` lists every flag. Existing scripts that call `python src/per_sample_per_chrom.py ...` still work via thin shims that forward to the package.)
 
 **Estimation unit** (`--unit`) — there is **one estimator**; the "mode" is just the unit it fits. Each unit is fit locally: *haploblock-collapse → EM → project*, with no anchor prior, no cross-window smoothing, and no fallback.
-- `--unit ld` (**default**, `--ld-r2 0.1`): r²-LD blocks derived from the panel's own `var_pa` (CompleteLDPartition). The corrected production estimator.
-- `--unit chrom`: one founder mixture per chromosome. Use for **selfing / inbred / F0** pools; also the only unit that supports `--h-only` and `--emit-af-se`.
+- `--unit chrom` (**default**): one founder mixture per chromosome. The default and the **selfing / inbred / F0** (GrENE-Net) production estimator — robust on uniform and sparse panels; also the only unit that supports `--h-only` and `--emit-af-se`.
+- `--unit ld` (`--ld-r2 0.1`): r²-LD blocks derived from the panel's own `var_pa` (CompleteLDPartition). A per-block option — it **collapses in low-diversity blocks** (e.g. the centromere), so it is **wrong for selfing pools**; use it only for recombinant pools where fine per-block resolution helps.
 - `--unit bp` (`--window-bp N`): fixed-bp windows, for **recombinant** pools.
 - `--unit tsv` (`--blocks-tsv PATH`): explicit block partition.
 

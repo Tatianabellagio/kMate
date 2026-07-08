@@ -18,10 +18,10 @@ kMate (legacy name `cactus_em`): per-sample Poisson k-mer EM on the 231-founder 
   *(Supersedes the `kmer_pa_231_v3qc_v3_filt2` named in the lineage tables below, which is now
   archived; see `docs/PIPELINE_STATE.md` §0. The §1–§2 tables are the historical sweep that
   selected `filt2`.)*
-- **EM weighting:** `--kmer-weight inv_mb` (ω_k = 1/m_b, per-bubble de-replication), GLOBAL mode. ★ for the heterogeneous 231 panel — but **panel-conditional** (see §3).
+- **EM weighting:** window mode `--kmer-weight inv_mb` (ω_k = 1/m_b, per-bubble de-replication). **GLOBAL-mode production is now `--normalize per_founder` + `--kmer-weight uniform`** — the per-founder M-step normalization removes the cactus/PG imbalance at its source, so ω_k=1/m_b is superseded for global mode (2026-07-06; uniform + per_founder wins both AF and h — see `docs/FOUNDER_NORMALIZATION_FIX.md`). ω_k=1/m_b was ★ for the heterogeneous 231 panel pre-fix, and is **panel-conditional** (see §3).
 - **Projection var_pa:** arch3 — `var_pa_231_arch3_chr1_atomized` (SNP-level GEA) + raw `var_pa_231_arch3_chr1` (SNP/indel/SV). ★
 - **Canonical VCF:** `panel/arch3/chr1/merged_231_chr1_final.vcf.gz` (v3qc QC: GQ≥20 + 5772/9947 dropped; arch biallelic; unimputed; het→missing).
-- **Driver:** `src/per_sample_per_chrom.py` (`--block-mode global --kmer-weight inv_mb`); solver `src/em_solver.py` (`solve_em(omega=)`).
+- **Driver:** `src/per_sample_per_chrom.py` (selfing production: `--unit chrom --normalize per_founder --kmer-weight uniform`; recombinant: `--unit bp --kmer-weight inv_mb`; `--block-mode global|window` kept as deprecated aliases); solver `src/em_solver.py` (`solve_em(omega=, normalize=)`).
 
 ---
 
@@ -67,7 +67,17 @@ rare/discriminating k-mers). See [[project_h_imbalance_rootcause]].
 ## 3. Final method decision & the panel-conditional caveat
 
 **filt2 + ω_k=1/m_b global** wins AF MAE in every regime on the heterogeneous 231 panel
-(g0 sims, replicate-validated). DECISIVE result.
+(g0 sims, replicate-validated). DECISIVE result — *within the multinomial-normalization
+era this sweep was run in.*
+
+> **Superseded 2026-07-06 for global mode.** This sweep pre-dates the per-founder
+> M-step normalization. Once each founder is normalized by its own effective
+> k-mer content (`--normalize per_founder`, now the default), the cactus/PG
+> imbalance ω_k=1/m_b was patching is removed at its source, and `--kmer-weight
+> uniform` then *beats* ω_k=1/m_b (AF-MAE 0.0036 vs 0.0045; old multinomial +
+> 1/m_b was the worst factorial row at 0.0096). So global-mode production is now
+> **per_founder + uniform**; ω_k=1/m_b stays the **window-mode** weight. See
+> `docs/FOUNDER_NORMALIZATION_FIX.md`, `ALGORITHM.md` §4.3.
 
 **BUT — benchmarks/p80 (homogeneous 80-cactus panel, 2026-05-27):** with no cactus-vs-PG
 imbalance, `filt2 + 1/m_b` LOSES to plain `filt2` in every regime (+2% to +41% MAE).

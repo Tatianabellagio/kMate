@@ -1,5 +1,19 @@
 # SV temporal purging — thread summary (2026-07-02)
 
+> ## ⚠️ SUPERSEDED (2026-07-08) — the signal did NOT survive
+> The estimator was regenerated under **`--unit chrom` + full-panel Kf_w**
+> (`--normalize per_founder`). On the rigorous frequency-de-trended metric
+> (`s_distribution_by_site`) the **SV excess-vs-baseline is essentially ZERO:
+> median +0.0011, negative at only 15/31 sites (a minority; sign test ≈ p=1.0,
+> n.s.).** There is **no genome-wide SV purifying excess**; any residual is
+> confined to a few of the hottest gardens. The old conclusion below — "~22/31
+> sites negative, a modest excess of purifying selection, climate-graded, three
+> methods agree" — **NO LONGER HOLDS.** The raw / single-tail methods
+> (s_histogram, s_vs_climate, ecdf, shiftfunction) still show apparent purging
+> only because they keep the frequency / founder-projection confound; the
+> **de-trended `s_distribution_by_site` is the authoritative view (signal null).**
+> The historical text is retained below for the record, marked superseded.
+
 **Question:** In GrENE-net, comparing per-variant allele-frequency change across generations, do
 non-SNPs (indels + SVs) show more selection than SNPs? (Pure temporal, per-variant — no haploblocks.)
 
@@ -21,11 +35,19 @@ distribution, so "SVs are rarer" is not a confound.
 
 - **indels ≡ SNPs** at every frequency and in every view → the non-SNP *category* (98% indels) is also
   ≈ null. (`_nonsnp_temporal_category.py`, `_temporal_selection_snp_vs_nonsnp.py`: fold ≈ 1.0.)
-- **SVs carry a small, real excess of purifying (negative-s) selection**, in the purged **tail**, that
-  **grows with climate harshness**. It is NOT a bulk/location shift (median barely moves) — a
-  few % of probability mass (KS ≈ 0.05–0.08 at hot sites).
+- **[SUPERSEDED]** The raw/single-tail views below suggested "SVs carry a small excess of purifying
+  (negative-s) selection in the purged tail that grows with climate harshness." **This does not
+  survive the Kf_w / `--unit chrom` regeneration.** On the frequency-de-trended
+  `s_distribution_by_site` metric the SV excess-vs-baseline is ≈0 (median **+0.0011**, negative at
+  only **15/31 sites**, sign test n.s.). The apparent tail effect was a frequency /
+  founder-projection confound, not a genome-wide purifying excess.
 
-### Cleanest test — per-variant climate slope β = d s / d climate  (`_compute_s_climate_slope.py`)
+### [SUPERSEDED] Cleanest test — per-variant climate slope β = d s / d climate  (`_compute_s_climate_slope.py`)
+> **This arm is frequency-confounded and no longer supports a climate-graded purging claim.** On the
+> de-trended `s_distribution_by_site` the signal is null (see banner). The per-axis correlations are
+> also weaker/mixed than stated below: aridity **bio18 corr = +0.54**, temperature **bio1 corr = −0.16**
+> (so "rises toward harsh sites" is false on the bio1 axis). Table retained for the record.
+
 A variant on a *constantly* purged haplotype (hitchhiking) has s<0 everywhere → β≈0; the p0/logit
 artifact is a per-variant constant → cancels in the slope. So β isolates climate-**differential**
 selection with the two big confounds removed.
@@ -85,9 +107,12 @@ pool-seq → independent allele-frequency-change). Consistency across plots = dr
   is ~1 MB/s (page-fault thrash) on this filesystem; use direct **seek + np.fromfile** (`read_rows`
   in `_compute_parallelism.py`) = ~150 MB/s. Sequential `dd` is 560 MB/s.
 
-**THREE independent methods now agree:** climate-slope β (KS p=10⁻¹⁶), ρ-parallelism (1.7–3.6×), real
-PicMin (1.2–1.3×) → SV **insertions** over-represented among selected/repeated loci, robust to MAF,
-climate-graded (aridity-dominant), SNP-baseline-flat.
+**[SUPERSEDED] The "three methods agree" claim does not survive the Kf_w / `--unit chrom` rerun.**
+The three arms (climate-slope β, ρ-parallelism, PicMin) all share the frequency / founder-projection
+confound that the de-trended `s_distribution_by_site` removes — and on that authoritative metric the
+SV excess-vs-baseline is ≈0 (median +0.0011, 15/31 sites, sign test n.s.). There is **no genome-wide
+SV purifying/climate-graded excess**; any residual is confined to a few of the hottest gardens. The
+historical multi-method text is retained above for the record only.
 
 ## Caveats (unresolved)
 Global-mode kMate AF is a linear projection of per-sample founder h → cannot separate SV-specific

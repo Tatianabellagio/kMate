@@ -1,5 +1,11 @@
 # Re-run checklist — downstream of the per_founder EM fix
 
+> **STATUS (2026-07-08):** This rerun is **COMPLETE** and has been superseded by the
+> full-panel Kf_w rerun. Production outputs now live in
+> `results/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`; the earlier pre-Kf_w
+> `rerun_perfounder` directory has been **deleted**. Paths below are updated to
+> `rerun_kfw_hb`; keep this doc as the checklist of what depends on what.
+
 **Trigger (2026-07-06).** kMate per-sample outputs are being regenerated under the fixed EM
 (`--normalize per_founder --kmer-weight uniform`, filt2inv, **global** mode) — see
 `docs/FOUNDER_NORMALIZATION_FIX.md`. This changes **(a)** every sample's per-record SNP/SV
@@ -7,7 +13,7 @@
 `p0`-anchored selection). Everything downstream that consumes those is stale.
 
 **New per-sample outputs (the new inputs):**
-`results/grenenet_gea/rerun_perfounder/{seedmix,evolved}/<SAMPLE>.tsv`
+`results/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/<SAMPLE>.tsv`
 (+ per-chrom `<SAMPLE>_Chr{N}.tsv` and `<SAMPLE>_Chr{N}.h_per_chrom.npz`). Global mode → each
 run emits BOTH the founder `h` and the per-record AF.
 
@@ -36,7 +42,7 @@ Cohort launch: seed-mix `35549607` (8) + evolved `35549608/609/647` (2168), glob
 
 ## Step 0 — repoint + clear caches  ✅ DONE (2026-07-06)
 - Repointed `analysis/grenenet_gea/lib.py` `OUT`/`SEEDMIX`, `build_af_store.py` `OUT`, and
-  `_build_support_nb.py` `OUTBASE` → `results/grenenet_gea/rerun_perfounder/{evolved,seedmix}`.
+  `_build_support_nb.py` `OUTBASE` → `results/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`.
   (Old multinomial outputs remain at `results/grenenet_kmate_arch3` / `seedmix_kmate_arch3`.)
 - Moved stale on-existence caches aside (suffix `preFix_multinomial`, reversible — they would
   otherwise silently return old data): `af_store/`, `group_means.npz`, `p0_seedmix_all.pkl`,

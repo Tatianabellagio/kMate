@@ -12,7 +12,7 @@
 mkdir -p logs
 set -euo pipefail
 NB=${1:?Usage: sbatch exec_nb.sh <notebook_path>}
-PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin
+PY=/global/home/users/tbellg/miniforge3/envs/basic/bin
 $PY/jupyter nbconvert --to notebook --execute --inplace \
   --ExecutePreprocessor.timeout=2400 \
   "$NB"

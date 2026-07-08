@@ -23,7 +23,7 @@ def subdir(reg):
     n, g = reg.split("_g"); return f"cov10_{n}_g{g}_s42_hotspots_p231_chr1"
 
 tr = pd.read_csv(SIMS/subdir(REG)/"recomb_truth_raw.tsv.gz", sep="\t", usecols=["truth_af"])
-es = pd.read_csv(RES/"kmate_global_filt2mb_raw"/REG/f"p231_filt2mb_raw_{REG}_cov10_s42.tsv",
+es = pd.read_csv(RES/"kmate_global_filt2invu_raw"/REG/f"p231_filt2invu_raw_{REG}_cov10_s42.tsv",
                  sep="\t", usecols=["alt_freq", "n_called"])
 truth = tr["truth_af"].values.astype(np.float32)
 est   = es["alt_freq"].values.astype(np.float32)

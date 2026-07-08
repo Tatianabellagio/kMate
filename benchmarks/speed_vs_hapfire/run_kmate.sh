@@ -38,7 +38,7 @@ echo "[$(date)] kMate benchmark start on $(hostname), ${SLURM_CPUS_PER_TASK:-?} 
     --reads "$SIMDIR/r1.fq" "$SIMDIR/r2.fq" \
     --sample kmate_n231_chr1_cov50_f30_pin8 \
     --out kmate_n231_chr1_cov50_f30_pin8.tsv \
-    --threads 8 --chroms Chr1 --kmer-weight inv_mb --block-mode global
+    --threads 8 --chroms Chr1 --kmer-weight uniform --block-mode global
 
 echo "[$(date)] kMate benchmark done"
 ls -la "$RES"

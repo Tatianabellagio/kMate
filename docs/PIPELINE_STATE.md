@@ -31,7 +31,7 @@ anywhere disagrees with §0, §0 wins — fix the other place.
 | **K_pa filter** | `filt2inv` (drop ac=1 singletons **and** ac=F invariants), applied inline by `--filter-production` |
 | **EM normalization** | **`per_founder` (default, set 2026-07-06)** — M-step divides each founder by its own effective k-mer content $K^w_f$ (RSEM effective-length correction). Fixes global-mode founder-$h$ collapse (~19–49/231 founders driven to ~0). Legacy multinomial kept as `--normalize global` (deprecated). See `docs/FOUNDER_NORMALIZATION_FIX.md`, `ALGORITHM.md` §4.3. |
 | **EM weighting** | **GLOBAL mode (the GrENE-Net production estimator — heavily-selfing cohort, so global not window; emits BOTH per-sample founder $\mathbf h$ and per-record SNP/SV AF):** `--kmer-weight uniform` (drop $\omega=1/m_b$) + keep filt2inv — **supersedes** the old "$\omega=1/m_b$ production" note (per_founder + uniform wins both AF and $\mathbf h$: AF-MAE 0.0036 vs 0.0096, 0 vs 33 absorbed). **WINDOW mode** (recombinant pools only, not the selfing production path): `--kmer-weight inv_mb` as before. |
-| **Driver** | `per_sample_per_chrom.py --block-mode {global|window} --normalize per_founder` — GLOBAL (production) adds `--kmer-weight uniform`; WINDOW keeps `--kmer-weight inv_mb`. (`per_founder` is the default; `--normalize global` reproduces legacy.) |
+| **Driver** | `per_sample_per_chrom.py --unit {chrom|ld|bp|tsv} --normalize per_founder` — `--unit chrom` (the default; production selfing path) adds `--kmer-weight uniform`; the recombinant `--unit bp` path keeps `--kmer-weight inv_mb`. (`per_founder` is the default; `--normalize global` reproduces legacy. `--block-mode global|window` kept as deprecated aliases.) |
 | **Conda env** | **`kmate`** (mamba; `/global/home/users/tbellg/miniforge3/envs/kmate`) — the only env. `hapfm`/`gwas`/`sequencing_pipeline`/`pang`/`pangenie`/`basic` are gone (cluster migration). |
 
 **ARCHIVED — DO NOT CONSUME (these are the recurring confusion; they live under `archive/`):**
@@ -52,9 +52,10 @@ reproduces the MLE byte-identically for balanced-panel users. See `ALGORITHM.md`
 
 ## §0.1 — Run recipe (per sample)
 
-Both modes are production. Window-mode defaults already encode the `★★` recipe
-(window-bp 10000, anchor 0.3, hmm passes 5 α 0.5), so `--block-mode window` alone
-reproduces it. Env: `kmate`. Replace `Chr1` / chrom paths as needed (loop Chr1..Chr5).
+`--unit chrom` (default) is the production selfing path; `--unit bp` is the
+recombinant path (the legacy anchored+smoothed `★★`/star2 recipe — window-bp
+10000, anchor 0.3, hmm passes 5 α 0.5 — is now opt-in behind `--no-local-only`).
+Env: `kmate`. Replace `Chr1` / chrom paths as needed (loop Chr1..Chr5).
 
 ```bash
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
@@ -66,8 +67,8 @@ $PY src/per_sample_per_chrom.py \
     --var-meta   panel/arch3/${CHR,,}/var_pa_231_arch3_${CHR,,}.meta.npz \
     --reads <r1.fq> <r2.fq> --sample <name> --out <name>.tsv \
     --threads 8 --chroms $CHR --normalize per_founder --kmer-weight uniform \
-    --block-mode global       # GLOBAL (production): per_founder + uniform.
-                              # For recombinant pools: --block-mode window --kmer-weight inv_mb
+    --unit chrom              # DEFAULT (production selfing): per_founder + uniform.
+                              # Recombinant pools: --unit bp --window-bp 10000 --kmer-weight inv_mb
 ```
 
 Output TSV (8 cols): `chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se`.
@@ -96,7 +97,7 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 - **K-mer filter / kmer_pa build**: `filt2inv` (drop ac=1 + ac=F, inline `--filter-production`). EM weighting: window-mode $\omega_k=1/m_b$ (`--kmer-weight inv_mb`); global-mode (production) `--kmer-weight uniform` + `--normalize per_founder` (superseded 2026-07-06 for global mode — see §0 and `docs/FOUNDER_NORMALIZATION_FIX.md`).
 - **Projection**: MAR — `(h @ var_pa) / (h @ var_called)` in both global and window modes. Patched 2026-05-21.
 - **Haploblock collapse (2026-07-07, ON by default both modes)**: each unit (window, or whole chromosome in global) is fit `unit → distinct haplotypes (K_b ≤ F) → EM → equal-split back to members`, instead of assuming all F=231 founders are separately identifiable (`haploblock_collapse=True`; `em_solver.haploblock_collapse_indices`). `--haploblock-eps` sets the merge tolerance (default 0 = exact k-mer-identical → **exact byte-identical no-op when K_b==F**, which is essentially always true on the arch3 panel at whole-chromosome / r²=0.1+ units, so the GLOBAL production path is numerically inert; it matters for window mode where a 10kb window may carry only a few haplotypes). `--emit-af-se` and the bootstrap compute uncertainty on the K_b classes (mapped to founders by the equal-split), not the singular full-F Fisher info. See `ALGORITHM.md` §4.4.
-- **Estimation unit (`--unit`, 2026-07-07)**: one estimator; the mode is the unit, each fit locally (haploblock collapse → EM → project; no anchor / smoothing / fallback). **`--unit ld --ld-r2 0.1`** (r²-LD CompleteLDPartition blocks from var_pa; `src/kmate/ld_partition.py`) is the **corrected production estimator**. `--unit chrom` = one h per chrom (former `--block-mode global`; byte-identical alias retained; supports `--h-only` + `--emit-af-se`; the heavy-selfing GrENE-Net cohort ran on this). `--unit bp` (fixed windows) / `--unit tsv` (explicit blocks) for recombinant pools. `--block-mode global|window` kept as deprecated aliases. The old fixed-bp *window* cohort outputs (`grenenet_kmate_window*`) are **STALE** (old multinomial EM; decision 2026-07-07) — archived (~1.6 TB) to `results/archive/`; see `docs/RERUN_AFTER_FIX.md` Group D. Anchored+smoothed "star2" recipe is now behind `--no-local-only`.
+- **Estimation unit (`--unit`, 2026-07-07)**: one estimator; the mode is the unit, each fit locally (haploblock collapse → EM → project; no anchor / smoothing / fallback). **`--unit chrom`** (the CLI default) = one h per chrom (former `--block-mode global`; byte-identical alias retained; supports `--h-only` + `--emit-af-se`) is the **production estimator** for the heavy-selfing GrENE-Net cohort — robust on uniform and sparse panels. `--unit ld --ld-r2 0.1` (r²-LD CompleteLDPartition blocks from var_pa; `src/kmate/ld_partition.py`) is a per-block option that **collapses in low-diversity blocks** (centromere) → **wrong for selfing pools**; it is NOT the corrected production estimator. `--unit bp` (fixed windows) / `--unit tsv` (explicit blocks) for recombinant pools. `--block-mode global|window` kept as deprecated aliases. The old fixed-bp *window* cohort outputs (`grenenet_kmate_window*`) are **STALE** (old multinomial EM; decision 2026-07-07) — archived (~1.6 TB) to `results/archive/`; see `docs/RERUN_AFTER_FIX.md` Group D. Anchored+smoothed "star2" recipe is now behind `--no-local-only`.
 - **Naming**: the method is **kMate** (algorithm + math: `ALGORITHM.md`). Legacy code and result-dir paths (`*/cactus_em_*`) still use the prior name `cactus_em`; with the k-mer-filter decision now closed, the rename is unblocked but not yet executed. (The former `sims/visor_freqk` sub-repo was absorbed into `sims/` 2026-05-30; see `sims/README.md`.)
 
 ## What changed since the last pipeline-state doc (2026-05-19)
@@ -134,7 +135,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 - `n_called` = integer count of called founders at record r (h-independent panel QC)
 - `se` = Wald SE using `n_called` as effective sample size
 
-Both `--block-mode global` and `--block-mode window` (the `★★` recipe) use the same projection semantics. **After the 2026-05-26 cleanup the window-mode defaults *are* the ★★ recipe** (window-bp 10000, global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5), so `--block-mode window` alone reproduces it. **EM weighting is mode-specific:** window mode uses `--kmer-weight inv_mb`, global (production) uses `--kmer-weight uniform` + `--normalize per_founder` (superseded 2026-07-06 for global mode — see §0 and `ALGORITHM.md` §4.3). The LD-block modes, overlapping windows, and the older k-mer-budget rebalancing / carrier-weighting / contamination-ω variants were archived to `src/archive/`; the authoritative file list + recipes are in `src/README.md`.
+All units (`--unit chrom` default; `ld`/`bp`/`tsv`) use the same projection semantics. The legacy anchored+smoothed `★★`/star2 window recipe (window-bp 10000, global-anchor-weight 0.3, hmm-smooth-passes 5, hmm-smooth-alpha 0.5) is now opt-in behind `--no-local-only`; the default `--unit bp` window is fit local-only. **EM weighting is unit-specific:** the recombinant `--unit bp` path uses `--kmer-weight inv_mb`, the production `--unit chrom` (selfing) path uses `--kmer-weight uniform` + `--normalize per_founder` (superseded 2026-07-06 — see §0 and `ALGORITHM.md` §4.3). The LD-block modes, overlapping windows, and the older k-mer-budget rebalancing / carrier-weighting / contamination-ω variants were archived to `src/archive/`; the authoritative file list + recipes are in `src/README.md`.
 
 ## 3. Outstanding production work
 

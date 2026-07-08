@@ -70,16 +70,23 @@ else
     CN_VAR_CALLED=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz
 fi
 
-OUT_DIR=$CTRL/results/kmate_ldr01_${CNVAR}/${REGIME}
+# UNIT selects the estimator: chrom (whole-chromosome, production for selfing) | ld (r2=0.1 blocks)
+UNIT=${3:-ld}
+case "$UNIT" in
+    chrom) UNITTAG=chrom; UNIT_ARGS="--unit chrom" ;;
+    ld)    UNITTAG=ldr01; UNIT_ARGS="--unit ld --ld-blocks $LD_BLOCKS" ;;
+    *) echo "ERROR: UNIT must be chrom|ld" >&2; exit 1 ;;
+esac
+
+OUT_DIR=$CTRL/results/kmate_${UNITTAG}_${CNVAR}/${REGIME}
 mkdir -p $OUT_DIR
-SAMPLE=p231_ldr01_${CNVAR}_${REGIME}_cov${COV}_s${SEED}
+SAMPLE=p231_${UNITTAG}_${CNVAR}_${REGIME}_cov${COV}_s${SEED}
 OUT_TSV=$OUT_DIR/${SAMPLE}.tsv
 
-echo "[$(date)] kMate --unit ld (r2=0.1) GLOBAL-prod  regime=$REGIME  var_pa=$CNVAR"
-echo "  kmer_pa:   $CN_KMER_PREFIX  (production in-house index)"
-echo "  ld_blocks: $LD_BLOCKS"
-echo "  var_pa:    $CN_VAR"
-echo "  out:       $OUT_TSV"
+echo "[$(date)] kMate --unit $UNIT  regime=$REGIME  var_pa=$CNVAR"
+echo "  kmer_pa: $CN_KMER_PREFIX (production in-house index)"
+echo "  var_pa:  $CN_VAR"
+echo "  out:     $OUT_TSV"
 
 $PYTHON -u $DRIVER \
     --kmer-pa-prefix $CN_KMER_PREFIX \
@@ -90,6 +97,6 @@ $PYTHON -u $DRIVER \
     --sample $SAMPLE \
     --out $OUT_TSV \
     --threads 8 --chroms Chr1 \
-    --unit ld --ld-blocks $LD_BLOCKS --kmer-weight uniform
+    $UNIT_ARGS --kmer-weight uniform
 
 echo; echo "[$(date)] DONE — $OUT_TSV"; ls -lh $OUT_TSV

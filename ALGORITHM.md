@@ -578,11 +578,14 @@ where $w(r)$ is the window containing record $r$.
 collapse + per-founder normalization + local-only, "global" and "window" are the
 same algorithm at different unit sizes — `partition → per-unit (haploblock
 collapse §4.4 → local EM) → project`. The unit:
-- `--unit ld` (**default**, `--ld-r2 0.1`): r²-LD blocks from the panel's own
+- `--unit chrom` (**default**): one $\hat{\mathbf{h}}_c$ per chromosome — the
+  production estimator for selfers / inbreds / F0 pools (SEEDMIX, GrENE-Net);
+  robust on uniform and sparse panels; the only unit supporting `--h-only` and
+  `--emit-af-se`.
+- `--unit ld` (`--ld-r2 0.1`): r²-LD blocks from the panel's own
   `var_pa` via CompleteLDPartition (`ld_partition.py`; blocks are a panel property,
-  computed once and cached). The corrected production estimator (~18 blocks/Chr1).
-- `--unit chrom`: one $\hat{\mathbf{h}}_c$ per chromosome — for selfers / inbreds /
-  F0 pools (SEEDMIX); the only unit supporting `--h-only` and `--emit-af-se`.
+  computed once and cached; ~18 blocks/Chr1). A per-block option that **collapses
+  in low-diversity blocks** (centromere) → not appropriate for selfing pools.
 - `--unit bp` (`--window-bp`): fixed-bp windows (hard cuts, production 10 kb).
 - `--unit tsv` (`--blocks-tsv`): an explicit block partition.
 
@@ -618,7 +621,7 @@ was unaffected (it doesn't form discrete classes). See
 
 ---
 
-## 8. EM variants — production status (updated 2026-05-27)
+## 8. EM variants — production status (updated 2026-07-08)
 
 Current production:
 - **M-step normalization `per_founder` (§4.3)** is the production default

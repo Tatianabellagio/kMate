@@ -33,7 +33,7 @@ if [[ "$METHOD" != "global" && "$METHOD" != "star2" ]]; then
 fi
 
 CTRL=/global/scratch/users/tbellg/kmate/benchmarks/p80
-PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 DRIVER=/global/scratch/users/tbellg/kmate/src/per_sample_per_chrom.py
 
 # Sim work dir (built by 06_run_sim_p80.sh). Seed 42 by convention.

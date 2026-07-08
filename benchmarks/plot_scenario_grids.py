@@ -32,15 +32,24 @@ SCENARIOS = {
 }
 # per panel: F, truth filename, est dir templates {mode}, est prefix
 # pfx is mode-dependent: the p80 window driver tags files 'filt2mbW' (note W).
+# GLOBAL mode, MIXED panel (p231): "filt2inv" kmer_pa (drops ac=1 singletons AND
+# ac=F invariants -- matches REAL production data/kmer_pa_231_arch3_filt2inv)
+# + uniform kmer-weight -- the front-runner since the 2026-07-06 per_founder
+# normalization fix dropped omega=1/m_b for GLOBAL mode (PIPELINE_STATE.md Sec.0).
+# GLOBAL mode, HOMOGENEOUS panel (p80): NO filter, NO bubble weighting -- the
+# filt2/filt2inv + omega=1/m_b corrections exist specifically to cancel the
+# cactus/PG k-mer-count imbalance, which doesn't exist on this all-long-read
+# control panel (ALGORITHM.md M6 / benchmarks/README.md); confirmed 2026-07-07.
+# WINDOW mode (both panels) keeps filt2/filt2mb (inv_mb), unchanged.
 PANEL = {
     "p231": dict(F=231, truth="recomb_truth_raw.tsv.gz",
-                 pfx={"global": "p231_filt2mb_raw", "window": "p231_filt2mb_raw"},
-                 edir={"global": "kmate_global_filt2mb_raw", "window": "kmate_window_filt2mb_raw"},
-                 title="arch3 raw: SNP+indel+SV"),
+                 pfx={"global": "p231_filt2invu_raw", "window": "p231_filt2mb_raw"},
+                 edir={"global": "kmate_global_filt2invu_raw", "window": "kmate_window_filt2mb_raw"},
+                 title="arch3 filt2inv (production filter): SNP+indel+SV"),
     "p80":  dict(F=80,  truth="recomb_truth.tsv.gz",
-                 pfx={"global": "p80_filt2mb", "window": "p80_filt2mbW"},
-                 edir={"global": "cactus_em_global_filt2_mb", "window": "cactus_em_window_filt2_mb"},
-                 title="var_pa_p80: SNP+indel+SV"),
+                 pfx={"global": "p80", "window": "p80_filt2mbW"},
+                 edir={"global": "cactus_em_global", "window": "cactus_em_window_filt2_mb"},
+                 title="var_pa_p80 (unfiltered, uniform): SNP+indel+SV"),
 }
 
 

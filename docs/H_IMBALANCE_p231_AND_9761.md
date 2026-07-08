@@ -26,7 +26,8 @@ cactus + 151 short-read / PG founders) — the panel where the imbalance exists.
   0.80); **n50 short-read-heavy** (45 SR + 5 LR, LR truth 0.10).
 - Rows: **raw** (unfiltered `kmer_pa_p231`, ω≡1) → **private k-mer filter**
   (`kmer_pa_p231_filt2`, ω≡1) → **private k-mer filter + bubble weighting**
-  (filt2, ω_k=1/m_b — production).
+  (filt2, ω_k=1/m_b — pre-fix production; now the window-mode weight — global-mode
+  production switched to per_founder + uniform 2026-07-06, see `docs/FOUNDER_NORMALIZATION_FIX.md`).
 - Style: greenish (dark green = long-read est, light green = short-read est), grey text,
   no spines, grey gridlines, shared y-axis, RMSE per panel, no figure title, legend at
   bottom; n50 columns ordered by true frequency so selected founders sit right and
@@ -39,6 +40,13 @@ cactus + 151 short-read / PG founders) — the panel where the imbalance exists.
 | n231_g0 | 0.35 | 0.56 | 0.47 | **0.33** |
 | n50 long-read-heavy | 0.80 | 0.77 | 0.71 | **0.58** |
 | n50 short-read-heavy | 0.10 | 0.24 | 0.22 | **0.17** |
+
+> **Note (2026-07-08).** This figure/table is the historical `filter + ω_k=1/m_b`
+> correction (kept for provenance). Global-mode production **no longer uses ω_k=1/m_b**:
+> it uses `--normalize per_founder` (full-panel Kf_w) + `--kmer-weight uniform`, which
+> removes the completeness imbalance at its source rather than down-weighting shared
+> k-mers post hoc. ω_k=1/m_b remains only the window-mode weight. See
+> `docs/FOUNDER_NORMALIZATION_FIX.md`.
 
 raw EM over-credits long-read founders; the filter + weighting walk it toward truth.
 **Panel-conditional caveat (M6) is visible:** weighting clearly helps the balanced

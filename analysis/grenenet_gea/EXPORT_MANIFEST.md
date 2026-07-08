@@ -5,6 +5,11 @@ by `push_gea_to_drive.sh`. **Results-only**, so the advisor can plot the phase-1
 replication himself for talks. The Drive layout mirrors the cluster folder names
 (`grenenet_gea/phase1_replication/wza`), rooted under `data/`.
 
+> **⚠️ Stale exports (2026-07-08).** The WZA CSVs below were built on **PRE-FIX AF**
+> (`results/grenenet_kmate_arch3/`, now retired) and **predate the full-panel Kf_w / `--unit chrom`
+> regeneration**. They should be **re-exported** after the downstream regen (production AF is now
+> `results/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/`) before being cited or presented.
+
 ## What's in the export (~7 MB)
 | Drive path (under `data/grenenet_gea/phase1_replication/`) | Source on cluster | What it is |
 |---|---|---|

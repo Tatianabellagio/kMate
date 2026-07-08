@@ -1,5 +1,14 @@
 # SNP vs non-SNP variance partition of ecotype selection — result + handoff
 
+> ## ⚠️ NUMBERS PREDATE THE Kf_w / `--unit chrom` FIX (2026-07-08) — need regeneration
+> Every quantity in this doc (h²=0.938, all joint LRT p-values, corr(K_snp,K_nonsnp)=0.998,
+> per-site λ=1.040, the chr2 ~2.34Mb top peak, all GWAS hit counts) was computed on **PRE-FIX
+> founder h** — collapsed-founder global-EM, before the full-panel Kf_w correction and the move to
+> `--unit chrom`. They **must be regenerated** and should not be cited as current. The cited npz
+> inputs (`ecotype_fitness/sample_global_h.npz`, `varexp/selection_s_matrix.npz`) have since been
+> regenerated under the fix. In particular the founder-collapse (below) is fixed: founder 9977 is now
+> rescued to h≈1.5e-4 (was ~1e-15, "absorbed") and ~230 of 231 founders are retained.
+
 Session date: 2026-07-03. Branch `add-kmate`. Env: `kmate`
 (`source ~/miniforge3/etc/profile.d/conda.sh && conda activate kmate`). Always `hostname`
 first — compute only on `n*.savio*`, never `ln00X` (hook-enforced).
@@ -44,8 +53,11 @@ log-odds space**: `s = logit-slope of h over gens 0→3` → skew +1, variance s
 - founding reference `p0` = mean over 8 SEEDMIX reps (ESTIMATED, not forced uniform 1/231 — the
   twin-absorption identifiability bias cancels in the slope; verified seedmix averaging is correct,
   mean is exactly 1/231 by closure, spread is real & reproducible across all 8 reps).
-- **presence filter**: analyzable = `p0 > 1e-3` → **212 of 231 founders** (drops ~19 twin-absorbed
-  founders like 9977 at h≈1e-15 whose logit is undefined; keeps rare-start winners).
+- **presence filter**: analyzable = `p0 > 1e-3`. **[PRE-FIX: kept 212 of 231, dropping ~19
+  twin-absorbed founders like 9977 at h≈1e-15.]** After the full-panel Kf_w fix the founder collapse
+  is gone: **9977 is rescued to h≈1.5e-4 and ~230 of 231 founders are retained**, so the `1e-3` floor
+  is now a near-no-op rather than a mass exclusion. This filter — and every downstream count — needs
+  to be recomputed on the post-fix h.
 - **NO reliability/cross-chrom-SD weighting** (user decision: chrom-averaging already regularizes).
 - raw `s` primary; **RINT** (rank-inverse-normal per site) as sensitivity.
 

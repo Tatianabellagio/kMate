@@ -23,14 +23,16 @@ SCENARIOS = {
     "selfing":  [["n231_g0", "n50_g0"], ["n231_g1_self97", "n50_g1_self97"],
                  ["n50_g3_self97", "n50_g3_dom500_self97"]],
 }
-# NEW estimator: --unit ld --ld-r2 0.1 + per_founder + uniform, production in-house panel.
+# Unit tag selects which estimator's outputs to plot: KMATE_UNITTAG=chrom|ldr01 (default ldr01).
+TAG = os.environ.get("KMATE_UNITTAG", "ldr01")
+_U = "--unit chrom" if TAG == "chrom" else "--unit ld r2=0.1"
 PANEL = {
     "p231": dict(F=231, truth="recomb_truth_raw.tsv.gz",
-                 edir="kmate_ldr01_raw", pfx="p231_ldr01_raw",
-                 title="prod in-house filt2inv, --unit ld r2=0.1: SNP+indel+SV"),
+                 edir=f"kmate_{TAG}_raw", pfx=f"p231_{TAG}_raw",
+                 title=f"prod in-house filt2inv, {_U}: SNP+indel+SV"),
     "p80":  dict(F=80,  truth="recomb_truth.tsv.gz",
-                 edir="kmate_ldr01_p80_filt2inv", pfx="p80_ldr01_filt2inv",
-                 title="p80 in-house filt2inv, --unit ld r2=0.1: SNP+indel+SV"),
+                 edir=f"kmate_{TAG}_p80_filt2inv", pfx=f"p80_{TAG}_filt2inv",
+                 title=f"p80 in-house filt2inv, {_U}: SNP+indel+SV"),
 }
 
 
@@ -54,7 +56,7 @@ def make(panel, scenario):
                 print(f"  [skip cell] {panel} {scenario} {reg}: missing truth or est ({ep.name})")
                 cells.append((f"{reg}\n(missing)", [0.0], [0.0])); continue
             cells.append((reg, *load_cell(tp, ep, miss_thr=_THR, F=p["F"])))
-    out = ROOT / f"{panel}/results/plots/{panel}_{scenario}_ldr01{SUFFIX}.png"
+    out = ROOT / f"{panel}/results/plots/{panel}_{scenario}_{TAG}{SUFFIX}.png"
     out.parent.mkdir(parents=True, exist_ok=True)
     grid_panel(cells, f"{panel} kMate --unit ld r2=0.1 ({p['title']}) — "
                f"FULLY {scenario.upper()} — {NOTE}", out)

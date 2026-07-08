@@ -71,11 +71,12 @@ for CHR in $CHROMS; do
         echo "[$(date)] $SAMPLE $CHR already done — skipping"; continue
     fi
     echo "[$(date)] EM $SAMPLE $CHR (global, h-only)"
+    # GLOBAL mode: drop omega=1/m_b (uniform) per PIPELINE_STATE.md Sec.0 (2026-07-06).
     $PY -u src/per_sample_per_chrom.py \
         --kmer-pa-prefix $KMER_PA_PREFIX \
         --reads /dev/null --kmer-db "$JF_DB" \
         --sample $SAMPLE --out $OUT_CHR \
-        --threads $THREADS --block-mode global --kmer-weight inv_mb \
+        --threads $THREADS --block-mode global --kmer-weight uniform \
         --chroms $CHR --h-only \
       || { echo "ERROR: EM failed $SAMPLE $CHR"; exit 1; }
 done

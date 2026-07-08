@@ -21,18 +21,22 @@ benchmark numbers were produced. All three affect global:
    (this refresh, decided 2026-07-07). With haploblock collapse + per-founder
    normalization + local-only, `global` and `window` are the SAME algorithm at
    different unit sizes: `partition → per-unit (collapse→local EM) → project`.
-   Production is now `--unit ld --ld-r2 0.1` (CompleteLDPartition r²=0.1 blocks from
-   var_pa_231_arch3, ~18/Chr1, variable size; K_b≈231 inside each so collapse ≈ no-op
-   but the unit is data-derived, not an arbitrary whole-chromosome). **This unification
-   is Phase 0 and must be built first.**
+   Settled selfing/inbred production is `--unit chrom` (whole-chromosome one-h; the CLI
+   default is now `--unit chrom`). `--unit ld --ld-r2 0.1` (CompleteLDPartition r²=0.1
+   blocks from var_pa_231_arch3, ~18/Chr1, variable size; K_b≈231 inside each so collapse
+   ≈ no-op) is ≈ chrom at r²=0.1 and is used only as a per-block / SNP-parity control, NOT
+   as selfing production. **This unification is Phase 0 and must be built first.**
 
 Also switching the benchmark k-mer panel to the **real production in-house index**
 `data/kmer_pa_231_arch3_filt2inv` (not the benchmark-local pang_135 rebuild), so the
 refresh is a true end-to-end production benchmark.
 
 **Production config the benchmarks must run:**
+(Settled selfing/inbred production = `--unit chrom`; `--unit ld --ld-r2 0.1` shown below
+is the per-block / SNP-parity control, ≈ chrom at r²=0.1.)
 ```
---unit ld --ld-r2 0.1        r²=0.1 CompleteLDPartition blocks (from var_pa_231_arch3)
+--unit chrom                 SELFING PRODUCTION (whole-chromosome one-h; CLI default)
+--unit ld --ld-r2 0.1        per-block / SNP-parity CONTROL (r²=0.1 CompleteLDPartition blocks)
 --haploblock-eps 0           exact haploblock collapse per unit, then local EM
 --normalize per_founder      full-panel Kf_w  (default)
 --kmer-weight uniform        (ω=1/m_b retired)
@@ -69,8 +73,8 @@ benchmark family below.
 → project`), unit-selected:
 
 ```
---unit ld    [--ld-r2 0.1]     CompleteLDPartition LD blocks   (DEFAULT, r2=0.1)
---unit chrom                   one unit = whole chromosome     (former "global")
+--unit chrom                   one unit = whole chromosome     (CLI DEFAULT; selfing production)
+--unit ld    [--ld-r2 0.1]     CompleteLDPartition LD blocks   (per-block / SNP-parity control)
 --unit bp    [--window-bp N]   fixed-bp windows                (former "window")
 --unit tsv    (--blocks-tsv P) explicit block TSV
 ```
@@ -126,9 +130,10 @@ n50_g3 n50_g3_dom500` (+ any `_self97` variants already simulated). Both var_pa
 arms: `raw` (SNP/indel/SV) and `atomized` (SNP-level).
 
 1. **New runner.** Adapt `scripts/07f_run_kmate_filt2inv_p231.sh` to the Phase-0
-   config: production in-house kmer_pa + `--unit ld --ld-r2 0.1 --kmer-weight uniform`
-   (replacing `--block-mode global`). New output dir e.g.
-   `results/kmate_ldr01_<cnvar>/<regime>/`.
+   config: production in-house kmer_pa + `--unit chrom --kmer-weight uniform`
+   (selfing production; replacing `--block-mode global`). `--unit ld --ld-r2 0.1`
+   is run only as the per-block / SNP-parity control (≈ chrom at r²=0.1). New output
+   dir e.g. `results/kmate_chrom_<cnvar>/<regime>/` (and `kmate_ldr01_*` for the control).
 2. **Score.** `scripts/score_p231.py` — MAE/RMSE/R²/outlier by regime × var-class
    (SNP/indel/SV). Point it at the new output dirs; keep the old dirs for the
    old↔new delta column.
@@ -176,6 +181,10 @@ re-run hapFIRE.
 
 ## Phase 5 — vs competitors (kMate arm only)
 
+**STATUS: still PENDING.** The `accuracy_vs_competitors/` quantitative tables
+(BENCHMARK_DESIGN §2.2, §3.2a, §5) still predate the corrected per_founder/uniform
+algorithm and have not yet been refreshed.
+
 Files: `benchmarks/accuracy_vs_competitors/`. **Reuse existing hapFIRE + vg
 outputs.** Re-run only the kMate arm under the new global config, then re-score
 with `scripts/score_snp_fair.py` (SNP parity vs hapFIRE) and the SV-vs-vg path.
@@ -213,9 +222,10 @@ Update `benchmark_table_4tool.tsv` / `benchmark_4tool_RMSE_*.png` kMate rows onl
   Phase 0c.
 
 - **Estimator unified under `--unit`** (2026-07-07) — full unify: one code path,
-  `--unit {ld,chrom,bp,tsv}`, default `ld:0.1`; `--block-mode global/window` kept as
-  deprecated aliases so production is byte-identical. "global" retired as a distinct
-  mode. See Phase 0a.
+  `--unit {chrom,ld,bp,tsv}`, CLI default `--unit chrom` (settled selfing production);
+  `--unit ld --ld-r2 0.1` is the per-block / SNP-parity control (≈ chrom at r²=0.1).
+  `--block-mode global/window` kept as deprecated aliases so production is byte-identical.
+  "global" retired as a distinct mode. See Phase 0a.
 - **ω=1/m_b (`inv_mb`) is retired for global** — per-founder normalization removes the
   imbalance at its source, so m_b weighting is stale (2026-07-07). Benchmarks run
   `--kmer-weight uniform` only; no m_b comparison arm.

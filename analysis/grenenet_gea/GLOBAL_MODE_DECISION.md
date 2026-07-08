@@ -112,6 +112,17 @@ Do not use the simulation floor. Instead:
 3. Define the break metric on a **collinearity-robust projected functional**, not raw `h`.
 4. Require a **positive control** (a known outcross/admixture locus) to fire first.
 
+## Update (2026-07-08): machinery archived; GLOBAL = `--unit chrom`
+
+"GLOBAL mode" is now the unified estimator invoked as **`--unit chrom`** (byte-identical
+to the old `--block-mode global`). The window/hapfreq *diagnostic* machinery referenced
+throughout this doc — cross-chrom agreement, `site4_block_vs_global_h`, the `gen9_window/`
+breakage script subtree — has been **archived** to `archive/window_hapfreq_retired/`
+(the window stores `results/grenenet_kmate_window[_seedmix]` it read were deleted, and the
+`--unit chrom` cohort emits no per-block `h_blocks`). Window-vs-chrom is settled in favor of
+**chrom**: haploblocks (r²=0.1, eps=0) collapse to ~231 ≈ chromosome-wise, so the reframe is
+"framing only." (The `gen9_window/` DATA directory under `results/` is kept.)
+
 ## Related
 - `FLOOR_DERIVATION.md` / `benchmarks/localonly_p231/` — the k-mer floor (AF error ∝ nnz;
   ~1–2k k-mers to plateau; 5–10 kb windows sit below it).

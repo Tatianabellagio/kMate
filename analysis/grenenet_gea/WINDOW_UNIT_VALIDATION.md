@@ -7,6 +7,16 @@
 > window-mode cohort run and its window-vs-global AF comparison (§2–§4) stand as the validation that
 > window-local `h` does not materially change AF (median r 0.995) — i.e. GLOBAL loses little.
 > This file merges `BLOCKS_HANDOFF.md` (block definitions + benchmark handoff); original in git `5cefcfa`.
+>
+> **Archival note (added 2026-07-08).** The window-unit / haploblock-frequency (hapfreq)
+> *diagnostic* machinery this file describes has been **archived** to
+> `archive/window_hapfreq_retired/` (cross-chrom agreement, block-vs-global-h, the
+> `gen9_window/` script subtree). The window stores `results/grenenet_kmate_window[_seedmix]`
+> those scripts read have been **deleted from disk**; the `--unit chrom` production cohort
+> emits no per-block `h_blocks`. The r≈0.995 window-vs-global agreement numbers below
+> **predate the full-panel `Kf_w` normalization fix** and should be read as historical.
+> Window-vs-chrom is settled: haploblocks (r²=0.1, eps=0) collapse to ~231 ≈ chromosome-wise,
+> so the reframe is "framing only." See `GLOBAL_MODE_DECISION.md`.
 
 The selection-test unit is the **LD-defined block** (dynld K500 unit); the cohort was also
 re-run in **window mode** so every sample carries a per-unit haplotype-frequency vector `h`

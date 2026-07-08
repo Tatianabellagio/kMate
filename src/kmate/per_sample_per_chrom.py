@@ -521,13 +521,16 @@ def main():
     ap.add_argument("--unit", default=None,
                     choices=["chrom", "ld", "bp", "tsv"],
                     help="Estimation UNIT (one estimator; the mode IS the unit). "
-                         "'ld' (DEFAULT): r²-LD blocks from var_pa (CompleteLDPartition, "
-                         "--ld-r2); the corrected production estimator. 'chrom': one h per "
-                         "chromosome (selfing / inbred / F0 pools; supports --h-only and "
-                         "--emit-af-se). 'bp': fixed --window-bp windows. 'tsv': explicit "
-                         "--blocks-tsv. Each unit is fit locally: haploblock-collapse "
-                         "(--haploblock-eps) → EM → project (no anchor / no smoothing / "
-                         "no fallback).")
+                         "'chrom' (DEFAULT): one h per chromosome — the production "
+                         "estimator for selfing / inbred / F0 pools (e.g. GrENE-Net); "
+                         "robust on both uniform and sparse panels; supports --h-only "
+                         "and --emit-af-se. 'ld': r²-LD blocks from var_pa "
+                         "(CompleteLDPartition, --ld-r2) — per-block resolution, but "
+                         "collapses in low-diversity blocks (centromere), so it is WRONG "
+                         "for selfing pools (see docs/EM_UNIT_CHOICE_AND_NONIDENTIFIABILITY.md). "
+                         "'bp': fixed --window-bp windows. 'tsv': explicit --blocks-tsv. "
+                         "Each unit is fit locally: haploblock-collapse (--haploblock-eps) "
+                         "→ EM → project (no anchor / no smoothing / no fallback).")
     ap.add_argument("--ld-r2", type=float, default=0.1,
                     help="r² cutoff for --unit ld CompleteLDPartition (default 0.1).")
     ap.add_argument("--ld-blocks", default=None,
@@ -602,7 +605,9 @@ def main():
     args = ap.parse_args()
 
     # Resolve the estimation UNIT. --unit is authoritative; --block-mode is a
-    # deprecated alias (global→chrom, window→bp); default is ld (production).
+    # deprecated alias (global→chrom, window→bp); default is chrom — the production
+    # estimator for selfing/inbred pools (ld collapses low-diversity blocks; see
+    # docs/EM_UNIT_CHOICE_AND_NONIDENTIFIABILITY.md).
     if args.unit is not None:
         if args.block_mode is not None:
             print(f"  NOTE: both --unit and --block-mode given; --unit '{args.unit}' wins.",
@@ -613,7 +618,7 @@ def main():
         print(f"  NOTE: --block-mode {args.block_mode} is DEPRECATED → --unit {unit}.",
               flush=True)
     else:
-        unit = "ld"
+        unit = "chrom"
     args.unit = unit
 
     if args.emit_af_se and unit != "chrom":
