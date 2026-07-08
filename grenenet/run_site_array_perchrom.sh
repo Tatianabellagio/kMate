@@ -33,7 +33,7 @@
 # preemption) by the trap — the per-chrom TSVs are what actually survive.
 #
 # Production recipe: env=kmate; K_pa=arch3 filt2inv; V_pa=arch3 per-chrom triplet;
-# EM weight inv_mb; GLOBAL mode (the evolved-cohort choice; window only on request).
+# EM weight uniform (no per-bubble weighting); GLOBAL mode (the evolved-cohort choice; window only on request).
 #
 # Usage (chunk by OFFSET if N>1000; see grenenet/README.md):
 #   sbatch --array=1-N%C --mem=32G \
@@ -50,7 +50,7 @@
 #                  -> /dev/shm -> OUT_DIR). The key scale-out knob (see below).
 #   OFFSET       — manifest-row offset for chunking past MaxArraySize=1001 (default 0)
 #   WINDOW_BP    — window-mode width, default 10000 (only used when BLOCK_MODE=window)
-#   KMER_WEIGHT  — "inv_mb" (production, default) | "uniform"
+#   KMER_WEIGHT  — "uniform" (production DEFAULT; no per-bubble weighting) | "inv_mb" (legacy)
 #   CHROMS       — quoted space-separated, default "Chr1 Chr2 Chr3 Chr4 Chr5"
 #   KMER_PA_PREFIX — K_pa prefix; driver appends _<CHR>.{kmer_pa,meta}.npz
 #   VAR_PA_DIR / VAR_PA_TAG — per-chrom V_pa location; paths are built as
@@ -81,7 +81,8 @@ WINDOW_BP=${WINDOW_BP:-10000}
 BLOCKS_DIR=${BLOCKS_DIR:-}        # set (with BLOCK_MODE=window) -> per-chrom LD-unit TSVs
                                  #   ${BLOCKS_DIR}/${chrlc}_units_dynld_K500.tsv, instead of fixed --window-bp
 MIN_KMERS=${MIN_KMERS:-50}       # min OBSERVED k-mers/block for a local fit (else global fallback)
-KMER_WEIGHT=${KMER_WEIGHT:-inv_mb}
+KMER_WEIGHT=${KMER_WEIGHT:-uniform}   # DEFAULT uniform (no per-bubble weighting); inv_mb is legacy
+NORMALIZE=${NORMALIZE:-per_founder}   # EM M-step normalization: per_founder (fix, default) | global (legacy)
 CHROMS=${CHROMS:-"Chr1 Chr2 Chr3 Chr4 Chr5"}
 
 # Production matrices (2026-05-31, arch3 single-source — docs/PIPELINE_STATE.md §0):
@@ -138,7 +139,7 @@ if [ -s "$FINAL_OUT" ]; then
     exit 0
 fi
 
-echo "[$(date)] task=${SLURM_ARRAY_TASK_ID}  sample=${SAMPLE}  block_mode=${BLOCK_MODE}  weight=${KMER_WEIGHT}"
+echo "[$(date)] task=${SLURM_ARRAY_TASK_ID}  sample=${SAMPLE}  block_mode=${BLOCK_MODE}  weight=${KMER_WEIGHT}  normalize=${NORMALIZE}"
 echo "  R1: $R1"
 echo "  R2: $R2"
 echo "  K_pa prefix: $KMER_PA_PREFIX   V_pa: $VAR_PA_DIR/<chr>/${VAR_PA_TAG}_<chr>"
@@ -219,6 +220,7 @@ for CHR in $CHROMS; do
         --threads 8 \
         --block-mode $BLOCK_MODE \
         --kmer-weight $KMER_WEIGHT \
+        --normalize $NORMALIZE \
         --chroms $CHR \
         $WINDOW_ARGS \
       || { echo "[$(date)] ERROR: driver failed on $SAMPLE $CHR"; exit 1; }

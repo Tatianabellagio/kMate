@@ -42,7 +42,7 @@
 #
 # Required env: MANIFEST, DB_DIR (Phase A output), OUT_DIR
 # Optional env (defaults = production recipe; mirror run_site_array_perchrom.sh):
-#   BLOCK_MODE (global, DEFAULT; window only if explicitly set) WINDOW_BP (10000) KMER_WEIGHT (inv_mb)
+#   BLOCK_MODE (global, DEFAULT; window only if explicitly set) WINDOW_BP (10000) KMER_WEIGHT (uniform)
 #   CHROMS ("Chr1 Chr2 Chr3 Chr4 Chr5")
 #   KMER_PA_PREFIX VAR_PA_DIR VAR_PA_TAG
 # ============================================================================
@@ -57,7 +57,7 @@ PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 : ${OUT_DIR:?Set OUT_DIR}
 BLOCK_MODE=${BLOCK_MODE:-global}
 WINDOW_BP=${WINDOW_BP:-10000}
-KMER_WEIGHT=${KMER_WEIGHT:-inv_mb}
+KMER_WEIGHT=${KMER_WEIGHT:-uniform}   # DEFAULT uniform (no per-bubble weighting); inv_mb is legacy
 CHROMS=${CHROMS:-"Chr1 Chr2 Chr3 Chr4 Chr5"}
 KMER_PA_PREFIX=${KMER_PA_PREFIX:-data/kmer_pa_231_arch3_filt2inv/kmer_pa}
 VAR_PA_DIR=${VAR_PA_DIR:-panel/arch3}

@@ -24,7 +24,7 @@ mkdir -p logs
 set -euo pipefail
 REGIME=${1:?Usage: REGIME CNVAR [WEIGHT]}
 CNVAR=${2:?Usage: REGIME CNVAR [WEIGHT]}
-WEIGHT=${3:-inv_mb}
+WEIGHT=${3:-uniform}   # default uniform (per_founder makes inv_mb redundant); pass inv_mb to opt in
 [[ "$CNVAR" == "atomized" || "$CNVAR" == "raw" ]] || { echo "ERROR: CNVAR atomized|raw" >&2; exit 1; }
 
 ROOT=/global/scratch/users/tbellg/kmate

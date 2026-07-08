@@ -22,7 +22,7 @@
 mkdir -p logs
 set -euo pipefail
 REGIME=${1:?Usage: REGIME [WEIGHT]}
-WEIGHT=${2:-inv_mb}
+WEIGHT=${2:-uniform}   # default uniform (per_founder makes inv_mb redundant); pass inv_mb to opt in
 [[ "$WEIGHT" == "inv_mb" || "$WEIGHT" == "uniform" ]] || { echo "ERROR WEIGHT" >&2; exit 1; }
 [[ "$WEIGHT" == "inv_mb" ]] && WTAG="filt2mbW" || WTAG="filt2uW"
 [[ "$WEIGHT" == "inv_mb" ]] && ODIR="cactus_em_window_filt2_mb" || ODIR="cactus_em_window_filt2_uniform"
