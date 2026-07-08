@@ -514,12 +514,29 @@ def main():
                          "k-mer-poor founders to ~0. 'global' is the LEGACY multinomial "
                          "normalization by the global count total (kept for reproducing old runs; "
                          "under-calls founder frequencies). Applied in both global and window modes.")
-    ap.add_argument("--block-mode", default="global", choices=["global", "window"],
-                    help="global: one h per chrom (selfing / inbred / F0 pools). "
-                         "window: per-window h for recombinant pools (production "
-                         "'star2' recipe; window defaults below reproduce it).")
+    ap.add_argument("--unit", default=None,
+                    choices=["chrom", "ld", "bp", "tsv"],
+                    help="Estimation UNIT (one estimator; the mode IS the unit). "
+                         "'ld' (DEFAULT): r²-LD blocks from var_pa (CompleteLDPartition, "
+                         "--ld-r2); the corrected production estimator. 'chrom': one h per "
+                         "chromosome (selfing / inbred / F0 pools; supports --h-only and "
+                         "--emit-af-se). 'bp': fixed --window-bp windows. 'tsv': explicit "
+                         "--blocks-tsv. Each unit is fit locally: haploblock-collapse "
+                         "(--haploblock-eps) → EM → project (no anchor / no smoothing / "
+                         "no fallback).")
+    ap.add_argument("--ld-r2", type=float, default=0.1,
+                    help="r² cutoff for --unit ld CompleteLDPartition (default 0.1).")
+    ap.add_argument("--ld-blocks", default=None,
+                    help="Precomputed LD-blocks TSV for --unit ld (chrom start_pos end_pos "
+                         "n_variants). If omitted, blocks are computed from --var-pa at "
+                         "--ld-r2 and cached next to it (LD blocks are a panel property).")
+    ap.add_argument("--ld-window", type=int, default=100,
+                    help="CompleteLDPartition window (markers) for --unit ld (default 100).")
+    ap.add_argument("--block-mode", default=None, choices=["global", "window"],
+                    help="DEPRECATED alias for --unit (kept for back-compat): "
+                         "global→--unit chrom, window→--unit bp. Prefer --unit.")
     ap.add_argument("--window-bp", type=int, default=10_000,
-                    help="fixed-window size for --block-mode window (production: 10 kb)")
+                    help="fixed-window size for --unit bp (production window: 10 kb)")
     ap.add_argument("--blocks-tsv", default=None,
                     help="LD-block TSV (chrom start_pos end_pos n_variants; TAIR10 coords). "
                          "In window mode, use these blocks as the windows instead of "
@@ -580,22 +597,38 @@ def main():
                          "merges near-indistinguishable founders (both modes).")
     args = ap.parse_args()
 
-    if args.emit_af_se and args.block_mode != "global":
-        sys.exit("ERROR: --emit-af-se is implemented for --block-mode global only")
+    # Resolve the estimation UNIT. --unit is authoritative; --block-mode is a
+    # deprecated alias (global→chrom, window→bp); default is ld (production).
+    if args.unit is not None:
+        if args.block_mode is not None:
+            print(f"  NOTE: both --unit and --block-mode given; --unit '{args.unit}' wins.",
+                  flush=True)
+        unit = args.unit
+    elif args.block_mode is not None:
+        unit = {"global": "chrom", "window": "bp"}[args.block_mode]
+        print(f"  NOTE: --block-mode {args.block_mode} is DEPRECATED → --unit {unit}.",
+              flush=True)
+    else:
+        unit = "ld"
+    args.unit = unit
 
-    # --local-only is a window-mode concept (default True). It is a no-op in global
-    # mode (run_one_chrom_global never reads it). run_one_chrom_window does the
-    # anchor/smoothing forcing itself, so nothing to force here.
+    if args.emit_af_se and unit != "chrom":
+        sys.exit("ERROR: --emit-af-se is implemented for --unit chrom only")
+    if unit == "tsv" and not args.blocks_tsv:
+        sys.exit("ERROR: --unit tsv requires --blocks-tsv <path>")
 
-    print(f"=== {args.sample} (per-chrom {args.block_mode} mode"
+    # --local-only (default True) forces no anchor / no smoothing / no fallback in the
+    # per-unit (non-chrom) path; run_one_chrom_window does that forcing itself.
+
+    print(f"=== {args.sample} (per-chrom unit={unit}"
           f"{', h-only' if args.h_only else ''}) ===", flush=True)
     print(f"  reads: {args.reads}", flush=True)
     t0 = time.time()
 
     global _VAR_CALLED
     if args.h_only:
-        if args.block_mode != "global":
-            sys.exit("ERROR: --h-only is supported in global mode only")
+        if unit != "chrom":
+            sys.exit("ERROR: --h-only is supported in --unit chrom only")
         var_pa = None
         var_meta = None
         n_records = None
@@ -653,7 +686,7 @@ def main():
             n_called_per_rec = np.full(n_records, F_total, dtype=np.int32)
 
     for chrom in args.chroms:
-        if args.block_mode == "global":
+        if unit == "chrom":
             idx, freqs, info, h, _, extra = run_one_chrom_global(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads, kmer_weight=args.kmer_weight,
@@ -672,7 +705,25 @@ def main():
             if args.h_only:
                 gc.collect()
                 continue
-        else:  # window
+        else:  # per-unit local fit: bp windows | tsv blocks | ld blocks
+            # Resolve this chrom's block TSV. ld: compute-or-load (panel property);
+            # tsv: the given --blocks-tsv; bp: None (fixed --window-bp windows).
+            blocks_tsv = None
+            if unit == "tsv":
+                blocks_tsv = args.blocks_tsv
+            elif unit == "ld":
+                if args.ld_blocks:
+                    blocks_tsv = args.ld_blocks
+                else:
+                    from .ld_partition import ld_blocks_tsv as _ld_tsv
+                    vp_prefix = args.var_pa[:-len(".var_pa.npz")] if \
+                        args.var_pa.endswith(".var_pa.npz") else args.var_pa
+                    cache = f"{vp_prefix}.ld_blocks_r2_{args.ld_r2:.2f}_{chrom}.tsv"
+                    print(f"  [{chrom}] --unit ld: r²={args.ld_r2} blocks "
+                          f"({'cached' if os.path.exists(cache) else 'computing'}) → {cache}",
+                          flush=True)
+                    blocks_tsv = _ld_tsv(vp_prefix, chrom, args.ld_r2, cache,
+                                         window=args.ld_window)
             idx, freqs, info, pack, _ = run_one_chrom_window(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
                 reads_input, args.threads,
@@ -683,7 +734,7 @@ def main():
                 hmm_smooth_recomb_rate=args.hmm_smooth_recomb_rate,
                 kmer_weight=args.kmer_weight,
                 kmer_db=kmer_db, hash_size=args.hash_size,
-                blocks_tsv=args.blocks_tsv,
+                blocks_tsv=blocks_tsv,
                 min_kmers_per_block=args.min_kmers_per_block,
                 local_only=args.local_only,
                 max_kmer_cov_mult=args.max_kmer_cov_mult,
@@ -734,7 +785,7 @@ def main():
                         f"{af_str}\t{inf_str}\t{nc_str}\t{se_str}\n")
         print(f"  wrote {n_records:,} records to {args.out}", flush=True)
 
-    suffix = ".h_per_chrom.npz" if args.block_mode == "global" else ".h_blocks_per_chrom.npz"
+    suffix = ".h_per_chrom.npz" if unit == "chrom" else ".h_blocks_per_chrom.npz"
     h_path = args.out.replace(".tsv", suffix) if args.out.endswith(".tsv") else args.out + suffix
     if h_path != args.out:
         if args.h_only:

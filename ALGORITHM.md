@@ -574,16 +574,23 @@ $$\widehat{\mathrm{AF}}_r \;=\; \frac{\hat{\mathbf{h}}_{w(r)}^{\!\top} \, (V_{\m
 
 where $w(r)$ is the window containing record $r$.
 
-**Partitioning schemes** (selected via `--block-mode`; two modes only after the
-2026-05-26 cleanup):
-- `global` (default): one $\hat{\mathbf{h}}_c$ per chromosome — for selfers /
-  inbreds / F0 pools (SEEDMIX).
-- `window` (fixed-bp): hard cuts every `--window-bp` (production default 10 kb).
-  Each window is fit **unit → haploblock collapse (§4.4) → EM**; each record takes
-  the $\hat{\mathbf{h}}$ of its window (hard assignment).
+**One estimator, selected by UNIT (`--unit`, 2026-07-07).** With haploblock
+collapse + per-founder normalization + local-only, "global" and "window" are the
+same algorithm at different unit sizes — `partition → per-unit (haploblock
+collapse §4.4 → local EM) → project`. The unit:
+- `--unit ld` (**default**, `--ld-r2 0.1`): r²-LD blocks from the panel's own
+  `var_pa` via CompleteLDPartition (`ld_partition.py`; blocks are a panel property,
+  computed once and cached). The corrected production estimator (~18 blocks/Chr1).
+- `--unit chrom`: one $\hat{\mathbf{h}}_c$ per chromosome — for selfers / inbreds /
+  F0 pools (SEEDMIX); the only unit supporting `--h-only` and `--emit-af-se`.
+- `--unit bp` (`--window-bp`): fixed-bp windows (hard cuts, production 10 kb).
+- `--unit tsv` (`--blocks-tsv`): an explicit block partition.
 
-The earlier `ld_gabriel`, `ld_complete`, `bigld_panel` modes and the
-overlapping-window variant were archived to `src/archive/`.
+`--block-mode global|window` remain as **deprecated aliases**
+(`global`→`--unit chrom`, `window`→`--unit bp`); `--unit chrom` is byte-identical
+to the former `--block-mode global`. The earlier `ld_gabriel`, `ld_complete`,
+`bigld_panel` modes and the overlapping-window variant were archived to
+`src/archive/`.
 
 **Window mode defaults to LOCAL-ONLY (2026-07-07):** `--local-only` is the
 window-mode default. It is GLOBAL-FREE — **no** global anchor prior, **no**

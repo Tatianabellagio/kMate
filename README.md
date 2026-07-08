@@ -70,16 +70,20 @@ kmate run \
     --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
     --var-meta   panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \
     --reads R1.fq R2.fq --sample MYSAMPLE --out MYSAMPLE.tsv \
-    --threads 8 --chroms Chr1 --kmer-weight uniform --block-mode global
+    --threads 8 --chroms Chr1 --kmer-weight uniform --unit ld --ld-r2 0.1
 ```
 
 (`kmate run --help` lists every flag. Existing scripts that call `python src/per_sample_per_chrom.py ...` still work via thin shims that forward to the package.)
 
-**Estimator mode** (`--block-mode`)
-- `global`: one founder mixture per chromosome. Use for **selfing / inbred / founder (F0)** pools. Recommended weighting is `--kmer-weight uniform` (the per-founder M-step normalization — kMate's default — removes the panel-completeness imbalance at its source, so the old `--kmer-weight inv_mb` de-replication is now redundant here; superseded 2026-07-06 for global mode — see [`docs/FOUNDER_NORMALIZATION_FIX.md`](docs/FOUNDER_NORMALIZATION_FIX.md)).
-- `window`: per-window mixture for **recombinant** pools. Defaults to **`--local-only`**: each window is fit purely on its own k-mers, with no global-mixture prior, no fallback to the chromosome-wide mixture, and no cross-window smoothing (a recombinant window carries only a few haplotypes, so the chromosome-wide mixture is the wrong prior for it). Pass `--no-local-only` to restore the legacy anchored + HMM-smoothed "star2" recipe (10 kb windows, anchor 0.3, 5 smoothing passes). Window mode keeps `--kmer-weight inv_mb`.
+**Estimation unit** (`--unit`) — there is **one estimator**; the "mode" is just the unit it fits. Each unit is fit locally: *haploblock-collapse → EM → project*, with no anchor prior, no cross-window smoothing, and no fallback.
+- `--unit ld` (**default**, `--ld-r2 0.1`): r²-LD blocks derived from the panel's own `var_pa` (CompleteLDPartition). The corrected production estimator.
+- `--unit chrom`: one founder mixture per chromosome. Use for **selfing / inbred / F0** pools; also the only unit that supports `--h-only` and `--emit-af-se`.
+- `--unit bp` (`--window-bp N`): fixed-bp windows, for **recombinant** pools.
+- `--unit tsv` (`--blocks-tsv PATH`): explicit block partition.
 
-**Haploblock collapse** (both modes, on by default): before each EM, kMate computes the distinct k-mer haplotypes the panel actually resolves over the unit (window, or whole chromosome) and fits those `K_b ≤ 231` haplotypes rather than assuming all 231 founders are separately identifiable, splitting each haplotype's frequency equally back to its members. `--haploblock-eps` sets the merge tolerance (default `0` = exact k-mer-identical, an exact no-op when all founders are distinct). This is the *block → haploblock → EM* design (like HARP/hapFIRE); it chiefly benefits window mode, where a small window may carry only a handful of haplotypes. See [`ALGORITHM.md`](ALGORITHM.md) §4.4.
+`--block-mode global|window` are kept as **deprecated aliases** (`global`→`--unit chrom`, `window`→`--unit bp`). Recommended weighting is `--kmer-weight uniform` — the per-founder M-step normalization (kMate's default) removes the panel-completeness imbalance at its source, so `--kmer-weight inv_mb` is redundant (superseded 2026-07-06; see [`docs/FOUNDER_NORMALIZATION_FIX.md`](docs/FOUNDER_NORMALIZATION_FIX.md)).
+
+**Haploblock collapse** (all units, on by default): before each EM, kMate computes the distinct k-mer haplotypes the panel actually resolves over the unit and fits those `K_b ≤ 231` haplotypes rather than assuming all 231 founders are separately identifiable, splitting each haplotype's frequency equally back to its members. `--haploblock-eps` sets the merge tolerance (default `0` = exact k-mer-identical, an exact no-op when all founders are distinct). This is the *block → haploblock → EM* design (like HARP/hapFIRE); it chiefly matters for finer units, where a small block may carry only a handful of haplotypes. See [`ALGORITHM.md`](ALGORITHM.md) §4.4.
 
 The M-step normalization defaults to `--normalize per_founder`; pass `--normalize global` only to reproduce legacy (pre-2026-07-06) runs.
 
