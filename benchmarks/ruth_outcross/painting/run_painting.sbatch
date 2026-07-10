@@ -20,7 +20,7 @@
 #
 # Per sample (array task) we run TWO window definitions on Chr1 to compare:
 #   1. fixed 10 kb windows + HMM smoothing (the "star2" recipe)         -> _win10k
-#   2. dynld_K500 LD-blocks (results/grenenet_gea/blocks_mcf90/)        -> _dynld
+#   2. dynld_K500 LD-blocks (analysis/grenenet_gea/blocks_mcf90/)        -> _dynld
 # Each writes <SAMPLE>_Chr1_<tag>.h_blocks_per_chrom.npz (the per-window h).
 #
 # Usage: sbatch --array=1-3 benchmarks/ruth_outcross/painting/run_painting.sbatch
@@ -39,7 +39,7 @@ OUT=$B/out
 KMER_PA_PREFIX=data/kmer_pa_231_arch3_filt2inv/kmer_pa
 VAR_PA_DIR=panel/arch3; VAR_PA_TAG=var_pa_231_arch3
 CHR=Chr1; chrlc=chr1
-BLOCKS=results/grenenet_gea/blocks_mcf90/${chrlc}_units_dynld_K500.tsv
+BLOCKS=analysis/grenenet_gea/blocks_mcf90/${chrlc}_units_dynld_K500.tsv
 THREADS=${SLURM_CPUS_PER_TASK:-8}
 
 LINE=$((SLURM_ARRAY_TASK_ID + 1))

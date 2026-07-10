@@ -1,0 +1,23 @@
+	Command being timed: "python -m kmate.per_sample_per_chrom --kmer-pa-prefix benchmarks/p80/data/kmer_pa_p80_filt2/kmer_pa --var-pa benchmarks/p80/data/var_pa_p80.var_pa.npz --var-meta benchmarks/p80/data/var_pa_p80.meta.npz --reads benchmarks/p80/sims/cov10_n80_g0_s42_hotspots_p80_chr1/reads/r1.fq benchmarks/p80/sims/cov10_n80_g0_s42_hotspots_p80_chr1/reads/r2.fq --sample speed_cov10_n80_g0_s42_hotspots_p80_chr1 --threads 8 --chroms Chr1 --block-mode global --kmer-weight inv_mb --out benchmarks/speed_benchmark/results/kmate_cov10_n80_g0_s42_hotspots_p80_chr1.tsv"
+	User time (seconds): 216.91
+	System time (seconds): 8.87
+	Percent of CPU this job got: 297%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:15.97
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 24242552
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 384
+	Minor (reclaiming a frame) page faults: 1170770
+	Voluntary context switches: 132588
+	Involuntary context switches: 627
+	Swaps: 0
+	File system inputs: 962648
+	File system outputs: 2241040
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

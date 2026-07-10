@@ -1,0 +1,2 @@
+tool	pool	panel	true_n	seed	eff_n	n_detected	recall	precision	mass_on_true	top_n_jaccard	h_rmse
+hapFIRE	cov10_n1_g0_s43_hotspots_p80_chr1	p80	1	43	1.248	1	1.0	1.0	0.8942	1.0	0.01265

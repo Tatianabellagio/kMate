@@ -1,0 +1,26 @@
+	Command being timed: "bash -c 
+      minimap2 -ax sr --MD --cs -Y --sam-hit-only -t 8 -R '@RG\tID:illumina\tSM:bulk'         /global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa /global/scratch/users/tbellg/kmate/benchmarks/p80/sims/cov10_n50_g3_s42_hotspots_p80_chr1/reads/r1.fq /global/scratch/users/tbellg/kmate/benchmarks/p80/sims/cov10_n50_g3_s42_hotspots_p80_chr1/reads/r2.fq | samtools sort -@ 8 -o /global/scratch/users/tbellg/kmate/benchmarks/speed_benchmark/results/cov10_n50_g3_s42_hotspots_p80_chr1.hf.bam -
+      samtools index /global/scratch/users/tbellg/kmate/benchmarks/speed_benchmark/results/cov10_n50_g3_s42_hotspots_p80_chr1.hf.bam
+      cd /global/scratch/users/tbellg/kmate/benchmarks/speed_benchmark/results && /global/home/users/tbellg/miniforge3/envs/hapfire/bin/python /global/scratch/users/tbellg/kmate/external/HapFIRE/hapFIRE.py         -vcf /global/scratch/users/tbellg/kmate/benchmarks/accuracy_vs_competitors/work/shared_snps_p80_Chr1.vcf.gz         -bam /global/scratch/users/tbellg/kmate/benchmarks/speed_benchmark/results/cov10_n50_g3_s42_hotspots_p80_chr1.hf.bam -fa /global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa -output speed_hapfire_cov10_n50_g3_s42_hotspots_p80_chr1"
+	User time (seconds): 745.34
+	System time (seconds): 19.43
+	Percent of CPU this job got: 108%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 11:42.76
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 4793388
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1380
+	Minor (reclaiming a frame) page faults: 9648977
+	Voluntary context switches: 308429
+	Involuntary context switches: 2088
+	Swaps: 0
+	File system inputs: 1156352
+	File system outputs: 2562768
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

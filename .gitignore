@@ -319,3 +319,90 @@ analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.txt
 # results/**/*.tsv rule provided; leave code/small-config/plots taggable as before.
 analysis/grenenet_gea/hap_blocks/**/*.tsv
 
+# =============================================================================
+# 2026-07-10 benchmarks/ cleanup audit: the --unit chrom/ld refresh (2026-07-07/08)
+# left ~103 GB untracked under benchmarks/ (per-record AF TSVs, vg graph indices,
+# hapFIRE raw dumps, archived pre-fix sim reads, a superseded pre-unification
+# LD-clique sweep and pool-benchmark harness). Policy unchanged: track only
+# code/docs/notebooks/small summary tables/plots; never bulk regeneratable data.
+# =============================================================================
+# per-record AF TSVs for the new unit-tagged result dirs (mirrors the existing
+# kmate_global_*/cactus_em_* rules above, extended to ldr01/chrom/window arms)
+benchmarks/p231/results/kmate_ldr01_*/
+benchmarks/p231/results/kmate_chrom_*/
+benchmarks/p231/results/kmate_window_filt2mb_raw/
+benchmarks/p80/results/kmate_ldr01_*/
+benchmarks/p80/results/kmate_chrom_*/
+# archived buggy pre-fix sims (reads/fastq, large; already quarantined by name)
+benchmarks/p231/archive/sims_buggy_preFix_2026-06-18/
+benchmarks/p80/archive/sims_buggy_preFix_2026-06-18/
+benchmarks/p80/archive/sims_raw/
+# competitor benchmark: vg graph indices/BAMs (work/) + per-pool metrics/hapFIRE
+# raw dumps (results/); scripts/BENCHMARK_DESIGN.md/summary tables stay tracked
+benchmarks/accuracy_vs_competitors/work/
+benchmarks/accuracy_vs_competitors/results/*.tsv
+benchmarks/accuracy_vs_competitors/results/*.txt
+benchmarks/accuracy_vs_competitors/results/*.png
+benchmarks/accuracy_vs_competitors/logs/
+# old pre-unification pool-benchmark harness raw outputs (superseded, ~11 GB)
+benchmarks/benchmark_runs/
+# pre-unification LD-clique coarseness sweep (~4 GB; predates --unit ld, superseded)
+benchmarks/ldblock_window_test/*.tsv
+benchmarks/ldblock_window_test/*.npz
+# local-only-vs-anchored window investigation: keep README/FLOOR_DERIVATION docs,
+# drop the per-regime work/diagnostic data dumps
+benchmarks/localonly_p231/work/
+benchmarks/localonly_p231/floor_diag/
+benchmarks/localonly_p231/floor_diag_p80/
+# abandoned speed harness (vg arm never run; superseded by speed_vs_hapfire/)
+benchmarks/speed_benchmark/results/*.bam
+benchmarks/speed_benchmark/results/*.bai
+benchmarks/speed_benchmark/results/*.tsv
+benchmarks/speed_benchmark/results/*_frequency.txt
+# founder-h investigation logs (h_uncertainty/, h_accuracy/, ecotype_count/)
+benchmarks/h_uncertainty/logs/
+benchmarks/h_accuracy/logs/
+benchmarks/ecotype_count/logs/
+benchmarks/p231/logs/
+benchmarks/p80/logs/
+benchmarks/scripts/logs/
+# ruth_outcross: keep README/notebook/figures, drop bulk per-sample painting
+# intermediates and a stray nested logs/ dir from a wrong-CWD sbatch run
+benchmarks/ruth_outcross/painting/out/*.tsv
+benchmarks/ruth_outcross/painting/out/*.npz
+benchmarks/ruth_outcross/benchmarks/
+benchmarks/ruth_outcross/logs/
+benchmarks/ruth_outcross/out/
+benchmarks/ruth_outcross/hapfire/
+
+# --- 2026-07-10 cleanup: remaining results/grenenet_gea/<topic> data (foundational
+# shared stores + self-contained topics with no single owning script) centralized
+# under analysis/grenenet_gea/<topic>/ directly (no /results nesting — mirrors
+# rerun_kfw_hb). Supersedes the removed 2026-06-18 results/grenenet_gea/{af_store,
+# gen_matrices,pool_matrices,sv_snp_ld,gea,lfmm}/ block above. ---
+analysis/grenenet_gea/af_store/
+analysis/grenenet_gea/gen_matrices/
+analysis/grenenet_gea/pool_matrices/
+analysis/grenenet_gea/ecotype_fitness/
+analysis/grenenet_gea/fitness/
+analysis/grenenet_gea/gea/
+analysis/grenenet_gea/lfmm/
+analysis/grenenet_gea/site_temporal/
+analysis/grenenet_gea/structure/
+analysis/grenenet_gea/sv_snp_ld/
+analysis/grenenet_gea/varexp/
+analysis/grenenet_gea/blocks_mcf90/
+analysis/grenenet_gea/blocks_mcf90_p80/
+analysis/grenenet_gea/blocks_recompute/
+# generic loose GEA-level caches (misc pilot figures, QC/coverage/fallback tables)
+analysis/grenenet_gea/results/
+# ...except the small pilot figures/tables that were already tracked before the move
+!analysis/grenenet_gea/results/01_pilot_qc.png
+!analysis/grenenet_gea/results/02_candidate_adaptive_svs.csv
+!analysis/grenenet_gea/results/02_candidate_trajectories.png
+!analysis/grenenet_gea/results/02_sv_dp_hot_vs_cold.png
+!analysis/grenenet_gea/results/02_sv_size_and_snp_compare.png
+!analysis/grenenet_gea/results/pilot_sample_map.csv
+# group_means.npz lives bare under grenenet_gea/ (matches lib.py's {GEA}/group_means.npz)
+analysis/grenenet_gea/group_means.npz
+analysis/grenenet_gea/group_means.pkl
