@@ -331,6 +331,14 @@ analysis/grenenet_gea/hap_blocks/**/*.tsv
 benchmarks/p231/results/kmate_ldr01_*/
 benchmarks/p231/results/kmate_chrom_*/
 benchmarks/p231/results/kmate_window_filt2mb_raw/
+# h-imbalance h-only runs (h_per_chrom.npz only, tens of KB total; no per-record
+# TSV since --h-only skips AF projection) -- keep, unlike the per-record dirs above.
+# Needs both a dir negation (else the kmate_chrom_*/ rule above hides it) AND a
+# file negation (else the global *.npz rule still excludes the file itself).
+!benchmarks/p231/results/kmate_chrom_himbalance_raw/
+!benchmarks/p231/results/kmate_chrom_himbalance_raw/**
+!benchmarks/p231/results/kmate_chrom_himbalance_filt2inv/
+!benchmarks/p231/results/kmate_chrom_himbalance_filt2inv/**
 benchmarks/p80/results/kmate_ldr01_*/
 benchmarks/p80/results/kmate_chrom_*/
 # archived buggy pre-fix sims (reads/fastq, large; already quarantined by name)
