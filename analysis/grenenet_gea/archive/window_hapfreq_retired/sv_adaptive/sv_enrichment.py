@@ -11,7 +11,7 @@ Run in `basic` env. Deterministic (seed=0)."""
 from pathlib import Path
 import numpy as np, pandas as pd
 
-OUT = Path("results/grenenet_gea/sv_adaptive")
+OUT = Path("analysis/grenenet_gea/sv_adaptive/results")
 NPERM = 10000
 RNG = np.random.default_rng(0)
 CONTRASTS = [("JOINT", "p_joint"), ("GLOBAL", "p_global"), ("CLIMATE", "p_clim")]

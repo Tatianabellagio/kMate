@@ -11,7 +11,7 @@ selection association; z>0 = alt-haplotype founders rose at that garden). Climat
 (temp) and bio12 (precip) per garden from lib.load_climate() (NOT the npz 'bio1', which is
 bioPC1 for this tag). Diverging color = z (RdBu, 0=neutral, CVD-safe); |z| as size/outline.
 
-Outputs (results/grenenet_gea/sv_adaptive/):
+Outputs (analysis/grenenet_gea/sv_adaptive/results/):
   svclim_1_heatmap.png      39 SV blocks x 30 gardens, gardens ordered by temp, rows clustered
   svclim_2_climate_space.png small-multiples: convincing blocks, gardens in temp x precip space
   svclim_3_aggregate.png     which gardens/climates get lit across all 39 blocks
@@ -28,7 +28,7 @@ from matplotlib.colors import TwoSlopeNorm
 from scipy.cluster.hierarchy import linkage, leaves_list
 import lib
 
-OUT = Path("results/grenenet_gea/sv_adaptive")
+OUT = Path("analysis/grenenet_gea/sv_adaptive/results")
 ZTHR, TOPFRAC, ZCLIP = 2.5, 0.01, 4.0
 CMAP = "RdBu_r"                                   # diverging, CVD-safe; red=+ (up), blue=- (down)
 NORM = TwoSlopeNorm(vcenter=0, vmin=-ZCLIP, vmax=ZCLIP)

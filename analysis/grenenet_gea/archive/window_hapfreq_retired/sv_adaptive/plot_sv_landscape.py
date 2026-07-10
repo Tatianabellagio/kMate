@@ -6,7 +6,7 @@ import numpy as np, pandas as pd
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OUT = Path("results/grenenet_gea/sv_adaptive")
+OUT = Path("analysis/grenenet_gea/sv_adaptive/results")
 df = pd.read_csv(OUT / "sv_landscape_clq0.9.csv")
 CEN = {"Chr1": 15.086, "Chr2": 3.607, "Chr3": 13.799, "Chr4": 3.956, "Chr5": 11.725}
 CHROMS = [f"Chr{i}" for i in range(1, 6)]

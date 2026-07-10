@@ -263,14 +263,6 @@ benchmarks/speed_vs_hapfire/results/*_frequency.txt
 # `git add -A` was about to stage all of it. Policy unchanged: track only
 # code/docs/notebooks under analysis/.
 # =============================================================================
-results/grenenet_gea/af_store/
-results/grenenet_gea/gen_matrices/
-results/grenenet_gea/pool_matrices/
-results/grenenet_gea/sv_snp_ld/
-results/grenenet_gea/gea/
-results/grenenet_gea/lfmm/
-results/grenenet_gea/phase1_replication/
-results/grenenet_gea/wza_investigation/
 # sample manifests (regeneratable sample/path lists)
 data/sample_manifest_*.tsv
 
@@ -292,6 +284,38 @@ __pycache__/
 # --- 2026-06-20 window-mode unit validation outputs (bulky / regenerable) ---
 results/grenenet_gea/window_vs_global/
 results/grenenet_gea/gen9_window/
-results/grenenet_kmate_window/
-results/grenenet_kmate_arch3_oldpanel_archive/
-results/seedmix_kmate_arch3_oldpanel_archive/
+
+# --- 2026-07-10 cleanup: stale/superseded result trees consolidated under archive/ ---
+archive/results_archive_stale/
+archive/grenenet_kmate_arch3_oldpanel_archive/
+archive/seedmix_kmate_arch3_oldpanel_archive/
+
+# --- 2026-07-10 cleanup: results/grenenet_gea/<topic> data centralized under
+# analysis/grenenet_gea/<topic>/results/. Re-assert the same "data never
+# stageable" policy at the new location (mirrors the block above, moved topics
+# only — topics not yet migrated keep their results/grenenet_gea/<topic>/ rule
+# above until they move). ---
+analysis/grenenet_gea/cam5_replication/results/
+analysis/grenenet_gea/driver_passenger/results/
+analysis/grenenet_gea/gea_newpanel/results/
+analysis/grenenet_gea/phase1_replication/results/
+analysis/grenenet_gea/wza_investigation/results/
+# rerun_kfw_hb: production AF store, per-sample TSVs (mirrors old results/**/*.tsv rule)
+analysis/grenenet_gea/rerun_kfw_hb/**/*.tsv
+
+# --- 2026-07-10 retirement: window-mode / hapfreq / block_ld_lmm / sv_adaptive chain
+# confirmed stale (docs/RERUN_AFTER_FIX.md Group D) and consolidated into
+# archive/window_hapfreq_retired/ alongside its already-archived code. Never
+# tracked before the move; keep it that way — code (.py/.md/.sh/.sbatch/.ipynb)
+# stays taggable, bulk output does not. ---
+analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.csv
+analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.png
+analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.json
+analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.npy
+analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.samples
+analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.txt
+# hap_blocks/ and seedmix_validation/ moved wholesale (code+data intermixed,
+# same as before the move) — restore the .tsv protection the generic
+# results/**/*.tsv rule provided; leave code/small-config/plots taggable as before.
+analysis/grenenet_gea/hap_blocks/**/*.tsv
+

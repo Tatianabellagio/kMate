@@ -28,7 +28,7 @@ from scipy import stats
 import lib
 from founder_genotype import build_genotype
 
-OUT = Path("results/grenenet_gea/sv_adaptive")
+OUT = Path("analysis/grenenet_gea/sv_adaptive/results")
 EDGES = [2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 40, 50, 70, 100, 150, 250, 10**9]
 MAC_MIN, MAC_GRM = 3, 12
 KPC = 20                                  # # founder structure axes (top GRM eigenvectors)

@@ -1,15 +1,18 @@
 #!/bin/bash
 #SBATCH --job-name=ld_agg
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=64G
 #SBATCH --time=2:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/preprocess_qc/logs/ld_agg_%j.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/preprocess_qc/logs/ld_agg_%j.err
+#SBATCH --output=logs/ld_agg_%j.out
+#SBATCH --error=logs/ld_agg_%j.err
 
+mkdir -p logs
 set -eo pipefail
-cd /carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+cd /global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 echo "[$(date)] aggregating ~25 GB of LD pair TSVs"
 $PY preprocess_qc/scripts/aggregate_ld.py
 echo "[$(date)] DONE"

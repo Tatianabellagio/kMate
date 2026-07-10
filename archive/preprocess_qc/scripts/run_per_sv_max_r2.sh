@@ -1,12 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=per_sv_r2
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=32G
 #SBATCH --time=6:00:00
 #SBATCH --array=0-9%8
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/preprocess_qc/logs/per_sv_r2_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/preprocess_qc/logs/per_sv_r2_%A_%a.err
+#SBATCH --requeue
+#SBATCH --output=logs/per_sv_r2_%A_%a.out
+#SBATCH --error=logs/per_sv_r2_%A_%a.err
 
 # Per-SV max-r² to nearest SNP (±50 kb), all 231 founders.
 # SVs are sourced from the production VCF founders_231_chr.vcf.gz (80 cactus +
@@ -16,8 +19,8 @@
 #   tasks 5..9 → cross    Chr{1..5}   (SNPs from xwu's GrENE-Net SNP-only)
 
 set -eo pipefail
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BASE=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 OUT=$BASE/preprocess_qc/output/ld
 mkdir -p $OUT $BASE/preprocess_qc/logs
 

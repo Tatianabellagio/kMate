@@ -14,11 +14,12 @@ Outputs:
                            for full + each cohort
 """
 import sys, argparse, gzip, subprocess
+from pathlib import Path
 
 CLASSES = ["SNP","small_indel","small_sv","medium_sv","large_sv"]
 
-BCF = "/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools"
-VCF = "/carnegie/nobackup/scratch/tbellagio/hapfire_sv/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz"
+BCF = "/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools"
+VCF = str(Path(__file__).resolve().parents[2] / "pangenie_genotyping/data/merged/founders_231_chr.vcf.gz")
 
 def size_class(ref_len, alt_len):
     if ref_len == 1 and alt_len == 1: return "SNP"

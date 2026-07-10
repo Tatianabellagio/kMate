@@ -20,9 +20,10 @@ For the 151 PanGenie founders specifically:
 """
 import argparse
 from collections import Counter, defaultdict
+from pathlib import Path
 import pysam
 
-CACTUS_80_PATH = "/carnegie/nobackup/scratch/tbellagio/hapfire_sv/imputation/work/sample_rename.txt"
+CACTUS_80_PATH = str(Path(__file__).resolve().parents[2] / "imputation/work/sample_rename.txt")
 
 def size_class(ref_len, alt_len):
     if ref_len == 1 and alt_len == 1: return "SNP"

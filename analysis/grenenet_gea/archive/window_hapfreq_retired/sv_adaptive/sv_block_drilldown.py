@@ -19,7 +19,7 @@ from pathlib import Path
 import numpy as np, pandas as pd, scipy.sparse as sp
 import lib
 
-OUT = Path("results/grenenet_gea/sv_adaptive")
+OUT = Path("analysis/grenenet_gea/sv_adaptive/results")
 PANEL = Path("panel/arch3")
 ZTHR = 2.5                       # per-garden |z| for "selected at that garden" (per-site lambda~1)
 TOPFRAC = 0.01                   # define the enriched tail

@@ -1,11 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=ld_arr
-#SBATCH --partition=bse
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=4:00:00
-#SBATCH --output=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/preprocess_qc/logs/ld_%A_%a.out
-#SBATCH --error=/carnegie/nobackup/scratch/tbellagio/hapfire_sv/preprocess_qc/logs/ld_%A_%a.err
+#SBATCH --output=logs/ld_%A_%a.out
+#SBATCH --error=logs/ld_%A_%a.err
 
 # =============================================================================
 # ld_one.sh — array task computes LD on one chromosome × one panel × one
@@ -14,10 +16,11 @@
 #   5..9   : production SNP anchors, chr 1..5
 #   10..14 : production SV anchors, chr 1..5
 # =============================================================================
+mkdir -p logs
 set -eo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BASE=/global/scratch/users/tbellg/hapfire_sv
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 OUT=$BASE/preprocess_qc/output/ld
 mkdir -p $OUT
 

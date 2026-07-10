@@ -24,7 +24,7 @@ import numpy as np, pandas as pd
 from scipy import stats
 import lib
 
-OUT = Path("results/grenenet_gea/sv_adaptive")
+OUT = Path("analysis/grenenet_gea/sv_adaptive/results")
 NPERM = 5000
 EDGES = [2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 40, 50, 70, 100, 150, 250, 10**9]
 rng = np.random.default_rng(0)

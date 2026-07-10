@@ -4,13 +4,13 @@
 # Per-sample: streamed counter aggregation.
 set -eo pipefail
 
-BASE=/carnegie/nobackup/scratch/tbellagio/hapfire_sv
+BASE=/global/scratch/users/tbellg/hapfire_sv
 VCF=${VCF:-$BASE/pangenie_genotyping/data/merged/founders_231_chr.vcf.gz}
 OUT=${OUT:-$BASE/preprocess_qc/output/merged_stats}
 mkdir -p $OUT
 
-BCF=/home/tbellagio/miniforge3/envs/sequencing_pipeline/bin/bcftools
-PY=/home/tbellagio/miniforge3/envs/hapfm/bin/python
+BCF=/global/home/users/tbellg/miniforge3/envs/sequencing_pipeline/bin/bcftools
+PY=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
 
 # Build cohort sample lists
 ALL_SAMPLES=$($BCF query -l $VCF)
