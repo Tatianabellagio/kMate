@@ -73,7 +73,11 @@ def metrics(est, truth):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tool", required=True)
-    ap.add_argument("--mode", required=True, choices=["global", "block"])
+    ap.add_argument("--mode", required=True,
+                     choices=["global", "block", "chrom", "ld"],
+                     help="global/block are the pre-2026-07-07 --block-mode labels "
+                          "(kept for old rows' provenance); chrom/ld are the current "
+                          "--unit labels (chrom = selfing production, ld = per-block control)")
     ap.add_argument("--pool", required=True, help="sim pool name (metadata parsed from it)")
     ap.add_argument("--truth", required=True)
     ap.add_argument("--est", required=True)

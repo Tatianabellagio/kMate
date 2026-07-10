@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
-"""Publication panel figure from benchmark_table.tsv: RMSE barplots, kMate GLOBAL vs
-BLOCK(dynld_K500), faceted by variation class (rows) x panel (cols), x-axis = scenario.
+"""Publication panel figure from benchmark_table.tsv: RMSE barplots across whichever
+kMate modes are present for a given founder count (current: chrom/ld under --unit;
+retained for provenance: global/block, the pre-2026-07-07 --block-mode labels),
+faceted by variation class (rows) x panel (cols), x-axis = scenario.
 Error bars = SD across seeds (g3 scenarios are multi-seed; single-seed -> no bar).
 Lower RMSE = better.
 
@@ -15,7 +17,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
-MODE_COLOR = {"global": "#4C72B0", "block": "#DD8452"}   # blue / orange
+MODE_COLOR = {"global": "#4C72B0", "block": "#DD8452",  # blue / orange (pre-2026-07-07 --block-mode)
+              "chrom": "#55A868", "ld": "#8172B2"}       # green / purple (current --unit)
+MODE_ORDER = ["global", "block", "chrom", "ld"]
 CLASSES = ["SNP", "indel", "SV"]
 
 
@@ -48,6 +52,8 @@ def main():
     g = (t.groupby(["panel", "var_class", "scn", "mode", "_o"])[a.metric]
            .agg(["mean", "std", "count"]).reset_index())
 
+    modes = [m for m in MODE_ORDER if m in g["mode"].unique()]
+    nm = max(len(modes), 1)
     panels = ["p80", "p231"]
     fig, axes = plt.subplots(len(CLASSES), len(panels), figsize=(7.0 * len(panels), 3.2 * len(CLASSES)),
                              squeeze=False, sharex="col")
@@ -56,10 +62,10 @@ def main():
             ax = axes[ci][pi]
             sub = g[(g.var_class == vc) & (g.panel == pan)].sort_values("_o")
             scns = sub.drop_duplicates("scn").sort_values("_o")["scn"].tolist()
-            x = np.arange(len(scns)); w = 0.4
-            for mi, mode in enumerate(["global", "block"]):
+            x = np.arange(len(scns)); w = 0.8 / nm
+            for mi, mode in enumerate(modes):
                 s = sub[sub["mode"] == mode].set_index("scn").reindex(scns)
-                ax.bar(x + (mi - 0.5) * w, s["mean"].values, w, yerr=s["std"].values,
+                ax.bar(x + (mi - (nm - 1) / 2) * w, s["mean"].values, w, yerr=s["std"].values,
                        color=MODE_COLOR[mode], capsize=2.5, error_kw=dict(lw=1, alpha=0.7),
                        label=mode)
             ax.set_xticks(x); ax.set_xticklabels(scns, fontsize=7)
@@ -70,8 +76,8 @@ def main():
                     va="top", bbox=dict(fc="white", ec="none", alpha=0.7, pad=1.5))
             ax.grid(axis="y", ls=":", alpha=0.4)
             ax.margins(x=0.01)
-    handles = [Patch(fc=MODE_COLOR[m], label=f"kMate {m}") for m in ["global", "block"]]
-    fig.legend(handles=handles, loc="upper center", ncol=2, fontsize=11,
+    handles = [Patch(fc=MODE_COLOR[m], label=f"kMate {m}") for m in modes]
+    fig.legend(handles=handles, loc="upper center", ncol=nm, fontsize=11,
                frameon=False, bbox_to_anchor=(0.5, 1.0))
     better = "lower = better" if a.metric in ("RMSE", "MAE") else "higher = better"
     fig.suptitle(f"kMate accuracy ({a.metric}, {better}); error bars = SD across seeds",
