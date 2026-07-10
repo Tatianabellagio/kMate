@@ -19,7 +19,8 @@
 2026-06-19. How we benchmark kMate against the two relevant competitor classes, the
 fairness decisions behind each panel, and the exact claims we can defend. Companion
 to the scripts in `benchmarks/accuracy_vs_competitors/scripts/` and the speed runs in
-`benchmarks/speed_benchmark/`.
+`benchmarks/speed_vs_hapfire/` (`benchmarks/archive/speed_benchmark_abandoned/` is an
+earlier, incomplete precursor — vg was never run there — kept only for provenance).
 
 ---
 
@@ -212,7 +213,7 @@ on the SV) and/or the real heterogeneous panel — the **second chapter** of the
 
 Speed is paper-critical, so it gets **clean, dedicated, sole-occupancy runs** (`--exclusive`,
 matched 8 threads, `/usr/bin/time -v` → wall + user/sys CPU + %CPU + peak RSS), separate from
-the (contended) accuracy runs. `benchmarks/speed_benchmark/run_speed.sbatch`.
+the (contended) accuracy runs. `benchmarks/speed_vs_hapfire/` (maintained; see its README).
 
 **End-to-end fastq→AF for every tool** — this is what makes kMate's alignment-free design
 visible:

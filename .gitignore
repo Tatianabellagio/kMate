@@ -354,11 +354,11 @@ benchmarks/ldblock_window_test/*.npz
 benchmarks/localonly_p231/work/
 benchmarks/localonly_p231/floor_diag/
 benchmarks/localonly_p231/floor_diag_p80/
-# abandoned speed harness (vg arm never run; superseded by speed_vs_hapfire/)
-benchmarks/speed_benchmark/results/*.bam
-benchmarks/speed_benchmark/results/*.bai
-benchmarks/speed_benchmark/results/*.tsv
-benchmarks/speed_benchmark/results/*_frequency.txt
+# abandoned speed harness (vg arm never run; moved to archive/speed_benchmark_abandoned/)
+benchmarks/archive/speed_benchmark_abandoned/results/*.bam
+benchmarks/archive/speed_benchmark_abandoned/results/*.bai
+benchmarks/archive/speed_benchmark_abandoned/results/*.tsv
+benchmarks/archive/speed_benchmark_abandoned/results/*_frequency.txt
 # founder-h investigation logs (h_uncertainty/, h_accuracy/, ecotype_count/)
 benchmarks/h_uncertainty/logs/
 benchmarks/h_accuracy/logs/
