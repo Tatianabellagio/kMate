@@ -127,6 +127,13 @@ Thumbs.db
 # --- claude ---
 .claude/
 
+# --- internal/working docs at repo root (keep private; not LICENSE/README) ---
+/ALGORITHM.md
+/BACKGROUND.md
+/CLAUDE.md
+/HANDOFF.md
+/SAVIO_HPC.md
+
 # --- but explicitly KEEP small important data files ---
 !data/*.tsv
 !data/*.txt

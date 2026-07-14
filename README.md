@@ -139,7 +139,7 @@ for your project, or in collaborating, please get in touch:
 
 **Tatiana Bellagio** (tatianabellagio@gmail.com)
 
-kMate was developed for, and underlies the allele-frequency analyses of, the GrENE-Net
+kMate was developed for, and underlies the allele-frequency analyses of, the [GrENE-Net](https://www.science.org/doi/10.1126/science.adz0777)
 outdoor evolution experiment in *Arabidopsis thaliana*.
 
 ## License
