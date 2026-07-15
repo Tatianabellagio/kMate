@@ -1,18 +1,24 @@
 # SV temporal purging — thread summary (2026-07-02)
 
-> ## ⚠️ SUPERSEDED (2026-07-08) — the signal did NOT survive
-> The estimator was regenerated under **`--unit chrom` + full-panel Kf_w**
-> (`--normalize per_founder`). On the rigorous frequency-de-trended metric
-> (`s_distribution_by_site`) the **SV excess-vs-baseline is essentially ZERO:
-> median +0.0011, negative at only 15/31 sites (a minority; sign test ≈ p=1.0,
-> n.s.).** There is **no genome-wide SV purifying excess**; any residual is
-> confined to a few of the hottest gardens. The old conclusion below — "~22/31
-> sites negative, a modest excess of purifying selection, climate-graded, three
-> methods agree" — **NO LONGER HOLDS.** The raw / single-tail methods
-> (s_histogram, s_vs_climate, ecdf, shiftfunction) still show apparent purging
-> only because they keep the frequency / founder-projection confound; the
-> **de-trended `s_distribution_by_site` is the authoritative view (signal null).**
-> The historical text is retained below for the record, marked superseded.
+> ## ⚠️ CORRECTED (2026-07-15, second pass) — split verdict, not a uniform null
+> **[2026-07-08 pass, still correct]** The de-trended metric (`s_distribution_by_site`, the per-p0-bin
+> ALL-class-median subtraction) shows the **OVERALL / whole-distribution median shift is essentially
+> ZERO: median +0.0011, negative at only 15/31 sites, n.s.** No genome-wide, frequency-independent SV
+> purifying excess on this specific (central-tendency) statistic. The old headline number ("~22/31
+> sites, three methods agree") for THIS statistic no longer holds.
+>
+> **[2026-07-15 audit, corrects the 2026-07-08 banner]** This banner previously ALSO dismissed
+> `s_histogram`, `s_vs_climate`, `ecdf`, `ecdf-difference`, and `shiftfunction` as sharing the same
+> confound — **that was checked directly and is wrong.** All of these (plus climate-slope β) describe
+> the same thing in their own takeaways: not a whole-distribution shift, but a **heavier purged TAIL,
+> concentrated at hot sites**. That is a different statistic than the de-trended median-shift metric,
+> and it was directly tested: a 10th-percentile SV-vs-matched-SNP tail gap, de-trended the same way as
+> `s_distribution`, barely moves (hot-site median −0.071→−0.055; correlation with bio1 strengthens,
+> ρ=−0.47→−0.51, p=0.0075→0.0032). **The tail/hot-site signal is real and is not the artifact that
+> explains the median-shift null.** Do not archive or dismiss `s_histogram`/`s_vs_climate`/`ecdf`/
+> `ecdf-difference`/`shiftfunction` as redundant with `s_distribution_by_site` — they test a different,
+> still-standing question. See the "Audited 2026-07-15" sections below for the climate-slope β detail
+> and the direct tail de-trending test.
 
 **Question:** In GrENE-net, comparing per-variant allele-frequency change across generations, do
 non-SNPs (indels + SVs) show more selection than SNPs? (Pure temporal, per-variant — no haploblocks.)
@@ -42,11 +48,30 @@ distribution, so "SVs are rarer" is not a confound.
   only **15/31 sites**, sign test n.s.). The apparent tail effect was a frequency /
   founder-projection confound, not a genome-wide purifying excess.
 
-### [SUPERSEDED] Cleanest test — per-variant climate slope β = d s / d climate  (`_compute_s_climate_slope.py`)
-> **This arm is frequency-confounded and no longer supports a climate-graded purging claim.** On the
-> de-trended `s_distribution_by_site` the signal is null (see banner). The per-axis correlations are
-> also weaker/mixed than stated below: aridity **bio18 corr = +0.54**, temperature **bio1 corr = −0.16**
-> (so "rises toward harsh sites" is false on the bio1 axis). Table retained for the record.
+### [AUDITED 2026-07-15 — dismissal was WRONG, based on a mislabeled statistic] Cleanest test — per-variant climate slope β = d s / d climate  (`_compute_s_climate_slope.py`)
+> Was marked "superseded," citing "per-axis correlations weaker/mixed than stated below: bio18 corr
+> = +0.54, bio1 corr = −0.16." **That citation is a mislabeled statistic, not the SV-specific
+> finding.** `+0.54/−0.16` is `s_purging_intensity.png`'s `corr(intensity, ...)` — the GENERAL
+> matched-SNP purging-rate-vs-climate correlation (a confound check, computed on `msnp_neg` alone) —
+> not the SV-specific **sign-excess** (`sv_neg − msnp_neg`) vs climate correlation the historical
+> table below actually reports. Recomputed the real sign-excess directly from the current (post-Kf_w)
+> `s_climate_slope_sign_by_site.csv`: **bio1 ρ=+0.51 (p=0.0035), bio18 ρ=−0.55 (p=0.0013)** — nearly
+> unchanged from the historical bio1 ρ=+0.55 / bio18 ρ=−0.65, both still highly significant, same
+> sign. **This arm's SV-specific climate-graded signal is essentially intact post-Kf_w and was never
+> actually shown to be superseded.**
+>
+> **Direct de-trending test run 2026-07-15** (now Section 4 of `temporal_s_consolidated.ipynb`,
+> `_build_temporal_s_consolidated_nb.py` — the standalone script this was first run in has been
+> folded into the notebook and removed): applied the
+> exact same per-p0-bin ALL-class-median subtraction that killed `s_distribution_by_site`'s median
+> shift, then redid the sign-excess-vs-climate correlation on the residualized `s`. **The signal
+> survives — it does not weaken:** bio1 ρ +0.38→+0.42 (p=0.019→0.019), bio18 ρ −0.54→−0.59
+> (p=0.0015→0.0004); median excess flips from −0.0037 to **+0.0016** with more sites positive
+> (10/31→19/31). This is the opposite of what you'd see if the p0/logit-boundary artifact explained
+> the signal. **Conclusion: this arm's climate-graded SV signal is not the same artifact that killed
+> the median-shift metric, and is not currently explained by any confound found in this thread.** The
+> standing hitchhiking / global-mode caveat (see below) still applies — this doesn't prove direct SV
+> selection vs. linkage to a selected haplotype — but the "superseded" label is retired.
 
 A variant on a *constantly* purged haplotype (hitchhiking) has s<0 everywhere → β≈0; the p0/logit
 artifact is a per-variant constant → cancels in the slope. So β isolates climate-**differential**
@@ -107,12 +132,33 @@ pool-seq → independent allele-frequency-change). Consistency across plots = dr
   is ~1 MB/s (page-fault thrash) on this filesystem; use direct **seek + np.fromfile** (`read_rows`
   in `_compute_parallelism.py`) = ~150 MB/s. Sequential `dd` is 560 MB/s.
 
-**[SUPERSEDED] The "three methods agree" claim does not survive the Kf_w / `--unit chrom` rerun.**
-The three arms (climate-slope β, ρ-parallelism, PicMin) all share the frequency / founder-projection
-confound that the de-trended `s_distribution_by_site` removes — and on that authoritative metric the
-SV excess-vs-baseline is ≈0 (median +0.0011, 15/31 sites, sign test n.s.). There is **no genome-wide
-SV purifying/climate-graded excess**; any residual is confined to a few of the hottest gardens. The
-historical multi-method text is retained above for the record only.
+**[AUDITED 2026-07-15 — mixed result, not a uniform "superseded"]** This section previously claimed
+the "three methods agree" headline does not survive the Kf_w / `--unit chrom` rerun because all three
+arms "share the frequency / founder-projection confound" that de-trended `s_distribution_by_site`
+removes. That was asserted by analogy and never tested directly on these statistics. Checked against
+the actual pre- vs post-Kf_w rerun numbers (git history, commit `3c34ec8`):
+- **Parallelism (bulk responder rate)**: shrank ~40% (insertions 0.098→0.059) — consistent with, but
+  not proof of, the same confound. Not re-verified null.
+- **PicMin**: SV-vs-matched-SNP fold shrank from 1.27× to 1.07× — closer to parity, but not re-verified
+  null with a dedicated significance test on the post-Kf_w numbers.
+- **Climate-slope β (sign-excess vs climate, the actual SV-specific number)**: essentially
+  **unchanged** (bio1 ρ +0.55→+0.51 p=0.0035, bio18 ρ −0.65→−0.55 p=0.0013 — recomputed directly
+  from current data). The doc previously cited "+0.54/−0.16, weaker/mixed" here — that was a
+  **mislabeled, unrelated statistic** (the general purging-intensity-vs-climate confound check, not
+  the SV-specific sign-excess) and should not have been used as evidence of anything.
+- **Parallelism-by-site climate-gradient excess**: numbers **essentially unchanged** (bio1
+  +0.43→+0.44, bio18 −0.70→−0.68).
+
+The last two being untouched by the exact fix that killed `s_distribution`'s signal means their
+dismissal is **not supported by the evidence actually available** — and for climate-slope β the
+original dismissal was actively wrong (mislabeled statistic), not just unverified. **Update
+2026-07-15: ran the direct de-trending test on climate-slope β's sign-excess (see the climate-slope
+β section above) — the signal SURVIVES de-trending (if anything slightly strengthens).** So:
+`s_distribution_by_site`'s own de-trended metric is directly verified null; parallelism/PicMin
+shrank but aren't confirmed null either way; **climate-slope β is now a verified, not-yet-explained
+real signal**; the parallelism-by-site climate-gradient remains open (same de-trending test not yet
+run on it). Do not cite this section as "all three methods died." The historical multi-method text is
+retained above for the record.
 
 ## Caveats (unresolved)
 Global-mode kMate AF is a linear projection of per-sample founder h → cannot separate SV-specific
@@ -154,23 +200,29 @@ turned out to be unpopulated genome-wide (0/2.25M records) and was dropped. Two 
   insertions vs deletions are represented/genotyped against TAIR10, present even in well-supported
   calls). That systematic-bias version of the caveat still needs a true outgroup for a full resolution.
   Artifacts: `_extract_vcf_callqual.sh` (bcftools extraction), `_sv_callqual_artifact.py` (join + test),
-  `results/grenenet_gea/sv_adaptive/{vcf_callqual_chr*.tsv,sv_callqual_artifact.npz}`.
+  `analysis/grenenet_gea/archive/window_hapfreq_retired/sv_adaptive/results/{vcf_callqual_chr*.tsv,sv_callqual_artifact.npz}`.
 
 ## Artifacts
 - **Estimator / compute:** `_temporal_s_plots_snp_vs_nonsnp.py`, `_compute_s_climate_slope.py`,
   `_compute_s_dist_by_stratum.py`, `_audit_s_classes.py`.
 - **Other tests:** `_nonsnp_temporal_category.py`, `_temporal_selection_snp_vs_nonsnp.py`,
   `_temporal_sel_drift_maf.py`, `_temporal_s_enrich_initqty.py`.
-- **Replicate arm:** `_compute_parallelism.py` (parallelism ρ + per-site z/ρ; has the fast `read_rows`),
-  `_picmin.py` (real PicMin), `_build_parallelism_nb.py`, `_build_picmin_nb.py`,
-  `_build_parallelism_by_site_nb.py`.
+- **Replicate arm (untouched this session, separate open thread):** `_compute_parallelism.py`
+  (parallelism ρ + per-site z/ρ; has the fast `read_rows`), `_picmin.py` (real PicMin),
+  `_build_parallelism_nb.py`, `_build_picmin_nb.py`, `_build_parallelism_by_site_nb.py`.
 - **Calling-quality artifact check:** `_extract_vcf_callqual.sh`, `_sv_callqual_artifact.py` (see
   Caveats section above).
-- **Notebooks** (`analysis/grenenet_gea/notebooks/`): `s_climate_slope.ipynb` (β for bio1 & bio18 +
-  purging-intensity), `s_ecdf_difference_by_site.ipynb`, `s_ecdf_by_site.ipynb`, `s_vs_climate.ipynb`,
-  `s_histogram_by_site.ipynb`, `s_shiftfunction_by_site.ipynb`, `s_distribution_by_site.ipynb`;
-  **replicate arm:** `parallelism.ipynb`, `picmin.ipynb`, `parallelism_by_site.ipynb`. `basic` env.
-- **Figures / data** (`results/grenenet_gea/sv_adaptive/`): `s_climate_slope_{bio1,bio18}.png`,
+- **Notebook (2026-07-15, consolidated — the 7 former separate `s_*` notebooks and their `_build_*_nb.py`
+  scripts, plus the standalone de-trending audit script, were merged and removed after the audit found
+  none of them redundant with each other):** `analysis/grenenet_gea/notebooks/temporal_s_consolidated.ipynb`,
+  built by `_build_temporal_s_consolidated_nb.py` (reads `s_dist_by_stratum.npz/.csv` +
+  `s_climate_slope.npz`/`_sign_by_site.csv`; no new compute). Sections: (1) whole-distribution
+  median shift, de-trended — null; (2) tail-specific views (histogram/ECDF/ECDF-difference/
+  shift-function/vs-climate) — real; (3) climate-slope β — real; (4) direct de-trending audit of
+  (2)-(3) — survives. `basic` env.
+  **Replicate arm (separate, untouched):** `parallelism.ipynb`, `picmin.ipynb`,
+  `parallelism_by_site.ipynb`.
+- **Figures / data** (`analysis/grenenet_gea/archive/window_hapfreq_retired/sv_adaptive/results/`): `s_climate_slope_{bio1,bio18}.png`,
   `s_purging_intensity.png`, `s_ecdf_difference_by_site.png`, `s_vs_climate.png`, `s_climate_slope.npz`,
   `s_climate_slope_sign_by_site.csv`, `temporal_*.csv`; **replicate arm:** `parallelism.npz`,
   `picmin.npz`, `parallelism.png`, `picmin.png`, `parallelism_by_site{,_summary,_excess}.png`.

@@ -13,15 +13,34 @@ large SVs (and the non-SNP layer generally) carry adaptive signal that SNP studi
 The answer depends on **which unit and which question**, and they do not all agree — state
 them separately, don't collapse to one headline:
 
-1. **Per-variant temporal selection — signal did NOT survive the Kf_w / `--unit chrom` rerun.**
-   The earlier headline (a real, small, SV-specific climate-graded purging excess, "three methods
-   agree") **does not survive** regeneration under `--unit chrom` + full-panel Kf_w. On the rigorous
-   frequency-de-trended metric the **SV excess-vs-baseline is ≈0: median +0.0011, negative at only
-   15/31 sites, sign test n.s.** — no genome-wide SV purifying excess; any residual is confined to a
-   few of the hottest gardens. The raw/single-tail methods (climate-slope β, parallelism, PicMin,
-   histograms) still look purged only because they keep the frequency / founder-projection confound;
-   the de-trended `s_distribution_by_site` is authoritative. → **`SV_TEMPORAL_PURGING_SUMMARY.md`**
-   (see its superseded banner).
+1. **Per-variant temporal selection — split verdict, audited 2026-07-15 (do not cite as a uniform
+   null; the original "these all share one confound" dismissal was checked directly and does not
+   hold for most of these arms).**
+   Two genuinely different questions get asked under this heading, and they have different answers:
+   - **Whole-distribution / median shift: verified null.** The de-trended metric
+     (`s_distribution_by_site`, subtracting the per-p0-bin ALL-class median) shows **SV
+     excess-vs-baseline ≈0: median +0.0011, negative at only 15/31 sites, sign test n.s.** No
+     genome-wide, frequency-independent shift in typical SV behavior.
+   - **Tail-specific, hot-site-concentrated purging: verified REAL, survives the same de-trending.**
+     `s_histogram`, `s_vs_climate`, `ecdf`, `ecdf-difference`, `shiftfunction`, and climate-slope β
+     all independently describe the *same* pattern in their own takeaways: not a whole-distribution
+     shift, but extra SV mass in the purged tail, concentrated at hot sites. This was previously
+     dismissed as sharing the median-shift's confound — checked directly (10th-percentile SV vs
+     matched-SNP gap, de-trended the same way): hot-site median tail gap barely moves
+     (−0.071→−0.055), correlation with bio1 *strengthens* (ρ −0.47→−0.51, p=0.0075→0.0032).
+     Climate-slope β's own sign-excess number got the same direct test: bio1 ρ +0.38→+0.42, bio18
+     ρ −0.54→−0.59 — also survives. **Neither is explained by the artifact that nulled the median.**
+   - Parallelism/PicMin **shrank** on the Kf_w rerun (not re-verified null either way);
+     parallelism-by-site's climate-gradient is unchanged but hasn't had this direct test run yet.
+   - Note: climate-slope β's original dismissal additionally cited "+0.54/−0.16, weaker/mixed" —
+     that was a **mislabeled, unrelated statistic** (general purging-intensity-vs-climate, not the
+     SV-specific finding), not just unverified evidence.
+   None of these views are redundant with each other — they test a different, still-standing
+   question (tail behavior, not central tendency) and none of them have been explained away.
+   **Consolidated 2026-07-15** into one notebook (`temporal_s_consolidated.ipynb`) with all four
+   sections above, since keeping them as 7 separately-named notebooks was part of why they got
+   wrongly assumed redundant in the first place; the old individual notebooks/build scripts were
+   removed. → **`SV_TEMPORAL_PURGING_SUMMARY.md`** for the audited detail.
 
 2. **Non-SNP layer adds ~nothing to the polygenic signal ("no kMate gain").**
    Genome-wide and SNP-untagged kinship, per-marker GWAS peaks, per-site and multi-site scans
@@ -46,7 +65,7 @@ to a few of the hottest gardens.
 | Doc | What it is |
 |---|---|
 | `GLOBAL_MODE_DECISION.md` | Why evolved AF is estimated in **GLOBAL mode** (window/block recombination-detection is circular, underpowered, and its sim floor doesn't transfer). Includes the methods sentence to cite. |
-| `PIPELINE_B_POOLED_MODEL.md` | **Frozen spec** for the pooled-trajectory model: pool plots → site freq → weighted within-site logit-slope `s_g` (variance-components SE) → random-effects climate meta-regression + site-permutation null; block WZA. |
+| `PIPELINE_B_POOLED_MODEL.md` | **⚠️ Superseded/dead** — pooled-trajectory model spec on a per-unit window-mode `h`; window mode is not being rerun, so this has no live input (see doc banner). Retained for the record. |
 | `WINDOW_UNIT_VALIDATION.md` | **Block / dynld-unit definitions** (the GEA test units) + window-mode cohort run and window-vs-global AF validation. (Window mode as an AF *estimator* is superseded by the global-mode decision; the blocks are retained as test units.) |
 
 **Results**
@@ -76,7 +95,7 @@ which we mirror for SVs:
 
 ## Data
 
-- kMate per-sample AF: `results/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/`
+- kMate per-sample AF: `analysis/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/`
   (production AF dir, regenerated under `--unit chrom` + full-panel Kf_w; the old-panel
   `grenenet_kmate_arch3` was deleted 2026-07-08). Columns `chrom pos ref_len alt_len alt_freq info n_called se`. SVs = `ref_len!=1 | alt_len!=1`.
 - Founding p0 (gen 0): mean alt_freq over the 8 SEEDMIX kMate reps (`lib.build_p0`).
@@ -96,4 +115,4 @@ which we mirror for SVs:
 - `lib.py` — loaders, SV filter, rec_key, p0, block collapse, eff_n_founders.
 - `phase1_replication/` — phase-1 kendall / lfmm / binomial + WZA replication on kMate AF.
 - `notebooks/` — QC, per-variant temporal, parallelism/PicMin, class-split GWAS figures.
-- derived outputs → `results/grenenet_gea/` (large, gitignored; rebuildable).
+- derived outputs → `analysis/grenenet_gea/` (large, gitignored; rebuildable).
