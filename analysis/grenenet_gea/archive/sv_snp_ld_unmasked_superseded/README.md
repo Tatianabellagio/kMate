@@ -1,7 +1,10 @@
 # Retired: SV-only, unmasked SV-SNP tagging (r2) analysis
 
-Archived 2026-07-10. `build_sv_snp_ld.py` and its notebook (`sv_snp_ld_tagging.ipynb`,
-already gone from disk before this archive move) computed max founder-genotype r2
+Archived 2026-07-10 (`build_sv_snp_ld.py` only — its notebook, `sv_snp_ld_tagging.ipynb`,
+was gone from disk at the time). The notebook was later regenerated from the same old
+buggy `.npz` outputs via `_build_sv_snp_ld_nb.py` and sat live in `notebooks/` presenting
+the retracted numbers below as current findings; both are now archived alongside it
+(2026-07-20). These computed max founder-genotype r2
 between each SV and its best nearby SNP (arch3 panel vs GrENE-Net short-read),
 but had two bugs found while reviewing the plots:
 

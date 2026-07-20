@@ -81,6 +81,15 @@ to a few of the hottest gardens.
 | `BAYPASS_TEMPORAL_PLAN.md` | **Plan (not completed** — core model smoke-tested only): Omega-conditioned per-haploblock temporal C2 contrast, kinship-controlled. Includes the method-comparison research appendix. |
 | `EXPORT_MANIFEST.md` | Phase-1 GEA WZA results exported to the lab shared Drive (for the advisor's talks). |
 
+**Supporting QC / panel investigations** (finished, not yet folded into a summary doc above)
+| Notebook | What it found |
+|---|---|
+| `notebooks/qc_coverage_audit.ipynb` | Depth alone is a poor QC signal (corr with usable-k-mer fraction only 0.57); cohort QC'd on `nzfrac<0.10` (17 dropped) instead. The 5 dead libraries look contaminated/mislabeled, not just shallow. |
+| `notebooks/founder_9977_kmer_space.ipynb` | Founder 9977 (kMate's worst EM-absorbed founder) has no single k-mer twin — it's diffusely non-identifiable: fewest k-mers of any founder, lowest private/discriminative k-mer fraction, near-collinear with a broad combination of others. |
+| `notebooks/panel_overlap_grenenet.ipynb` | arch3 exact-matches 76.5% of the GrENE-Net 231 SNP catalog (up from 55.05% pre-decomposition-fix); dropping arch3 singletons *lowers* coverage to 67.65% (~15.6% of them are independently corroborated by GrENE-Net, i.e. real signal, not just noise). |
+| `notebooks/sv_indel_tagging_masked.ipynb` | Corrected (masked, MAC-floored) SV/indel-SNP tagging: MAC filtering beyond the base ≥2 floor barely matters; ~13% of SVs / ~8% of indels are untestable (anchor missingness) rather than confirmed-untagged — among testable anchors, essentially none score near-zero r². Supersedes `archive/sv_snp_ld_unmasked_superseded/` (that version had two bugs: missingness coded as REF, no MAC floor). |
+| `notebooks/sfs_shift_by_site.ipynb` | Folded-SFS mean shift is null (consistent with finding #1's median-shift null), but SV *extinction rate* robustly exceeds matched-SNP rate across ~all sites — a genuinely different signature (boundary/loss event, not central tendency). Sweep-past-half rate is inconclusive (tie-dominated), reported as such rather than as a finding. Not yet resolved: SV-specific purifying selection vs. hitchhiking. |
+
 ## The target (from the phase-1 SNP paper)
 
 The headline phase-1 signature: **an allele whose frequency rises in hot sites and falls in

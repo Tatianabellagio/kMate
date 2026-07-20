@@ -1,5 +1,18 @@
 # kMate founder-h non-identifiability — investigation handoff (2026-07-06)
 
+> **RESOLVED (2026-07-07, refined same week).** Despite this doc's "NEXT AGENT" framing
+> below picking **EM-REG (Dirichlet/prior_h) as the front-runner**, that is NOT what won.
+> The actual fix came from the **NORM arm**: `fix_norm/em_variants.py`'s "poisson" M-step
+> (normalize by each founder's own k-mer content `Kf_w`, not a global count total —
+> a missing RNA-seq-style effective-length correction). Validated in
+> `../kmate_founder_fix_results.ipynb`: poisson + filt2inv + no-ω beats production 2.7×
+> on AF-MAE, 0 vs 33 absorbed founders (drop ω=1/mb, keep filt2inv). It was then integrated
+> into the real `solve_em()` and refined one day later — `Kf_w` must sum over the FULL
+> k-mer unit, not observed-only k-mers (the `fix_norm` prototype never hit this second bug);
+> see `fix_kfw_fullpanel/kmate_kfw_fullpanel_results.ipynb`, commit `9669be7`. `fix_emreg/`,
+> `fix_local/`, and `fix_seedmix/` are the abandoned/superseding-candidate arms, kept below
+> as decision-trail, not live guidance.
+
 Memory: `kmate-founder-h-nonidentifiability.md` (auto-loads). This is the actionable version.
 
 ## THE PROBLEM
