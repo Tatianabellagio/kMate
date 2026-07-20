@@ -23,7 +23,7 @@ Method (fast, structure-corrected, does NOT refit LFMM per perm):
      Assign clq0.9 blocks. Annotate significant blocks with genes.
 
 Runs all {class} x {axis} x {K} combos. Outputs under
-results/grenenet_gea/gea_newpanel/permnull/.
+analysis/grenenet_gea/gea_newpanel/results/permnull/.
 """
 from __future__ import annotations
 import os, sys, json, time
@@ -35,7 +35,7 @@ sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea
 from blocks_clq09 import assign_clq09_blocks
 from lib import annotate_svs, load_genes
 
-ROOT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
+ROOT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
 LFMM = f"{ROOT}/gea_newpanel/lfmm_site"
 ENVD = f"{ROOT}/gea_newpanel/env_site"
 RECD = f"{ROOT}/phase1_replication/class_matrices"

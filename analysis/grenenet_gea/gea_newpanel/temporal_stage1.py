@@ -18,7 +18,7 @@ A variant that moves the SAME way across independent replicate plots (small
 among-plot spread vs the mean) is under selection; pure drift scatters the
 plot slopes around 0.
 
-INPUT (GLOBAL-mode kMate AF): results/grenenet_gea/pool_matrices/
+INPUT (GLOBAL-mode kMate AF): analysis/grenenet_gea/pool_matrices/
     pool_gen{1,2,3}_{snp,nonsnp}_af.npy   [n_pools x n_variants]
     pool_gen{g}_{snp,nonsnp}.meta.csv     (site, plot, total_flowers, ...)
     af_store/p0_{snp,nonsnp}.npy          founding gen-0 AF
@@ -52,7 +52,7 @@ def logit(p):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--class", dest="cls", required=True, choices=["snp", "nonsnp"])
-    ap.add_argument("--out", default=f"{lib.GEA}/gea_newpanel/temporal_twostage")
+    ap.add_argument("--out", default=f"{lib.GEA}/gea_newpanel/results/temporal_twostage")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     cls = args.cls

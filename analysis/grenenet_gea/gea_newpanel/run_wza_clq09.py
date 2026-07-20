@@ -9,7 +9,7 @@ For cls in {snp, nonsnp}:
   3. write the reassigned per-record table (for the notebook's raw Manhattan) and a
      WZA `correlations` input, then run wza_script.py --window block deg7-cap2000.
 
-Outputs under results/grenenet_gea/gea_newpanel/:
+Outputs under analysis/grenenet_gea/gea_newpanel/results/:
   lfmm_{cls}_gen9_bio1_clq09.csv   per-record, clq0.9 block  (raw LFMM view)
   wza_{cls}_clq09.csv              per-block WZA (gene=block, Z_pVal, chrom, pos)
 """
@@ -20,8 +20,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import blocks_clq09
 
 PROJ = "/global/scratch/users/tbellg/kmate"
-LDIR = f"{PROJ}/results/grenenet_gea/phase1_replication/lfmm"      # raw LFMM p (reused)
-OUT = f"{PROJ}/results/grenenet_gea/gea_newpanel"
+LDIR = f"{PROJ}/analysis/grenenet_gea/phase1_replication/results/lfmm"      # raw LFMM p (reused)
+OUT = f"{PROJ}/analysis/grenenet_gea/gea_newpanel/results"
 WZA = f"{PROJ}/analysis/grenenet_gea/wza_script.py"
 PY = sys.executable
 

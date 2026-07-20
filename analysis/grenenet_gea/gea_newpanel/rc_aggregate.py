@@ -4,7 +4,7 @@ lambda_GC and #Bonferroni/#FDR clq0.9 blocks."""
 import glob, json, os
 import pandas as pd
 
-OUTD = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/rank_count"
+OUTD = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/rank_count"
 rows = []
 for f in sorted(glob.glob(f"{OUTD}/summary_*.json")):
     d = json.load(open(f))

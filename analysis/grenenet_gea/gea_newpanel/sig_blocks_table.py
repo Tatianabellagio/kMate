@@ -23,10 +23,10 @@ import blocks_clq09
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-POW = f"{lib.GEA}/gea_newpanel/power"
-SITE = f"{lib.GEA}/gea_newpanel/lfmm_site"
-GNP = f"{lib.GEA}/gea_newpanel"
-CM = f"{lib.GEA}/phase1_replication/class_matrices"
+POW = f"{lib.GEA}/gea_newpanel/results/power"
+SITE = f"{lib.GEA}/gea_newpanel/results/lfmm_site"
+GNP = f"{lib.GEA}/gea_newpanel/results"
+CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
 _P0 = {"snp": "p0_snp.npy", "nonsnp": "p0_nonsnp.npy", "sv": "p0_nonsnp.npy"}
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 MAF_MIN = 0.05

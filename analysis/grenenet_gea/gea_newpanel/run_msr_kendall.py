@@ -33,7 +33,7 @@ Empirical structure-null p (two-sided, +1 smoothed): (1+#{|rho_null|>=|rho_obs|}
 P set to 10000 so the empirical-p floor 1/(P+1)~=1e-4 can actually reach the
 reported p<1e-4 threshold (naive P=2000 could not).
 
-Outputs to results/grenenet_gea/gea_newpanel/msr_kendall/:
+Outputs to analysis/grenenet_gea/gea_newpanel/results/msr_kendall/:
   msr_kendall_{cls}_site_{clim}.csv : chrom,pos,ref_len,alt_len,site_maf,block,
                                        rho,p_naive,p_msr
   msr_arrays_{cls}_{clim}.npz       : rho,p_naive,p_msr,site_maf,gif_* for plotting
@@ -115,8 +115,8 @@ def main():
     ap.add_argument("--P", type=int, default=10000, help="# MSR surrogate envs")
     ap.add_argument("--sigma-class", default="snp", help="class used to build Sigma")
     ap.add_argument("--seed", type=int, default=12345)
-    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")
-    ap.add_argument("--out", default=f"{lib.GEA}/gea_newpanel/msr_kendall")
+    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/gea_newpanel/results/msr_kendall")
     ap.add_argument("--batch", type=int, default=500, help="surrogate batch size")
     args = ap.parse_args()
     classes = args.classes.split(",")

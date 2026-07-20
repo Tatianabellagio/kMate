@@ -2,7 +2,7 @@
 """Analyze quasibinom outputs: GIF table, QQ + Manhattan figures, gene-annotated
 top hits, SNP-vs-non-SNP block-peak comparison. Run in the `basic` env (matplotlib).
 
-Writes to results/grenenet_gea/gea_newpanel/quasibinom/.
+Writes to analysis/grenenet_gea/gea_newpanel/results/quasibinom/.
 """
 from __future__ import annotations
 import os, sys
@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/gea_newpanel/quasibinom"
+OUT = f"{lib.GEA}/gea_newpanel/results/quasibinom"
 CHR1_HIT = 13979249      # non-SNP-of-interest locus to check
 
 PCOLS = {"binom": "pval_binom", "quasi": "pval_quasi", "effN": "pval_effN"}

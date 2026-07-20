@@ -7,7 +7,7 @@ import numpy as np, pandas as pd, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OUT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/k_sweep"
+OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/k_sweep"
 d = pd.read_csv(f"{OUT}/k_sweep.csv")
 AXES = ["bio1", "bio18", "pc1"]
 CLR = {"snp": "#c1443c", "nonsnp": "#2e7d5b"}

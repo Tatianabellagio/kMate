@@ -43,7 +43,7 @@ phase-1 CAM5 replication). This folder holds only the SNP-vs-nonSNP comparison.
 - `build_lfmm_input.py` (with `nonsnp`) + `run_lfmm_lastgen.R` → raw LFMM p per record
   (`results/.../phase1_replication/lfmm/lfmm_{snp,nonsnp}_gen9_bio1.csv`).
 
-## Outputs → `results/grenenet_gea/gea_newpanel/`
+## Outputs → `analysis/grenenet_gea/gea_newpanel/results/`
 - `lfmm_{cls}_gen9_bio1_clq09.csv` — per-record LFMM p with clq0.9 block.
 - `wza_{cls}_clq09.csv` — per-block WZA (`gene`=block, `Z_pVal`, chrom, pos).
 - `snp_vs_nonsnp/` — Manhattan PNGs, top-record + class-specific block tables (annotated).

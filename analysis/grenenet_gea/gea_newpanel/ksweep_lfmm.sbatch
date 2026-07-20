@@ -9,7 +9,7 @@
 #SBATCH --mem=48G
 #SBATCH --time=6:00:00
 #SBATCH --array=0-2
-#SBATCH --output=/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/ksweep_calib/ksweep_%a_%j.log
+#SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/ksweep_calib/ksweep_%a_%j.log
 set -euo pipefail
 export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
 cd /global/scratch/users/tbellg/kmate

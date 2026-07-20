@@ -17,9 +17,9 @@ cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PR=analysis/grenenet_gea/phase1_replication
-LDIR=results/grenenet_gea/phase1_replication/lfmm
-CMDIR=results/grenenet_gea/phase1_replication/class_matrices
-OUT=results/grenenet_gea/gea_newpanel/snp_vs_nonsnp
+LDIR=analysis/grenenet_gea/phase1_replication/results/lfmm
+CMDIR=analysis/grenenet_gea/phase1_replication/results/class_matrices
+OUT=analysis/grenenet_gea/gea_newpanel/results/snp_vs_nonsnp
 mkdir -p "$OUT"
 K=16
 
@@ -29,8 +29,8 @@ $R $PR/run_lfmm_lastgen.R "$LDIR/lfmm_nonsnp_gen9" $K "$LDIR/lfmm_nonsnp_gen9_bi
 echo "== join calibrated p -> per-record tables (snp reuse; nonsnp new) =="
 $PY - <<'EOF'
 import pandas as pd, numpy as np
-LDIR="results/grenenet_gea/phase1_replication/lfmm"
-CMDIR="results/grenenet_gea/phase1_replication/class_matrices"
+LDIR="analysis/grenenet_gea/phase1_replication/results/lfmm"
+CMDIR="analysis/grenenet_gea/phase1_replication/results/class_matrices"
 for cls in ["snp","nonsnp"]:
     rec=pd.read_csv(f"{CMDIR}/{cls}_gen9.records.csv")
     pv=pd.read_csv(f"{LDIR}/lfmm_{cls}_gen9_bio1_calibp.csv")["pval"].to_numpy()
@@ -44,8 +44,8 @@ EOF
 echo "== WHERE DO THE HITS LAND: record + LD-block comparison =="
 $PY - <<'EOF'
 import pandas as pd, numpy as np, scipy.stats as st
-LDIR="results/grenenet_gea/phase1_replication/lfmm"
-OUT="results/grenenet_gea/gea_newpanel/snp_vs_nonsnp"
+LDIR="analysis/grenenet_gea/phase1_replication/results/lfmm"
+OUT="analysis/grenenet_gea/gea_newpanel/results/snp_vs_nonsnp"
 def gif(p):
     p=np.clip(np.asarray(p,float),1e-300,1); return np.median(st.chi2.isf(p,1))/st.chi2.isf(0.5,1)
 

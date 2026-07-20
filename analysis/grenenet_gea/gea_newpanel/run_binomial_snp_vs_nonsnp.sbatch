@@ -14,7 +14,7 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/basic/bin/python   # statsmodels lives in basic
 PR=analysis/grenenet_gea/phase1_replication
-OUT=results/grenenet_gea/gea_newpanel/binomial
+OUT=analysis/grenenet_gea/gea_newpanel/results/binomial
 echo "== host $(hostname) | binomial SNP vs non-SNP gen9 bio1 | cpus=${SLURM_CPUS_PER_TASK:-8} =="
 for CLS in nonsnp snp; do   # nonsnp first (smaller/faster), snp second
     $PY -u $PR/run_binomial.py --class "$CLS" --gen 9 --climate bio1 \

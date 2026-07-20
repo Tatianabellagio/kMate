@@ -19,8 +19,8 @@ cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PR=analysis/grenenet_gea/phase1_replication
-LDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/lfmm
-CMDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/class_matrices
+LDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/lfmm
+CMDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/class_matrices
 K=16
 
 echo "== host $(hostname) =="
@@ -36,8 +36,8 @@ for CLS in nonsnp snp; do
   $PY - "$CLS" <<'EOF'
 import sys, pandas as pd
 cls=sys.argv[1]
-CMDIR="results/grenenet_gea/phase1_replication/class_matrices"
-LDIR="results/grenenet_gea/phase1_replication/lfmm"
+CMDIR="analysis/grenenet_gea/phase1_replication/results/class_matrices"
+LDIR="analysis/grenenet_gea/phase1_replication/results/lfmm"
 rec=pd.read_csv(f"{CMDIR}/{cls}_gen9.records.csv")
 pv=pd.read_csv(f"{LDIR}/lfmm_{cls}_gen9_bio1_calibp.csv")["pval"].to_numpy()
 assert len(pv)==len(rec),(len(pv),len(rec))

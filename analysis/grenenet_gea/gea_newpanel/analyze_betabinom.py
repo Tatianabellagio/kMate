@@ -14,9 +14,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-BB = f"{lib.GEA}/gea_newpanel/betabinom"
-BIN = f"{lib.GEA}/gea_newpanel/binomial_latent"
-CM = f"{lib.GEA}/phase1_replication/class_matrices"
+BB = f"{lib.GEA}/gea_newpanel/results/betabinom"
+BIN = f"{lib.GEA}/gea_newpanel/results/binomial_latent"
+CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
 NULLMED = chi2.ppf(0.5, 1)
 
 

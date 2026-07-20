@@ -7,10 +7,10 @@ suppressMessages(library(lfmm))
 a <- commandArgs(trailingOnly = TRUE)
 cls <- a[1]
 
-ROOT <- "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
-LFMM <- file.path(ROOT, "gea_newpanel", "lfmm_site")
-ENVD <- file.path(ROOT, "gea_newpanel", "env_site")
-OUTD <- file.path(ROOT, "gea_newpanel", "ksweep_calib")
+ROOT <- "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
+LFMM <- file.path(ROOT, "gea_newpanel", "results", "lfmm_site")
+ENVD <- file.path(ROOT, "gea_newpanel", "results", "env_site")
+OUTD <- file.path(ROOT, "gea_newpanel", "results", "ksweep_calib")
 RAWD <- file.path(OUTD, "raw_p")
 
 AXES <- c("bio5", "pc1", "bio12", "bio13", "bio16", "bio19")

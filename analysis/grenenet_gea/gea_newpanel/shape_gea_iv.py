@@ -36,7 +36,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 import shape_gea as S   # reuse load_class / site_frame / build_design / ENVS
 
-OUT = f"{lib.GEA}/gea_newpanel/shape_gea"
+OUT = f"{lib.GEA}/gea_newpanel/results/shape_gea"
 CMDIR = S.CMDIR
 WCAP = 10.0            # cap a site's weight at WCAP x per-locus median
 

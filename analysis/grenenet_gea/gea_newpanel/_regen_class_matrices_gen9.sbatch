@@ -8,7 +8,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=96G
 #SBATCH --time=4:00:00
-#SBATCH --output=/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/_regen_logs/class_matrices_g9_%j.log
+#SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/_regen_logs/class_matrices_g9_%j.log
 
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate

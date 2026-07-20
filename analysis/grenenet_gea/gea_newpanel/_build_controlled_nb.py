@@ -38,7 +38,7 @@ C.append(new_code_cell(
     "import scipy.stats as st, lib\n"
     "from scipy.stats import chi2\n"
     "mpl.rcParams.update({'figure.dpi':110,'font.size':10,'axes.spines.top':False,'axes.spines.right':False})\n"
-    "GNP=f'{PROJ}/results/grenenet_gea/gea_newpanel'\n"
+    "GNP=f'{PROJ}/analysis/grenenet_gea/gea_newpanel/results'\n"
     "OUT=f'{GNP}/binom_kendall_controlled'; os.makedirs(OUT, exist_ok=True)\n"
     "CHR=[f'Chr{i}' for i in range(1,6)]\n"
     "ACC={'snp':'#c1443c','nonsnp':'#2e7d5b'}; NAME={'snp':'SNP','nonsnp':'non-SNP (indel+SV)'}\n"

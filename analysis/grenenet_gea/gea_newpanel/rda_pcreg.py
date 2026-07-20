@@ -17,7 +17,7 @@ p_raw = F.sf(F, q, n-1-K-q).  Genomic control on the chi^2_1 transform of p_raw:
 BH-FDR on p_gc. Reports lambda_gc for each K so K can be chosen for calibration
 (target lambda ~1.0-1.2, NOT deflated), and the FDR-candidate clq0.9 block count.
 
-Outputs under results/grenenet_gea/gea_newpanel/rda/ (pcreg_*).
+Outputs under analysis/grenenet_gea/gea_newpanel/results/rda/ (pcreg_*).
 """
 from __future__ import annotations
 import os, sys, json, time
@@ -30,7 +30,7 @@ sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea
 from blocks_clq09 import assign_clq09_blocks
 from lib import annotate_svs, load_genes
 
-ROOT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
+ROOT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
 LFMM = f"{ROOT}/gea_newpanel/lfmm_site"
 ENVD = f"{ROOT}/gea_newpanel/env_site"
 RECD = f"{ROOT}/phase1_replication/class_matrices"

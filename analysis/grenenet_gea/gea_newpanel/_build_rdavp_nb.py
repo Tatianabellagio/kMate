@@ -38,7 +38,7 @@ C.append(new_markdown_cell("## Results"))
 C.append(new_code_cell(
     "import pandas as pd, numpy as np, matplotlib.pyplot as plt, matplotlib as mpl\n"
     "mpl.rcParams.update({'figure.dpi':110,'font.size':10,'axes.spines.top':False,'axes.spines.right':False})\n"
-    "OUT='/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/rda_varpart'\n"
+    "OUT='/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/rda_varpart'\n"
     "df=pd.read_csv(f'{OUT}/varpart_by_class.csv')\n"
     "df"))
 

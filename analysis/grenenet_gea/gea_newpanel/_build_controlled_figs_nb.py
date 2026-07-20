@@ -8,7 +8,7 @@ Built in kMate env; execute in `basic` (IPython + nbconvert).
 import os, nbformat
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 
-R = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel"
+R = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results"
 C = []
 
 C.append(new_markdown_cell(

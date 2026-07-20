@@ -16,4 +16,4 @@ CLS=(snp nonsnp)
 C=${CLS[$SLURM_ARRAY_TASK_ID]}
 echo "host=$(hostname) class=$C"
 $PY temporal_stage1.py --class "$C" \
-    --out /global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/temporal_twostage
+    --out /global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/temporal_twostage

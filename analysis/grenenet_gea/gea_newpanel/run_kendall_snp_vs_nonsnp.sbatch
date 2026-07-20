@@ -14,7 +14,7 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 PR=analysis/grenenet_gea/phase1_replication
-OUT=results/grenenet_gea/gea_newpanel/kendall
+OUT=analysis/grenenet_gea/gea_newpanel/results/kendall
 echo "== host $(hostname) | kendall SNP vs non-SNP gen9 bio1 =="
 for CLS in snp nonsnp; do
     $PY -u $PR/run_kendall.py --class "$CLS" --gen 9 --climate bio1 \

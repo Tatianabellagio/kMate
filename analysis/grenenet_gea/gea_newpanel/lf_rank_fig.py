@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OUT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/lf_rank"
+OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/lf_rank"
 Z = np.load(f"{OUT}/fig_inputs.npz", allow_pickle=True)
 G = np.load(f"{OUT}/fig_gif.npz", allow_pickle=True)
 CHR = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]

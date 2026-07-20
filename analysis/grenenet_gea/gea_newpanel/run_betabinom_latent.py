@@ -168,8 +168,8 @@ def main():
     ap.add_argument("--gen", type=int, default=9)
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--k", type=int, default=16)
-    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")
-    ap.add_argument("--out", default=f"{lib.GEA}/gea_newpanel/betabinom")
+    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/gea_newpanel/results/betabinom")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--estimate-rho", action="store_true",
                     help="rho-estimation mode: fit K=16 subsample, write rho_{cls}.json")

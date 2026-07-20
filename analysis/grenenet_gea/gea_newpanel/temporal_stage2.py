@@ -30,7 +30,7 @@ STAGE-1-ONLY (selection, no climate):  per site, per variant t = s/se on
   SNP vs non-SNP, with gene clustering. This has power even where the n=31
   climate step does not.
 
-Outputs under results/grenenet_gea/gea_newpanel/temporal_twostage/.
+Outputs under analysis/grenenet_gea/gea_newpanel/results/temporal_twostage/.
   PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
   $PY temporal_stage2.py --class nonsnp
 """
@@ -47,8 +47,8 @@ import lib
 from blocks_clq09 import assign_clq09_blocks
 
 GEA = lib.GEA
-TW = f"{GEA}/gea_newpanel/temporal_twostage"
-ENVD = f"{GEA}/gea_newpanel/env_site"
+TW = f"{GEA}/gea_newpanel/results/temporal_twostage"
+ENVD = f"{GEA}/gea_newpanel/results/env_site"
 NSITES = 31
 MAF_MIN = 0.05
 MIN_SITES = 20                # min # of sites contributing a finite (s,se) to a locus

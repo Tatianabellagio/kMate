@@ -17,7 +17,7 @@ def line(tag, p, gif):
 
 def main():
     files = sorted(sys.argv[1:]) or sorted(glob.glob(
-        "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/**/*_bothp*.csv",
+        "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/**/*_bothp*.csv",
         recursive=True))
     for f in files:
         d = pd.read_csv(f)

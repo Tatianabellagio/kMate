@@ -15,7 +15,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/gea_newpanel/msr_kendall"
+OUT = f"{lib.GEA}/gea_newpanel/results/msr_kendall"
 CLIM = "bio1"
 MAF = 0.05
 LFMM_LEAD = ("Chr1", 13_979_249)

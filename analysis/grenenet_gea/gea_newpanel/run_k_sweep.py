@@ -20,8 +20,8 @@ sys.path.insert(0, HERE); sys.path.insert(0, os.path.dirname(HERE))
 import lib
 from run_lf_rank import rank_avg, latent_factors, m_perp, pval_from_r, gif
 
-CM = f"{lib.GEA}/phase1_replication/class_matrices"
-OUT = f"{lib.GEA}/gea_newpanel/k_sweep"
+CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
+OUT = f"{lib.GEA}/gea_newpanel/results/k_sweep"
 KGRID = [0, 2, 4, 6, 8, 10, 12, 16, 20, 24, 32]
 AXES = ["bio1", "bio18", "pc1"]
 GEN = 9

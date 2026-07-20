@@ -46,9 +46,9 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib  # noqa: E402
 
-CMDIR = f"{lib.GEA}/phase1_replication/class_matrices"
-SITEDIR = f"{lib.GEA}/gea_newpanel/lfmm_site"
-OUT = f"{lib.GEA}/gea_newpanel/shape_gea"
+CMDIR = f"{lib.GEA}/phase1_replication/results/class_matrices"
+SITEDIR = f"{lib.GEA}/gea_newpanel/results/lfmm_site"
+OUT = f"{lib.GEA}/gea_newpanel/results/shape_gea"
 P0 = {"snp": "p0_snp.npy", "nonsnp": "p0_nonsnp.npy"}
 EPS = 1e-4
 ENVS = ["bio1", "bio12"]

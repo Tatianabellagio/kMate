@@ -15,7 +15,7 @@ the SAME for every axis, so we rank+residualize each class's AF ONCE, then every
 is a single mat-vec. Latent factors U (K=16) are SNP-derived (common structure
 reference for all three classes; 'structure is structure', matching the MSR run).
 
-Out: results/grenenet_gea/gea_newpanel/lf_rank_table/
+Out: analysis/grenenet_gea/gea_newpanel/results/lf_rank_table/
   sig_blocks_by_axis.csv   cls,axis,GIF,inflated,n_tested,n_bonf_blocks,n_fdr_blocks,min_p
   sig_blocks_overlap.csv   axis, per-class block counts + pairwise overlaps (bonf & fdr)
   + prints the axis x {SNP, non-SNP, SV, SNP∩SV, ...} pivot.
@@ -32,8 +32,8 @@ sys.path.insert(0, os.path.dirname(HERE))
 import lib, blocks_clq09
 from run_lf_rank import rank_avg, latent_factors, m_perp, pval_from_r, gif
 
-CM = f"{lib.GEA}/phase1_replication/class_matrices"
-OUT = f"{lib.GEA}/gea_newpanel/lf_rank_table"
+CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
+OUT = f"{lib.GEA}/gea_newpanel/results/lf_rank_table"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 CLASSES = ["snp", "nonsnp", "sv"]
 K = 16

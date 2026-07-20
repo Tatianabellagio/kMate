@@ -15,9 +15,9 @@ cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 NP=analysis/grenenet_gea/gea_newpanel
-SITE=results/grenenet_gea/gea_newpanel/lfmm_site
-POW=results/grenenet_gea/gea_newpanel/power
-PLOT=results/grenenet_gea/phase1_replication/lfmm
+SITE=analysis/grenenet_gea/gea_newpanel/results/lfmm_site
+POW=analysis/grenenet_gea/gea_newpanel/results/power
+PLOT=analysis/grenenet_gea/phase1_replication/results/lfmm
 mkdir -p "$POW"
 
 echo "===== build site-level (flower-weighted per-site mean) matrices ====="

@@ -18,7 +18,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-BLOCK_DIR = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/blocks_recompute"
+BLOCK_DIR = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/blocks_recompute"
 _CHROMS = [f"Chr{i}" for i in range(1, 6)]
 _CACHE: dict | None = None
 

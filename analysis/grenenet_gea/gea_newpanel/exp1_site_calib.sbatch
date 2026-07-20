@@ -14,11 +14,11 @@ cd /global/scratch/users/tbellg/kmate
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 NP=analysis/grenenet_gea/gea_newpanel
-SITE=results/grenenet_gea/gea_newpanel/lfmm_site
-ES=results/grenenet_gea/gea_newpanel/env_site
-EP=results/grenenet_gea/gea_newpanel/env_plot
-PLOT=results/grenenet_gea/phase1_replication/lfmm
-POW=results/grenenet_gea/gea_newpanel/power
+SITE=analysis/grenenet_gea/gea_newpanel/results/lfmm_site
+ES=analysis/grenenet_gea/gea_newpanel/results/env_site
+EP=analysis/grenenet_gea/gea_newpanel/results/env_plot
+PLOT=analysis/grenenet_gea/phase1_replication/results/lfmm
+POW=analysis/grenenet_gea/gea_newpanel/results/power
 mkdir -p "$POW"
 echo "=== EXP1 site-level bio1 K sweep (raw vs GIF) ==="
 for CLS in snp nonsnp; do for K in 1 3 5; do

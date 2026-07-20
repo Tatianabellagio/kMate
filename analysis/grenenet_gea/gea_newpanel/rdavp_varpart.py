@@ -21,8 +21,8 @@ import numpy as np, pandas as pd
 sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea")
 import lib
 
-CM = f"{lib.GEA}/phase1_replication/class_matrices"
-OUT = f"{lib.GEA}/gea_newpanel/rda_varpart"; os.makedirs(OUT, exist_ok=True)
+CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
+OUT = f"{lib.GEA}/gea_newpanel/results/rda_varpart"; os.makedirs(OUT, exist_ok=True)
 BIOS = [f"bio{i}" for i in range(1, 20)]
 NPERM = 2000
 

@@ -112,8 +112,8 @@ def main():
     ap.add_argument("--gen", type=int, default=9)
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--k", type=int, default=16)
-    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")
-    ap.add_argument("--out", default=f"{lib.GEA}/gea_newpanel/lf_rank")
+    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/gea_newpanel/results/lf_rank")
     ap.add_argument("--chunk", type=int, default=100000)
     ap.add_argument("--kcurve", default="0,4,8,16,32")
     ap.add_argument("--curve-sub", type=int, default=200000,

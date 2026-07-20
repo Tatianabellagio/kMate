@@ -22,7 +22,7 @@ sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea
 from blocks_clq09 import assign_clq09_blocks
 from lib import annotate_svs, load_genes
 
-ROOT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
+ROOT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
 LFMM = f"{ROOT}/gea_newpanel/lfmm_site"
 RECD = f"{ROOT}/phase1_replication/class_matrices"
 OUTD = f"{ROOT}/gea_newpanel/ksweep_calib"

@@ -15,9 +15,9 @@ cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 NP=analysis/grenenet_gea/gea_newpanel
-SITE=results/grenenet_gea/gea_newpanel/lfmm_site
-ES=results/grenenet_gea/gea_newpanel/env_site
-POW=results/grenenet_gea/gea_newpanel/power
+SITE=analysis/grenenet_gea/gea_newpanel/results/lfmm_site
+ES=analysis/grenenet_gea/gea_newpanel/results/env_site
+POW=analysis/grenenet_gea/gea_newpanel/results/power
 
 echo "== build SV-only site-level Δp matrix =="
 $PY -u $NP/build_power_inputs.py --classes sv --skip-env

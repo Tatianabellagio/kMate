@@ -16,8 +16,8 @@ cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PR=analysis/grenenet_gea/phase1_replication
-LDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/lfmm
-KOUT=/global/scratch/users/tbellg/kmate/results/grenenet_gea/lfmm/ksweep_gif_nonsnp_gen9_bio1.csv
+LDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/lfmm
+KOUT=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/lfmm/ksweep_gif_nonsnp_gen9_bio1.csv
 mkdir -p "$LDIR" "$(dirname "$KOUT")"
 
 echo "== build pooled non-SNP class matrix (gen9, MAF>=0.05) =="

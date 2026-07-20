@@ -8,7 +8,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/gea_newpanel/lf_rank"
+OUT = f"{lib.GEA}/gea_newpanel/results/lf_rank"
 
 
 def bh_fdr(p):

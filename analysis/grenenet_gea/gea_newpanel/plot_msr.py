@@ -9,7 +9,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-OUT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/msr_kendall"
+OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/msr_kendall"
 CLIM = "bio1"
 CHR_ORDER = [f"Chr{i}" for i in range(1, 6)]
 COL = {"snp": "#2c6fbb", "nonsnp": "#d1495b"}

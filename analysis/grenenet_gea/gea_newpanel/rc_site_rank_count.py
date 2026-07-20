@@ -21,7 +21,7 @@ Tested family = site-MAF>=0.05 variants with a finite statistic.
 
 SV class: writes annotated (genes) hit tables for both tests.
 
-Outputs: results/grenenet_gea/gea_newpanel/rank_count/
+Outputs: analysis/grenenet_gea/gea_newpanel/results/rank_count/
   summary_{cls}_{axis}.json          lambda + block/variant counts (both tests)
   svhits_{test}_{cls}_{axis}.csv      (sv only) FDR/Bonferroni hits + genes
 
@@ -45,7 +45,7 @@ from lib import annotate_svs, load_genes
 
 warnings.filterwarnings("ignore")
 
-ROOT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
+ROOT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
 LFMM = f"{ROOT}/gea_newpanel/lfmm_site"
 ENVD = f"{ROOT}/gea_newpanel/env_site"
 RECD = f"{ROOT}/phase1_replication/class_matrices"
