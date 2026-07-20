@@ -50,7 +50,7 @@ import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 from scipy import stats
 os.chdir("/global/scratch/users/tbellg/kmate")
-SV = "results/grenenet_gea/sv_adaptive"
+SV = "analysis/grenenet_gea/sv_adaptive/results"
 GEAD = "results/grenenet_gea/hapfreq_clq90/pipelineB_varlen"
 L  = pd.read_csv(f"{SV}/sv_landscape_clq0.9.csv")          # per clq0.9 block: SV content + size
 EW = pd.read_csv(f"{SV}/sv_enrichment.csv")                # founder-GWAS size-matched enrichment

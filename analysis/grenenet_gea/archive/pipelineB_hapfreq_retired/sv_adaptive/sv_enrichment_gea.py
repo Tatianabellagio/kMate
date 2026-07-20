@@ -23,7 +23,7 @@ from pathlib import Path
 import numpy as np, pandas as pd
 from scipy.special import erfcinv
 
-OUT = Path("results/grenenet_gea/sv_adaptive")
+OUT = Path("analysis/grenenet_gea/sv_adaptive/results")
 GEADIR = Path("results/grenenet_gea/hapfreq_clq90/pipelineB_varlen")
 NPERM = 10000
 RNG = np.random.default_rng(0)

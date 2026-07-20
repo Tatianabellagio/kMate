@@ -8,7 +8,7 @@ spread) + n, and a frequency-matched SV-vs-SNP / indel-vs-SNP median shift. Save
 30-panel (one-per-site) figure. Also a small per-variant subsample per site (all SVs + matched SNP/
 indel sample) for optional violins.
 
-Env: kmate. Writes results/grenenet_gea/sv_adaptive/s_dist_by_stratum.{npz,csv}.
+Env: kmate. Writes analysis/grenenet_gea/sv_adaptive/s_dist_by_stratum.{npz,csv}.
 """
 import os, sys, glob
 import numpy as np
@@ -64,8 +64,8 @@ def main():
         for b in range(NBIN):
             sn = s_sn[bsnp == b]; no = s_no[bnon == b]
             svv = no[sv_k[bnon == b]]; inv = no[ind_k[bnon == b]]
-            allb = np.concatenate([sn, no])                     # ALL-class pooled baseline (null-free)
-            base = float(np.median(allb)) if allb.size else np.nan
+            allb = np.concatenate([sn, no])                     # kept only for the "ALL" reference row
+            base = float(np.median(sn)) if sn.size else np.nan  # per-bin SNP-only de-trending baseline
             for nm, arr in (("ALL", allb), ("SNP", sn), ("indel", inv), ("SV", svv)):
                 if arr.size == 0:
                     continue
@@ -74,7 +74,7 @@ def main():
                                       cls=nm, median=float(np.median(arr)),
                                       q25=float(np.quantile(arr, .25)),
                                       q75=float(np.quantile(arr, .75)), n=int(arr.size),
-                                      base=base))              # per-bin ALL-class median for de-trending
+                                      base=base))              # per-bin SNP median for de-trending
             if svv.size:
                 shifts_sv.append(np.median(svv) - base)         # SV excess vs same-freq baseline
             if inv.size:

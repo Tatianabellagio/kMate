@@ -1,9 +1,12 @@
 # SV temporal purging — thread summary (2026-07-02)
 
 > ## ⚠️ CORRECTED (2026-07-15, second pass) — split verdict, not a uniform null
-> **[2026-07-08 pass, still correct]** The de-trended metric (`s_distribution_by_site`, the per-p0-bin
-> ALL-class-median subtraction) shows the **OVERALL / whole-distribution median shift is essentially
-> ZERO: median +0.0011, negative at only 15/31 sites, n.s.** No genome-wide, frequency-independent SV
+> **[2026-07-08 pass, still correct; baseline switched to SNP-only 2026-07-20, result unchanged]** The
+> de-trended metric (`s_distribution_by_site`, the per-p0-bin SNP-median subtraction — was ALL-class
+> pooled through 2026-07-20; switched to SNP-only for consistency with the CSV `base`, Section 4, and
+> Sections 2-3's SNP-matching, and because the notebook's all-class pool was a storage subsample that
+> over-weighted SVs ~24× their genomic share) shows the **OVERALL / whole-distribution median shift is
+> essentially ZERO: median +0.0004 (was +0.0011 all-class), negative at only 15/31 sites, n.s.** No genome-wide, frequency-independent SV
 > purifying excess on this specific (central-tendency) statistic. The old headline number ("~22/31
 > sites, three methods agree") for THIS statistic no longer holds.
 >
@@ -13,8 +16,8 @@
 > the same thing in their own takeaways: not a whole-distribution shift, but a **heavier purged TAIL,
 > concentrated at hot sites**. That is a different statistic than the de-trended median-shift metric,
 > and it was directly tested: a 10th-percentile SV-vs-matched-SNP tail gap, de-trended the same way as
-> `s_distribution`, barely moves (hot-site median −0.071→−0.055; correlation with bio1 strengthens,
-> ρ=−0.47→−0.51, p=0.0075→0.0032). **The tail/hot-site signal is real and is not the artifact that
+> `s_distribution`, holds and strengthens (hot-site median gap −0.069→−0.048; correlation with bio1
+> ρ=−0.501→−0.532, p=0.004→0.002; notebook Section 4, bio1). **The tail/hot-site signal is real and is not the artifact that
 > explains the median-shift null.** Do not archive or dismiss `s_histogram`/`s_vs_climate`/`ecdf`/
 > `ecdf-difference`/`shiftfunction` as redundant with `s_distribution_by_site` — they test a different,
 > still-standing question. See the "Audited 2026-07-15" sections below for the climate-slope β detail
@@ -44,7 +47,8 @@ distribution, so "SVs are rarer" is not a confound.
 - **[SUPERSEDED]** The raw/single-tail views below suggested "SVs carry a small excess of purifying
   (negative-s) selection in the purged tail that grows with climate harshness." **This does not
   survive the Kf_w / `--unit chrom` regeneration.** On the frequency-de-trended
-  `s_distribution_by_site` metric the SV excess-vs-baseline is ≈0 (median **+0.0011**, negative at
+  `s_distribution_by_site` metric the SV excess-vs-baseline is ≈0 (median **+0.0004** [SNP baseline;
+  +0.0011 under the former all-class baseline], negative at
   only **15/31 sites**, sign test n.s.). The apparent tail effect was a frequency /
   founder-projection confound, not a genome-wide purifying excess.
 
@@ -63,13 +67,24 @@ distribution, so "SVs are rarer" is not a confound.
 > **Direct de-trending test run 2026-07-15** (now Section 4 of `temporal_s_consolidated.ipynb`,
 > `_build_temporal_s_consolidated_nb.py` — the standalone script this was first run in has been
 > folded into the notebook and removed): applied the
-> exact same per-p0-bin ALL-class-median subtraction that killed `s_distribution_by_site`'s median
-> shift, then redid the sign-excess-vs-climate correlation on the residualized `s`. **The signal
-> survives — it does not weaken:** bio1 ρ +0.38→+0.42 (p=0.019→0.019), bio18 ρ −0.54→−0.59
-> (p=0.0015→0.0004); median excess flips from −0.0037 to **+0.0016** with more sites positive
-> (10/31→19/31). This is the opposite of what you'd see if the p0/logit-boundary artifact explained
-> the signal. **Conclusion: this arm's climate-graded SV signal is not the same artifact that killed
-> the median-shift metric, and is not currently explained by any confound found in this thread.** The
+> exact same per-p0-bin SNP-median subtraction that killed `s_distribution_by_site`'s median
+> shift, then redid two vs-climate (bio1) tests on the residualized `s`. **The signal survives the
+> de-trending — carried by the tail-gap test.** Numbers below are Section 4 of the notebook (the
+> source of truth); the figures previously cited here (bio1 +0.38→+0.42, a bio18 arm, 10/31→19/31)
+> came from the deleted standalone script, did **not** match the consolidated notebook, and are
+> superseded — the consolidated Section 4 computes bio1 only:
+> - **(b) 10th-percentile SV−matched-SNP tail gap vs bio1: ρ = −0.501 (p=0.004) raw → −0.532
+>   (p=0.002) de-trended** — strengthens; hot-site (bio1≥15) median gap −0.069 → −0.048. This is the
+>   test the "survives" conclusion rests on.
+> - **(a) sign-excess (frac s<0, SV−matched-SNP) vs bio1: ρ = +0.442 (p=0.013) raw → +0.355 (p=0.050)
+>   de-trended** — weakens to *borderline* but does not reverse; median excess −0.0017 → +0.0037,
+>   13/31 → 17/31 sites positive.
+>
+> Neither is the direction you'd see if the p0/logit-boundary artifact explained the signal (that
+> would collapse the correlation, not hold or strengthen it). **Conclusion: this arm's climate-graded
+> SV signal is not the same artifact that killed the median-shift metric, and is not currently
+> explained by any confound found in this thread — though after de-trending it is clearly significant
+> on the tail-gap test (b) and only borderline on the sign-excess test (a).** The
 > standing hitchhiking / global-mode caveat (see below) still applies — this doesn't prove direct SV
 > selection vs. linkage to a selected haplotype — but the "superseded" label is retired.
 
@@ -107,25 +122,44 @@ selection with the two big confounds removed.
   (x = s, y = ΔCDF) or selection-difference-vs-independent-axis (climate), not selection on both axes.
 
 ## Replicate-based arm (session 2, 2026-07-03) — PARALLELISM + PicMin
+
+> **⚠️ The bold fold numbers in the first three bullets below are PRE-Kf_w (2026-07-03) and are
+> SUPERSEDED — do not cite them.** They were never regenerated by the Kf_w / `--unit chrom` fix
+> (commit `3c34ec8` did not touch this doc). The authoritative current values are the single
+> consolidated, re-executed notebook **`notebooks/parallelism_picmin.ipynb`** (§1 parallelism, §2
+> PicMin, §3 per-site climate; re-run 2026-07-15 from the post-Kf_w `parallelism.npz`/`picmin.npz` —
+> this replaces the former three separate notebooks). Each stale number is annotated inline with its
+> verified replacement. Net: on post-Kf_w data the SV-vs-matched-SNP parallelism/PicMin enrichment **shrank
+> to ~1.0–1.3× and is n.s. at mid/common MAF** — much weaker than the pre-fix headline. See the
+> "[AUDITED 2026-07-15]" block after the bullets.
+
 Uses the ~10–12 replicate **plots** within each site as parallel populations (each an independent
 pool-seq → independent allele-frequency-change). Consistency across plots = drift control.
 - **Parallelism** ρ = mean²/mean(slope²) across plots (AF-vapeR rank-1 eigenvalue analog; 0=drift,
   1=fully parallel). `_compute_parallelism.py`. **Responder** = ρ in top decile within its p0-bin
   (class-agnostic). **Repeatability** = # sites where responder.
-- **SV enrichment among parallel responders** (freq-matched, bootstrap p=0.005): responder rate
-  **1.16×**, repeatable ≥⅓ sites **1.72×**, strongly-repeatable ≥½ sites **3.65×** (escalates with
-  stringency). **Insertion-driven** (insertions 0.098 vs deletions 0.038). **Holds at ALL MAF** (rare
-  1.76×, mid 1.28×, common 1.29× — so no MAF filter needed; unlike the climate-purging median it
-  survives common MAF).
+- **SV enrichment among parallel responders** (freq-matched, bootstrap):
+  ~~responder rate **1.16×**, repeatable ≥⅓ sites **1.72×**, strongly-repeatable ≥½ sites **3.65×**;
+  insertions 0.098 vs deletions 0.038; rare 1.76× / mid 1.28× / common 1.29×~~
+  → **VERIFIED POST-Kf_w (2026-07-15, `parallelism_picmin.ipynb` §1): responder 1.03× (p=0.005), repeatable ≥⅓
+  1.19× (p=0.005), strongly ≥½ 1.30× (p=0.015)**; insertions repeatable **0.059** vs deletions 0.039.
+  **Does NOT hold at all MAF**: rare 1.12× (p=0.005), **mid 1.05× (p=0.085, n.s.), common 1.05×
+  (p=0.194, n.s.)** — the fold is small and only nominally significant in the rare band. The pre-fix
+  "escalates 1.2→1.7→3.6×, holds at all MAF" claim does not reproduce.
 - **Real PicMin** (`_picmin.py`: empirical per-site p vs SNP in p0-bin → Beta order statistics over
-  the 31 site-lineages → min-over-orders → uniform-null calibration → BH-FDR): SV **1.23×** (q<0.1) /
-  **1.33×** (q<0.05) enriched among repeated-adaptation loci; **insertion-driven** (ins 22–25% vs del
-  ~13% ≈ indel ≈ SNP). Absolute significant frac is high (13–20%) because this founder-projection
-  system has pervasive parallel sorting — the SV-vs-SNP **relative** contrast is the signal.
-- **Per-site climate grid** (`parallelism_by_site.ipynb`, analog of s_ecdf_difference_by_site): SV
-  parallelism excess is **climate-graded** — bio1 ρ=+0.43 (p=0.016), **bio18 ρ=−0.70 (p=0.000)**;
-  the matched-SNP baseline parallelism is ~flat (+0.10 / −0.19) → the SV-specific gap opens at hot/
-  arid sites (aridity-dominant), same as the climate-slope β arm.
+  the 31 site-lineages → min-over-orders → uniform-null calibration → BH-FDR):
+  ~~SV **1.23×** (q<0.1) / **1.33×** (q<0.05)~~
+  → **VERIFIED POST-Kf_w (2026-07-15, `parallelism_picmin.ipynb` §2): SV fold ~1.07–1.12× (q<0.1: 17.4% vs matched
+  15.8%; q<0.05: 14.9% vs matched ~13.3–13.9%)** — near parity, not re-tested for significance.
+  Still nominally **insertion-driven** (ins 17.3% vs del 12.3% at q<0.05). Absolute significant frac
+  is high (13–20%) because this founder-projection system has pervasive parallel sorting — the
+  SV-vs-SNP **relative** contrast (now ~1.1×) is what matters.
+- **Per-site climate grid** (`parallelism_picmin.ipynb` §3, analog of s_ecdf_difference_by_site): SV
+  parallelism excess is **climate-graded** — **VERIFIED POST-Kf_w (2026-07-15): excess corr bio1
+  ρ=+0.44 (p=0.014), bio18 ρ=−0.68 (p=0.000)** (essentially unchanged from the pre-fix +0.43/−0.70);
+  the matched-SNP baseline parallelism is ~flat → the SV-specific gap opens at hot/arid sites
+  (aridity-dominant), same as the climate-slope β arm. NB: this climate-*gradient* of the excess is
+  what survived the fix; the *bulk* responder-rate fold above did not.
 - **AF-vapeR NOT run** (window eigen-method; SVs ~0–1 per window → can't give a per-SV parallelism;
   would reduce to SV-window colocalization = spatial-null problem). PicMin is the right replicate tool.
 - **I/O GOTCHA (important for any per-plot analysis):** memmap random-row access of `pool_gen*_af.npy`
@@ -137,10 +171,13 @@ the "three methods agree" headline does not survive the Kf_w / `--unit chrom` re
 arms "share the frequency / founder-projection confound" that de-trended `s_distribution_by_site`
 removes. That was asserted by analogy and never tested directly on these statistics. Checked against
 the actual pre- vs post-Kf_w rerun numbers (git history, commit `3c34ec8`):
-- **Parallelism (bulk responder rate)**: shrank ~40% (insertions 0.098→0.059) — consistent with, but
-  not proof of, the same confound. Not re-verified null.
-- **PicMin**: SV-vs-matched-SNP fold shrank from 1.27× to 1.07× — closer to parity, but not re-verified
-  null with a dedicated significance test on the post-Kf_w numbers.
+- **Parallelism (bulk responder rate)**: shrank sharply (repeatable ≥⅓ 1.72×→1.19×, strongly ≥½
+  3.65×→1.30×; insertions repeatable 0.098→0.059), and is **n.s. at mid/common MAF** on post-Kf_w
+  data — consistent with, but not formally proven, the same confound. Verified 2026-07-15 via the
+  re-run `parallelism_picmin.ipynb` §1.
+- **PicMin**: SV-vs-matched-SNP fold shrank from **1.33× (q<0.05) to ~1.07–1.12×** — near parity,
+  not re-verified null with a dedicated significance test on the post-Kf_w numbers. Verified
+  2026-07-15 via the re-run `parallelism_picmin.ipynb` §2.
 - **Climate-slope β (sign-excess vs climate, the actual SV-specific number)**: essentially
   **unchanged** (bio1 ρ +0.55→+0.51 p=0.0035, bio18 ρ −0.65→−0.55 p=0.0013 — recomputed directly
   from current data). The doc previously cited "+0.54/−0.16, weaker/mixed" here — that was a
@@ -207,9 +244,10 @@ turned out to be unpopulated genome-wide (0/2.25M records) and was dropped. Two 
   `_compute_s_dist_by_stratum.py`, `_audit_s_classes.py`.
 - **Other tests:** `_nonsnp_temporal_category.py`, `_temporal_selection_snp_vs_nonsnp.py`,
   `_temporal_sel_drift_maf.py`, `_temporal_s_enrich_initqty.py`.
-- **Replicate arm (untouched this session, separate open thread):** `_compute_parallelism.py`
-  (parallelism ρ + per-site z/ρ; has the fast `read_rows`), `_picmin.py` (real PicMin),
-  `_build_parallelism_nb.py`, `_build_picmin_nb.py`, `_build_parallelism_by_site_nb.py`.
+- **Replicate arm (compute):** `_compute_parallelism.py` (parallelism ρ + per-site z/ρ; has the fast
+  `read_rows`) → `parallelism.npz`; `_picmin.py` (real PicMin) → `picmin.npz`. Notebook builder
+  (2026-07-15, consolidated — the three former `_build_parallelism_nb.py` / `_build_picmin_nb.py` /
+  `_build_parallelism_by_site_nb.py` were merged and removed): `_build_parallelism_picmin_nb.py`.
 - **Calling-quality artifact check:** `_extract_vcf_callqual.sh`, `_sv_callqual_artifact.py` (see
   Caveats section above).
 - **Notebook (2026-07-15, consolidated — the 7 former separate `s_*` notebooks and their `_build_*_nb.py`
@@ -217,11 +255,13 @@ turned out to be unpopulated genome-wide (0/2.25M records) and was dropped. Two 
   none of them redundant with each other):** `analysis/grenenet_gea/notebooks/temporal_s_consolidated.ipynb`,
   built by `_build_temporal_s_consolidated_nb.py` (reads `s_dist_by_stratum.npz/.csv` +
   `s_climate_slope.npz`/`_sign_by_site.csv`; no new compute). Sections: (1) whole-distribution
-  median shift, de-trended — null; (2) tail-specific views (histogram/ECDF/ECDF-difference/
-  shift-function/vs-climate) — real; (3) climate-slope β — real; (4) direct de-trending audit of
-  (2)-(3) — survives. `basic` env.
-  **Replicate arm (separate, untouched):** `parallelism.ipynb`, `picmin.ipynb`,
-  `parallelism_by_site.ipynb`.
+  median shift, de-trended — null; (2) tail-specific views (ECDF-difference/shift-function/vs-climate;
+  the raw-histogram and per-class-ECDF panels were dropped later the same day as non-additive next to
+  ECDF-difference) — real; (3) climate-slope β — real; (4) direct de-trending audit of (2)-(3) —
+  survives. `basic` env.
+  **Replicate arm (2026-07-15, consolidated — three former notebooks merged into one):**
+  `analysis/grenenet_gea/notebooks/parallelism_picmin.ipynb` (§1 parallelism, §2 PicMin, §3 per-site
+  climate), built by `_build_parallelism_picmin_nb.py`.
 - **Figures / data** (`analysis/grenenet_gea/archive/window_hapfreq_retired/sv_adaptive/results/`): `s_climate_slope_{bio1,bio18}.png`,
   `s_purging_intensity.png`, `s_ecdf_difference_by_site.png`, `s_vs_climate.png`, `s_climate_slope.npz`,
   `s_climate_slope_sign_by_site.csv`, `temporal_*.csv`; **replicate arm:** `parallelism.npz`,

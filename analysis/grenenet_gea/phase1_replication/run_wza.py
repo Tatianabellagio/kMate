@@ -71,7 +71,7 @@ def main():
     ap.add_argument("--gen", type=int, required=True)
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--indir", default=None, help="dir of the model result CSV (default: ../<model>)")
-    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/wza")
+    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/wza")
     ap.add_argument("--min-snps", type=int, default=2, help="min records per block (WZA --min_snps)")
     ap.add_argument("--poly-deg", type=int, default=None,
                     help="SNP-number-correction degree (None=canonical deg-2; 7=phase-1/last-gen)")
@@ -84,7 +84,7 @@ def main():
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
 
-    indir = args.indir or f"{lib.GEA}/phase1_replication/{args.model}"
+    indir = args.indir or f"{lib.GEA}/phase1_replication/results/{args.model}"
     in_csv = os.path.abspath(f"{indir}/{args.model}_{args.cls}_gen{args.gen}_{args.climate}.csv")
     if not os.path.exists(in_csv):
         sys.exit(f"missing model result: {in_csv}")

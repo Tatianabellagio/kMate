@@ -23,7 +23,7 @@ slopes and a SNP on the same founders shares it -> cannot separate SV-specific s
 selected haplotypes; needs independent local-mode/vg SV AF. (But plot replicates DO remove the
 drift-vs-selection ambiguity, which Δp could not.)
 
-Env: kmate. Writes results/grenenet_gea/sv_adaptive/temporal_s_plots_snp_vs_nonsnp.csv (+_summary).
+Env: kmate. Writes analysis/grenenet_gea/sv_adaptive/temporal_s_plots_snp_vs_nonsnp.csv (+_summary).
 """
 import os, sys, glob
 import numpy as np

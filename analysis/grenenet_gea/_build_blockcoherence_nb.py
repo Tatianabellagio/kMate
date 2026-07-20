@@ -5,7 +5,7 @@ import nbformat as nbf
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 
 ROOT = "/global/scratch/users/tbellg/kmate"
-CSV = f"{ROOT}/results/grenenet_gea/blocks_recompute/chr1_pc1ve_by_clqcut.csv"
+CSV = f"{ROOT}/analysis/grenenet_gea/blocks_recompute/chr1_pc1ve_by_clqcut.csv"
 OUT = f"{ROOT}/analysis/grenenet_gea/notebooks/block_coherence_clqcut.ipynb"
 
 cells = []
@@ -26,7 +26,7 @@ f"""import os, numpy as np, pandas as pd, matplotlib.pyplot as plt
 import matplotlib as mpl
 mpl.rcParams.update({{"figure.dpi":110,"font.size":11,"axes.grid":True,"grid.alpha":.3}})
 # per-block PC1-VE by CLQcut on the NON-MISSING (min-called-frac 0.9) Chr1 map
-MD90 = "{ROOT}/results/grenenet_gea/blocks_mcf90"
+MD90 = "{ROOT}/analysis/grenenet_gea/blocks_mcf90"
 _p=[]
 for c in [0.5,0.7,0.9]:
     _f=f"{{MD90}}/chr1_frontier_blocks_clq{{c}}.csv"
@@ -111,7 +111,7 @@ signature-haplotype clusters (if n_eff>G). Per-unit PC1-VE is measured on the **
 (out-of-sample). We want the knee: **high coherence at the fewest units**."""))
 
 cells.append(new_code_cell(
-f"""BR = "{ROOT}/results/grenenet_gea/blocks_mcf90"   # NON-MISSING (min-called-frac 0.9) Chr1 map
+f"""BR = "{ROOT}/analysis/grenenet_gea/blocks_mcf90"   # NON-MISSING (min-called-frac 0.9) Chr1 map
 clqs = [c for c in [0.5,0.7,0.9] if os.path.exists(f"{{BR}}/chr1_frontier_blocks_clq{{c}}.csv")]
 print("CLQcuts available:", clqs, "(0.5/0.7 appear once the clq_sweep job finishes)")
 Bc = {{c: pd.read_csv(f"{{BR}}/chr1_frontier_blocks_clq{{c}}.csv") for c in clqs}}
@@ -184,7 +184,7 @@ genotyping error; selection can only separate linked variants *through* recombin
 These blocks are both recombination markers and **fine-mapping leads** (a recombinant that
 splits a causal variant from its hitchhikers is what localizes the cause)."""))
 cells.append(new_code_cell(
-f"""_fv = "{ROOT}/results/grenenet_gea/blocks_mcf90/chr1_clq0.9_founder_vs_evolved_ve.csv"  # NON-MISSING map
+f"""_fv = "{ROOT}/analysis/grenenet_gea/blocks_mcf90/chr1_clq0.9_founder_vs_evolved_ve.csv"  # NON-MISSING map
 rec = pd.read_csv(_fv) if os.path.exists(_fv) else pd.DataFrame(columns=["founder_ve","evolved_ve","eff_dim"])
 rec["ve_drop"] = rec.founder_ve - rec.evolved_ve
 margin = 0.2
@@ -227,7 +227,7 @@ only real per-variant support axis here.)*"""))
 
 cells.append(new_code_cell(
 f"""import glob
-_tf = sorted(glob.glob("{ROOT}/results/grenenet_gea/blocks_recompute/chr*_panel_support_tag.csv"))
+_tf = sorted(glob.glob("{ROOT}/analysis/grenenet_gea/blocks_recompute/chr*_panel_support_tag.csv"))
 tag = pd.concat([pd.read_csv(f).assign(chrom=f.split("/")[-1].split("_")[0]) for f in _tf], ignore_index=True)
 tag["grp"] = tag.groupby(["chrom","block","tag_cluster"]).ngroup()   # haplotype-unit id (per chrom)
 tag["blk"] = tag.groupby(["chrom","block"]).ngroup()                 # whole-block id (per chrom)
@@ -329,7 +329,7 @@ at the same k). ARI≈1 ⇒ imputation didn't matter; ARI dropping in low-call-r
 ⇒ imputation reshaped those clusters."""))
 cells.append(new_code_cell(
 f"""import glob
-_msf = sorted(glob.glob("{ROOT}/results/grenenet_gea/blocks_recompute/chr*_missing_sensitivity.csv"))
+_msf = sorted(glob.glob("{ROOT}/analysis/grenenet_gea/blocks_recompute/chr*_missing_sensitivity.csv"))
 if not _msf:
     print("missing-sensitivity not computed yet — re-run after block_missing_sensitivity.py finishes")
 else:
@@ -363,7 +363,7 @@ each n_eff>2 block → its signature-haplotype clusters. Per-unit PC1-VE on the 
 how single-trajectory each unit is. The right panel is the decision plot: requiring
 PC1-VE ≥ T keeps the cleaner units and drops the rest."""))
 cells.append(new_code_cell(
-f"""MD = "{ROOT}/results/grenenet_gea/blocks_mcf90"
+f"""MD = "{ROOT}/analysis/grenenet_gea/blocks_mcf90"
 bu_all, cu_all, neff_all = [], [], []
 for ch in ["chr1","chr2","chr3","chr4","chr5"]:
     B = pd.read_csv(f"{{MD}}/{{ch}}_frontier_blocks_clq0.9.csv")

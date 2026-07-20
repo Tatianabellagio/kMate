@@ -260,8 +260,15 @@ results/**/*.tsv.gz
 benchmarks/p231/results/seedmix_grid/
 # (95M kMate AF tables):
 benchmarks/speed_vs_hapfire/results/*.tsv
-# (16M hapFIRE SNP-freq dump):
-benchmarks/speed_vs_hapfire/results/*_frequency.txt
+# (16M hapFIRE SNP-freq dump). NOTE 2026-07-20: this was `results/*_frequency.txt`
+# (single `*`, does not cross `/`), which missed nested per-run subdirs like
+# results/genomewide_test/n50_s44/..._snp_frequency.txt (one file 3.2M lines,
+# 63M) and let a bad `git add -A` sweep in ~1.5 GB of raw hapFIRE sim dumps.
+# Use `**` so it matches at any depth under results/ AND under archive/ (the
+# panel_mismatch_prefit_2026-07-15/ snapshot has the same per-run nesting).
+benchmarks/speed_vs_hapfire/results/**/*.tsv
+benchmarks/speed_vs_hapfire/results/**/*_frequency.txt
+benchmarks/speed_vs_hapfire/archive/**/*_frequency.txt
 
 # =============================================================================
 # 2026-06-18: GEA results are bulk derived data (~150 GB: per-sample AF store,
@@ -309,6 +316,10 @@ analysis/grenenet_gea/phase1_replication/results/
 analysis/grenenet_gea/wza_investigation/results/
 # rerun_kfw_hb: production AF store, per-sample TSVs (mirrors old results/**/*.tsv rule)
 analysis/grenenet_gea/rerun_kfw_hb/**/*.tsv
+# sv_adaptive/: LIVE output dir for the s_*/parallelism/picmin/temporal_* SV-selection
+# family (Group B item 7 of docs/RERUN_AFTER_FIX.md) — data only, its ~25 driver
+# scripts are loose at analysis/grenenet_gea/ top level, not in this dir.
+analysis/grenenet_gea/sv_adaptive/
 
 # --- 2026-07-10 retirement: window-mode / hapfreq / block_ld_lmm / sv_adaptive chain
 # confirmed stale (docs/RERUN_AFTER_FIX.md Group D) and consolidated into
@@ -321,6 +332,16 @@ analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.json
 analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.npy
 analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.samples
 analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.txt
+analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.bak
+# same policy for the sibling pipelineB_hapfreq_retired/ archive (also never
+# tracked, also missed this coverage — pre-existing gap, closed alongside)
+analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.csv
+analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.png
+analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.json
+analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.npy
+analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.samples
+analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.txt
+analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.bak
 # hap_blocks/ and seedmix_validation/ moved wholesale (code+data intermixed,
 # same as before the move) — restore the .tsv protection the generic
 # results/**/*.tsv rule provided; leave code/small-config/plots taggable as before.
@@ -421,3 +442,16 @@ analysis/grenenet_gea/results/
 # group_means.npz lives bare under grenenet_gea/ (matches lib.py's {GEA}/group_means.npz)
 analysis/grenenet_gea/group_means.npz
 analysis/grenenet_gea/group_means.pkl
+
+# =============================================================================
+# 2026-07-20: post-checkpoint-commit audit (a bare `git add -A` staged ~300 GB
+# of raw hapFIRE sim reads/BAMs before .gitignore caught up — see the
+# results/**/*_frequency.txt fix above). Close the remaining sim-input gaps:
+# sims_genomewide_test/, sims_greneNet/, sims_oldpanel_test/ are per-run VISOR
+# sim dirs (mirrors benchmarks/p80/sims/*/... below); .fa/.fai/.fq/.bam/.bai
+# are already covered by the global rules above, this closes .tsv/.bed.
+# =============================================================================
+benchmarks/speed_vs_hapfire/sims_*/*/ancestry.tsv
+benchmarks/speed_vs_hapfire/sims_*/*/pool_weights.tsv
+benchmarks/speed_vs_hapfire/sims_*/*/source_weights.tsv
+benchmarks/speed_vs_hapfire/sims_*/*/region.bed

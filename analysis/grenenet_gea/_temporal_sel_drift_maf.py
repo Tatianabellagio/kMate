@@ -18,7 +18,7 @@ Two nulls, per site:
 MAF band = min(p0,1-p0): rare [0.02,0.10) / mid [0.10,0.20) / common [0.20,0.50]. Reports SV, indel,
 nonSNP DOWN-fold per band; SV split ins/del. Aggregate across sites (median + sign test).
 
-Env: kmate. Writes results/grenenet_gea/sv_adaptive/temporal_sel_drift_maf.csv (+ _summary.csv).
+Env: kmate. Writes analysis/grenenet_gea/sv_adaptive/temporal_sel_drift_maf.csv (+ _summary.csv).
 """
 import os, sys, glob
 import numpy as np
@@ -33,7 +33,7 @@ STORE = lib.AF_STORE
 PM = f"{lib.GEA}/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN, TAILQ = 0.02, 50, 12, 10, 0.95
 BANDS = [("rare", 0.02, 0.10), ("mid", 0.10, 0.20), ("common", 0.20, 0.501)]
-CENSUS = pd.read_csv("results/grenenet_gea/fitness/site_census_N.csv").set_index("site")["N_per_gen"]
+CENSUS = pd.read_csv("analysis/grenenet_gea/fitness/site_census_N.csv").set_index("site")["N_per_gen"]
 
 
 def down_fold(dp, p0, snp_dn, binf, band):

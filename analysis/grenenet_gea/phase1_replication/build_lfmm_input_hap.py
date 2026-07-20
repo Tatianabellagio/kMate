@@ -22,8 +22,8 @@ import lib
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--climate", default="bio1")
-    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")
-    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/lfmm")
+    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/lfmm")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 

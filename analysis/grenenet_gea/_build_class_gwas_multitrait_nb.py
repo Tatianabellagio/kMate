@@ -48,8 +48,8 @@ from scipy import stats
 os.chdir("/global/scratch/users/tbellg/kmate")
 sys.path.insert(0, "analysis/grenenet_gea")
 import lib
-OUT = "results/grenenet_gea/varexp"
-CLASSES = ["snp", "nonsnp"]
+OUT = "analysis/grenenet_gea/varexp"
+CLASSES = ["snp", "nonsnp", "sv"]
 
 def load_class(name):
     d = np.load(f"{OUT}/class_gwas_{name}.npz", allow_pickle=True)
@@ -135,36 +135,199 @@ def climate_p_cached(cls, bvec):
     return 2 * stats.norm.sf(np.abs(z_clim))
 """
 
-md_table = """## The overlap table
+md_overlap = """## Peak overlap — two tables (Bonferroni & FDR)
 
-Rows: JOINT, GLOBAL, and CLIMATE for each of the 19 bioclim variables + PC1 of all 19 (22 rows
-total). Columns match the phase-1-replication kendall/lfmm/binomial overlap table, plus both
-significance thresholds shown side by side: `n_*_bonf` (Bonferroni 0.05, strict) and `n_*_fdr`
-(BH q<0.05, the threshold the overlap/jaccard/pct columns are computed on)."""
+Peaks = **clq0.9-block leads significant** at each threshold (one lead marker per LD block, so
+markers in LD aren't double-counted). We build the **same table twice** — once with peaks called at
+**Bonferroni** 0.05 (strict) and once at **BH-FDR** q<0.05 (inclusive) — for all three classes.
+Rows: JOINT, GLOBAL, and CLIMATE for each of the 19 bioclim variables + PC1 of all 19.
 
-code_table = r"""
-rows = []
-for name, key in [("JOINT", "p_joint"), ("GLOBAL", "p_global")]:
-    lead = {c: collapse_lead(data[c]["chrom"], data[c]["pos"], data[c][key]) for c in CLASSES}
-    sig = {c: sig_sets(lead[c]) for c in CLASSES}
-    rows.append(overlap_row(name, *sig["snp"], *sig["nonsnp"]))
+The headline is **what the non-SNP / SV layer adds that SNPs miss** — not the shared blocks. So the
+key columns are `n_nonsnp_not_snp` / `n_sv_not_snp`: blocks that class flags as significant but the
+SNP scan does **not** (blocks live on a shared clq0.9 partition, so the set difference is exact).
+`pct_*_not_snp` is that count as a fraction of the class's own hits. `n_snp`/`n_nonsnp`/`n_sv` give
+the raw per-class hit totals for context. A block counts as "not in snp" whether SNPs there are
+merely non-significant *or* absent entirely — both are signal SNPs don't deliver."""
+
+code_overlap_setup = r"""
+def lead_from_p(c, p):
+    '''Collapse to one lead (min-p) marker per clq0.9 block, reusing the cached block ids.'''
+    b = blk_cache[c]; keep = b != ""
+    nlp = -np.log10(np.clip(p[keep], 1e-300, 1))
+    lead = lib.collapse_to_blocks(pd.DataFrame({"block": b[keep], "nlp": nlp}),
+                                  stat="nlp", block_col="block")
+    lead["p"] = 10.0 ** (-lead["nlp"])
+    return lead
+
+def overlap_row(name, sets):
+    # The gain from the non-SNP / SV layer = blocks IT calls significant that the SNP scan does NOT
+    # (blocks are on a shared clq0.9 partition, so the set difference is well-defined).
+    row = {"contrast": name, "n_snp": len(sets["snp"]),
+           "n_nonsnp": len(sets["nonsnp"]), "n_sv": len(sets["sv"])}
+    for b in ("nonsnp", "sv"):
+        new = sets[b] - sets["snp"]          # significant in b, NOT in snp = the new information
+        row[f"n_{b}_not_snp"] = len(new)
+        row[f"pct_{b}_not_snp"] = round(len(new) / len(sets[b]), 3) if sets[b] else np.nan
+    return row
+
+# per (contrast, class): compute the lead collapse once, keep BOTH (bonf, fdr) significant sets
+contrasts = [("JOINT", lambda c: data[c]["p_joint"]),
+             ("GLOBAL", lambda c: data[c]["p_global"])]
 for axname, bvec in climate_axes.items():
-    lead = {c: collapse_lead(data[c]["chrom"], data[c]["pos"], climate_p_cached(c, bvec)) for c in CLASSES}
-    sig = {c: sig_sets(lead[c]) for c in CLASSES}
-    rows.append(overlap_row(f"CLIMATE_{axname}", *sig["snp"], *sig["nonsnp"]))
-overlap_df = pd.DataFrame(rows)
-overlap_df
+    contrasts.append((f"CLIMATE_{axname}", lambda c, bv=bvec: climate_p_cached(c, bv)))
+
+sig_by_contrast = {name: {c: sig_sets(lead_from_p(c, pf(c))) for c in CLASSES}
+                   for name, pf in contrasts}
+
+def overlap_table(thr_idx):   # 0 = Bonferroni, 1 = FDR
+    return pd.DataFrame([overlap_row(name, {c: sig_by_contrast[name][c][thr_idx] for c in CLASSES})
+                         for name, _ in contrasts])
+
+overlap_bonf_df = overlap_table(0)
+overlap_fdr_df = overlap_table(1)
+print("built Bonferroni + FDR overlap tables:", overlap_bonf_df.shape, overlap_fdr_df.shape)
 """
+
+md_bonf = """### Table 1 — Bonferroni (0.05) significant peaks"""
+code_bonf = "overlap_bonf_df\n"
+
+md_fdr = """### Table 2 — BH-FDR (q<0.05) significant peaks"""
+code_fdr = "overlap_fdr_df\n"
+
+md_genes = """## Genes under non-SNP-only / SV-only peaks — anything interesting?
+
+For every block that is significant in **non-SNP** or in **SV** but **not** in SNP (the gain columns
+above), map the block's clq0.9 interval (±2 kb promoter flank) to TAIR10 genes, and record **which
+contrast(s)** flagged it — i.e. JOINT, GLOBAL, or which bioclim variable (bio1–19 / PC1). Two tables:
+peaks called at **Bonferroni** and at **FDR**. `klass` = which layer (nonsnp/sv), `overlap` =
+in_block vs flank2kb, `contrasts` = the bio variable(s) / omnibus it was significant for. This is a
+hypothesis-generating browse (the per-locus climate null still applies), sorted so genes recurring
+across the most contrasts surface first."""
+
+code_genes_setup = r"""
+FLANK = 2000
+def block_interval_map():
+    m = {}
+    for ci in range(1, 6):
+        c = f"Chr{ci}"
+        g = pd.read_csv(f"{lib.CLQ_BLOCKS_DIR}/chr{ci}_clq0.9_blocks_clq0.9.tsv",
+                        sep="\t").sort_values("start_pos").reset_index(drop=True)
+        for idx, r in g.iterrows():
+            m[f"{c}_{idx}"] = (c, int(r.start_pos), int(r.end_pos))
+    return m
+bmap = block_interval_map()
+genes = lib.load_genes()
+
+def gene_table(thr_idx):
+    hits = {}
+    for b_cls in ("nonsnp", "sv"):
+        blk2contrasts = {}
+        for name, _ in contrasts:
+            only = sig_by_contrast[name][b_cls][thr_idx] - sig_by_contrast[name]["snp"][thr_idx]
+            for b in only:
+                blk2contrasts.setdefault(b, set()).add(name.replace("CLIMATE_", ""))
+        for b, cs in blk2contrasts.items():
+            if b not in bmap:
+                continue
+            c, s, e = bmap[b]
+            inb = genes[(genes.chrom == c) & (genes.start <= e) & (genes.end >= s)]
+            flk = genes[(genes.chrom == c) & (genes.start <= e + FLANK) & (genes.end >= s - FLANK)]
+            flk = flk[~flk.gene.isin(inb.gene)]
+            for gid, nm, otype in ([(g, n, "in_block") for g, n in zip(inb.gene, inb.name.fillna(""))]
+                                   + [(g, n, "flank2kb") for g, n in zip(flk.gene, flk.name.fillna(""))]):
+                d = hits.setdefault((gid, b_cls), dict(gene=gid, name=nm, klass=b_cls, chrom=c,
+                                                       overlap=otype, blocks=set(), contrasts=set()))
+                d["blocks"].add(b); d["contrasts"].update(cs)
+                if otype == "in_block":
+                    d["overlap"] = "in_block"
+    rows = [dict(gene=d["gene"], name=d["name"], klass=d["klass"], chrom=d["chrom"], overlap=d["overlap"],
+                 n_blocks=len(d["blocks"]), n_contrasts=len(d["contrasts"]),
+                 contrasts=";".join(sorted(d["contrasts"]))) for d in hits.values()]
+    df = pd.DataFrame(rows)
+    if len(df):
+        df = df.sort_values(["klass", "n_contrasts", "overlap", "gene"],
+                            ascending=[True, False, True, True]).reset_index(drop=True)
+    return df
+
+genes_bonf_df = gene_table(0)
+genes_fdr_df = gene_table(1)
+
+# ---- Ensembl Plants gene descriptions (cached to gene_descriptions.csv; offline -> AT-IDs only) ----
+import urllib.request as _u
+DESC_CSV = f"{OUT}/gene_descriptions.csv"
+_cache = {}
+if os.path.exists(DESC_CSV):
+    _c = pd.read_csv(DESC_CSV).fillna("")
+    _cache = {r.gene: (r.symbol, r.function) for r in _c.itertuples()}
+_need = sorted(set(genes_bonf_df.gene) | set(genes_fdr_df.gene))
+_missing = [g for g in _need if g not in _cache]
+
+def _ens_batch(ids, chunk=45):
+    got = {}
+    for i in range(0, len(ids), chunk):
+        sub = ids[i:i + chunk]
+        for att in range(4):
+            try:
+                req = _u.Request("https://rest.ensembl.org/lookup/id",
+                                 data=json.dumps({"ids": sub}).encode(),
+                                 headers={"Content-Type": "application/json", "Accept": "application/json"})
+                for g, v in json.load(_u.urlopen(req, timeout=45)).items():
+                    v = v or {}
+                    got[g] = (v.get("display_name", "") or "",
+                              (v.get("description", "") or "").split(" [Source")[0])
+                break
+            except Exception as e:
+                import time as _t; _t.sleep(2 * (att + 1))
+                if att == 3:
+                    print(f"[warn] ensembl chunk {i} failed after retries: {type(e).__name__}")
+    return got
+
+if _missing:
+    new = _ens_batch(_missing)
+    _cache.update(new)
+    if _cache:
+        pd.DataFrame([{"gene": g, "symbol": s, "function": f} for g, (s, f) in sorted(_cache.items())]
+                     ).to_csv(DESC_CSV, index=False)
+    print(f"Ensembl: described {len(new)}/{len(_missing)} new genes "
+          f"({'offline -> AT-IDs only' if not new else f'cache -> {len(_cache)} total'})")
+else:
+    print(f"Ensembl: all {len(_need)} genes from cache")
+
+def _add_desc(df):
+    df = df.copy()
+    df.insert(2, "symbol", df.gene.map(lambda g: _cache.get(g, ("", ""))[0]))
+    df.insert(3, "function", df.gene.map(lambda g: _cache.get(g, ("", ""))[1]))
+    return df
+genes_bonf_df = _add_desc(genes_bonf_df)
+genes_fdr_df = _add_desc(genes_fdr_df)
+
+print(f"non-SNP/SV-only genes — Bonferroni: {len(genes_bonf_df)}   FDR: {len(genes_fdr_df)}")
+for lbl, df in [("Bonferroni", genes_bonf_df), ("FDR", genes_fdr_df)]:
+    if len(df):
+        print(f"  {lbl}: " + ", ".join(f"{k}={int(v)}" for k, v in df.klass.value_counts().items())
+              + f"; in_block={(df.overlap=='in_block').sum()}")
+"""
+
+md_genes_bonf = """### Genes — Bonferroni (non-SNP-only / SV-only)"""
+code_genes_bonf = "genes_bonf_df\n"
+md_genes_fdr = """### Genes — FDR (non-SNP-only / SV-only)"""
+code_genes_fdr = "genes_fdr_df\n"
 
 md_bottom = """## Bottom line
 
-- **JOINT/GLOBAL**: read off the `n_*_bonf` / `n_*_fdr` / `jaccard_fdr` / `pct_*` columns
-  directly -- the same overlap-table logic as the phase-1 kendall/lfmm/binomial comparison, now
-  applied to the SNP-vs-nonSNP class split, with both significance thresholds shown.
-- **CLIMATE across all 19 bioclim variables + PC1**: if the climate-gradient null established
-  earlier (bio1) generalizes, expect **0 (or near-0) significant blocks in most/all CLIMATE rows,
-  for both classes** -- a systematic sweep across the full bioclim panel (not just temperature)
-  before concluding local adaptation is absent for this system."""
+- **Two tables, two thresholds**: `overlap_bonf_df` (strict) and `overlap_fdr_df` (inclusive). The
+  quantity that matters is `n_nonsnp_not_snp` / `n_sv_not_snp` — blocks the non-SNP or SV scan finds
+  that the SNP scan does **not**. That is the information gained by adding the layer; a small number
+  (relative to `n_snp`) means the layer is mostly re-finding SNP peaks.
+- **JOINT** is where hits concentrate; **GLOBAL** and every **CLIMATE** row (all 19 bioclim + PC1)
+  should be ~empty for all three classes if the climate-gradient null holds — a full-panel sweep,
+  not just temperature.
+- Peaks are *significant* clq0.9 blocks (block-level BH over ~58k blocks, so FDR counts are much
+  larger than the marker-level counts in `class_gwas_summary.json`) — peak-specific, not the
+  whole-genome window concordance that was diluted by ~5.5k mostly-null windows.
+- **`genes_bonf_df` / `genes_fdr_df`** list the genes under non-SNP-only / SV-only peaks and the bio
+  variable(s) they were significant for — a candidate browse for kMate-unique signal, subject to the
+  standing per-locus climate null."""
 
 nb = new_notebook(cells=[
     new_markdown_cell(md_title),
@@ -172,8 +335,18 @@ nb = new_notebook(cells=[
     new_code_cell(code_helpers),
     new_markdown_cell(md_climate_setup),
     new_code_cell(code_climate_setup),
-    new_markdown_cell(md_table),
-    new_code_cell(code_table),
+    new_markdown_cell(md_overlap),
+    new_code_cell(code_overlap_setup),
+    new_markdown_cell(md_bonf),
+    new_code_cell(code_bonf),
+    new_markdown_cell(md_fdr),
+    new_code_cell(code_fdr),
+    new_markdown_cell(md_genes),
+    new_code_cell(code_genes_setup),
+    new_markdown_cell(md_genes_bonf),
+    new_code_cell(code_genes_bonf),
+    new_markdown_cell(md_genes_fdr),
+    new_code_cell(code_genes_fdr),
     new_markdown_cell(md_bottom),
 ])
 ep = ExecutePreprocessor(timeout=1200, kernel_name="basic", startup_timeout=180)

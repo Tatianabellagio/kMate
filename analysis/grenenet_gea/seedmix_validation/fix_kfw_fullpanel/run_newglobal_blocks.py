@@ -16,10 +16,10 @@ import numpy as np
 import scipy.sparse as sp
 
 ROOT = "/global/scratch/users/tbellg/kmate"
-OUT = f"{ROOT}/results/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
-CDIR = f"{ROOT}/results/grenenet_gea/seedmix_validation/fix_seedmix/counts"
+OUT = f"{ROOT}/analysis/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
+CDIR = f"{ROOT}/analysis/grenenet_gea/seedmix_validation/fix_seedmix/counts"
 PANEL = f"{ROOT}/data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1"
-BLOCKTSV = f"{ROOT}/results/grenenet_gea/hap_blocks/ld_blocks_r2_0.10.tsv"
+BLOCKTSV = f"{ROOT}/analysis/grenenet_gea/hap_blocks/ld_blocks_r2_0.10.tsv"
 CHROM = "Chr1"
 F = 231
 sys.path.insert(0, f"{ROOT}/src")

@@ -11,7 +11,7 @@ Run in the kmate env. Usage:
 """
 import argparse, numpy as np, pandas as pd
 
-CM = "results/grenenet_gea/phase1_replication/class_matrices"
+CM = "analysis/grenenet_gea/phase1_replication/results/class_matrices"
 CLASSES = ["snp", "smallindel", "sv"]
 
 

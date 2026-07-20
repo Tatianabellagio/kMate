@@ -33,7 +33,7 @@ import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 import wza_core as wc
 
-KEN = ("/global/scratch/users/tbellg/kmate/results/grenenet_gea/"
+KEN = ("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/"
        "phase1_replication/kendall/kendall_snp_gen1_bio1.csv")
 df = pd.read_csv(KEN); df = df[df.MAF >= 0.05].copy()
 
@@ -125,7 +125,7 @@ for ax in axes[1, :]:
     ax.set_xticks(ticks); ax.set_xticklabels(CHROMS)
 fig.suptitle("WZA block-Manhattan — cap vs no-cap × deg-2 vs deg-7 (gen1 SNP, bio1); y clipped at 14", fontsize=13)
 fig.tight_layout()
-OUT_PNG = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/wza_investigation/fig9_manhattan_cap_vs_nocap.png"
+OUT_PNG = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_investigation/results/fig9_manhattan_cap_vs_nocap.png"
 fig.savefig(OUT_PNG, dpi=130); plt.show()
 print("saved", OUT_PNG)"""))
 

@@ -17,7 +17,7 @@ artifact):
     two readouts: has_sv (>=1 SV in block) and sv_frac (SV share of block variants, size-robust).
     Size-matched permutation null (lib.matched_perm_test style).
 
-Output -> results/grenenet_gea/ecotype_fitness/gwas/block_sv_enrichment.{csv,json}
+Output -> analysis/grenenet_gea/ecotype_fitness/gwas/block_sv_enrichment.{csv,json}
 Env: kmate. Light.
 """
 from __future__ import annotations

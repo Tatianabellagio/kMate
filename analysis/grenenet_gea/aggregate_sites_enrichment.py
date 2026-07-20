@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Cross-site synthesis of the per-site temporal SV-enrichment (clq0.9 blocks).
 
-Reads every results/grenenet_gea/site_temporal/site{N}_sv_enrichment.json produced by
+Reads every analysis/grenenet_gea/site_temporal/site{N}_sv_enrichment.json produced by
 site_sv_enrichment.py and answers the headline question across sites:
   Is there SV enrichment in the temporally-selected haploblocks -- anywhere, consistently?
 

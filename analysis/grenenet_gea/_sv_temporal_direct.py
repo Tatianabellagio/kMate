@@ -19,7 +19,7 @@ CAVEAT: pool_matrices AF is GLOBAL-mode founder projection (dp[v] is algebraical
 per-founder h change beta uses). So agreement here VALIDATES the pipeline + shows the real
 magnitudes/trajectories; it is NOT an independent instrument (that needs local-mode / vg SV AF).
 
-Env: kmate.  Writes results/grenenet_gea/sv_adaptive/sv_temporal_direct.csv.
+Env: kmate.  Writes analysis/grenenet_gea/sv_adaptive/sv_temporal_direct.csv.
 """
 import os, sys, glob
 import numpy as np

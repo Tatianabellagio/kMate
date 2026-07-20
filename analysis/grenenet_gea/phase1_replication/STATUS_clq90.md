@@ -15,7 +15,7 @@ Started 2026-07-03.
 
 Self-contained subtree: **all code in this folder** (`run_binomial.py` +
 `reblock.py` + `compare_clq90.py` + `plot_clq90_manhattan.py` + the two sbatch
-drivers), **all outputs under `results/grenenet_gea/phase1_replication/clq90/`**.
+drivers), **all outputs under `analysis/grenenet_gea/phase1_replication/results/clq90/`**.
 
 > **Consolidated 2026-07-06:** the session log `SESSION_20260703.md` is merged into this file —
 > its Kendall-inflation decision, the 20-axis extension, and the nonSNP-specific candidate-gene

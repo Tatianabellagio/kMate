@@ -16,7 +16,7 @@
 
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/grenenet_gea/blocks_mcf90
+mkdir -p logs analysis/grenenet_gea/blocks_mcf90
 export LD_LIBRARY_PATH=/usr/lib64:${LD_LIBRARY_PATH:-}
 
 CHRS=(Chr1 Chr2 Chr3 Chr4 Chr5)
@@ -29,6 +29,6 @@ echo "[$(date)] $CHR : BigLD CLQcut=0.9, min-called-frac=0.9"
 $PY analysis/grenenet_gea/recompute_blocks.py \
     --var-pa-prefix panel/arch3/${chrlc}/var_pa_231_arch3_${chrlc} \
     --chrom "$CHR" --corr 0.2 --window 50 --maf 0.05 --clqcut 0.9 --min-called-frac 0.9 \
-    --out results/grenenet_gea/blocks_mcf90/${chrlc}_clq0.9 \
+    --out analysis/grenenet_gea/blocks_mcf90/${chrlc}_clq0.9 \
     --rscript "$RSCRIPT" --bigld-dir /global/scratch/users/tbellg/HapFM/bin
 echo "[$(date)] $CHR done"

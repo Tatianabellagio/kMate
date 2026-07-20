@@ -61,7 +61,7 @@ pct, `--resamples 100`). His email to Tati recommended the same: cap ~2000 + deg
 
 ## Worry 3 — does WZA over-weight low-SNP windows (e.g. CAM5 ~16 SNPs)?
 
-Tested empirically — see `results/grenenet_gea/wza_investigation/`
+Tested empirically — see `analysis/grenenet_gea/wza_investigation/results/`
 (`overweighting_by_snpbin.csv`, `fig2`, `fig3`) and the summary below.
 
 ---
@@ -71,7 +71,7 @@ Tested empirically — see `results/grenenet_gea/wza_investigation/`
   Raw weighted-Z byte-identical to canonical; only the correction is exposed.
 - `run_investigation.py` — gen1 SNP×bio1: sweeps degree {2,7} × cap {none, 2000,
   q95, q75}; reports NaN rate, Bonferroni hits, CAM5 (block 2_1265 / 2_1264); plus
-  the low-SNP-overweighting test. Outputs → `results/grenenet_gea/wza_investigation/`.
+  the low-SNP-overweighting test. Outputs → `analysis/grenenet_gea/wza_investigation/results/`.
 
 ## Results
 (filled in after the run — see `RESULTS.md`.)

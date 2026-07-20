@@ -11,7 +11,7 @@
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate/analysis/grenenet_gea
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
-L=/global/scratch/users/tbellg/kmate/results/grenenet_gea/lfmm
+L=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/lfmm
 DP=$L/delta_p_gen3_sv.csv
 ENV=$L/env_gen3_bio1.csv
 # per-K LFMM on the fresh gen3-SV Δp/env; writes kscan_bio1_k{K}.{calibrated_pval,pval,beta}.csv + .gif.txt

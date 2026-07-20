@@ -4,7 +4,7 @@ import json, glob, os
 import numpy as np
 
 ROOT = "/global/scratch/users/tbellg/kmate"
-OUT = f"{ROOT}/results/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
+OUT = f"{ROOT}/analysis/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
 SPLIT = json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))
 CACTUS = set(map(str, SPLIT["cactus"]))
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]

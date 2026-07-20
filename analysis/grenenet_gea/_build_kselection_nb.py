@@ -50,7 +50,7 @@ cells.append(nbf.v4.new_code_cell(
 '''import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 
-ROOT  = "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
+ROOT  = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
 PLOTS = f"{ROOT}/lfmm"
 
 sw = pd.read_csv(f"{ROOT}/lfmm/ksweep_gif_snp_gen9_bio1.csv")

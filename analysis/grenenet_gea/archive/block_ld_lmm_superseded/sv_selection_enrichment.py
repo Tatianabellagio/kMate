@@ -19,7 +19,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 H = "results/grenenet_gea/hapfreq"
-CM = "results/grenenet_gea/phase1_replication/class_matrices"
+CM = "analysis/grenenet_gea/phase1_replication/results/class_matrices"
 SITE = int(os.environ.get("SITE", 4))
 CLASSES = ["snp", "sv", "smallindel"]
 

@@ -1,3 +1,13 @@
+> ℹ️ **See [`PANEL_MISMATCH_BUG.md`](PANEL_MISMATCH_BUG.md).** An earlier
+> poolsize×depth accuracy/speed comparison ran kMate on the arch3 panel but
+> hapFIRE on the old greneNet SNP-only VCF, while reads came from arch3 — a
+> panel mismatch that invalidated the pre-2026-07-15 `hapfire_vs_kmate_*`
+> results (archived under `archive/panel_mismatch_prefit_2026-07-15/`). **Fixed
+> 2026-07-15**: each tool now runs on its own native panel with reads simulated
+> to match (kMate: arch3; hapFIRE: greneNet-derived FASTAs + the greneNet VCF),
+> same founders-meta + seed so pool composition is identical across tools. See
+> "Poolsize × depth (fair...)" below for current numbers.
+
 # kMate vs hapFIRE — running-time benchmark
 
 **Date:** 2026-06-03. **Question:** how much faster is kMate than hapFIRE (= a
@@ -48,7 +58,59 @@ the single-core result. kMate single core: 319 s k-mer count + 157 s EM = 531 s.
 kMate stage breakdown: 78 s k-mer count (jellyfish) + 45 s EM (200 iters) +
 projection → 157–181 s total.
 
-## Reproduce
+## Poolsize × depth (fair, each tool on its native panel)
+
+Separate from the single-condition run above: a full N × depth × seed sweep
+(N ∈ {2,5,20,50,150}, depth ∈ {1,10}×5 seeds, plus N=50 × depth ∈ {30,50}×5
+seeds — 60 conditions), comparing h (founder-mixture) accuracy, founder
+recovery, and speed/compute. kMate runs on arch3 (existing `benchmarks/p231`
+results, no rerun); hapFIRE runs on greneNet-derived FASTAs + the greneNet VCF
+(`sims_greneNet/`, `results/greneNet_fair/`). Both draw the identical pool
+(same arch3 founders-meta + seed) so the comparison is apples-to-apples. No
+shared AF-accuracy comparison — see `PANEL_MISMATCH_BUG.md` for why.
+
+```bash
+scripts/submit_greneNet_fair_grid.sh                       # sim + hapFIRE, full grid (idempotent)
+/global/home/users/tbellg/miniforge3/envs/basic/bin/python scripts/score_hapfire_vs_kmate.py
+/global/home/users/tbellg/miniforge3/envs/basic/bin/python scripts/plot_hapfire_vs_kmate.py
+/global/home/users/tbellg/miniforge3/envs/basic/bin/python scripts/plot_speed_vs_coverage.py
+```
+
+Outputs: `results/hapfire_vs_kmate_table.tsv`,
+`results/hapfire_vs_kmate_{h_accuracy,founders_recovered,speed,speed_vs_coverage}.png`.
+
+### Result (60 conditions, 2026-07-15)
+
+Averaged over depth ∈ {1,10}×5 seeds per N (the main grid):
+
+| N | kMate R²(h) | hapFIRE R²(h) | kMate founders | hapFIRE founders | wall kMate | wall hapFIRE | speedup |
+|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2 | 0.994 | 0.980 | 100 % | 100 % | 102 s | 979 s | 9.6× |
+| 5 | 0.994 | 0.986 | 100 % | 100 % | 102 s | 979 s | 9.6× |
+| 20 | 0.981 | 0.930 | 100 % | 100 % | 105 s | 1009 s | 9.6× |
+| 50 | 0.950 | 0.866 | 99.0 % | 99.6 % | 106 s | 999 s | 9.5× |
+| 150 | 0.580 | 0.723 | 96.7 % | 98.7 % | 93 s | 965 s | 10.4× |
+
+- **Founder recovery is essentially tied** — both tools recover ~all pooled
+  founders (top-K-vs-truth) across the whole grid; hapFIRE is marginally ahead
+  at N=150 (98.7 % vs 96.7 %). The pre-fix "hapFIRE collapses to 36/50" result
+  was the panel-mismatch artifact and is gone.
+- **Proportion accuracy (R² of h):** kMate leads at N ≤ 50 (e.g. 0.95 vs 0.87 at
+  N=50); at **N=150 the ordering flips** — hapFIRE 0.72 vs kMate 0.58. Both
+  degrade as the pool approaches full-panel density (founder weights → near-
+  uniform ~1/N, so R²'s denominator, sd(truth), shrinks and the metric gets
+  fragile), but kMate degrades faster there. This N=150 reversal is real and
+  worth flagging — not an artifact of the old bug.
+- **Speed:** kMate ~**9.6× faster wall-clock** (median over all 60) and ~4.5×
+  fewer CPU-seconds (the parallelization-agnostic number — kMate uses 8 threads,
+  hapFIRE's HARP stage is single-threaded by build). At fixed N=50 the wall-clock
+  gap holds ~9–10× as depth climbs 1×→50× (`..._speed_vs_coverage.png`).
+- **Memory:** here kMate's peak RSS is *higher* (~32 GB vs ~18 GB) — the reverse
+  of the single-condition 231-founder run above — because kMate carries the full
+  arch3 k-mer + variant matrices while hapFIRE runs on the smaller greneNet
+  SNP-only panel. Panel size, not method, drives this.
+
+## Reproduce (single-condition speed run above)
 
 ```bash
 sbatch benchmarks/speed_vs_hapfire/run_hapfire.sh   # hapFIRE (env: hapfire)

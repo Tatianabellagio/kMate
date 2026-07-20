@@ -64,7 +64,7 @@ C.append(nbf.v4.new_code_cell(r"""import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import chi2
 
-CLQ = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/clq90"
+CLQ = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/clq90"
 FIX = f"{CLQ}/binom_fix_test"
 CLASSES = ["snp", "nonsnp"]
 METHODS = ["current", "betabinom", "quasibinom"]

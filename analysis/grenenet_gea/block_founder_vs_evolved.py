@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from recompute_blocks import build_common_matrix
 from eval_block_coherence import load_allclass_af, pc1_var_explained
 
-BR = os.environ.get("BLOCKS_DIR", "results/grenenet_gea/blocks_recompute")
+BR = os.environ.get("BLOCKS_DIR", "analysis/grenenet_gea/blocks_recompute")
 MAF = 0.05
 MINCF = float(os.environ.get("MINCF", "0.5"))
 

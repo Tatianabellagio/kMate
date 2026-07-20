@@ -13,8 +13,8 @@ cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 PR=analysis/grenenet_gea/phase1_replication
 WZA=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_script.py
-KDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/kendall
-WDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/wza
+KDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/kendall
+WDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/wza
 mkdir -p "$WDIR"
 
 echo "== host $(hostname) =="
@@ -39,7 +39,7 @@ done
 echo "== STEP 4: cross-class comparison (CAM5 + block overlap, deg7nocap) =="
 $PY - <<'EOF'
 import pandas as pd, numpy as np, scipy.stats as st, os
-WDIR="results/grenenet_gea/phase1_replication/wza"; CAM5="2_1265"
+WDIR="analysis/grenenet_gea/phase1_replication/results/wza"; CAM5="2_1265"
 def bh(p):
     p=np.asarray(p,float); n=len(p); o=np.argsort(p); q=np.empty(n)
     q[o]=(p[o]*n)/(np.arange(n)+1); q[o]=np.minimum.accumulate(q[o][::-1])[::-1]; return np.clip(q,0,1)

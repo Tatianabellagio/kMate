@@ -14,7 +14,7 @@
 # artifact. Coarse CompleteLDPartition (corr 0.2) + fine BigLD (gpart). r_env + LD_LIBRARY_PATH.
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/grenenet_gea/blocks_mcf90_p80
+mkdir -p logs analysis/grenenet_gea/blocks_mcf90_p80
 export LD_LIBRARY_PATH=/usr/lib64:${LD_LIBRARY_PATH:-}
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 RSCRIPT=/global/home/users/tbellg/miniforge3/envs/r_env/bin/Rscript
@@ -23,6 +23,6 @@ echo "[$(date)] p80 Chr1 : BigLD CLQcut=0.9, min-called-frac=0.9 (>=72/80)"
 $PY analysis/grenenet_gea/recompute_blocks.py \
     --var-pa-prefix benchmarks/p80/data/var_pa_p80 \
     --chrom Chr1 --corr 0.2 --window 50 --maf 0.05 --clqcut 0.9 --min-called-frac 0.9 \
-    --out results/grenenet_gea/blocks_mcf90_p80/chr1_clq0.9 \
+    --out analysis/grenenet_gea/blocks_mcf90_p80/chr1_clq0.9 \
     --rscript "$RSCRIPT" --bigld-dir /global/scratch/users/tbellg/HapFM/bin
 echo "[$(date)] p80 Chr1 done"

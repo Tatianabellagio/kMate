@@ -26,8 +26,8 @@ RCLONE="rclone"
 FLAGS=(--stats 10s --stats-one-line -v --transfers 8 --checkers 16
        --timeout 120s --contimeout 30s --low-level-retries 20 --retries 10 --retries-sleep 10s)
 
-WZA="$PROJ/results/grenenet_gea/phase1_replication/wza"
-P1="$PROJ/results/grenenet_gea/phase1_replication"
+WZA="$PROJ/analysis/grenenet_gea/phase1_replication/results/wza"
+P1="$PROJ/analysis/grenenet_gea/phase1_replication/results"
 
 echo "### destination: $DEST"
 echo "### started: $(date)"

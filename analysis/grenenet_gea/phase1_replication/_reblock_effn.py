@@ -3,11 +3,11 @@
 onto OUR clq0.9 partition (lib.assign_clq_blocks), so they're comparable to the
 existing clq90 pipeline, and emit per-record diagnostics.
 
-Source: results/grenenet_gea/gea_newpanel/quasibinom/quasibinom_lf16_{cls}_gen9_bio1.csv
+Source: analysis/grenenet_gea/gea_newpanel/results/quasibinom/quasibinom_lf16_{cls}_gen9_bio1.csv
   columns: chrom,pos,ref_len,alt_len,MAF,block,slope,pval_binom,pval_quasi,phi,pval_effN
   (the `block` column here is from a DIFFERENT clq0.9 build (~82k blocks) - IGNORE/drop it)
 
-Output: results/grenenet_gea/phase1_replication/clq90/binom_fix_test/effn/binomial_{cls}_gen9_bio1.csv
+Output: analysis/grenenet_gea/phase1_replication/results/clq90/binom_fix_test/effn/binomial_{cls}_gen9_bio1.csv
   columns: chrom,pos,MAF,pval,block   (pval = pval_effN, renamed; block = OUR clq0.9 assignment)
   (named binomial_{cls}_... , not effn_{cls}_..., so run_wza.py --model binomial --indir .../effn works)
 
@@ -23,9 +23,9 @@ from scipy import stats
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-SRC = f"{lib.GEA}/gea_newpanel/quasibinom"
+SRC = f"{lib.GEA}/gea_newpanel/results/quasibinom"
 # lib.GEA points at the analysis dir; results live in the mirrored results tree.
-RESULTS_GEA = "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
+RESULTS_GEA = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
 OUTDIR = f"{RESULTS_GEA}/phase1_replication/clq90/binom_fix_test/effn"
 os.makedirs(OUTDIR, exist_ok=True)
 

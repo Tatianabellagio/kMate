@@ -34,8 +34,8 @@ and to run efficiently at ~2.3M-marker scale):
     windows, per-window max -log10(p_joint) correlated between classes (Spearman) as the
     "same regions light up" test; top-N hit window overlap (Jaccard).
 
-Reads results/grenenet_gea/varexp/selection_s_matrix.npz + panel/arch3 var_pa per chrom.
-Writes results/grenenet_gea/varexp/class_gwas_{snp,nonsnp}.npz + class_gwas_summary.json.
+Reads analysis/grenenet_gea/varexp/selection_s_matrix.npz + panel/arch3 var_pa per chrom.
+Writes analysis/grenenet_gea/varexp/class_gwas_{snp,nonsnp}.npz + class_gwas_summary.json.
 Env: kmate. Compute-node only (dense per-chrom marker blocks).
 """
 from __future__ import annotations

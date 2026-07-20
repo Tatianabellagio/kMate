@@ -20,7 +20,7 @@ full design-space history) and `poolfreq/src/archive/` (superseded solver code).
 | `panel_overlap_v3_grenenet/` | Overlap of `cn_var_v3` vs GrENE-Net 231 SNPs (the 55%-coverage analysis) | Superseded by the arch3 decomposition (lifted SNP coverage) and by `panel_overlap_135_vs_82/` (current panel-composition analysis). |
 | `cactus_panel_overlap/` | Early our-cactus-panel vs xwu-82-accession position comparison | Superseded by `panel_overlap_135_vs_82/`. |
 | `pangenome_comparison/` | Record-classification + SV-subgraph topology comparison across graphs/callers | Exploratory; conclusions folded into the cn_var decomposition investigation. |
-| `preprocess_qc/` | LD / concordance / missingness QC of the genotyped panel | Conclusions folded into `MISSINGNESS_231PANEL.md` and the v3qc panel-QC decisions. |
+| `preprocess_qc/` | LD / concordance / missingness QC of the genotyped panel | Conclusions folded into `MISSINGNESS_231PANEL.md` and the v3qc panel-QC decisions. Its SNP/SV LD-decay + SV-SNP tagging analysis (`notebooks/ld_*.ipynb`, `scripts/{compute_ld,aggregate_ld,compute_per_sv_max_r2}.py`, `output/ld/`, `plots/`) and its panel-composition descriptive stats (`notebooks/production_vcf_stats.ipynb`, `scripts/merged_vcf_stats*.{py,sh}`, `output/merged_stats/`) all ran on the **pre-arch3** merged panel (`founders_231_chr.vcf.gz`) — **stale 2026-07-10** now that arch3 is production. Superseded by, respectively: the arch3-vs-GrENE-Net SV tagging comparison in `analysis/grenenet_gea/build_sv_snp_ld.py` → `analysis/grenenet_gea/sv_snp_ld/` (write-up: `analysis/grenenet_gea/notebooks/sv_snp_ld_tagging.ipynb`); and the arch3 panel-composition notebook `analysis/grenenet_gea/notebooks/panel_stats_arch3.ipynb` (backed by `results/panel_stats/PANEL_STATS.md` / `scripts/panel_stats_for_paper.py`). Non-LD, non-composition parts of `preprocess_qc/` (dup rates, genotyped concordance) remain live at top level, unarchived. |
 | `results/` | Early top-level result tables (e.g. recomb window-size comparison) | Superseded by per-subproject results (`control_p80/results/`, `arch3/chr1/`). |
 | `jf_chr1/` | Early jellyfish + founder Jaccard-diagnostic working dir (cactus-vs-1001g heatmaps, carrier-weighted experiments) | Diagnostics folded into the k-mer-imbalance investigation; not a production path. |
 | `pangenie_test/` | Early PanGenie test runs + PCA grouping work | Superseded by production `pangenie_genotyping/`. |
@@ -41,6 +41,19 @@ Front-runner settled (`filt2 + ω=1/m_b`, arch3 cn_var projection) ⇒ experimen
 | `fastas_superseded/` (42 GB) | `unimputed_fastas_v3`, `founder_fastas_231_v3`, `imputed_fastas_v2_DEPRECATED` | current = `unimputed_fastas_v3qc` / `control_p231/fastas_231` |
 
 Some `poolfreq/scripts/{build_cn_full_*,run_seedmix_*}` now reference archived dirs (concluded-experiment scripts; recoverable, kept as records).
+
+## Added 2026-07-10 — results/ cleanup: consolidate scattered stale/archived result trees (~1.8 TB)
+
+Part of the `analysis/` vs `results/` centralization pass (kMate results moving under
+`analysis/grenenet_gea/`). These three were already flagged stale/superseded and living
+under ad-hoc `results/*archive*` names; moved here so there is exactly one archive
+convention, not two.
+
+| Item | What it was | Why archived |
+|---|---|---|
+| `results_archive_stale/` (1.6 TB) | Formerly `results/archive/` — mostly the STALE fixed-bp window-mode cohort (`grenenet_kmate_window` / `_seedmix` / `_smoke`, old multinomial EM, superseded 2026-07-07 by the per_founder fix) plus assorted early seedmix/site04/hapfire-comparison result dumps (`seedmix_231*`, `site04_*`, `session_summary`, `overhang_timing`, etc.). See `docs/PIPELINE_STATE.md` §7/§8 and `docs/RERUN_AFTER_FIX.md` Group D for the staleness call. |
+| `grenenet_kmate_arch3_oldpanel_archive/` (154 GB) | Formerly `results/grenenet_kmate_arch3_oldpanel_archive/` — GrENE-Net cohort AF on the old 10.33M (pre-segregating-filter) panel, superseded by the 8.49M-panel rerun. | Superseded panel version; see `analysis/grenenet_gea/WINDOW_UNIT_VALIDATION.md` §3. |
+| `seedmix_kmate_arch3_oldpanel_archive/` (7.1 GB) | Formerly `results/seedmix_kmate_arch3_oldpanel_archive/` — SEEDMIX p0 reps on the same old panel. | Same as above. |
 
 ## Recovering an archived file into git tracking
 

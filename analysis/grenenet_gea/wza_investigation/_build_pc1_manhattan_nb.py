@@ -16,7 +16,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_investigation"
 OUT = f"{HERE}/pc1_manhattan.ipynb"
-RES = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/wza_investigation"
+RES = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_investigation/results"
 
 nb = nbf.v4.new_notebook()
 C = []
@@ -36,7 +36,7 @@ C.append(nbf.v4.new_markdown_cell(r"""# Manhattan: raw WZA vs honest PC1 + site-
 What survives in (B) is the honest single-axis, single-generation climate signal."""))
 
 C.append(nbf.v4.new_code_cell(r"""import numpy as np, pandas as pd, matplotlib.pyplot as plt
-RES = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/wza_investigation"
+RES = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_investigation/results"
 
 pc1 = pd.read_csv(f"{RES}/pc1_genomewide_gen1_bio1.csv")             # block,chrom,pos,m,pc1_ve,r_obs,perm_p,bh_q
 wza = pd.read_csv(f"{RES}/wza_deg7_nocap.csv")                       # block,...,Z_pVal (phase-1 method)

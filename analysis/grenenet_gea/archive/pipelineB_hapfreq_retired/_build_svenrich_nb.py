@@ -7,7 +7,7 @@ structural variants? Presents (1) the per-clq0.9-block SV landscape + its two co
 This is the GWAS-realm pass. The GEA-realm (pool-seq temporal climate) axis is a
 separate, heavier rerun (Pipeline B on clq0.9) — flagged as pending at the end.
 
-Load-only (precomputed CSVs in results/grenenet_gea/sv_adaptive/) -> runs in `basic`."""
+Load-only (precomputed CSVs in analysis/grenenet_gea/sv_adaptive/results/) -> runs in `basic`."""
 import os
 import nbformat as nbf
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
@@ -70,7 +70,7 @@ code_setup = '''import os
 import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 os.chdir("/global/scratch/users/tbellg/kmate")
-SVDIR = "results/grenenet_gea/sv_adaptive"
+SVDIR = "analysis/grenenet_gea/sv_adaptive/results"
 L = pd.read_csv(f"{SVDIR}/sv_landscape_clq0.9.csv")
 E = pd.read_csv(f"{SVDIR}/sv_enrichment.csv")
 print(f"landscape: {len(L):,} clq0.9 blocks | {int(L.has_sv.sum()):,} carry >=1 SV "

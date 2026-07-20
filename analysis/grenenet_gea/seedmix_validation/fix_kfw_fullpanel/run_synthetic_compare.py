@@ -19,7 +19,7 @@ import numpy as np
 from scipy.sparse import load_npz
 
 ROOT = "/global/scratch/users/tbellg/kmate"
-OUT = f"{ROOT}/results/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
+OUT = f"{ROOT}/analysis/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
 PANEL = f"{ROOT}/data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1"
 sys.path.insert(0, f"{ROOT}/src")
 from kmate.em_solver import solve_em

@@ -14,10 +14,10 @@ PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PR=analysis/grenenet_gea/phase1_replication
 WZA=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_script.py
-LDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/lfmm
-KDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/kendall
-WDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/wza
-CMDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/class_matrices
+LDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/lfmm
+KDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/kendall
+WDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/wza
+CMDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/class_matrices
 mkdir -p "$LDIR" "$WDIR"
 K=16
 
@@ -33,9 +33,9 @@ for CLS in snp smallindel sv; do
   $PY - "$CLS" <<'EOF'
 import sys, pandas as pd
 cls=sys.argv[1]
-CMDIR="results/grenenet_gea/phase1_replication/class_matrices"
-LDIR="results/grenenet_gea/phase1_replication/lfmm"
-KDIR="results/grenenet_gea/phase1_replication/kendall"
+CMDIR="analysis/grenenet_gea/phase1_replication/results/class_matrices"
+LDIR="analysis/grenenet_gea/phase1_replication/results/lfmm"
+KDIR="analysis/grenenet_gea/phase1_replication/results/kendall"
 rec=pd.read_csv(f"{CMDIR}/{cls}_gen9.records.csv")
 pv=pd.read_csv(f"{LDIR}/lfmm_{cls}_gen9_bio1_calibp.csv")["pval"].to_numpy()
 assert len(pv)==len(rec),(len(pv),len(rec))
@@ -60,7 +60,7 @@ done
 echo "== CAM5 + cross-class (LFMM->WZA deg7nocap) =="
 $PY - <<'EOF'
 import pandas as pd, numpy as np, scipy.stats as st, os
-WDIR="results/grenenet_gea/phase1_replication/wza"; CAM5="2_1265"
+WDIR="analysis/grenenet_gea/phase1_replication/results/wza"; CAM5="2_1265"
 def bh(p):
     p=np.asarray(p,float); n=len(p); o=np.argsort(p); q=np.empty(n)
     q[o]=(p[o]*n)/(np.arange(n)+1); q[o]=np.minimum.accumulate(q[o][::-1])[::-1]; return np.clip(q,0,1)

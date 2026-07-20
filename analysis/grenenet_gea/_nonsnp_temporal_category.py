@@ -14,7 +14,7 @@ side by side so the category is decomposed.
 CAVEAT (same as SV test): pool_matrices AF is GLOBAL-mode founder projection; this is a consistency
 readout of the founder-h trajectories, NOT an independent instrument (that needs local-mode/vg AF).
 
-Env: kmate.  Writes results/grenenet_gea/sv_adaptive/nonsnp_temporal_category.csv.
+Env: kmate.  Writes analysis/grenenet_gea/sv_adaptive/nonsnp_temporal_category.csv.
 """
 import os, sys, glob
 import numpy as np

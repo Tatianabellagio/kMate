@@ -27,9 +27,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import wza_core as wc
 
-KENDALL = ("/global/scratch/users/tbellg/kmate/results/grenenet_gea/"
+KENDALL = ("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/"
            "phase1_replication/kendall/kendall_snp_gen1_bio1.csv")
-OUT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/wza_investigation"
+OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_investigation/results"
 os.makedirs(OUT, exist_ok=True)
 CAM5 = ["2_1265", "2_1264"]   # gene 3' (real hit) ; gene-midpoint pericentro null
 

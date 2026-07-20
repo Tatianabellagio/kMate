@@ -25,7 +25,7 @@ Design (matches ecotype_selection_site.py, extended to all sites, GLOBAL-mode h)
     p0>1e-3 drop-floor that discarded ~19 legitimate rare-start founders (was 212 analyzable).
     NO reliability/cross-chrom weighting (chrom-averaging regularizes h).
 
-Output -> results/grenenet_gea/varexp/selection_s_matrix.npz
+Output -> analysis/grenenet_gea/varexp/selection_s_matrix.npz
   S[n_site x 231] logit-slope, sites, founders, bio1, p0, analyzable(bool 231), n_plots[n_site],
   freq_last[n_site x 231] (QC). Env: kmate. Light (runs off the cache in seconds).
 """

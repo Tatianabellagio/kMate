@@ -35,15 +35,80 @@ window-vs-global / cross-chromosome agreement diagnostics.
   **NOTE:** the associated DATA directory `results/grenenet_gea/gen9_window/`
   (kept for GEA) was **NOT** moved — only the scripts are archived here.
 
-## NOT archived (deliberately left in place — see the handoff report)
-The core hapfreq/Pipeline-B chain — `build_hapfreq_matrix.py`,
+## Update 2026-07-08 (later same day) — Pipeline-B chain also retired, separately
+The "NOT archived" chain originally described here — `build_hapfreq_matrix.py`,
 `build_hapfreq_p0_seedmix.py`, `build_hap_trajectories.py`, `build_hap_gea.py`,
-`build_hap_wza.py`, and its drivers `hapfreq.sbatch` / `gea_clq90_pipelineB.sbatch`,
-plus `phase1_replication/build_hap_lastgen_matrix.py` — was left in place. Although
-these also read the deleted window store (`build_hapfreq_matrix.py` reads
-`results/grenenet_kmate_window` even in `--h-source global` mode), they generate
-`results/grenenet_gea/hapfreq_clq90/pipelineB_varlen/*` which is still consumed by
-the **live** SV-enrichment analysis (`sv_adaptive/sv_enrichment_gea.py`). Retiring
-this chain requires a maintainer decision and should be done as a unit.
+`build_hap_wza.py`, its drivers, `phase1_replication/build_hap_lastgen_matrix.py`, and
+the dedicated consumers (`sv_adaptive/sv_enrichment_gea.py`, `sv_temporal_markermatched.py`,
+etc.) — was itself retired (both SV threads it fed had resolved null) to
+**`../pipelineB_hapfreq_retired/`** (a sibling archive dir, not this one). `build_hap_membership`
+was kept in place (shared with the live SV-selection audit at the time).
 
-Date archived: 2026-07-08.
+## Update 2026-07-10 — the remaining maintainer decision made: fully retired
+The "maintainer decision" flagged below as pending is resolved: the window-mode founder-GWAS /
+`block_ld_lmm*` family is **not** a live analysis. Consolidated into this directory as part of
+the `analysis/` vs `results/` centralization pass:
+- `hapfreq/` — the DATA directory this README's original note said was "kept for GEA" (moved
+  from `results/grenenet_gea/hapfreq/`, 1.8 GB). With the Pipeline-B chain above already retired,
+  nothing live still reads it.
+- `gen9_window/` — the matching DATA for the script subtree already archived here (moved from
+  `results/grenenet_gea/gen9_window/`, 14 GB).
+- `window_vs_global/` — data + its driver `aggregate_window_vs_global.py` (moved from
+  `results/grenenet_gea/window_vs_global/` + `analysis/grenenet_gea/`, 9.3 MB).
+
+**Correction (later same pass, 2026-07-10):** `sv_adaptive/` was initially archived wholesale too
+— that was wrong for the *data*, half-right for the *code*. `analysis/grenenet_gea/sv_adaptive/`
+was genuinely dead as a **code folder** (12 scripts, all confirmed reading `hapfreq/` or
+`lib.multisite_gwas_raw()` — `audit_sv_passenger_emmax.py`, `build_sv_landscape.py`,
+`climate_cluster_enrichment.py`, `locality_index.py`, `plot_sv_block_climate.py`,
+`plot_sv_landscape.py`, `sv_block_drilldown.py`, `sv_block_haplotype_resolve.py`,
+`sv_enrichment.py`, `sv_frac_markermatched.py`, `sv_joint_diagnosis.py`, `sv_joint_mechanism.py`
+— correctly archived here, in `sv_adaptive/`). But its **output directory name** (`sv_adaptive/`,
+reached via `lib.GEA`) was *also* the write target of a completely different, **live** family of
+~25 top-level scripts (the s_\*/parallelism/picmin/temporal_\* SV-selection-vs-drift analysis,
+`docs/RERUN_AFTER_FIX.md` Group B item 7) that share no code with the dead chain — they just
+happened to write into a directory with the same name. Archiving the whole data directory broke
+that live family's output path. Fixed: the live ~43 files were moved back out to a **recreated
+live** `analysis/grenenet_gea/sv_adaptive/` (not this one), and the ~25 live scripts' path
+references were reverted to point there. Only the genuinely-dead output files stayed here.
+
+The consumer scripts of `hapfreq/` — `founder_gwas_multisite.py`, `cross_site_winners.py`,
+`cross_site_winners_multisite.py`, `derive_climate_axis.py`, `multisite_climate_perm.py`,
+`founder_gwas_231.py`, `ecotype_selection_site.py`, `build_fitness_table.py`,
+`predict_ecotype_performance.py`, `winner_convergence_site.py`, `build_crosssite_climate.py`,
+`omega_contrast.py`, `baypass_build_inputs.py`, `_sv_haplotype_enrichment.py`, `_sv_ld_check.py`,
+`_sv_haplotype_check.py`, their notebook builders (`_build_foundergwas_nb.py`,
+`_build_multisite_gwas_nb.py`, `_build_ccagree_nb.py`, `_build_predict_perf_nb.py`,
+`_build_climate_locality_nb.py`), their generated notebooks (`multisite_founder_gwas.ipynb`,
+`predict_ecotype_performance.ipynb`, `cross_chrom_agreement.ipynb`,
+`climate_cluster_locality.ipynb`), and their sbatch/sh drivers (`run_cross_site.sbatch`,
+`predict_ecotype_perf.sbatch`, `run_multisite_gwas.sbatch`, `run_multisite_downstream.sh`) —
+all individually verified reading `hapfreq/` or `lib.multisite_gwas_raw()`, none importable
+by live code — were moved here too, physically, not just repointed.
+
+One shared helper, `genome_h()` (+ `CHROMS`), was pulled out of `ecotype_selection_site.py`
+before archiving it: it's a generic per-sample founder-h loader with no `hapfreq` dependency,
+and two live scripts (`_sv_winning_genetics.py`, `build_sample_h_cache.py`) import it. Promoted
+to `lib.py` instead of leaving a shim behind.
+
+**Left for a maintainer, not archived:** `_sv_founder_direction.py` and `_sv_founder_mechanism.py`
+have a genuinely mixed dependency — live `af_store`/`pool_matrices` data AND the dead
+`hapfreq/multisite_founder_gwas_clq90_pc1` as their candidate-locus input. They can't run as-is,
+but whether that's "retire" or "needs a non-hapfreq locus source" is a scientific call, not a
+filing one. Their two output CSVs stayed in `sv_adaptive/results/` here (not moved to the live
+dir) pending that call.
+
+**Second correction (same pass):** `build_sv_landscape.py` + `plot_sv_landscape.py` were
+archived here too on first pass, but checked individually they read only panel block TSVs
+(`{ch}_clq0.9_blocks_clq0.9.tsv`) — no `hapfreq`/`multisite_gwas_raw` dependency at all. Their
+output `sv_landscape_clq0.9.csv` is a shared input consumed by *both* the genuinely-dead
+scripts above *and* a separate live SV-haplotype audit (`_sv_hap_context.py`,
+`_sv_hap_rotationnull.py`, `_sv_hap_freqrobust.py`, `_sv_haplotype_axes_sweep.py`,
+`_build_sv_selection_audit_nb.py` — deliberately kept per
+`../pipelineB_hapfreq_retired/README.md`, not part of this retirement). Reverted both scripts
++ their data back to live `analysis/grenenet_gea/sv_adaptive/`. See that same README for an
+open question about whether the audit itself is still fully runnable — 3 of its 4 producer
+scripts also call `lib.multisite_gwas_raw()` and read the dead Pipeline-B `hap_gea.csv`.
+
+Date archived: 2026-07-08 (first script batch); 2026-07-10 (remaining data, corrected sv_adaptive
+split, hapfreq/multisite-GWAS consumer family, final retirement decision).

@@ -10,7 +10,7 @@ live at the project root.
 | `METHODS_TRIED_AND_RESULTS.md` | What was tried and how it scored — k-mer-filter sweep, EM weighting (ω_k=1/m_b vs uniform), projection variants. Complements `RESULTS_LOG.md`. |
 | `FOUNDER_NORMALIZATION_FIX.md` | The per-founder M-step normalization fix (`--normalize per_founder`, full-panel Kf_w) that stopped the global-mode founder-h collapse; supersedes ω_k=1/m_b for the selfing production path. |
 | `EM_UNIT_CHOICE_AND_NONIDENTIFIABILITY.md` | Why `--unit chrom` is the production estimator (and `--unit ld` collapses in low-diversity blocks); EM non-identifiability and the no-prior decision. |
-| `RERUN_AFTER_FIX.md` | Re-run checklist for regenerating all downstream outputs after the per_founder + Kf_w fix (now landed in `results/grenenet_gea/rerun_kfw_hb`). |
+| `RERUN_AFTER_FIX.md` | Re-run checklist for regenerating all downstream outputs after the per_founder + Kf_w fix (now landed in `analysis/grenenet_gea/rerun_kfw_hb`). |
 | `INVESTIGATION_CN_VAR_DECOMPOSITION.md` | Why production switched to the arch decomposition (annotate_vcf + convert-to-biallelic) instead of `bcftools norm -m -any` for var_pa. |
 | `PIPELINE_FASTQ_PREPROCESSING.md` | Read-side FASTQ preprocessing pipeline (trim/dedup/QC) used upstream of genotyping. |
 | `MISSINGNESS_231PANEL.md` | F_MISSING characterization on the production 231-founder panel and its effect on AF estimates. |

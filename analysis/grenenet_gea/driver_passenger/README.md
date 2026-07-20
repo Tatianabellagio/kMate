@@ -58,7 +58,7 @@ artifact** (SV blocks median 73 rec vs 7; size-matched enrichment 1.0–1.3×, n
 ## Files / how to re-run (merged from HANDOFF)
 Env: kmate python `/global/home/users/tbellg/miniforge3/envs/kmate/bin/python`; SuSiE in `r_env`,
 needs `export LD_LIBRARY_PATH=/usr/lib64` (susieR 0.14.2). Compute node only. Outputs →
-`results/grenenet_gea/driver_passenger/`.
+`analysis/grenenet_gea/driver_passenger/results/`.
 1. `build_allclass_wza.py --model kendall --gen 9 --climate bio1`
    → `allclass_*.records.csv`, `wza_*_deg{2,7}.csv`, `block_composition_*.csv`,
      `finemap_worklist_*.csv` (22 SV-containing BH-sig blocks). Runs WZA via `../wza_script.py`.
@@ -70,7 +70,7 @@ needs `export LD_LIBRARY_PATH=/usr/lib64` (susieR 0.14.2). Compute node only. Ou
    → `finemap_susie_results{,_pool}.csv`, then `driver_passenger_FINAL.csv`.
 
 ### Inputs this depends on (already on disk)
-- Per-class gen9 kendall: `results/grenenet_gea/phase1_replication/kendall/kendall_{snp,sv,smallindel}_gen9_bio1.csv`
+- Per-class gen9 kendall: `analysis/grenenet_gea/phase1_replication/results/kendall/kendall_{snp,sv,smallindel}_gen9_bio1.csv`
   (chrom,pos,ref_len,alt_len,MAF,block,tau,pval; row-aligned to class_matrices records/af).
 - `phase1_replication/class_matrices/{cls}_gen9_af.npy` (355 pools × records) + `gen9.pools.csv`
   (355 pools, 31 sites, bio1 per site, total_flowers for weighting).

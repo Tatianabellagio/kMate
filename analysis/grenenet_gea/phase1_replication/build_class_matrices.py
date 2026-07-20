@@ -18,7 +18,7 @@ Filters (mirroring phase-1 `maf05 mincount05`; both CLI-tunable):
 
 Each kept record is assigned its phase-1 hapFIRE LD block (lib.assign_ld_blocks).
 
-Outputs (--out, default results/grenenet_gea/phase1_replication/class_matrices):
+Outputs (--out, default analysis/grenenet_gea/phase1_replication/results/class_matrices):
   {class}_gen{g}_af.npy       float32 [n_pools_g x n_kept]   (NaN where no data)
   {class}_gen{g}.records.csv  chrom,pos,ref_len,alt_len,p_bar,maf,n_finite,
                               col (orig column index in the class),block
@@ -117,7 +117,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pooldir", default=f"{lib.GEA}/pool_matrices")
     ap.add_argument("--store", default=lib.AF_STORE)
-    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/class_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
     ap.add_argument("--classes", nargs="+", default=list(CLASSES), choices=CLASSES)
     ap.add_argument("--gens", type=int, nargs="+", default=[1, 3])
     ap.add_argument("--maf-min", type=float, default=0.05)

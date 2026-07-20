@@ -2,7 +2,7 @@
 
 > **STATUS (2026-07-08):** This rerun is **COMPLETE** and has been superseded by the
 > full-panel Kf_w rerun. Production outputs now live in
-> `results/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`; the earlier pre-Kf_w
+> `analysis/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`; the earlier pre-Kf_w
 > `rerun_perfounder` directory has been **deleted**. Paths below are updated to
 > `rerun_kfw_hb`; keep this doc as the checklist of what depends on what.
 
@@ -13,7 +13,7 @@
 `p0`-anchored selection). Everything downstream that consumes those is stale.
 
 **New per-sample outputs (the new inputs):**
-`results/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/<SAMPLE>.tsv`
+`analysis/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/<SAMPLE>.tsv`
 (+ per-chrom `<SAMPLE>_Chr{N}.tsv` and `<SAMPLE>_Chr{N}.h_per_chrom.npz`). Global mode → each
 run emits BOTH the founder `h` and the per-record AF.
 
@@ -27,7 +27,7 @@ Cohort launch: seed-mix `35549607` (8) + evolved `35549608/609/647` (2168), glob
   globally (`lib.qc_excluded()`, list in `data/qc_lowcov_exclude.txt`). 5 of them are dead/
   contaminated libraries (nzfrac<0.01 — normal sequencing depth but ~0% panel k-mers ⇒ off-panel
   DNA, NOT low depth; depth is a poor QC signal here, corr(depth,nzfrac)≈0.57). Full audit +
-  plots: `results/grenenet_gea/qc_coverage_audit.{csv,ipynb}`.
+  plots: `analysis/grenenet_gea/results/qc_coverage_audit.csv + analysis/grenenet_gea/notebooks/qc_coverage_audit.ipynb`.
 - **Site 33 dropped (selection trait: 31 → 30 sites).** Site 33 has 7 usable-cohort samples but
   only ONE at gen1 (plot 1, `MLFH330120180607`, nzfrac 0.088); its other 6 are gen2-only in plots
   with no gen1 anchor. The selection slope needs a gen1 anchor within a plot, so site 33's whole
@@ -42,7 +42,7 @@ Cohort launch: seed-mix `35549607` (8) + evolved `35549608/609/647` (2168), glob
 
 ## Step 0 — repoint + clear caches  ✅ DONE (2026-07-06)
 - Repointed `analysis/grenenet_gea/lib.py` `OUT`/`SEEDMIX`, `build_af_store.py` `OUT`, and
-  `_build_support_nb.py` `OUTBASE` → `results/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`.
+  `_build_support_nb.py` `OUTBASE` → `analysis/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`.
   (Old multinomial outputs `results/grenenet_kmate_arch3` / `seedmix_kmate_arch3` were
   DELETED 2026-07-08 (~1.6 TB) so they can't be used by mistake; the old-panel scripts that
   read them are archived under `analysis/grenenet_gea/archive/oldpanel_arch3_retired/`.)
@@ -97,7 +97,18 @@ refresh the `EXPORT_MANIFEST.md` / `push_gea_to_drive.sh` export set.
 
 ---
 
-## GROUP D — window-mode chain  🅧 STALE, NOT BEING UPDATED (decision 2026-07-07)
+## GROUP D — window-mode chain  🅧 RETIRED (decision 2026-07-07, made final 2026-07-10)
+
+> **RESOLVED (2026-07-10):** the "is this still a live analysis?" question below is answered:
+> **no, retired.** `hapfreq/`, `gen9_window/`, `window_vs_global/`, and `sv_adaptive/` (code + data)
+> are consolidated into `analysis/grenenet_gea/archive/window_hapfreq_retired/`. The ~60 consumer
+> scripts across `analysis/grenenet_gea/` (`founder_gwas_multisite.py`, `cross_site_winners*`,
+> `derive_climate_axis.py`, `multisite_climate_perm.py`, `founder_gwas_231.py`,
+> `ecotype_selection_site.py`, `build_fitness_table.py`, the `_temporal_*`/`_sv_*`/`_build_*_nb.py`
+> family, etc.) were left in place but had their `results/grenenet_gea/{hapfreq,gen9_window,
+> window_vs_global}` / `analysis/grenenet_gea/sv_adaptive` path references repointed to the new
+> archive location so they stay internally consistent (they remain unrunnable — the underlying
+> `grenenet_kmate_window*` store is deleted — this is archaeology, not a live pipeline).
 
 > **DECISION (2026-07-07):** window mode is **not in production use** (the GrENE-Net cohort is
 > analyzed in GLOBAL mode — heavy selfing). The entire window-mode chain below is therefore left
@@ -114,9 +125,11 @@ refresh the `EXPORT_MANIFEST.md` / `push_gea_to_drive.sh` export set.
 > `founder_gwas_multisite.py` is part of this stale chain and is not.)
 >
 > **Archived (2026-07-07):** the raw `grenenet_kmate_window` / `_seedmix` / `_smoke` result
-> directories (~1.6 TB) have been moved to `results/archive/` given this decision — any script in
-> this stale chain that still points at `results/grenenet_kmate_window*` will need repointing to
-> the archived location if this chain is ever revived.
+> directories (~1.6 TB) have been moved to `archive/results_archive_stale/` given this decision
+> (relocated from the intermediate `results/archive/` on 2026-07-10, see `archive/README.md`) —
+> any script in this stale chain that still points at `results/grenenet_kmate_window*` will need
+> repointing to `archive/results_archive_stale/grenenet_kmate_window*` if this chain is ever
+> revived.
 
 <details><summary>Stale window-mode chain (archived detail — not being rerun)</summary>
 The global rerun does **NOT** regenerate the separate **window-mode** run

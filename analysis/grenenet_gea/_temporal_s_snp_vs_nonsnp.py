@@ -19,7 +19,7 @@ CAVEAT unchanged: pool AF is a GLOBAL-mode founder projection -> s of a variant 
 founder-h slopes; SNP-on-same-founders shares it. SNPs = realized-drift null; cannot separate SV-
 specific selection from riding selected haplotypes (needs independent local-mode/vg SV AF).
 
-Env: kmate. Writes results/grenenet_gea/sv_adaptive/temporal_s_snp_vs_nonsnp.csv (+_summary.csv).
+Env: kmate. Writes analysis/grenenet_gea/sv_adaptive/temporal_s_snp_vs_nonsnp.csv (+_summary.csv).
 """
 import os, sys, glob
 import numpy as np

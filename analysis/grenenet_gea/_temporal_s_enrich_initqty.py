@@ -15,7 +15,7 @@ s = plot-replicate mean logit-slope per variant per site (from _temporal_s_plots
 Strata = global p0 deciles. Pool contingency counts across the 31 sites; also per-site enrich for a
 sign test. Purged (down) is the focal direction (that's where any SV signal lives); UP reported too.
 
-Env: kmate. Writes results/grenenet_gea/sv_adaptive/temporal_s_enrich_initqty.csv.
+Env: kmate. Writes analysis/grenenet_gea/sv_adaptive/temporal_s_enrich_initqty.csv.
 """
 import os, sys, glob
 import numpy as np

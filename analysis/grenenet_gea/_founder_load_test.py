@@ -23,7 +23,7 @@ and ask:
        fully a founder-carrier-composition effect (audit finding M1/M4).
 
 Env: kmate. Reads selection_s_matrix.npz, s_climate_slope.npz, panel/arch3, af_store.
-Writes results/grenenet_gea/sv_adaptive/founder_load_test.npz + prints summary.
+Writes analysis/grenenet_gea/sv_adaptive/founder_load_test.npz + prints summary.
 """
 import os, sys, glob
 import numpy as np, pandas as pd

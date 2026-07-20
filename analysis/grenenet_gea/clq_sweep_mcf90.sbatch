@@ -16,10 +16,10 @@
 
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/grenenet_gea/blocks_mcf90
+mkdir -p logs analysis/grenenet_gea/blocks_mcf90
 export LD_LIBRARY_PATH=/usr/lib64:${LD_LIBRARY_PATH:-}
 export MINCF=0.9
-export BLOCKS_DIR=results/grenenet_gea/blocks_mcf90
+export BLOCKS_DIR=analysis/grenenet_gea/blocks_mcf90
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 RSCRIPT=/global/home/users/tbellg/miniforge3/envs/r_env/bin/Rscript
 BIGLD=/global/scratch/users/tbellg/HapFM/bin
@@ -31,7 +31,7 @@ case $SLURM_ARRAY_TASK_ID in
     echo "[$(date)] Chr1 CLQ$CLQ blocks (min-called-frac 0.9)"
     $PY analysis/grenenet_gea/recompute_blocks.py --var-pa-prefix "$VP" \
         --chrom Chr1 --corr 0.2 --window 50 --maf 0.05 --clqcut "$CLQ" --min-called-frac 0.9 \
-        --out results/grenenet_gea/blocks_mcf90/chr1_clq${CLQ} \
+        --out analysis/grenenet_gea/blocks_mcf90/chr1_clq${CLQ} \
         --rscript "$RSCRIPT" --bigld-dir "$BIGLD"
     echo "[$(date)] Chr1 CLQ$CLQ frontier (clustering)"
     $PY -u analysis/grenenet_gea/block_unit_frontier.py --clqcut "$CLQ" --chrom Chr1

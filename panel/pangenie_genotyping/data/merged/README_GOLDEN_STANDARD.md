@@ -130,8 +130,14 @@ For the hapFIRE methods-comparison column on the v3 panel, the conversion pipeli
 
 ## Stats locations
 
-- Per-record / per-sample / per-size-class TSVs: `preprocess_qc/output/merged_stats/founders_231_*.tsv*`
-- Visual notebook: `preprocess_qc/notebooks/production_vcf_stats.ipynb`
+- **Archived 2026-07-10** (this panel is pre-arch3, superseded): per-record /
+  per-sample / per-size-class TSVs now at
+  `archive/preprocess_qc/output/merged_stats/founders_231_*.tsv*`; visual notebook
+  at `archive/preprocess_qc/notebooks/production_vcf_stats.ipynb`.
+- The arch3 (current production panel) equivalent — variant-class composition,
+  SV size spectrum, AF/missingness distributions, genomic density — is
+  `analysis/grenenet_gea/notebooks/panel_stats_arch3.ipynb`, backed by the
+  numbers in `results/panel_stats/PANEL_STATS.md`.
 
 ## Audit trail
 

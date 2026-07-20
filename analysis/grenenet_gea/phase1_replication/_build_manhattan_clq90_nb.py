@@ -53,7 +53,7 @@ classes."""))
 C.append(nbf.v4.new_code_cell(r"""import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 
-CLQ    = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/clq90"
+CLQ    = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/clq90"
 WDIR   = f"{CLQ}/wza"
 WDIR_IN = f"{CLQ}/wza_in"                  # per-record input WZA actually consumes (post reblock, pre-aggregation)
 CLASSES = ["snp", "nonsnp"]                # rows
@@ -233,8 +233,8 @@ axes[-1, 0].legend(fontsize=7, loc="upper right", framealpha=0.9)
 fig.suptitle("clq0.9-block WZA Manhattan — gen9, bio1, deg2 CORRECTED (cap 1000/350, no floor hack)",
              fontsize=11)
 fig.tight_layout(rect=[0, 0, 1, 0.97])
-OUT_PNG = ("/global/scratch/users/tbellg/kmate/results/grenenet_gea/"
-           "phase1_replication/clq90/manhattan_clq90_deg2_grid.png")
+OUT_PNG = ("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/"
+           "phase1_replication/results/clq90/manhattan_clq90_deg2_grid.png")
 OUT_PDF = OUT_PNG[:-4] + ".pdf"
 fig.savefig(OUT_PNG, dpi=130, bbox_inches="tight")
 fig.savefig(OUT_PDF, bbox_inches="tight"); plt.show()

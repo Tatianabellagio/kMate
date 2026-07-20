@@ -37,3 +37,8 @@ onto a compute node.
 - **No co-author trailers in commits** (no `Co-Authored-By` / "Generated with
   Claude") — project policy.
 - Production pipeline is **arch3** (see the kMate docs / memory for details).
+- **Plotting convention: no chart titles, no subplot titles** (no
+  `ax.set_title()` / `fig.suptitle()`) in any matplotlib/seaborn figure —
+  notebook markdown headers + axis labels carry context instead. For small
+  multiples where each panel needs identity, use an in-panel corner annotation
+  (`ax.annotate`/`ax.text` in axes-fraction coords), not a title.

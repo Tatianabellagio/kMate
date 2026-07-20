@@ -25,7 +25,7 @@ alongside the projected per-variant AF.
 ## 0. Block / unit definitions (the unit map)
 
 **The units** (k-mer-covered, LD-grown; = kMate h-window candidate AND selection unit):
-- genome-wide: `results/grenenet_gea/blocks_mcf90/final_units_dynld_K500.tsv`; per-chrom
+- genome-wide: `analysis/grenenet_gea/blocks_mcf90/final_units_dynld_K500.tsv`; per-chrom
   `chr{N}_units_dynld_K500.tsv`. Cols: `chrom start_pos end_pos n_variants panel_kmers covered`.
   **22,939 units; 72% COVERED** (panel_kmers≥500 → local-fit; 16,403 units), 28% desert (global
   fallback). Median 32 var / 2.1 kb / 926 panel k-mers. Built by `dynamic_ld_blocks.py` (grow CLQ0.9
@@ -46,14 +46,14 @@ alongside the projected per-variant AF.
 
 ## 1. Production window-mode run
 - Runner: `grenenet/run_site_array_perchrom.sh` with `BLOCK_MODE=window`,
-  `BLOCKS_DIR=results/grenenet_gea/blocks_mcf90` (units `chr{N}_units_dynld_K500.tsv`,
+  `BLOCKS_DIR=analysis/grenenet_gea/blocks_mcf90` (units `chr{N}_units_dynld_K500.tsv`,
   22,939 units, 72% k-mer-covered), `MIN_KMERS=50`. Output: `results/grenenet_kmate_window/`.
 - 2,168 / 2,168 samples. Per sample: `*_ChrN.h_blocks_per_chrom.npz` (per-unit h) +
   `*_ChrN.tsv` / `*.tsv` (projected per-variant AF). ~1.6 TB.
 
 ## 2. Window vs global AF (does the unit-local h change AF?)
 `compare_window_vs_global_af.py` + `compare_win_vs_glob.sbatch` + `aggregate_window_vs_global.py`
-→ `results/grenenet_gea/window_vs_global/` (SUMMARY.txt, plot).
+→ `analysis/grenenet_gea/archive/window_hapfreq_retired/window_vs_global/` (SUMMARY.txt, plot).
 - 18.4B variant-comparisons, all 2168 samples. **median Pearson r 0.995**, mean |ΔAF| 0.0077.
 - ~48% of variants ~identical (desert/global-fallback); **17% shift >0.01, 1.1% >0.10** —
   window redistributes AF within the covered LD units (the haplotype-resolved refinement).
@@ -63,14 +63,15 @@ Sites 4 & 54 (175 samples) + the 8 SEEDMIX gen0 reps had their **global** TSVs o
 10.33M panel; the rest are on the 8.49M segregating-only panel. Because the filter only
 changed V_pa (projection), NOT K_pa (h estimation), correcting = an exact **row-subset**.
 - `correct_oldpanel_sample.py` + `correct_oldpanel.sbatch`: line-wise subset via
-  `old2new_mask.npy`, originals archived to `*_oldpanel_archive/`. Verified: per-chrom mask
+  `old2new_mask.npy`, originals archived to `archive/*_oldpanel_archive/` (moved from
+  `results/*_oldpanel_archive/` 2026-07-10, see `archive/README.md`). Verified: per-chrom mask
   slices reproduce new-panel positions exactly; kept rows byte-identical; dropped rows
   monomorphic. **All raw TSVs (cohort arch3 + SEEDMIX) are now 8.49M.**
 - The old→new mask handling code was then DELETED from `build_af_store.py`, `build_p0.py`,
   `build_two_stage_pooled.py`, `_build_support_nb.py` (they now assert `len == n_full`).
 
 ## 4. Block breakage with block-based h (founder vs evolved PC1-VE)
-`analysis/grenenet_gea/gen9_window/` (build_gather_index → extract_sample → merge_pools →
+`analysis/grenenet_gea/archive/window_hapfreq_retired/gen9_window/` (build_gather_index → extract_sample → merge_pools →
 founder_vs_evolved_dynld) → notebook `notebooks/block_breakage_window_vs_global.ipynb`.
 Recomputes the founder-vs-evolved-PC1-VE breakage diagnostic on the **dynld units**, with the
 evolved gen9 PC1-VE from window h vs global AF (same 355 pools + same records).
@@ -80,5 +81,8 @@ evolved gen9 PC1-VE from window h vs global AF (same 355 pools + same records).
   plot because dynld units are coarser (median 32 var vs 7), not because of the AF mode.
 
 ## Next
-GEA selection testing on the per-unit `h` (Pipeline B v2, `PIPELINE_B_POOLED_MODEL.md`):
-pool plots → site freq → weighted within-site slope → IV climate regression w/ permutation null.
+
+Not window mode. Pipeline B v2 (`PIPELINE_B_POOLED_MODEL.md`) depended on a per-unit
+window-mode `h`, which is dead: given ~97% selfing + ~3 generations, a window-mode rerun
+is not worth doing (`GLOBAL_MODE_DECISION.md`). GEA selection testing proceeds on
+`--unit chrom` (global-mode) AF only.

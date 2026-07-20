@@ -55,9 +55,9 @@ C.append(nbf.v4.new_code_cell(r"""import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import chi2
 
-CLQ = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/clq90"
+CLQ = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/clq90"
 SITE = f"{CLQ}/kendall_fix_test/site_collapsed"
-MSRDIR = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea_newpanel/msr_kendall"
+MSRDIR = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/msr_kendall"
 CLASSES = ["snp", "nonsnp"]
 METHODS = ["pool_raw", "pool_gc", "site_gc", "msr"]
 METHOD_LABEL = {"pool_raw": "pool-level RAW (current, 355 pools)",

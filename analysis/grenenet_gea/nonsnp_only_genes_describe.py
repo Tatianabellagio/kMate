@@ -7,7 +7,7 @@
     (cc_function) where a Swiss-Prot/TrEMBL entry exists -- a fuller functional sentence than the
     Ensembl one-liner. Best-effort; genes with no UniProt hit just keep the Ensembl description.
 
-Writes results/grenenet_gea/varexp/nonsnp_only_genes_described.csv (nonsnp_only_genes.csv + columns
+Writes analysis/grenenet_gea/varexp/nonsnp_only_genes_described.csv (nonsnp_only_genes.csv + columns
 ensembl_description, biotype, uniprot_protein, uniprot_function). Env: kmate (needs internet;
 compute node reaches rest.ensembl.org + rest.uniprot.org).
 """

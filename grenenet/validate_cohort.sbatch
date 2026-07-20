@@ -18,6 +18,6 @@ cd /global/scratch/users/tbellg/kmate
 echo "host=$(hostname)  $(date)"
 python grenenet/validate_cohort.py \
   --manifest data/sample_manifest_usesample.tsv \
-  --out-dir results/grenenet_gea/rerun_kfw_hb/evolved \
+  --out-dir analysis/grenenet_gea/rerun_kfw_hb/evolved \
   --fix
 echo "[$(date)] DONE"

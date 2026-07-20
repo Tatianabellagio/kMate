@@ -5,7 +5,7 @@ Takes the WZA block results (build_wza.py), computes BH-FDR + Bonferroni on the
 SNP-number-corrected block p (Z_pVal), reconstructs each block's genomic SPAN from
 its member SVs, and annotates with ALL TAIR10 genes overlapping that span.
 
-Outputs (results/grenenet_gea/gea/wza/):
+Outputs (analysis/grenenet_gea/gea/wza/):
   significant_blocks.csv   every block with q<FDR_THRESH OR Bonferroni, both stats,
         cols: stat, block, chrom, start, end, span_bp, n_sv, SNPs, Z, Z_pVal, fdr,
               bonferroni, dir, n_up, n_dn, n_genes, genes, gene_names, flower_loci

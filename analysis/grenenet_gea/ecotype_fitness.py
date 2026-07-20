@@ -30,7 +30,7 @@ Per-founder CONDITIONAL-NEUTRALITY class from the zone means + a plot/site boots
 Also a RELIABILITY proxy: cross-chromosome SD of h (identifiability wobble; founders whose
 h disagrees across the 5 chromosomes are the non-identifiable ones — h-certainty work).
 
-Outputs -> results/grenenet_gea/ecotype_fitness/
+Outputs -> analysis/grenenet_gea/ecotype_fitness/
   ecotype_fitness.csv     (founder, h0, + w_/c_ for both flavours, cn_class, xchrom_sd)
   founder_site_dh.npz     (founders, sites, bio1, zone, DH_rel, DH_cen, H0)
   sample_global_h.npz     (cache: samples, H[n_samp x 231], SD, founders) — built once

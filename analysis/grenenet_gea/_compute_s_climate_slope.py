@@ -10,7 +10,7 @@ hitchhiking offset and the p0/logit artifact (both per-variant constants across 
  (2) SIGN ENRICHMENT vs bio1 (user's idea): per site, frequency-matched fraction with s<0 (purged)
      for SV / indel / matched-SNP; regress the SV-SNP purging excess on bio1. Saved per site.
 
-Env: kmate. Writes results/grenenet_gea/sv_adaptive/s_climate_slope.npz + _sign_by_site.csv .
+Env: kmate. Writes analysis/grenenet_gea/sv_adaptive/s_climate_slope.npz + _sign_by_site.csv .
 """
 import os, sys, glob
 import numpy as np, pandas as pd

@@ -28,8 +28,8 @@ def main():
     ap.add_argument("--class", dest="cls", required=True, choices=["snp", "sv", "smallindel"])
     ap.add_argument("--gen", type=int, default=9)
     ap.add_argument("--climate", default="bio1")
-    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")  # input
-    ap.add_argument("--out", default=f"{lib.GEA}/wza_investigation/pc1")                 # output (relocated)
+    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/results/class_matrices")  # input
+    ap.add_argument("--out", default=f"{lib.GEA}/wza_investigation/results/pc1")                 # output (relocated)
     ap.add_argument("--min-snps", type=int, default=2)
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)

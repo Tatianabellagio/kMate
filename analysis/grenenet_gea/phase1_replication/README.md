@@ -73,7 +73,7 @@ WZA at deg7-cap2000 (primary) + deg7-nocap + deg2nocap; CAM5 reproduces in all 3
 - `README.md` — this file (plan, decisions, WZA review, status).
 - *(scripts added as built)* — `build_class_matrices.py`, `run_kendall.py`,
   `run_wza.py`, `run_lfmm.*`, `run_binomial.py`, `compare_blocks.py`.
-- Outputs → `results/grenenet_gea/phase1_replication/`.
+- Outputs → `analysis/grenenet_gea/phase1_replication/results/`.
 
 ## Provenance
 - Original phase-1 pipeline: `/global/scratch/users/tbellg/gea_grene-net/`

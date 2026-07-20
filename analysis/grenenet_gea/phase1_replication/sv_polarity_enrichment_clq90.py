@@ -25,10 +25,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 import lib
 
-WZA_DIR = f"{lib.GEA}/phase1_replication/clq90/wza"
-COMPOSITION = f"{lib.GEA}/driver_passenger/block_composition_kendall_gen9_bio1.csv"
-POLARITY = f"{lib.GEA}/phase1_replication/clq90/block_polarity_composition.csv"
-OUT = f"{lib.GEA}/phase1_replication/clq90/sv_polarity_enrichment_clq90.csv"
+WZA_DIR = f"{lib.GEA}/phase1_replication/results/clq90/wza"
+COMPOSITION = f"{lib.GEA}/driver_passenger/results/block_composition_kendall_gen9_bio1.csv"
+POLARITY = f"{lib.GEA}/phase1_replication/results/clq90/block_polarity_composition.csv"
+OUT = f"{lib.GEA}/phase1_replication/results/clq90/sv_polarity_enrichment_clq90.csv"
 
 
 def bh(p):

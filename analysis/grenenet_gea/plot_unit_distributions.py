@@ -5,7 +5,7 @@ Run in the plotting/basic env."""
 import numpy as np, pandas as pd
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 
-D = pd.read_csv("results/grenenet_gea/blocks_mcf90/final_units_dynld_K500_metrics.csv")
+D = pd.read_csv("analysis/grenenet_gea/blocks_mcf90/final_units_dynld_K500_metrics.csv")
 cov = D[D.covered]; des = D[~D.covered]
 fig, ax = plt.subplots(2, 2, figsize=(13, 9))
 
@@ -39,8 +39,8 @@ ax[1, 1].set_title(f"PC1 explained variance (median {D.pc1_ve.median():.2f})"); 
 
 plt.suptitle(f"Final dynamic-LD units (K=500), n={len(D):,}  |  covered {int(D.covered.sum()):,} ({100*D.covered.mean():.0f}%)",
              fontsize=13)
-plt.tight_layout(); plt.savefig("results/grenenet_gea/blocks_mcf90/unit_distributions.png", dpi=110)
-print("wrote results/grenenet_gea/blocks_mcf90/unit_distributions.png")
+plt.tight_layout(); plt.savefig("analysis/grenenet_gea/blocks_mcf90/unit_distributions.png", dpi=110)
+print("wrote analysis/grenenet_gea/blocks_mcf90/unit_distributions.png")
 for c in ["n_variants", "panel_kmers", "mean_r2", "pc1_ve"]:
     v = D[c].dropna()
     print(f"  {c:>12}: median {v.median():.3f}  q25 {v.quantile(.25):.3f}  q75 {v.quantile(.75):.3f}")

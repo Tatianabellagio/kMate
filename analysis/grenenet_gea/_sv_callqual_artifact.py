@@ -21,8 +21,8 @@ always a unique key (~5.6% of chr1 rows share a length-key with a same-position,
 different-sequence allele) -- duplicates are mean-aggregated before joining, matching
 how kMate's TSV already collapses to one row per (locus,ref_len,alt_len) (lib.rec_key).
 
-Env: kmate. Reads results/grenenet_gea/sv_adaptive/{s_climate_slope.npz,vcf_callqual_chr*.tsv}.
-Writes results/grenenet_gea/sv_adaptive/sv_callqual_artifact.npz + prints a text summary.
+Env: kmate. Reads analysis/grenenet_gea/sv_adaptive/{s_climate_slope.npz,vcf_callqual_chr*.tsv}.
+Writes analysis/grenenet_gea/sv_adaptive/sv_callqual_artifact.npz + prints a text summary.
 """
 import os, sys, glob
 import numpy as np, pandas as pd

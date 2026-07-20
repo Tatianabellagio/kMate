@@ -29,7 +29,7 @@ per founder so divergence-matching removes the residual):
 Causal tier (--causal-only): restrict to SVs in low founder-LD (max r2 < 0.2 to any common SNP
 in its cis window) -- the only SVs where no co-segregating SNP can be the driver.
 
-Env: kmate.  Writes results/grenenet_gea/sv_adaptive/sv_winning_genetics{_suffix}.{csv,json}.
+Env: kmate.  Writes analysis/grenenet_gea/sv_adaptive/sv_winning_genetics{_suffix}.{csv,json}.
 """
 import os, sys, json, glob
 import numpy as np
@@ -38,7 +38,7 @@ import scipy.sparse as sp
 from scipy import stats
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
-from ecotype_selection_site import genome_h
+from lib import genome_h
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 CH = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
@@ -53,7 +53,7 @@ EPS = 1e-3
 
 def per_founder_selection():
     """sel_DH[site,f] and sel_SLOPE[site,f] (nsite x 231), + site ids and p0."""
-    c = np.load("results/grenenet_gea/fitness/sample_genome_h.npz", allow_pickle=True)
+    c = np.load("analysis/grenenet_gea/fitness/sample_genome_h.npz", allow_pickle=True)
     H = c["H"]; samples = c["samples"].astype(str); founders = c["founders"].astype(str)
     hmap = {s: i for i, s in enumerate(samples)}
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]

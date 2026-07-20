@@ -43,7 +43,7 @@ pd.set_option("display.max_rows", 600)
 pd.set_option("display.max_colwidth", 90)
 pd.set_option("display.width", 200)
 
-CSV = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/multiaxis/nonsnp_specific_genes.csv"
+CSV = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/multiaxis/nonsnp_specific_genes.csv"
 d = pd.read_csv(CSV)
 # one row per gene (a gene can appear via >1 block; keep the block with most flags)
 g = (d[d.gene != ""].sort_values("n_flags", ascending=False)
@@ -97,7 +97,7 @@ All unique genes, sorted by how many axis-model combos flag them. Written also t
 
 C.append(nbf.v4.new_code_cell(r"""full = g[["block","chrom","start","end","symbol","gene","description",
                           "category","n_flags","axes_nonsnp_specific","models","never_snp_hit"]].copy()
-full.to_csv("/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/"
+full.to_csv("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/"
             "multiaxis/nonsnp_specific_genes_table.csv", index=False)
 full"""))
 

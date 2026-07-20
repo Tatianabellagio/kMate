@@ -19,7 +19,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
-MA = f"{lib.GEA}/phase1_replication/multiaxis"
+MA = f"{lib.GEA}/phase1_replication/results/multiaxis"
 
 # (source relpath template, pval column in source) per output model name
 SRC = {

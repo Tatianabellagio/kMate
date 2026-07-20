@@ -26,7 +26,7 @@ cells.append(nbf.v4.new_code_cell(
 '''import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 
-LFMM = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/lfmm"
+LFMM = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/lfmm"
 PLOTS = "/global/home/users/tbellg/scratch/kmate/analysis/grenenet_gea/cam5_replication/plots"
 STEM = f"{LFMM}/lfmm_snp_gen9"
 
@@ -86,7 +86,7 @@ suppressed). `frac_top_decile` ≈ 0.10 indicates a flat (well-calibrated) null.
 
 cells.append(nbf.v4.new_code_cell(
 '''import os
-KS = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/cam5_replication/ksweep_gif_snp_gen9_bio1.csv"
+KS = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/cam5_replication/results/ksweep_gif_snp_gen9_bio1.csv"
 if os.path.exists(KS):
     sw = pd.read_csv(KS)
     display(sw)

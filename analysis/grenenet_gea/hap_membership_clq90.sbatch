@@ -16,10 +16,10 @@
 # units give better localization. Identical HapFM-xmeans clustering rule, just finer blocks.
 set -eo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/grenenet_gea/blocks_mcf90/hap_membership
+mkdir -p logs analysis/grenenet_gea/blocks_mcf90/hap_membership
 CHRS=(Chr1 Chr2 Chr3 Chr4 Chr5); CHR=${CHRS[$SLURM_ARRAY_TASK_ID]}
 CHRLC=$(echo "$CHR" | tr 'A-Z' 'a-z')
-UNITS="results/grenenet_gea/blocks_mcf90/${CHRLC}_clq0.9_blocks_clq0.9.tsv"
+UNITS="analysis/grenenet_gea/blocks_mcf90/${CHRLC}_clq0.9_blocks_clq0.9.tsv"
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 echo "[$(date)] $CHR clq0.9 haplotype membership build from $UNITS"
 $PY -u analysis/grenenet_gea/build_hap_membership.py --chrom "$CHR" --units "$UNITS" --tag clq90 \

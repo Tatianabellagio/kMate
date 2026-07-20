@@ -11,7 +11,7 @@ absorbed founders (low p0) have HIGH mean_ac / LOW priv; and a founder is absorb
 chromosomes where its k-mers are least private (per-(founder,chrom) test).
 
 Reuses diag_9761.py's loading. Env: kmate. Heavy (5 x ~500MB k-mer matrices) -> background.
--> results/grenenet_gea/seedmix_validation/kmer_identifiability.npz + prints.
+-> analysis/grenenet_gea/seedmix_validation/kmer_identifiability.npz + prints.
 """
 import numpy as np, glob, os, sys, time
 from scipy.sparse import load_npz
@@ -21,7 +21,7 @@ import lib
 
 PANEL="data/kmer_pa_231_arch3_filt2inv/kmer_pa"
 CH=[f"Chr{i}" for i in range(1,6)]; N=231
-OUT="results/grenenet_gea/seedmix_validation"; os.makedirs(OUT,exist_ok=True)
+OUT="analysis/grenenet_gea/seedmix_validation"; os.makedirs(OUT,exist_ok=True)
 t0=time.time()
 
 # founder order of the k-mer panel (cheap: npz loads one key lazily)

@@ -17,7 +17,7 @@ cd /global/scratch/users/tbellg/kmate
 source analysis/grenenet_gea/phase1_replication/multiaxis/axes.sh
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 PR=analysis/grenenet_gea/phase1_replication
-MA=results/grenenet_gea/phase1_replication/multiaxis
+MA=analysis/grenenet_gea/phase1_replication/results/multiaxis
 i=${SLURM_ARRAY_TASK_ID}; AXIS=$(axis_for $i); C=$(cls_for $i)
 CAP=1000; [ "$C" = "nonsnp" ] && CAP=350
 echo "== host $(hostname) | ma_wza $C $AXIS (cap=$CAP) =="

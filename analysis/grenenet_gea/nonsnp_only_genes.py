@@ -10,7 +10,7 @@ across:
   - per-site single-site scans (31 gardens)
 Union the non-SNP-only blocks, map each to its clq0.9 interval -> overlapping TAIR10 genes.
 
-Writes results/grenenet_gea/varexp/nonsnp_only_blocks.csv (one row per block) and
+Writes analysis/grenenet_gea/varexp/nonsnp_only_blocks.csv (one row per block) and
 nonsnp_only_genes.csv (one row per gene; UniProt descriptions filled in by
 nonsnp_only_genes_describe.py). Env: kmate.
 """

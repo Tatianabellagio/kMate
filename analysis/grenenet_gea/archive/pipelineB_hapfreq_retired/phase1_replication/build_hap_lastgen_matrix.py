@@ -25,7 +25,7 @@ contemporary filter MAF>=--maf-min over the 355 pools + require variation. Each 
 haplotype also carries its block's SV content (does the block span overlap a panel SV?)
 for the downstream SV-enrichment test.
 
-Outputs (--out, default results/grenenet_gea/phase1_replication/class_matrices):
+Outputs (--out, default analysis/grenenet_gea/phase1_replication/results/class_matrices):
   hap_gen9_af.npy        float32 [355 x n_kept]        per-pool haplotype freq
   hap_gen9.records.csv   hap_id,chrom,pos,ref_len,alt_len,MAF,block(+rich cols)
                          row-aligned to the matrix columns; consumed by run_kendall.py

@@ -29,7 +29,7 @@ import lib
 
 RSCRIPT = "/global/home/users/tbellg/miniforge3/envs/r_env/bin/Rscript"
 SUSIE_R = f"{HERE}/susie_one.R"
-DP = f"{lib.GEA}/driver_passenger"
+DP = f"{lib.GEA}/driver_passenger/results"
 
 
 def run_block(npz_path: str, n: int, tmpd: str, env: dict):

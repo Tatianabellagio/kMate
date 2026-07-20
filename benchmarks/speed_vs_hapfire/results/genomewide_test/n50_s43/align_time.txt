@@ -1,0 +1,27 @@
+	Command being timed: "bash -c 
+    set -euo pipefail
+    /global/home/users/tbellg/miniforge3/envs/kmate/bin/bwa mem -t 8 /global/scratch/users/tbellg/pang/ref_xing/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa /global/scratch/users/tbellg/kmate/benchmarks/speed_vs_hapfire/sims_genomewide_test/cov10_n50_g0_s43_p231_genomewide/reads/r1.fq /global/scratch/users/tbellg/kmate/benchmarks/speed_vs_hapfire/sims_genomewide_test/cov10_n50_g0_s43_p231_genomewide/reads/r2.fq 2> /global/scratch/users/tbellg/kmate/benchmarks/speed_vs_hapfire/results/genomewide_test/n50_s43/bwa.log         | /global/home/users/tbellg/miniforge3/envs/kmate/bin/samtools sort -@ 8 -o /global/scratch/users/tbellg/kmate/benchmarks/speed_vs_hapfire/results/genomewide_test/n50_s43/sim.srt.bam -
+    /global/home/users/tbellg/miniforge3/envs/kmate/bin/samtools index /global/scratch/users/tbellg/kmate/benchmarks/speed_vs_hapfire/results/genomewide_test/n50_s43/sim.srt.bam
+"
+	User time (seconds): 844.99
+	System time (seconds): 7.67
+	Percent of CPU this job got: 747%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 1:54.06
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 3525700
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 2546327
+	Voluntary context switches: 772200
+	Involuntary context switches: 445694
+	Swaps: 0
+	File system inputs: 502976
+	File system outputs: 723856
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

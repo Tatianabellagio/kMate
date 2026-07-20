@@ -14,7 +14,7 @@ the candidate list.
 
 Usage:
   PLOTPY=/global/home/users/tbellg/miniforge3/envs/plotting/bin/python
-  $PLOTPY analysis/grenenet_gea/plot_candidates.py --candidates results/grenenet_gea/gea/poster_candidates.csv --n 6
+  $PLOTPY analysis/grenenet_gea/plot_candidates.py --candidates analysis/grenenet_gea/gea/poster_candidates.csv --n 6
 """
 from __future__ import annotations
 import argparse, os, sys

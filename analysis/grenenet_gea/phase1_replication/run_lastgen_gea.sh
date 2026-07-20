@@ -13,8 +13,8 @@ cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 PR=analysis/grenenet_gea/phase1_replication
 WZA=analysis/grenenet_gea/wza_script.py
-KEN=results/grenenet_gea/phase1_replication/kendall/kendall_snp_gen9_bio1.csv
-WDIR=results/grenenet_gea/phase1_replication/wza
+KEN=analysis/grenenet_gea/phase1_replication/results/kendall/kendall_snp_gen9_bio1.csv
+WDIR=analysis/grenenet_gea/phase1_replication/results/wza
 
 echo "== host $(hostname) | mem ${SLURM_MEM_PER_NODE:-?} =="
 
@@ -41,7 +41,7 @@ run_wza deg2nocap   2 40 0
 echo "== STEP 4: CAM5 (block 2_1265) report =="
 $PY - <<'EOF'
 import pandas as pd, numpy as np, scipy.stats as st, glob, os
-WDIR="results/grenenet_gea/phase1_replication/wza"; CAM5="2_1265"
+WDIR="analysis/grenenet_gea/phase1_replication/results/wza"; CAM5="2_1265"
 def bh(p):
     p=np.asarray(p,float); n=len(p); o=np.argsort(p); q=np.empty(n)
     q[o]=(p[o]*n)/(np.arange(n)+1); q[o]=np.minimum.accumulate(q[o][::-1])[::-1]; return np.clip(q,0,1)

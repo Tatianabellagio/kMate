@@ -9,7 +9,7 @@ site, from parallelism.npz). PicMin:
   3. calibrate that min-over-orders statistic against a uniform null -> per-locus PicMin p-value; BH-FDR.
 Then the SV-vs-SNP contrast: fraction of SVs that are repeated-adaptation loci vs frequency-matched SNPs.
 
-Env: kmate. Reads results/grenenet_gea/sv_adaptive/parallelism.npz.
+Env: kmate. Reads analysis/grenenet_gea/sv_adaptive/parallelism.npz.
 """
 import os, sys
 import numpy as np

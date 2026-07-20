@@ -19,7 +19,7 @@ strongly-MOVING haplotypes than matched SNPs" — it CANNOT separate non-SNP-SPE
 non-SNPs riding selected haplotypes (passenger co-occurrence). It is the honest answer to the literal
 frequency question; an independent per-variant SV AF (local-mode/vg) is the only way past that.
 
-Env: kmate. Writes results/grenenet_gea/sv_adaptive/temporal_selection_snp_vs_nonsnp.csv (per site)
+Env: kmate. Writes analysis/grenenet_gea/sv_adaptive/temporal_selection_snp_vs_nonsnp.csv (per site)
 and _summary.csv (across sites).
 """
 import os, sys, glob

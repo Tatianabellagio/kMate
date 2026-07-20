@@ -112,7 +112,7 @@ def main():
                       names=["chrom", "src", "feat", "start", "end", "sc", "st", "fr", "attr"])
     gff = gff[gff.chrom.isin(CHROMS)]
     genes = gff[gff.feat == "gene"]; tes = gff[gff.feat == "transposable_element"]
-    L = pd.read_csv("results/grenenet_gea/sv_adaptive/sv_landscape_clq0.9.csv")
+    L = pd.read_csv("analysis/grenenet_gea/sv_adaptive/sv_landscape_clq0.9.csv")
     L["unit"] = L.block_id if "block_id" in L else (L.chrom + ":" + L.start.astype(str) + "-" + L.end.astype(str))
     nkept = L.set_index("unit").n_kept.to_dict() if "n_kept" in L else {}
 

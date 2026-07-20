@@ -8,7 +8,7 @@
 > cohort (or retire this plan). `baypass_build_inputs.py` carries the same warning.
 
 > **Status (2026-07-06): PLAN, not a completed analysis.** Only the CORE (Omega) model was
-> smoke-tested at site 4 (`results/grenenet_gea/hapfreq/baypass_temporal_site4/core_baypass.log`);
+> smoke-tested at site 4 (`analysis/grenenet_gea/archive/window_hapfreq_retired/hapfreq/baypass_temporal_site4/core_baypass.log`);
 > **no C2 contrast results exist yet.** The method-research doc
 > `KINSHIP_TEMPORAL_METHODS_RESEARCH.md` is merged into this file (Appendix below). Its full raw
 > deep-research claims dump (~400 lines) was dropped in the 2026-07-06 consolidation but is preserved

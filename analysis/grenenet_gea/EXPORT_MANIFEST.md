@@ -8,7 +8,7 @@ replication himself for talks. The Drive layout mirrors the cluster folder names
 > **⚠️ Stale exports (2026-07-08).** The WZA CSVs below were built on **PRE-FIX AF**
 > (`results/grenenet_kmate_arch3/`, now retired) and **predate the full-panel Kf_w / `--unit chrom`
 > regeneration**. They should be **re-exported** after the downstream regen (production AF is now
-> `results/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/`) before being cited or presented.
+> `analysis/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/`) before being cited or presented.
 
 ## What's in the export (~7 MB)
 | Drive path (under `data/grenenet_gea/phase1_replication/`) | Source on cluster | What it is |
@@ -21,7 +21,7 @@ column (Manhattan y = −log10 `Z_pVal`).
 
 ## Deliberately NOT exported
 - **Code** — lives on GitHub (`Tatianabellagio/kMate`); no need to duplicate on Drive.
-- **Raw allele frequencies** — `results/grenenet_gea/af_store/` (52 GB), `gen_matrices/`
+- **Raw allele frequencies** — `analysis/grenenet_gea/af_store/` (52 GB), `gen_matrices/`
   (43 GB), `pool_matrices/` (35 GB), `class_matrices/`, LFMM `*.f64` memmaps. All large
   and rebuildable from the pipeline (`build_af_store.py` → `build_gen_matrices.py` →
   `build_pool_matrix.py`); they are not plotting inputs for the advisor.

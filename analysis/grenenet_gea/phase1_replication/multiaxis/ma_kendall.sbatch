@@ -16,7 +16,7 @@ cd /global/scratch/users/tbellg/kmate
 source analysis/grenenet_gea/phase1_replication/multiaxis/axes.sh
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 i=${SLURM_ARRAY_TASK_ID}; AXIS=$(axis_for $i); C=$(cls_for $i)
-OUT=results/grenenet_gea/phase1_replication/multiaxis/kendall
+OUT=analysis/grenenet_gea/phase1_replication/results/multiaxis/kendall
 echo "== host $(hostname) | kendall $C gen9 $AXIS =="
 $PY -u analysis/grenenet_gea/phase1_replication/run_kendall.py \
     --class "$C" --gen 9 --climate "$AXIS" --threads "${SLURM_CPUS_PER_TASK:-8}" --out "$OUT"

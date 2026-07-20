@@ -1,5 +1,14 @@
 # Pipeline B v2 — pooled-trajectory selection coefficients + inverse-variance climate regression
 
+> ## ⚠️ SUPERSEDED / DEAD (2026-07-15) — will not be revived
+> This spec runs on a **per-unit window-mode `h`**. Window mode is not being rerun for
+> GrENE-net (~97% selfing + ~3 generations makes it not worth it — `GLOBAL_MODE_DECISION.md`),
+> so this pipeline has no live input and won't be regenerated. It was implemented once
+> (`build_hapfreq_matrix.py` → ... → `build_hap_wza.py`) and has since been retired to
+> `archive/pipelineB_hapfreq_retired/` (see that dir's README). GEA selection testing on SVs
+> proceeds on `--unit chrom` (global-mode) AF instead — see `SV_TEMPORAL_PURGING_SUMMARY.md`.
+> Spec retained below for the record only.
+
 **Status: FINAL modeling spec** (frozen 2026-06-05). Implementation to follow this exactly.
 
 **Goal.** Find SVs whose allele frequency changes with climate, using the GrENE-net

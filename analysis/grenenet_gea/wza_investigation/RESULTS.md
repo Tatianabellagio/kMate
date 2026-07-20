@@ -1,9 +1,9 @@
 # WZA investigation — results (gen1 SNP × bio1, Kendall-τ)
 
-Inputs: `results/grenenet_gea/phase1_replication/kendall/kendall_snp_gen1_bio1.csv`
+Inputs: `analysis/grenenet_gea/phase1_replication/results/kendall/kendall_snp_gen1_bio1.csv`
 (1,989,384 SNP records, MAF≥0.05, 16,467 hapFIRE blocks). Code: `wza_core.py`,
 `run_investigation.py`, `centromere_check` (inline). Outputs + figs:
-`results/grenenet_gea/wza_investigation/`.
+`analysis/grenenet_gea/wza_investigation/results/`.
 
 SNPs/block fed to WZA: median **14**, q75 53, q95 656, **max 9,158** (atomized kMate
 records inflate vs the 3,028-SNP raw hapFIRE max).

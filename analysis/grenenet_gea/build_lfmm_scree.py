@@ -7,7 +7,7 @@ lightweight (it just reads the small CSV this writes). Re-run only if the SNP
 """
 import numpy as np, pandas as pd
 
-ROOT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
+ROOT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
 STEM = f"{ROOT}/phase1_replication/lfmm/lfmm_snp_gen9"
 OUT  = f"{ROOT}/lfmm/scree_snp_gen9.csv"
 

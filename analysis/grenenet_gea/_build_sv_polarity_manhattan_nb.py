@@ -40,8 +40,8 @@ import numpy as np, pandas as pd
 import matplotlib; import matplotlib.pyplot as plt
 plt.rcParams.update({'figure.dpi':120,'font.size':9})
 
-GEA = "/global/scratch/users/tbellg/kmate/results/grenenet_gea"
-WZA = f"{GEA}/phase1_replication/clq90/wza"
+GEA = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
+WZA = f"{GEA}/phase1_replication/results/clq90/wza"
 MODELS = ["kendall", "lfmm", "binomial"]
 CLASSES = ["nonsnp", "snp"]   # "all variants" (SV+indel) vs "SNP-only"
 CHROM_LEN = {"Chr1": 30427671, "Chr2": 19698289, "Chr3": 23459830,
@@ -60,8 +60,8 @@ def offsets():
     return off, cum
 OFF, TOTAL = offsets()
 
-comp = pd.read_csv(f"{GEA}/driver_passenger/block_composition_kendall_gen9_bio1.csv")
-pol = pd.read_csv(f"{GEA}/phase1_replication/clq90/block_polarity_composition.csv")
+comp = pd.read_csv(f"{GEA}/driver_passenger/results/block_composition_kendall_gen9_bio1.csv")
+pol = pd.read_csv(f"{GEA}/phase1_replication/results/clq90/block_polarity_composition.csv")
 pol_full = comp[["block","has_sv"]].merge(pol, on="block", how="left").fillna(0)
 pol_full["both_sv"] = (pol_full.n_ins_sv > 0) & (pol_full.n_del_sv > 0)
 print(f"blocks: {len(comp):,} | has_sv {int(comp.has_sv.sum()):,} | both_sv {int(pol_full.both_sv.sum()):,}")
@@ -117,7 +117,7 @@ fig.suptitle("clq0.9-block WZA Manhattan — gen9, bio1, deg2\n"
              "nonsnp = \"all variants\" (SV+indel pooled)  vs  snp = SNP-only  |  "
              "orange = has_sv, red = both ins+del SV, ringed = BH-sig", fontsize=11)
 fig.tight_layout(rect=[0, 0, 1, 0.94])
-out = f"{GEA}/phase1_replication/clq90/manhattan_sv_polarity_clq90.png"
+out = f"{GEA}/phase1_replication/results/clq90/manhattan_sv_polarity_clq90.png"
 fig.savefig(out, dpi=140)
 print("wrote", out)
 plt.show()

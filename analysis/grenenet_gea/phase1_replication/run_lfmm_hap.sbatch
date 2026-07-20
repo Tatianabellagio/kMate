@@ -13,12 +13,12 @@
 # SV-enrichment on the calibrated p. Compares lambda vs the raw Kendall (8.95).
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p analysis/grenenet_gea/phase1_replication/logs results/grenenet_gea/phase1_replication/lfmm
+mkdir -p analysis/grenenet_gea/phase1_replication/logs analysis/grenenet_gea/phase1_replication/results/lfmm
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PR=analysis/grenenet_gea/phase1_replication
-LDIR=results/grenenet_gea/phase1_replication/lfmm
-CMDIR=results/grenenet_gea/phase1_replication/class_matrices
+LDIR=analysis/grenenet_gea/phase1_replication/results/lfmm
+CMDIR=analysis/grenenet_gea/phase1_replication/results/class_matrices
 K=16
 
 echo "== build hap LFMM input (raw freq, z bio1) =="
@@ -30,8 +30,8 @@ $R $PR/run_lfmm_lastgen.R "$LDIR/lfmm_hap_gen9" $K "$LDIR/lfmm_hap_gen9_bio1_cal
 echo "== join calibrated p -> per-haploblock GEA csv (hap_id-keyed) =="
 $PY - <<'EOF'
 import pandas as pd
-CMDIR="results/grenenet_gea/phase1_replication/class_matrices"
-LDIR="results/grenenet_gea/phase1_replication/lfmm"
+CMDIR="analysis/grenenet_gea/phase1_replication/results/class_matrices"
+LDIR="analysis/grenenet_gea/phase1_replication/results/lfmm"
 rec=pd.read_csv(f"{CMDIR}/hap_gen9.records.csv")            # hap_id-ordered == Y columns
 pv=pd.read_csv(f"{LDIR}/lfmm_hap_gen9_bio1_calibp.csv")["pval"].to_numpy()
 assert len(pv)==len(rec),(len(pv),len(rec))
@@ -44,5 +44,5 @@ EOF
 echo "== size-matched SV-enrichment on LFMM calibrated p =="
 $PY -u $PR/hap_sv_enrichment.py \
     --gea "$LDIR/lfmm_hap_gen9_bio1.csv" \
-    --out results/grenenet_gea/phase1_replication/hap_sv_enrichment_lfmm.csv
+    --out analysis/grenenet_gea/phase1_replication/results/hap_sv_enrichment_lfmm.csv
 echo "== ALLDONE_LFMM_HAP =="

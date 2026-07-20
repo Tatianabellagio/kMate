@@ -44,7 +44,7 @@ mark: no SV is called in the CAM5 block."""))
 C.append(nbf.v4.new_code_cell(r"""import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 
-WDIR = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/wza"
+WDIR = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/wza"
 CLASSES = ["snp", "smallindel", "sv"]      # rows
 MODELS  = ["kendall", "lfmm", "binomial"]  # columns
 REGIME  = "deg7cap2000"
@@ -138,8 +138,8 @@ axes[-1, 0].plot([], [], color="orange", ls=":", label="BH q<0.05")
 axes[-1, 0].scatter([], [], facecolors="none", edgecolors="green", label="CAM5 block")
 axes[-1, 0].legend(fontsize=7, loc="upper right", framealpha=0.9)
 fig.tight_layout()
-OUT_PNG = ("/global/scratch/users/tbellg/kmate/results/grenenet_gea/"
-           "phase1_replication/manhattan_3models_deg7cap2000.png")
+OUT_PNG = ("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/"
+           "phase1_replication/results/manhattan_3models_deg7cap2000.png")
 OUT_PDF = OUT_PNG[:-4] + ".pdf"
 fig.savefig(OUT_PNG, dpi=130, bbox_inches="tight")
 fig.savefig(OUT_PDF, bbox_inches="tight"); plt.show()

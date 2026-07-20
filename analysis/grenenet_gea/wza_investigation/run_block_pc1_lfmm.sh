@@ -14,7 +14,7 @@ PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PR=analysis/grenenet_gea/wza_investigation                  # PC1 scripts now live here
 P1R=analysis/grenenet_gea/phase1_replication                # run_lfmm_lastgen.R stays in the replication
-PCDIR=/global/scratch/users/tbellg/kmate/results/grenenet_gea/wza_investigation/pc1
+PCDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_investigation/results/pc1
 K=16
 
 for CLS in snp smallindel sv; do
@@ -26,7 +26,7 @@ for CLS in snp smallindel sv; do
   echo "== join -> per-block result =="
   $PY - "$CLS" <<'EOF'
 import sys, pandas as pd, numpy as np
-cls=sys.argv[1]; PCDIR="results/grenenet_gea/wza_investigation/pc1"
+cls=sys.argv[1]; PCDIR="analysis/grenenet_gea/wza_investigation/results/pc1"
 b=pd.read_csv(f"{PCDIR}/pc1lfmm_{cls}_gen9_blocks.csv")
 pv=pd.read_csv(f"{PCDIR}/pc1lfmm_{cls}_gen9_calibp.csv")["pval"].to_numpy()
 assert len(pv)==len(b),(len(pv),len(b))
@@ -42,7 +42,7 @@ echo "== COMPARE: PC1-LFMM (structure-corrected) vs PC1-Kendall vs WZA =="
 $PY - <<'EOF'
 import pandas as pd, numpy as np
 from scipy.stats import chi2
-PCDIR="results/grenenet_gea/wza_investigation/pc1"; WZ="results/grenenet_gea/phase1_replication/wza"
+PCDIR="analysis/grenenet_gea/wza_investigation/results/pc1"; WZ="analysis/grenenet_gea/phase1_replication/results/wza"
 def lam(p): p=np.clip(np.asarray(p,float),1e-300,1); return np.median(chi2.isf(p,1))/chi2.isf(0.5,1)
 for cls in ["snp","smallindel","sv"]:
     pl=pd.read_csv(f"{PCDIR}/pc1lfmm_{cls}_gen9_bio1.csv"); pl["block"]=pl["block"].astype(str)

@@ -20,7 +20,7 @@ Two streaming passes over the 5 per-chrom var_pa npz:
 Variant class from panel meta ref_len/alt_len: SNP (1,1) | indel (non-SNP, |dlen|<=50) |
 SV (|dlen|>50). Uncalled founders imputed to the column allele frequency.
 
-Output -> results/grenenet_gea/ecotype_fitness/gwas/
+Output -> analysis/grenenet_gea/ecotype_fitness/gwas/
   gwas_z.npz : chrom,pos,ref_len,alt_len,mac,vclass, Z[n_var x P] (LOCO), Znaive[n_var x P],
                pheno_names, delta[C x P], h2[C x P]
 Env: kmate. Heavy -> run via run_ecotype_gwas.sbatch (NOT the login node).

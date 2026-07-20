@@ -1,0 +1,46 @@
+[
+ {
+  "r2": 0.1,
+  "n_blocks": 18,
+  "alone": 5141,
+  "width_med_kb": 1330.0085,
+  "width_p10_kb": 460.3689,
+  "width_p90_kb": 3621.0083000000004,
+  "width_max_mb": 5.291014,
+  "nvar_med": 16129.0,
+  "nvar_p10": 6419.6
+ },
+ {
+  "r2": 0.2,
+  "n_blocks": 110,
+  "alone": 5141,
+  "width_med_kb": 92.5405,
+  "width_p10_kb": 1.7254000000000003,
+  "width_p90_kb": 519.4174000000004,
+  "width_max_mb": 3.716297,
+  "nvar_med": 1456.5,
+  "nvar_p10": 9.9
+ },
+ {
+  "r2": 0.3,
+  "n_blocks": 371,
+  "alone": 5141,
+  "width_med_kb": 20.686,
+  "width_p10_kb": 0.486,
+  "width_p90_kb": 239.306,
+  "width_max_mb": 0.915267,
+  "nvar_med": 300.0,
+  "nvar_p10": 3.0
+ },
+ {
+  "r2": 0.4,
+  "n_blocks": 825,
+  "alone": 5141,
+  "width_med_kb": 8.568,
+  "width_p10_kb": 0.357,
+  "width_p90_kb": 103.19720000000007,
+  "width_max_mb": 0.743123,
+  "nvar_med": 133.0,
+  "nvar_p10": 3.0
+ }
+]

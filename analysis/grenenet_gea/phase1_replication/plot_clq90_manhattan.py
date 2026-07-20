@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-W = f"{lib.GEA}/phase1_replication/clq90/wza"
+W = f"{lib.GEA}/phase1_replication/results/clq90/wza"
 CHROM_LEN = {"Chr1": 30427671, "Chr2": 19698289, "Chr3": 23459830,
              "Chr4": 18585056, "Chr5": 26975502}
 MODELS = ["kendall", "lfmm", "binomial"]
@@ -85,7 +85,7 @@ def main():
     fig.suptitle(f"clq0.9-block WZA Manhattan — gen9, bio1, {args.regime} "
                  f"(red line = CAM5 Chr2:11.53 Mb)", fontsize=12)
     fig.tight_layout(rect=[0, 0, 1, 0.98])
-    out = args.out or f"{lib.GEA}/phase1_replication/clq90/manhattan_clq90_{args.regime}.png"
+    out = args.out or f"{lib.GEA}/phase1_replication/results/clq90/manhattan_clq90_{args.regime}.png"
     fig.savefig(out, dpi=140)
     print("wrote", out)
 

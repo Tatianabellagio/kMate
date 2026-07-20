@@ -19,7 +19,7 @@ Unit = clq90 hap-cluster (blocks_mcf90/hap_membership/chr{N}_hapmemb_clq90.npz: 
 
 SV MAF floors swept (MAC 12/24/46 = MAF 5/10/20%) to reproduce the frequency dependence.
 
-Output -> results/grenenet_gea/ecotype_fitness/gwas/hap_sv_enrichment.{csv,json}
+Output -> analysis/grenenet_gea/ecotype_fitness/gwas/hap_sv_enrichment.{csv,json}
 Env: kmate.
 """
 from __future__ import annotations

@@ -40,7 +40,7 @@ cells.append(nbf.v4.new_code_cell(
 '''import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 
-WZA   = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/phase1_replication/wza"
+WZA   = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/wza"
 PLOTS = "/global/home/users/tbellg/scratch/kmate/analysis/grenenet_gea/cam5_replication/plots"
 TAG   = "deg7nocap"
 GEN, CLIMATE = 9, "bio1"

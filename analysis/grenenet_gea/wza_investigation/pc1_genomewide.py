@@ -13,9 +13,9 @@ from __future__ import annotations
 import numpy as np, pandas as pd
 from scipy.stats import rankdata
 
-CM = ("/global/scratch/users/tbellg/kmate/results/grenenet_gea/"
+CM = ("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/"
       "phase1_replication/class_matrices")
-OUT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/wza_investigation"
+OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_investigation/results"
 NPERM = 20000
 RNG = np.random.default_rng(0)
 

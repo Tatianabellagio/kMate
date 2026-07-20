@@ -8,10 +8,10 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=48G
 #SBATCH --time=2:00:00
-#SBATCH --output=/global/scratch/users/tbellg/kmate/results/grenenet_gea/seedmix_validation/fix_kfw_fullpanel/synthetic_%j.log
+#SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/seedmix_validation/fix_kfw_fullpanel/synthetic_%j.log
 set -euo pipefail
 source ~/miniforge3/etc/profile.d/conda.sh
 conda activate kmate
 export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
 cd /global/scratch/users/tbellg/kmate
-python results/grenenet_gea/seedmix_validation/fix_kfw_fullpanel/run_synthetic_compare.py
+python analysis/grenenet_gea/seedmix_validation/fix_kfw_fullpanel/run_synthetic_compare.py

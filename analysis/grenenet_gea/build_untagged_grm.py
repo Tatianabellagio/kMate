@@ -9,7 +9,7 @@ Two thresholds: 0.2 (the number named in the handoff) and 0.5 (secondary/more ge
 0.2 turned out extremely strict genome-wide -- only ~0.26% of non-SNP markers survive it) so the
 marker-count/power tradeoff is visible alongside the result.
 
-Output -> results/grenenet_gea/varexp/untagged_grms.npz
+Output -> analysis/grenenet_gea/varexp/untagged_grms.npz
   founders, K_untagged_r02, K_untagged_r05, n_markers (json: per-threshold total/indel/sv counts)
 Env: kmate.
 """

@@ -16,7 +16,7 @@ all-class WZA screen), build the two SuSiE-RSS inputs on the SAME allele coding:
 Driver readout downstream: is any SV in a 95% credible set / the top-PIP variant,
 or is the SV PIP always <= the best SNP? That's the LD-confound-beating question.
 
-Outputs (--out, default results/grenenet_gea/driver_passenger/finemap_inputs):
+Outputs (--out, default analysis/grenenet_gea/driver_passenger/results/finemap_inputs):
   <block>.npz  keys: block, chrom, pos, ref_len, alt_len, cls, is_sv, beta, se, z,
                      R (m x m float32), sites (31,), matched (bool per variant)
 
@@ -37,9 +37,9 @@ sys.path.insert(0, GEA_DIR)
 import lib
 
 CLASSES = ("snp", "smallindel", "sv")
-CM = f"{lib.GEA}/phase1_replication/class_matrices"
+CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
 PANEL = "/global/scratch/users/tbellg/kmate/panel/arch3"
-DP = f"{lib.GEA}/driver_passenger"
+DP = f"{lib.GEA}/driver_passenger/results"
 
 
 def site_weights(pools: pd.DataFrame):

@@ -8,7 +8,7 @@ This folder is **self-contained**: it holds ONLY the phase-1 replication (3 mode
 last-gen × WZA → datasets → figure). The PC1/PC1-LFMM robustness branch lives in
 `../wza_investigation/`; one-block deep-dives live in `followups/`.
 
-## ★ FINAL DELIVERABLES ★ (all under `results/grenenet_gea/phase1_replication/`)
+## ★ FINAL DELIVERABLES ★ (all under `analysis/grenenet_gea/phase1_replication/results/`)
 - **gene table (per gene):** `gene_summary_gen9_bio1_deg7cap2000.csv` — one row/gene:
   symbol, function, region (Chr:start-end), categories, n_models, best_q, q_floored.
 - **gene table (per block,gene):** `significant_genes_annotated_gen9_bio1_deg7cap2000.csv`

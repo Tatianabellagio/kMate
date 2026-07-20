@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 PROJ = "/global/scratch/users/tbellg/kmate"
-GEA = f"{PROJ}/results/grenenet_gea"
+GEA = f"{PROJ}/analysis/grenenet_gea"
 PM = f"{GEA}/pool_matrices"; STORE = lib.AF_STORE
 NBDIR = f"{PROJ}/analysis/grenenet_gea/notebooks"
 OUT = f"{NBDIR}/07_twostage_gea.ipynb"
@@ -135,7 +135,7 @@ code_load = r"""
 import numpy as np, pandas as pd, sys
 import matplotlib.pyplot as plt
 sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"); import lib
-G = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea"
+G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea"
 R = {s: np.load(f"{G}/twostage_{s}_bio1.npz", allow_pickle=True) for s in ("dp","scoef")}
 diag = np.load(f"{G}/twostage_diag_cache.npz", allow_pickle=True)
 for s in ("dp","scoef"):

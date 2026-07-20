@@ -37,7 +37,7 @@ blocks**, not the polygenic background itself).
 code_manhattan = r"""
 import pandas as pd, numpy as np
 import matplotlib.pyplot as plt
-WZ = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea/wza"
+WZ = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea/wza"
 order = [f"Chr{i}" for i in range(1, 6)]
 titles = {"dp": "A — endpoint Δp (gen3 − p0)",
           "scoef": "B — selection coefficient (gen0→3 trajectory)"}

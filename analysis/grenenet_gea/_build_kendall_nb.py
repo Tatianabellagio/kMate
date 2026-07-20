@@ -35,7 +35,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea")
 import lib
 
-GEA = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea"
+GEA = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea"
 z = np.load(f"{GEA}/kendall_gen3_bio1.npz", allow_pickle=True)
 df = pd.DataFrame({k: z[k] for k in
                    ["chrom","pos","ref_len","alt_len","sv_size","tau","pval","p0","dp_mean"]})

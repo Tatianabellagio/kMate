@@ -18,18 +18,19 @@ them separately, don't collapse to one headline:
    hold for most of these arms).**
    Two genuinely different questions get asked under this heading, and they have different answers:
    - **Whole-distribution / median shift: verified null.** The de-trended metric
-     (`s_distribution_by_site`, subtracting the per-p0-bin ALL-class median) shows **SV
-     excess-vs-baseline ≈0: median +0.0011, negative at only 15/31 sites, sign test n.s.** No
+     (`s_distribution_by_site`, subtracting the per-p0-bin SNP median) shows **SV
+     excess-vs-baseline ≈0: median +0.0004, negative at only 15/31 sites, sign test n.s.** No
      genome-wide, frequency-independent shift in typical SV behavior.
    - **Tail-specific, hot-site-concentrated purging: verified REAL, survives the same de-trending.**
      `s_histogram`, `s_vs_climate`, `ecdf`, `ecdf-difference`, `shiftfunction`, and climate-slope β
      all independently describe the *same* pattern in their own takeaways: not a whole-distribution
      shift, but extra SV mass in the purged tail, concentrated at hot sites. This was previously
-     dismissed as sharing the median-shift's confound — checked directly (10th-percentile SV vs
-     matched-SNP gap, de-trended the same way): hot-site median tail gap barely moves
-     (−0.071→−0.055), correlation with bio1 *strengthens* (ρ −0.47→−0.51, p=0.0075→0.0032).
-     Climate-slope β's own sign-excess number got the same direct test: bio1 ρ +0.38→+0.42, bio18
-     ρ −0.54→−0.59 — also survives. **Neither is explained by the artifact that nulled the median.**
+     dismissed as sharing the median-shift's confound — checked directly (Section 4 of
+     `temporal_s_consolidated.ipynb`, bio1): the 10th-percentile SV vs matched-SNP tail gap, de-trended
+     the same way, *strengthens* (ρ −0.501→−0.532, p=0.004→0.002; hot-site median gap −0.069→−0.048).
+     Climate-slope β's sign-excess got the same test and does not reverse but weakens to borderline
+     (ρ +0.442→+0.355, p=0.013→0.050). **Neither is explained by the artifact that nulled the median**
+     — the tail-gap survives clearly, the sign-excess marginally.
    - Parallelism/PicMin **shrank** on the Kf_w rerun (not re-verified null either way);
      parallelism-by-site's climate-gradient is unchanged but hasn't had this direct test run yet.
    - Note: climate-slope β's original dismissal additionally cited "+0.54/−0.16, weaker/mixed" —
@@ -56,7 +57,7 @@ them separately, don't collapse to one headline:
 
 **Net:** there is no SV-specific *climate-GEA* signal, no *block-enrichment* signal, and — after the
 Kf_w / `--unit chrom` rerun — **no genome-wide per-variant *temporal* SV-insertion selection signal
-either** (de-trended excess ≈ 0: median +0.0011, 15/31 sites, n.s.). Any residual purging is confined
+either** (de-trended excess ≈ 0: median +0.0004, 15/31 sites, n.s.). Any residual purging is confined
 to a few of the hottest gardens.
 
 ## Document index

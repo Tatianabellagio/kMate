@@ -19,8 +19,8 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
-WD = f"{lib.GEA}/phase1_replication/multiaxis/wza"
-OUTDIR = f"{lib.GEA}/phase1_replication/multiaxis"
+WD = f"{lib.GEA}/phase1_replication/results/multiaxis/wza"
+OUTDIR = f"{lib.GEA}/phase1_replication/results/multiaxis"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 MODELS = ["kendall", "lfmm", "binomial"]
 ENSEMBL = "https://rest.ensembl.org/lookup/id"

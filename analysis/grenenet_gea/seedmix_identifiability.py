@@ -14,7 +14,7 @@ Computes, per founder, genome-wide and per-chrom:
 and tests these against the kMate seed-mix p0 and per-chrom h.
 
 Also emits the per-chrom x per-sample h matrix for the low founders ("are they always low?").
-Env: kmate. Compute node. -> results/grenenet_gea/seedmix_validation/identifiability.npz + prints.
+Env: kmate. Compute node. -> analysis/grenenet_gea/seedmix_validation/identifiability.npz + prints.
 """
 import numpy as np, glob, os, sys
 import scipy.sparse as sp
@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
 CH=[f"Chr{i}" for i in range(1,6)]; N=231
-OUT="results/grenenet_gea/seedmix_validation"; os.makedirs(OUT,exist_ok=True)
+OUT="analysis/grenenet_gea/seedmix_validation"; os.makedirs(OUT,exist_ok=True)
 
 # ---- kMate seed-mix h: reps x chroms x founders ----
 reps=sorted({os.path.basename(p).split("_Chr")[0] for p in glob.glob(f"{lib.SEEDMIX}/*_Chr1.h_per_chrom.npz")})

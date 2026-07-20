@@ -21,8 +21,8 @@ done
 echo "== COMPARE: block-PC1 vs Kendall->WZA (deg7), CAM5 & 4_2519 =="
 $PY - <<'EOF'
 import pandas as pd, numpy as np
-PC="results/grenenet_gea/wza_investigation/pc1"            # PC1 outputs (relocated)
-WZ="results/grenenet_gea/phase1_replication/wza"           # WZA inputs from the replication
+PC="analysis/grenenet_gea/wza_investigation/results/pc1"            # PC1 outputs (relocated)
+WZ="analysis/grenenet_gea/phase1_replication/results/wza"           # WZA inputs from the replication
 def wza(cls):
     w=pd.read_csv(f"{WZ}/wza_kendall_{cls}_gen9_bio1_deg7nocap.csv").rename(columns={"index":"block"})
     w["block"]=w["block"].astype(str); w=w[w.Z_pVal.notna()].sort_values("Z_pVal").reset_index(drop=True)

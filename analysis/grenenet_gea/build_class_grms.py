@@ -19,7 +19,7 @@ GRMs are built on all 231 founders (relatedness is a founder property); the mode
 to the analyzable set. Two streaming passes over the 5 per-chrom var_pa npz (pass 1: class GRMs +
 MAC spectra; pass 2: MAC-matched SNP GRM). Heavy Lustre I/O -> run via sbatch, NOT the login node.
 
-Output -> results/grenenet_gea/varexp/class_grms.npz
+Output -> analysis/grenenet_gea/varexp/class_grms.npz
   founders, K_snp, K_indel, K_sv, K_nonsnp, K_all, K_snp_matched, n_markers{dict}, MIN_MAC, CALL_MIN
 Env: kmate.
 """

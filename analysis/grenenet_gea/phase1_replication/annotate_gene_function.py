@@ -12,7 +12,7 @@ light/UV · oxidative/abiotic · defense(biotic) · calcium/signaling. The combi
 `climate_stress_flowering` = any of {flowering, temperature, water, light, oxidative,
 defense} (the environment/stress/phenology axes the GrENE-Net selection scan targets).
 
-Outputs (results/grenenet_gea/phase1_replication/):
+Outputs (analysis/grenenet_gea/phase1_replication/results/):
   gene_function_gen{g}_{clim}_{regime}.csv          per gene: symbol,entrez,name,summary,
         go_bp, go_mf, categories, evidence, climate_stress_flowering
   significant_genes_annotated_gen{g}_{clim}_{regime}.csv   the full (block,gene) sig table
@@ -122,7 +122,7 @@ def main():
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--gen", type=int, default=9)
     args = ap.parse_args()
-    base = f"{lib.GEA}/phase1_replication"
+    base = f"{lib.GEA}/phase1_replication/results"
     sig = pd.read_csv(f"{base}/significant_genes_gen{args.gen}_{args.climate}_{args.regime}.csv")
     genes = sorted(sig.loc[sig.gene.notna() & (sig.gene.astype(str) != ""), "gene"].unique())
     print(f"annotating {len(genes)} genes via mygene.info…", flush=True)

@@ -3,7 +3,7 @@ Run in `basic` env, then execute with nbconvert (kernel python3)."""
 import nbformat as nbf
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 
-SV = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
+SV = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
 nb = new_notebook()
 C = []
 
@@ -42,7 +42,7 @@ Current production config for global mode: `normalize=\"per_founder\"`, `omega=N
 code("""%matplotlib inline
 import json, numpy as np, matplotlib.pyplot as plt
 plt.rcParams.update({'figure.dpi':110,'font.size':10})
-SV="/global/scratch/users/tbellg/kmate/results/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
+SV="/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/seedmix_validation/fix_kfw_fullpanel"
 U=1/231""")
 
 md("""## 1. Controlled synthetic test (Chr1 filt2inv panel, uniform truth h=1/231)

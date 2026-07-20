@@ -32,9 +32,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(HERE))
 import lib
 
-CM = f"{lib.GEA}/phase1_replication/class_matrices"
-KEN = f"{lib.GEA}/phase1_replication/kendall/kendall_hap_gen9_bio1.csv"
-OUT = f"{lib.GEA}/phase1_replication/hap_sv_enrichment.csv"
+CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
+KEN = f"{lib.GEA}/phase1_replication/results/kendall/kendall_hap_gen9_bio1.csv"
+OUT = f"{lib.GEA}/phase1_replication/results/hap_sv_enrichment.csv"
 
 
 def bh(p):

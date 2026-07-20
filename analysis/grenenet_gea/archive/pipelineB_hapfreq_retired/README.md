@@ -71,3 +71,18 @@ Product data:
   `hapfreq_registry.csv`, which are now **stale/retired** products of this chain.
   Because a kept file references them, those two files were NOT moved; the plan
   should be revisited before use.
+
+**2026-07-10 note (separate `../window_hapfreq_retired/` retirement pass):** a first sweep
+mis-archived all 4 `_sv_hap_*.py` scripts here (into `sv_adaptive/`, on the reasoning that they
+carry `sv_adaptive`-family names) — caught and reverted back to
+`analysis/grenenet_gea/` per the "LEFT IN PLACE" note above, which this session had initially
+missed. **Open question surfaced while checking this, not yet resolved:** read individually,
+`_sv_hap_rotationnull.py`, `_sv_hap_freqrobust.py`, and `_sv_haplotype_axes_sweep.py` (not
+`_sv_hap_context.py`, which defines but never uses it) all do
+`HG = pd.read_csv(HAPGEA)` where `HAPGEA = "results/grenenet_gea/hapfreq_clq90/pipelineB_varlen/hap_gea.csv"`
+— the retired Pipeline-B product this README documents as gone — *and* call
+`lib.multisite_gwas_raw()`, the retired window-mode multisite-GWAS store. If that's their real,
+load-bearing dependency (not a fallback/optional path), the "kept, live" status this README
+asserts may need revisiting — worth a maintainer look rather than a second guess from reading
+the code alone, since this session got the adjacent `sv_adaptive/` classification wrong twice
+already.

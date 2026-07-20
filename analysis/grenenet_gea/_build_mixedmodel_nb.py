@@ -36,8 +36,8 @@ the resulting degeneracy and that the few "hits" are LD/rare-SV artifacts.
 code_load = r"""
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
 from scipy.stats import norm
-G = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea"
-L = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/lfmm"
+G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea"
+L = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/lfmm"
 mm = np.load(f"{G}/mixedmodel_gen3_bio1.npz", allow_pickle=True)
 df = pd.DataFrame({k: mm[k] for k in ["chrom","pos","sv_size","p0","beta","pval","rec_index"]})
 df["chrom"] = df["chrom"].astype(str)

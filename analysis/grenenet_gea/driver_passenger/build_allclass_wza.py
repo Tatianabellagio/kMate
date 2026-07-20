@@ -18,7 +18,7 @@ Design decisions (this session):
     phase-1's deg-2 SNP-number-correction NaN; we VERIFY that here (NaN / neg-SD /
     fit-RMSE deg2 vs deg7) rather than defaulting to the deg-7 workaround.
 
-Outputs (--out, default results/grenenet_gea/driver_passenger):
+Outputs (--out, default analysis/grenenet_gea/driver_passenger/results):
   allclass_{model}_gen{g}_{climate}.records.csv   pooled per-record table
   wza_allclass_{model}_gen{g}_{climate}_deg{2,7}.csv
   block_composition_{model}_gen{g}_{climate}.csv  per-block class counts + WZA Z_pVal
@@ -163,11 +163,11 @@ def main():
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--indir", default=None,
                     help="dir of per-class model CSVs (default ../phase1_replication/<model>)")
-    ap.add_argument("--out", default=f"{lib.GEA}/driver_passenger")
+    ap.add_argument("--out", default=f"{lib.GEA}/driver_passenger/results")
     ap.add_argument("--min-snps", type=int, default=2)
     args = ap.parse_args()
 
-    indir = args.indir or f"{lib.GEA}/phase1_replication/{args.model}"
+    indir = args.indir or f"{lib.GEA}/phase1_replication/results/{args.model}"
     os.makedirs(args.out, exist_ok=True)
     stem = f"allclass_{args.model}_gen{args.gen}_{args.climate}"
 

@@ -6,7 +6,7 @@
 # (transient jellyfish/dev-shm/OOM failures), up to MAXROUND rounds. Reports tally.
 set -uo pipefail
 cd /global/scratch/users/tbellg/kmate
-BASE=results/grenenet_gea/rerun_kfw_hb
+BASE=analysis/grenenet_gea/rerun_kfw_hb
 EVO_MAN=data/sample_manifest_usesample.tsv
 SM_MAN=data/seedmix_manifest_arch3.tsv
 RUNNER=grenenet/run_site_array_perchrom.sh

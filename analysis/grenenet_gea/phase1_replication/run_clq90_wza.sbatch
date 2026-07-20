@@ -18,7 +18,7 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 PR=analysis/grenenet_gea/phase1_replication
-CLQ=results/grenenet_gea/phase1_replication/clq90
+CLQ=analysis/grenenet_gea/phase1_replication/results/clq90
 
 echo "== host $(hostname) =="
 echo "== STEP 1: re-block all 3 models x 2 classes onto clq0.9 =="
@@ -41,7 +41,7 @@ done
 echo "== STEP 3: NaN / neg-SD audit per regime (does deg-2 run clean on clq0.9?) =="
 $PY - <<'EOF'
 import pandas as pd, numpy as np, glob, os
-W="results/grenenet_gea/phase1_replication/clq90/wza"
+W="analysis/grenenet_gea/phase1_replication/results/clq90/wza"
 print(f"{'file':45s} {'blocks':>7} {'NaN_p':>6} {'Bonf':>5}")
 for f in sorted(glob.glob(f"{W}/wza_*_gen9_bio1_*.csv")):
     w=pd.read_csv(f)

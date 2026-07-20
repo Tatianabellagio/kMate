@@ -14,7 +14,7 @@
 # CLQcut=0.5 -> looser cliques -> coarser/fewer blocks. gpart::BigLD lives in r_env.
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/grenenet_gea/blocks_mcf90
+mkdir -p logs analysis/grenenet_gea/blocks_mcf90
 export LD_LIBRARY_PATH=/usr/lib64:${LD_LIBRARY_PATH:-}
 CHRS=(Chr1 Chr2 Chr3 Chr4 Chr5); CHR=${CHRS[$SLURM_ARRAY_TASK_ID]}
 chrlc=$(echo "$CHR" | tr 'A-Z' 'a-z')
@@ -24,6 +24,6 @@ echo "[$(date)] $CHR : BigLD CLQcut=0.5, min-called-frac=0.9"
 $PY analysis/grenenet_gea/recompute_blocks.py \
     --var-pa-prefix panel/arch3/${chrlc}/var_pa_231_arch3_${chrlc} \
     --chrom "$CHR" --corr 0.2 --window 50 --maf 0.05 --clqcut 0.5 --min-called-frac 0.9 \
-    --out results/grenenet_gea/blocks_mcf90/${chrlc}_clq0.5 \
+    --out analysis/grenenet_gea/blocks_mcf90/${chrlc}_clq0.5 \
     --rscript "$RSCRIPT" --bigld-dir /global/scratch/users/tbellg/HapFM/bin
 echo "[$(date)] $CHR done"

@@ -12,7 +12,7 @@
 # ecotype-selection variance partition. Two streaming passes over the 5 per-chrom var_pa npz.
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/grenenet_gea/varexp
+mkdir -p logs analysis/grenenet_gea/varexp
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
 echo "[$(date)] class GRMs start on $(hostname)"

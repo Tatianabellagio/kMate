@@ -15,8 +15,14 @@ Sections:
   4. Direct de-trending audit of sections 2/3's signal (was _compute_s_climate_slope_detrended.py) --
      confirms the tail/climate signal is NOT the artifact that nulled section 1.
 
-Explicitly OUT OF SCOPE (per user 2026-07-15: "we won't deal with parallelism/PicMin stuff this
-session"): parallelism.ipynb, picmin.ipynb, parallelism_by_site.ipynb are untouched, not merged here.
+Separate arm (not merged here): the replicate parallelism/PicMin analysis lives in its own
+consolidated notebook `parallelism_picmin.ipynb` (built by `_build_parallelism_picmin_nb.py`).
+
+**2026-07-15, later same day:** dropped the raw-histogram (2a) and per-class-ECDF (2b) panels from
+Section 2 as non-additive next to 2c's ECDF-difference (same information, less sensitive view) --
+Section 2 is now 3 views, not 5. Section 1's grid moved from the disjoint p0-decile `long` table to a
+fixed-count sliding window over the raw (s, p0) pairs (smoother, adapts to SV's local sparsity), and
+its single two-panel summary split into two clean single-axis panels (bio1, bio18).
 
 Load-only (reads precomputed sv_adaptive/s_dist_by_stratum.{npz,csv} and
 sv_adaptive/s_climate_slope.npz + _sign_by_site.csv). Runs in the `basic` env.
@@ -31,52 +37,61 @@ OUT = f"{ROOT}/analysis/grenenet_gea/notebooks/temporal_s_consolidated.ipynb"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 # ============================================================ intro
-md_intro = r"""# Per-variant temporal selection coefficient `s` — consolidated results
-
-**Consolidated 2026-07-15** from 7 previously separate notebooks (`s_distribution_by_site`,
-`s_histogram_by_site`, `s_ecdf_by_site`, `s_ecdf_difference_by_site`, `s_shiftfunction_by_site`,
-`s_vs_climate`, `s_climate_slope`) after an audit found none of them redundant with each other —
-each tests a genuinely different statistic, and an assumption that some were "superseded" by others
-turned out wrong once checked directly. This notebook is now the single source for the **temporal s**
-thread. (Parallelism / PicMin / `parallelism_by_site` are a separate, untouched thread this session —
-not merged here.)
+md_intro = r"""# Per-variant temporal selection coefficient `s` — SV purging and its climate gradient
 
 **`s`** = per-variant **plot-replicate selection coefficient** at a site = mean over the site's
 ~10–12 replicate plots of the OLS slope of $\mathrm{logit}(p)$ on generation (gen 0 = shared founding
-frequency). Plots-as-replicates separate real selection (same direction across independent plots)
-from drift. `s<0` = declining (purged), `s>0` = rising (favoured).
+frequency). Plots-as-replicates separate real selection (consistent direction across independent
+plots) from drift. `s<0` = declining (purged), `s>0` = rising (favoured). Variants pass a founder-panel
+filter (minor-allele count 12–219, call-rate ≥ 0.9) and a seed-mix boundary filter
+(0.02 ≤ $p_0$ ≤ 0.98).
 
-**Two genuinely different questions, two different answers:**
-1. **Does the whole distribution of `s` shift** (SV vs frequency-matched SNP, at matched initial
-   frequency)? → **Section 1: NULL.** A raw median comparison has a strong artifact (a Jensen/
-   boundary effect of the logit statistic near 0/1, amplified for rare variants sitting on few
-   founders) that a naive comparison doesn't remove; once de-trended (subtracting the per-p0-bin
-   ALL-class-pooled median), the SV excess is ≈0.
-2. **Is there a heavier PURGED TAIL for SVs, concentrated at hot/arid sites?** → **Sections 2-3:
-   REAL.** Five independent views (histogram, ECDF, ECDF-difference, shift-function, vs-climate) plus
-   climate-slope β all show the same pattern, insertion-driven. This is not the same statistic as (1)
-   and is **not** explained by the artifact that nulled it — **Section 4** applies the identical
-   de-trending correction directly to this signal and it survives, essentially unchanged.
+**De-trending.** Raw median `s` vs $p_0$ carries a logit/boundary (Jensen) artifact, amplified for
+rare variants sitting on few founders. Each curve subtracts the per-$p_0$-bin **SNP** median (SNPs =
+the abundant, ~neutral reference class), so it shows $s_{\text{class}} - s_{\text{SNP}}$ at matched
+$p_0$: SNP ≡ 0 by construction, below 0 = more purged than a same-frequency SNP.
 
-**Standing caveats (apply to whatever in Sections 2-4 is real):**
+**Result — one finding with two faces:**
+1. **No net, genome-wide shift (null).** Averaged over sites the de-trended SV excess is ≈ 0 (median
+   **+0.0004**, negative at only **15/31 sites**, sign test n.s.). SVs are *not* uniformly more purged
+   than same-frequency SNPs.
+2. **But SV purging is climate-graded (real).** The same per-site de-trended shift tracks climate —
+   stronger SV purging at **hot** (bio1 ρ ≈ −0.48, p ≈ 0.006) and **dry-summer / arid** (bio18
+   ρ ≈ +0.65, p < 0.001) sites, ≈ 0 or positive at cold/wet ones. The net-null in (1) is
+   warm-negative and cold-positive sites cancelling; the real signal is the **gradient**, and (per the
+   panel grid) it sits in the rare (low-$p_0$) tail at the warm sites. The insertion/deletion panel
+   further splits the SV curve by polarity.
+
+**Scope (trimmed 2026-07-20).** This notebook is the headline only — the de-trended per-site grids
+(all-class, and insertions-vs-deletions) and the climate scatter. The finer analyses that localize
+this *same* signal to the purged tail (ECDF-difference, shift-function), formalize the per-variant
+climate slope β, and test its robustness to de-trending, plus the parallelism/PicMin arm, live in
+`SV_TEMPORAL_PURGING_SUMMARY.md` (this notebook was consolidated from 7 earlier ones; the removed
+sections are recoverable from git history). Those are alternate views / refinements of the one
+climate-graded, tail-concentrated purging signal, not independent findings.
+
+**Standing caveats (apply to the climate-graded result):**
 - **Hitchhiking.** Global-mode kMate AF is a founder-mixture projection — cannot separate SV-specific
   selection from hitchhiking on a climate-purged haplotype (`GLOBAL_MODE_DECISION.md`). Local/window
-  mode is not a clean fix (panel-incompleteness artifacts are deterministic and
-  replicate-reproducible — they'd masquerade as this exact signal).
-- **Insertion-polarity.** The signal is insertion-specific (reference-relative). Ruled out as a
-  within-panel calling-confidence artifact (`F_MISSING`/`MA` checks), but not equivalent to true
-  ancestral polarization — no outgroup exists in this repo. A *systematic* reference/mapping bias
-  version of this caveat remains open.
+  mode is not a clean fix (panel-incompleteness artifacts are deterministic and replicate-reproducible,
+  and would masquerade as this exact signal).
+- **Insertion-polarity.** The purging is insertion-specific (reference-relative; see the ins/del
+  panel). Ruled out as a within-panel calling-confidence artifact (`F_MISSING`/`MA` checks), but not
+  equivalent to true ancestral polarization — no outgroup exists in this repo. A *systematic*
+  reference/mapping-bias version of this caveat remains open.
 
 See `SV_TEMPORAL_PURGING_SUMMARY.md` for the full audit narrative."""
 
 # ============================================================ shared setup
 code_setup = r"""
+import os
 import numpy as np, pandas as pd, matplotlib as mpl, matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy import stats
 plt.rcParams.update({'figure.dpi':110, 'font.size':8, 'axes.linewidth':0.6})
 G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/sv_adaptive"
+PLOTS = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/notebooks/plots"  # figures saved here
+os.makedirs(PLOTS, exist_ok=True)
 COL = {"SNP":"#888888", "indel":"#0072B2", "SV":"#D55E00", "ins":"#D55E00", "del":"#009E73"}
 rng = np.random.default_rng(0)
 NBIN_MATCH, NDRAW = 25, 20000   # frequency-matching resample granularity, shared by all sections
@@ -95,7 +110,9 @@ def match_to(target_p0, src_s, src_p0):
 npz = np.load(f"{G}/s_dist_by_stratum.npz")
 long = pd.read_csv(f"{G}/s_dist_by_stratum.csv")
 long["resid"] = long["median"] - long["base"]
-meta = pd.read_csv(f"{G}/s_dist_by_stratum_sitemeta.csv").sort_values("bio1").reset_index(drop=True)
+meta = pd.read_csv(f"{G}/s_dist_by_stratum_sitemeta.csv")
+meta = meta.merge(pd.read_csv(f"{G}/s_climate_slope_sign_by_site.csv")[["site","bio18"]], on="site", how="left")
+meta = meta.sort_values("bio1").reset_index(drop=True)
 p0q = npz["p0q"]; mids = 0.5 * (p0q[:-1] + p0q[1:]); NBIN = len(p0q) - 1
 binf = lambda p: np.clip(np.digitize(p, p0q[1:-1]), 0, NBIN - 1)
 base_lookup = long.set_index(["site", "stratum"])["base"].to_dict()
@@ -104,178 +121,215 @@ print(f"{len(meta)} sites, {long.stratum.nunique()} initial-frequency strata")
 """
 
 # ============================================================ Section 1: median shift (de-trended)
-md_s1 = r"""## Section 1 — whole-distribution median shift, de-trended (VERIFIED NULL)
+md_s1 = r"""## De-trended per-site `s`, and its climate gradient
 
-De-trended by initial frequency: raw median `s` vs $p_0$ has a strong NEG→POS slope that is an
-artifact of the logit statistic at the 0/1 boundaries (reproduced by a zero-selection drift
-simulation; median *linear* $\Delta p$ stays ~0), amplified because rare variants sit on few founders
-(small effective $N_e$). We subtract the per-$p_0$-bin median of ALL variants (pooled, not
-SNP-defined) so each panel shows $s_{\text{class}} - s_{\text{all}}$ at matched $p_0$: flat 0 =
-behaves like same-frequency variants; below 0 = more purifying selection."""
+Raw median `s` vs $p_0$ has a strong NEG→POS slope that is an artifact of the logit statistic at the
+0/1 boundaries (reproduced by a zero-selection drift simulation; median *linear* $\Delta p$ stays
+~0), amplified because rare variants sit on few founders (small effective $N_e$). We subtract the
+per-$p_0$-bin **SNP** median (SNPs are the abundant, ~neutral reference class that defines the
+artifact's shape), so every curve/point shows $s_{\text{class}} - s_{\text{SNP}}$ at matched $p_0$:
+SNP ≡ 0 by construction; **below 0 = more purged than a same-frequency SNP.** (SNPs are 81% of all
+variants and indels behave like SNPs, so this SNP baseline ≈ the full-population all-class median, but
+is not distorted by the purged SVs the way an equal-count SNP/indel/SV subsample pool would be.)
+
+Three views follow, all on this de-trended shift:
+1. **Per-site panel grid** — SV / indel / SNP curves vs $p_0$ (log x), one site per panel, ordered
+   cold→hot. Watch the low-$p_0$ (rare) tail at the warm sites.
+2. **Insertion-vs-deletion grid** — the same grid, splitting the SV curve by polarity (ref-relative):
+   insertions vs deletions, to see which carries the tail purging.
+3. **Climate scatter** — each site's mean de-trended shift vs bio1 (temperature) and bio18 (dry-summer
+   precip). This is where the climate gradient shows up as a single number per axis."""
 
 code_s1_grid = r"""
+# per-site curves via a sliding window over raw (s, p0) pairs (not the disjoint deciles in `long`) --
+# a fixed-count window adapts to local density, so the SV line stays smooth where SV is sparse instead
+# of getting noisier there.
+def rolling_curve(s, p0, thin=15):
+    o = np.argsort(p0); p0s, ss = p0[o], s[o]
+    win = max(51, len(ss)//8); win += 1 - win%2  # odd
+    med = pd.Series(ss).rolling(win, center=True, min_periods=win//3).median().to_numpy()
+    return p0s[::thin], med[::thin]
+
+def site_curves(site):
+    # SNP-ONLY baseline: SNP is the abundant, ~neutral reference class, so the per-p0 logit/boundary
+    # offset is estimated from SNPs alone (consistent with the CSV `base` + Section 4, and with
+    # Sections 2-3's SNP-matching). SNP then reads exactly 0 by construction; SV/indel read as
+    # excess-vs-SNP. (Superseded the earlier balanced-subsample all-class pool, which incidentally
+    # over-weighted SVs ~24x their genomic share and let purged SVs contaminate their own baseline.)
+    p0_base, base_curve = rolling_curve(npz[f"{site}_s_SNP"], npz[f"{site}_p0_SNP"])
+    logp0_base = np.log(p0_base)
+    out = {}
+    for c in ["SNP","indel","SV"]:
+        p0c, medc = rolling_curve(npz[f"{site}_s_{c}"], npz[f"{site}_p0_{c}"])
+        out[c] = (p0c, medc - np.interp(np.log(p0c), logp0_base, base_curve))
+    return out
+
+XTICKS = [0.03, 0.05, 0.1, 0.2, 0.5]; XLIM = (0.026, 0.62)
 sites = meta.site.tolist()
-ncol, nrow = 5, int(np.ceil(len(sites)/5))
-fig, axes = plt.subplots(nrow, ncol, figsize=(15, 2.5*nrow), sharex=True, sharey=True)
+curves = {s: site_curves(s) for s in sites}
+
+# Shared y-limit, sized to the TRUE min/max (not a percentile guess) so no panel ever clips --
+# a fixed guess clipped 19/31 panels, and a percentile-based range still clipped 10/31 (a few
+# sites' rolling curve genuinely swings to +-0.2-0.4 right at the lowest p0, the rare-founder
+# logit/boundary artifact the Section 1 takeaway describes). Using the actual full range keeps
+# the shared scale (for direct cross-panel comparison) while guaranteeing every curve fits.
+def _visible(p0c, rc):
+    m = (p0c >= XLIM[0]) & (p0c <= XLIM[1]); return p0c[m], rc[m]
+all_vis = np.concatenate([np.concatenate([_visible(*curves[s][cl])[1] for s in sites]) for cl in ["SV","indel"]])
+pad = 0.05 * (all_vis.max() - all_vis.min())
+YLIM = (all_vis.min() - pad, all_vis.max() + pad)
+
+ncol, nrow = 7, int(np.ceil(len(sites)/7))
+norm = mpl.colors.Normalize(vmin=meta.bio1.min(), vmax=meta.bio1.max()); cmap = mpl.cm.coolwarm
+fig, axes = plt.subplots(nrow, ncol, figsize=(18, 2.4*nrow), sharex=True, sharey=True)
 axes = axes.ravel()
-for ax in axes[len(sites):]:
-    ax.axis("off")
+for ax in axes[len(sites):]: ax.axis("off")
 for i, s in enumerate(sites):
-    ax = axes[i]; d = long[long.site==s]
-    for cls in ["SNP","indel","SV"]:
-        dc = d[d.cls==cls].sort_values("stratum")
-        if dc.empty: continue
-        x = mids[dc.stratum.values]
-        ax.plot(x, dc["resid"], "-", color=COL[cls], lw=1.6 if cls=="SV" else 1.0,
-                marker="o", ms=3 if cls=="SV" else 2.2, label=cls, zorder=3 if cls=="SV" else 2,
-                alpha=0.95 if cls=="SV" else 0.8)
+    ax = axes[i]; cv = curves[s]
+    p0sv, rsv = _visible(*cv["SV"]); p0in, rin = _visible(*cv["indel"]); p0sn, rsn = _visible(*cv["SNP"])
     ax.axhline(0, color="k", lw=0.7, ls=":")
-    mrow = meta[meta.site==s].iloc[0]
-    star = "*" if (mrow.wil_p_sv==mrow.wil_p_sv and mrow.wil_p_sv<0.05) else ""
-    ax.annotate(f"site {s}  (bio1 {mrow.bio1:.0f})\nΔSV={mrow.shift_sv:+.2f}{star}",
-                xy=(0.03, 0.96), xycoords="axes fraction", va="top", ha="left", fontsize=6.5)
-    ax.set_xscale("log"); ax.set_xlim(mids[0]*0.85, mids[-1]*1.15)
-    ax.set_ylim(-0.22, 0.12)
+    ax.fill_between(p0sv, 0, rsv, color=COL["SV"], alpha=0.20, lw=0)
+    ax.plot(p0sn, rsn, "-", color=COL["SNP"], lw=0.9)
+    ax.plot(p0in, rin, "-", color=COL["indel"], lw=1.1)
+    ax.plot(p0sv, rsv, "-", color=COL["SV"], lw=1.7)
+    b1 = meta.bio1.iloc[i]; c = cmap(norm(b1))
+    ax.annotate(f"site {int(meta.site.iloc[i])}   bio1={b1:.0f}°C", xy=(0.03,0.96),
+                xycoords="axes fraction", va="top", ha="left", fontsize=6.8, color=c, fontweight="bold")
+    for sp in ax.spines.values(): sp.set_color(c); sp.set_linewidth(1.4)
+    ax.set_xscale("log"); ax.set_xlim(*XLIM); ax.set_xticks(XTICKS)
+    ax.set_xticklabels([str(t) for t in XTICKS], fontsize=6)
     ax.tick_params(labelsize=6)
+axes[0].set_ylim(*YLIM)
 fig.supxlabel("initial frequency $p_0$ (log)", y=0.005, fontsize=10)
-fig.supylabel("s minus same-frequency baseline   (below 0 = more purged than typical variant)",
-              x=0.005, fontsize=10)
-fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,marker="o",ms=4,label=c)
-                    for c in ["SNP","indel","SV"]],
-           loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.99,1.005))
+fig.supylabel("s − same-$p_0$ SNP baseline   (below 0 = more purged)", x=0.006, fontsize=10)
+fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,label=c) for c in ["SNP","indel","SV"]],
+           loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.995,1.004))
 fig.tight_layout(rect=[0.02,0.02,1,0.99])
-fig.savefig(f"{G}/s_distribution_by_site.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/s_distribution_by_site.png", dpi=130, bbox_inches="tight")
 plt.show()
-print("saved s_distribution_by_site.png  (* = Wilcoxon p<0.05 on per-stratum SV-vs-SNP shift)")
+print(f"saved {PLOTS}/s_distribution_by_site.png  (shared ylim={YLIM}, true data min/max -- no clipping)")
 """
 
 code_s1_summary = r"""
-fig, ax = plt.subplots(1, 2, figsize=(11, 4))
-piv = (long.groupby(["stratum","cls"])["resid"].median().unstack())
-for cls in ["SNP","indel","SV"]:
-    ax[0].plot(mids, piv[cls].values, "-o", color=COL[cls], lw=1.8 if cls=="SV" else 1.2, ms=4, label=cls)
-ax[0].axhline(0, color="k", lw=0.6, ls=":"); ax[0].set_xscale("log")
-ax[0].set_xlabel("initial frequency $p_0$"); ax[0].set_ylabel("s − same-$p_0$ baseline (pooled over sites)")
-ax[0].annotate("SNP/indel ≈ 0; SV dips below at low $p_0$", xy=(0.97,0.05), xycoords="axes fraction",
-               ha="right", fontsize=8)
-ax[0].legend(frameon=False)
-m = meta
-ax[1].axhline(0, color="k", lw=0.6, ls=":")
-ax[1].scatter(m.bio1, m.shift_sv, c="#D55E00", s=28, label="SV", zorder=3)
-ax[1].scatter(m.bio1, m.shift_ind, c="#0072B2", s=18, alpha=.6, label="indel")
-ax[1].set_xlabel("site mean annual temp (bio1)"); ax[1].set_ylabel("mean s − baseline (freq-matched)")
-nneg = int((m.shift_sv<0).sum())
-ax[1].annotate(f"SV below baseline at {nneg}/{len(m)} sites", xy=(0.97,0.05), xycoords="axes fraction",
-               ha="right", fontsize=8)
-ax[1].legend(frameon=False)
-fig.tight_layout(); fig.savefig(f"{G}/s_distribution_summary.png", dpi=130, bbox_inches="tight")
-plt.show()
-print(f"SV median excess-vs-baseline across sites = {m.shift_sv.median():+.4f} (below at {nneg}/{len(m)})")
+def summary_clean(cvar, cmap):
+    m = meta
+    fig, ax = plt.subplots(figsize=(7, 4.6))
+    ax.set_axisbelow(True); ax.grid(color="0.88", lw=0.7)
+    for sp in ax.spines.values(): sp.set_visible(False)
+    ax.axhline(0, color="0.6", lw=0.8, ls=":")
+    ax.scatter(m[cvar], m.shift_ind, c="0.8", s=22, label="indel")
+    ax.scatter(m[cvar], m.shift_sv, c=m[cvar], cmap=cmap, s=55, label="SV", zorder=3)
+    r = stats.spearmanr(m[cvar], m.shift_sv)
+    b, a0 = np.polyfit(m[cvar], m.shift_sv, 1); xs = np.array([m[cvar].min(), m[cvar].max()])
+    ax.plot(xs, a0 + b*xs, color="0.35", lw=1.5, ls="--")
+    ax.annotate(f"ρ = {r.statistic:+.2f}    p = {r.pvalue:.3f}", xy=(0.03, 0.03),
+                xycoords="axes fraction", fontsize=9, color="0.3")
+    ax.set_xlabel(cvar); ax.set_ylabel("mean (s − baseline)")
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
+    fig.tight_layout(); fig.savefig(f"{PLOTS}/s_distribution_summary_{cvar}.png", dpi=130, bbox_inches="tight")
+    plt.show()
+    nneg = int((m.shift_sv<0).sum())
+    print(f"{cvar}: rho={r.statistic:+.3f} p={r.pvalue:.4f}; SV median excess={m.shift_sv.median():+.4f} (below baseline at {nneg}/{len(m)})")
+
+summary_clean("bio1", "coolwarm")
+summary_clean("bio18", "BrBG_r")
 """
 
-md_s1_take = r"""**Section 1 takeaway (verified null):** once the logit/initial-frequency artifact is removed,
-**SNP and indel sit on the neutral line (0)** at every frequency, and **SV excess-vs-baseline is ≈0**:
-median +0.0011, negative at only **15/31 sites** (a minority, sign test n.s.). No genome-wide SV
-purifying (or favoured) excess on this whole-distribution statistic. This does **not** mean SVs carry
-no selection signal by any statistic — see Sections 2-4."""
+md_s1_take = r"""**Takeaway — one finding, two faces of the same de-trended shift:**
 
-# ============================================================ Section 2: tail views
-md_s2 = r"""## Section 2 — tail-specific views (VERIFIED REAL): histogram, ECDF, ECDF-difference, shift-function, vs-climate
+- **Net shift is null.** SNP ≡ 0 (the baseline) and indel sits on it; SV excess-vs-SNP as a
+  whole-distribution median is ≈ 0 — median **+0.0004**, negative at only **15/31 sites** (sign test
+  n.s.). There is **no** uniform, genome-wide SV purifying (or favoured) excess.
+- **But the shift is climate-graded.** The per-site shift goes **negative (more purged) at hot/arid
+  sites and positive at cold/wet ones** (bio1 ρ ≈ −0.48, p ≈ 0.006; bio18 ρ ≈ +0.65, p < 0.001). The
+  net-null above is exactly these opposite-sign sites cancelling — the gradient is the real signal,
+  and the panel grid shows it concentrated in the **rare (low-$p_0$) tail** at the warm sites.
+- **It's insertions.** The insertion/deletion grid shows the warm-site tail purging is carried by SV
+  **insertions** (ref-relative); deletions track the SNP baseline.
 
-Five independent, complementary views of the same underlying question: not "does the whole
+Bounded by the hitchhiking and insertion-polarity caveats in the header. Finer tail localization
+(ECDF-difference, shift-function), the per-variant climate-slope β, and the de-trending robustness
+audit are in `SV_TEMPORAL_PURGING_SUMMARY.md`."""
+
+# ============================================================ insertion vs deletion grid
+md_insdel = r"""### Insertions vs deletions
+
+Same de-trended per-site grid, but the SV curve is split by **polarity** (ref-relative length):
+**insertions** (alt longer than ref, orange) vs **deletions** (ref longer, green), each still shown as
+$s_{\text{class}} - s_{\text{SNP}}$ vs $p_0$. Tests whether the warm-site rare-tail purging seen in
+the all-class grid is carried by one polarity. (`sv_isdel` comes from `s_climate_slope.npz`; it is
+aligned to the SV column order of `s_dist_by_stratum.npz` — the two share the same filters/order —
+and the cell asserts that alignment before plotting.)"""
+
+code_insdel_grid = r"""
+# split the per-site SV curve into insertions vs deletions. sv_isdel is a per-SV bool from the
+# climate-slope npz, aligned to the fixed SV column order shared by both npz files (same MIN_P0 /
+# MAC / SV_BP filters, same cols_non, same sv_k). Assert the alignment on p0 before trusting it.
+_z = np.load(f"{G}/s_climate_slope.npz"); sv_isdel = _z["sv_isdel"].astype(bool)
+_probe = sites[0]
+assert npz[f"{_probe}_s_SV"].size == sv_isdel.size, "SV count mismatch vs sv_isdel"
+assert np.allclose(npz[f"{_probe}_p0_SV"], _z["p0_sv"], atol=1e-5), \
+    "SV p0 order differs between npz files -- sv_isdel NOT aligned, do not trust ins/del split"
+
+def site_curves_insdel(site):
+    p0_base, base_curve = rolling_curve(npz[f"{site}_s_SNP"], npz[f"{site}_p0_SNP"])
+    logp0_base = np.log(p0_base)
+    sv_s = npz[f"{site}_s_SV"]; sv_p0 = npz[f"{site}_p0_SV"]
+    out = {}
+    for name, mask in (("ins", ~sv_isdel), ("del", sv_isdel)):
+        if mask.sum() < 30:
+            out[name] = (np.array([]), np.array([])); continue
+        p0c, medc = rolling_curve(sv_s[mask], sv_p0[mask])
+        out[name] = (p0c, medc - np.interp(np.log(p0c), logp0_base, base_curve))
+    return out
+
+n_ins = int((~sv_isdel).sum()); n_del = int(sv_isdel.sum())
+curves_id = {s: site_curves_insdel(s) for s in sites}
+all_vis_id = np.concatenate([np.concatenate([_visible(*curves_id[s][cl])[1]
+             for s in sites if curves_id[s][cl][0].size]) for cl in ["ins","del"]])
+pad = 0.05 * (all_vis_id.max() - all_vis_id.min()); YLIM_ID = (all_vis_id.min()-pad, all_vis_id.max()+pad)
+
+fig, axes = plt.subplots(nrow, ncol, figsize=(18, 2.4*nrow), sharex=True, sharey=True)
+axes = axes.ravel()
+for ax in axes[len(sites):]: ax.axis("off")
+for i, s in enumerate(sites):
+    ax = axes[i]; cv = curves_id[s]
+    p0i, ri = _visible(*cv["ins"]); p0d, rd = _visible(*cv["del"])
+    ax.axhline(0, color="k", lw=0.7, ls=":")
+    if p0i.size:
+        ax.fill_between(p0i, 0, ri, color=COL["ins"], alpha=0.18, lw=0)
+        ax.plot(p0i, ri, "-", color=COL["ins"], lw=1.6)
+    if p0d.size:
+        ax.plot(p0d, rd, "-", color=COL["del"], lw=1.6)
+    b1 = meta.bio1.iloc[i]; c = cmap(norm(b1))
+    ax.annotate(f"site {int(meta.site.iloc[i])}   bio1={b1:.0f}°C", xy=(0.03,0.96),
+                xycoords="axes fraction", va="top", ha="left", fontsize=6.8, color=c, fontweight="bold")
+    for sp in ax.spines.values(): sp.set_color(c); sp.set_linewidth(1.4)
+    ax.set_xscale("log"); ax.set_xlim(*XLIM); ax.set_xticks(XTICKS)
+    ax.set_xticklabels([str(t) for t in XTICKS], fontsize=6)
+    ax.tick_params(labelsize=6)
+axes[0].set_ylim(*YLIM_ID)
+fig.supxlabel("initial frequency $p_0$ (log)", y=0.005, fontsize=10)
+fig.supylabel("SV insertion / deletion  s − SNP baseline   (below 0 = more purged)", x=0.006, fontsize=10)
+fig.legend(handles=[Line2D([0],[0],color=COL["ins"],lw=2,label=f"insertion (n={n_ins})"),
+                    Line2D([0],[0],color=COL["del"],lw=2,label=f"deletion (n={n_del})")],
+           loc="upper right", ncol=2, fontsize=9, frameon=False, bbox_to_anchor=(0.995,1.004))
+fig.tight_layout(rect=[0.02,0.02,1,0.99])
+fig.savefig(f"{PLOTS}/s_distribution_insdel_by_site.png", dpi=130, bbox_inches="tight")
+plt.show()
+print(f"saved {PLOTS}/s_distribution_insdel_by_site.png  (ins n={n_ins}, del n={n_del}; ylim={YLIM_ID})")
+"""
+
+# ============================================================ Section 2: tail views (retained defs, NOT emitted)
+md_s2 = r"""## Section 2 — tail-specific views (VERIFIED REAL): ECDF-difference, shift-function, vs-climate
+
+Three independent, complementary views of the same underlying question: not "does the whole
 distribution shift" (Section 1, null), but **does SV have a heavier PURGED TAIL than a
-frequency-matched SNP, and does it concentrate at hot/arid sites?** All five agree: yes. Frequency
+frequency-matched SNP, and does it concentrate at hot/arid sites?** All three agree: yes. Frequency
 matching throughout (SNP/indel resampled to the SV $p_0$ distribution per site); no de-trending in
 this section (that check is Section 4)."""
 
-md_s2a = r"""### 2a. Raw histograms per site (common MAF; qualitative view)
-Density histograms of `s` per class per site. If the orange (SV) histogram is shifted left of
-grey/blue, SVs are under more purifying selection."""
-
-code_s2a = r"""
-MAF_MIN = 0.0
-XR = (-0.8, 0.8); BINS = np.linspace(*XR, 49)
-def get(site, cls):
-    s = npz[f"{site}_s_{cls}"]; p0 = npz[f"{site}_p0_{cls}"]
-    m = np.minimum(p0, 1-p0) >= MAF_MIN
-    return np.clip(s[m], *XR)
-
-sites = meta.site.tolist()
-ncol, nrow = 5, int(np.ceil(len(sites)/5))
-fig, axes = plt.subplots(nrow, ncol, figsize=(15, 2.6*nrow), sharex=True)
-axes = axes.ravel()
-for ax in axes[len(sites):]: ax.axis("off")
-for i, s in enumerate(sites):
-    ax = axes[i]; nsv = 0
-    for cls in ["SNP","indel","SV"]:
-        v = get(s, cls)
-        if v.size == 0: continue
-        if cls == "SV": nsv = v.size
-        ax.hist(v, bins=BINS, density=True, histtype="step", color=COL[cls],
-                lw=1.8 if cls=="SV" else 1.1, alpha=0.9)
-        ax.axvline(np.median(v), color=COL[cls], ls="--", lw=1.0 if cls=="SV" else 0.7, alpha=0.9)
-    ax.axvline(0, color="k", lw=0.5, ls=":")
-    b1 = meta[meta.site==s].bio1.iloc[0]
-    ax.set_title(f"site {s}  (bio1 {b1:.0f})  n$_{{SV}}$={nsv}", fontsize=7.5)
-    ax.set_xlim(*XR); ax.tick_params(labelsize=6); ax.set_yticks([])
-fig.supxlabel("selection coefficient  s  (logit-slope / gen);  <0 = purged, >0 = favoured", y=0.005, fontsize=10)
-fig.supylabel("density", x=0.006, fontsize=10)
-fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,label=c) for c in ["SNP","indel","SV"]],
-           loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.99,1.004))
-fig.tight_layout(rect=[0.02,0.02,1,0.99])
-fig.savefig(f"{G}/s_histogram_by_site.png", dpi=130, bbox_inches="tight"); plt.show()
-
-rows=[]
-for s in meta.site:
-    med={c:np.median(get(s,c)) for c in ["SNP","indel","SV"]}
-    rows.append(dict(site=s, sv_minus_snp=med["SV"]-med["SNP"], ind_minus_snp=med["indel"]-med["SNP"]))
-sh=pd.DataFrame(rows)
-nneg=int((sh.sv_minus_snp<0).sum())
-print(f"[RAW, not de-trended] median-s(SV) - median-s(SNP): median across sites {sh.sv_minus_snp.median():+.4f}")
-print(f"SV median below SNP at {nneg}/{len(sh)} sites (sign p={stats.binomtest(nneg,len(sh)).pvalue:.3f}); "
-      f"indel-SNP median {sh.ind_minus_snp.median():+.4f} (≈0)")
-print("NOTE: this RAW whole-population median comparison is the one that Section 1's de-trending nulls "
-      "(15/31 sites, n.s.) -- it is shown here for the qualitative distribution view only.")
-"""
-
-md_s2b = r"""### 2b. ECDFs per site, each class plotted separately
-Frequency-matched (SNP/indel resampled to SV's $p_0$). A curve higher/left reaches a given cumulative
-probability at more-negative `s` ⇒ more purged."""
-
-code_s2b = r"""
-GRID_E = np.linspace(-1.2, 0.9, 240)
-def ecdf(s): ss=np.sort(s); return np.searchsorted(ss, GRID_E, side="right")/ss.size
-
-sites = meta.site.tolist()
-ncol, nrow = 5, int(np.ceil(len(sites)/5))
-norm = mpl.colors.Normalize(vmin=meta.bio1.min(), vmax=meta.bio1.max()); cmap = mpl.cm.coolwarm
-fig, axes = plt.subplots(nrow, ncol, figsize=(15, 2.5*nrow), sharex=True, sharey=True)
-axes = axes.ravel()
-for ax in axes[len(sites):]: ax.axis("off")
-for i, s in enumerate(sites):
-    ax = axes[i]; p_sv = npz[f"{s}_p0_SV"]
-    e_sv = ecdf(npz[f"{s}_s_SV"])
-    e_sn = ecdf(match_to(p_sv, npz[f"{s}_s_SNP"],   npz[f"{s}_p0_SNP"]))
-    e_in = ecdf(match_to(p_sv, npz[f"{s}_s_indel"], npz[f"{s}_p0_indel"]))
-    ax.axvline(0, color="0.5", lw=1.0, zorder=1)
-    ax.plot(GRID_E, e_sn, color=COL["SNP"],   lw=1.6, zorder=2)
-    ax.plot(GRID_E, e_in, color=COL["indel"], lw=1.1, zorder=3)
-    ax.plot(GRID_E, e_sv, color=COL["SV"],    lw=1.6, zorder=4)
-    b1 = meta[meta.site==s].bio1.iloc[0]; c = cmap(norm(b1))
-    ax.set_title(f"#{i+1}  site {s}  bio1={b1:.0f}°C", fontsize=7.5, color=c, fontweight="bold")
-    for sp in ax.spines.values(): sp.set_color(c); sp.set_linewidth(1.4)
-    ax.set_ylim(0,1); ax.tick_params(labelsize=6)
-fig.supxlabel("selection coefficient  s   (left = purged, right = favoured)", y=0.005, fontsize=10)
-fig.supylabel("cumulative fraction  P(s ≤ x)", x=0.006, fontsize=10)
-fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,label=c) for c in ["SNP","indel","SV"]],
-           loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.99,1.004))
-fig.tight_layout(rect=[0.03,0.02,1,0.99])
-fig.savefig(f"{G}/s_ecdf_by_site.png", dpi=130, bbox_inches="tight"); plt.show()
-print("saved s_ecdf_by_site.png -- orange rising above grey/blue left of s=0 = more purged; "
-      "gap grows at hot sites, ~absent at cold ones. SNP/indel coincide.")
-"""
-
-md_s2c = r"""### 2c. ECDF-difference per site (the more sensitive companion to 2b)
+md_s2c = r"""### 2c. ECDF-difference per site
 $\Delta\mathrm{CDF}(x) = P(s_{\text{class}} \le x) - P(s_{\text{matched SNP}} \le x)$. Positive hump ⇒
 left-shifted (more purged); peak height ≈ KS statistic."""
 
@@ -298,7 +352,7 @@ for i, s in enumerate(sites):
     ax.fill_between(GRID_D, 0, dsv, color=COL["SV"], alpha=0.20, lw=0)
     ax.plot(GRID_D, dsv, color=COL["SV"], lw=1.6); ax.plot(GRID_D, din, color=COL["indel"], lw=1.0)
     b1 = meta[meta.site==s].bio1.iloc[0]; c = cmap(norm(b1))
-    ax.set_title(f"#{i+1}  site {s}  bio1={b1:.0f}°C  KS={np.abs(dsv).max():.03f}",
+    ax.set_title(f"site {s}   bio1={b1:.0f}°C   KS={np.abs(dsv).max():.03f}",
                  fontsize=7.5, color=c, fontweight="bold")
     for sp in ax.spines.values(): sp.set_color(c); sp.set_linewidth(1.4)
     ax.tick_params(labelsize=6)
@@ -430,7 +484,7 @@ print(f"mean-s difference: median across sites {d.d_mean.median():+.4f}; indel-S
 md_s2_take = r"""**Section 2 takeaway (verified real):** indel ≈ SNP everywhere, in every view. **SV has a heavier
 purged tail than frequency-matched SNP, concentrated at hot/arid sites** — not a whole-distribution
 shift (Section 1 is right about that), but a real, modest, climate-concentrated tail effect,
-insertion-driven. Five independent statistics agree. This was previously (wrongly) dismissed as
+insertion-driven. Three independent statistics agree. This was previously (wrongly) dismissed as
 sharing Section 1's confound — Section 4 tests that directly."""
 
 # ============================================================ Section 3: climate-slope beta
@@ -527,7 +581,7 @@ and wrongly concluded this arm had weakened."""
 # ============================================================ Section 4: de-trending audit
 md_s4 = r"""## Section 4 — direct de-trending audit (2026-07-15): does Section 1's fix kill Sections 2-3?
 
-Section 1's de-trending (subtract the per-p0-bin ALL-class-pooled median `s`) killed the
+Section 1's de-trending (subtract the per-p0-bin SNP median `s`) killed the
 whole-distribution median-shift signal. An earlier pass assumed, by analogy, that Sections 2-3's
 tail/climate signal shared the same confound and would also die under the same correction — that was
 never tested directly until now. This section applies the identical correction to (a) climate-slope
@@ -538,7 +592,7 @@ sites_hot_cold = sorted({int(k.split("_")[0]) for k in npz.files if k.split("_")
 clim_site = meta.set_index("site")["bio1"]
 
 def resid_frac_neg(site):
-    # de-trended fraction s<0: s minus the per-(site,stratum) ALL-class median baseline
+    # de-trended fraction s<0: s minus the per-(site,stratum) SNP median baseline
     s_sv, p0_sv = npz[f"{site}_s_SV"].astype(np.float64), npz[f"{site}_p0_SV"].astype(np.float64)
     s_sn, p0_sn = npz[f"{site}_s_SNP"].astype(np.float64), npz[f"{site}_p0_SNP"].astype(np.float64)
     b_sv, b_sn = binf(p0_sv), binf(p0_sn)
@@ -614,20 +668,18 @@ insertion-polarity (no ancestral outgroup) caveats still apply, unchanged, to wh
 turns out to be. Parallelism / PicMin / `parallelism_by_site` are a separate, open thread not
 addressed here."""
 
+# Trimmed 2026-07-20 to the headline: de-trended per-site grid (all-class) + insertion/deletion
+# grid + climate scatter. Sections 2-4 (tail views, climate-slope β, de-trending audit) and the
+# final synthesis are retained as definitions above but NOT emitted; they live in
+# SV_TEMPORAL_PURGING_SUMMARY.md and git history. Re-add them here to restore.
 nb = new_notebook(cells=[
     new_markdown_cell(md_intro),
     new_code_cell(code_setup),
-    new_markdown_cell(md_s1), new_code_cell(code_s1_grid), new_code_cell(code_s1_summary), new_markdown_cell(md_s1_take),
-    new_markdown_cell(md_s2),
-    new_markdown_cell(md_s2a), new_code_cell(code_s2a),
-    new_markdown_cell(md_s2b), new_code_cell(code_s2b),
-    new_markdown_cell(md_s2c), new_code_cell(code_s2c),
-    new_markdown_cell(md_s2d), new_code_cell(code_s2d),
-    new_markdown_cell(md_s2e), new_code_cell(code_s2e),
-    new_markdown_cell(md_s2_take),
-    new_markdown_cell(md_s3), new_code_cell(code_s3_load), new_code_cell(code_s3_intensity), new_markdown_cell(md_s3_take),
-    new_markdown_cell(md_s4), new_code_cell(code_s4), new_markdown_cell(md_s4_take),
-    new_markdown_cell(md_final),
+    new_markdown_cell(md_s1),
+    new_code_cell(code_s1_grid),
+    new_markdown_cell(md_insdel), new_code_cell(code_insdel_grid),
+    new_code_cell(code_s1_summary),
+    new_markdown_cell(md_s1_take),
 ])
 ep = ExecutePreprocessor(timeout=1800, kernel_name="basic", startup_timeout=180)
 ep.preprocess(nb, {"metadata": {"path": os.path.dirname(OUT)}})

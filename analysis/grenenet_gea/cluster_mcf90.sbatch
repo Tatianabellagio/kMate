@@ -18,7 +18,7 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 mkdir -p logs
 export MINCF=0.9
-export BLOCKS_DIR=results/grenenet_gea/blocks_mcf90
+export BLOCKS_DIR=analysis/grenenet_gea/blocks_mcf90
 
 CHRS=(Chr1 Chr2 Chr3 Chr4 Chr5)
 CHR=${CHRS[$SLURM_ARRAY_TASK_ID]}

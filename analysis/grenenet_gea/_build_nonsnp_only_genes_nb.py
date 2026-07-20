@@ -35,7 +35,7 @@ code_load = r"""
 import os
 import numpy as np, pandas as pd
 os.chdir("/global/scratch/users/tbellg/kmate")
-OUT = "results/grenenet_gea/varexp"
+OUT = "analysis/grenenet_gea/varexp"
 g = pd.read_csv(f"{OUT}/nonsnp_only_genes_described.csv").fillna("")
 b = pd.read_csv(f"{OUT}/nonsnp_only_blocks.csv").fillna("")
 g["desc"] = g["ensembl_description"].str.replace(r" \[Source:.*", "", regex=True)
@@ -122,7 +122,7 @@ md_bottom = """## Notes
   bioclim-null caveat above.
 - Keyword screening is low-recall. A manual pass over the symbols (below the auto-screen) is worth
   doing for canonical stress/flowering/clock genes that carry only generic family annotations.
-- Files: `results/grenenet_gea/varexp/nonsnp_only_{blocks,genes,genes_described}.csv`."""
+- Files: `analysis/grenenet_gea/varexp/nonsnp_only_{blocks,genes,genes_described}.csv`."""
 
 nb = new_notebook(cells=[
     new_markdown_cell(md_title),

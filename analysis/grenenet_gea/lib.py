@@ -6,7 +6,7 @@ dependent directional selection — and ask whether SVs add adaptive signal SNPs
 miss. See README.md.
 
 Data:
-  - kMate per-sample AF TSVs: results/grenenet_gea/rerun_kfw_hb/evolved/<MLFH...>.tsv
+  - kMate per-sample AF TSVs: analysis/grenenet_gea/rerun_kfw_hb/evolved/<MLFH...>.tsv
       (--unit chrom + full-panel Kf_w; old-panel grenenet_kmate_arch3 deleted 2026-07-08)
       cols: chrom pos ref_len alt_len alt_freq info n_called se
   - founding p0 (gen 0): the SEEDMIX kMate outputs (mean over 8 reps).
@@ -21,10 +21,10 @@ from scipy import stats
 PROJ = "/global/scratch/users/tbellg/kmate"
 # Repointed 2026-07-07 to the full-panel-Kf_w + haploblock (--unit chrom) rerun.
 # Prev: rerun_perfounder (pre-Kf_w-fullpanel, 2026-07-06 — STALE). See
-# results/grenenet_gea/rerun_kfw_hb/README.md.
-OUT = f"{PROJ}/results/grenenet_gea/rerun_kfw_hb/evolved"
-SEEDMIX = f"{PROJ}/results/grenenet_gea/rerun_kfw_hb/seedmix"
-GEA = f"{PROJ}/results/grenenet_gea"
+# analysis/grenenet_gea/rerun_kfw_hb/README.md.
+OUT = f"{PROJ}/analysis/grenenet_gea/rerun_kfw_hb/evolved"
+SEEDMIX = f"{PROJ}/analysis/grenenet_gea/rerun_kfw_hb/seedmix"
+GEA = f"{PROJ}/analysis/grenenet_gea"
 T5 = ("/global/scratch/users/tbellg/pang/grenenet_reads/"
       "Table_S5_sample_collection_sequencing_library.csv")
 # Authoritative GrENE-Net sample table (has usesample, flowerscollected,
@@ -76,7 +76,7 @@ def decode_af(u: np.ndarray) -> np.ndarray:
 # QC exclusion: samples with too little USABLE panel data (Chr1 nonzero-k-mer
 # fraction < 0.10) — dead/contaminated libraries whose h/AF are garbage. NOT a
 # sequencing-depth cut (depth doesn't isolate them; corr(depth,nzfrac)~0.57). See
-# results/grenenet_gea/qc_coverage_audit.{csv,ipynb}. Applied globally so no pool/
+# analysis/grenenet_gea/results/qc_coverage_audit.csv + analysis/grenenet_gea/notebooks/qc_coverage_audit.ipynb. Applied globally so no pool/
 # site/analysis sees them. Set 2026-07-07.
 QC_EXCLUDE_FILE = f"{os.path.dirname(os.path.abspath(__file__))}/../../data/qc_lowcov_exclude.txt"
 def qc_excluded() -> set[str]:
@@ -87,6 +87,24 @@ def qc_excluded() -> set[str]:
                     if ln.strip() and not ln.startswith("#")}
     except FileNotFoundError:
         return set()
+
+
+CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
+
+
+def genome_h(samp: str, base: str) -> np.ndarray | None:
+    """genome-wide founder h for one sample = mean over chroms of the per-chrom h.
+
+    Reads the --unit chrom cohort format `{base}/{samp}_{ch}.h_per_chrom.npz`, key
+    `{ch}` (a single 231-vector per chrom).
+    """
+    gs = []
+    for ch in CHROMS:
+        f = f"{base}/{samp}_{ch}.h_per_chrom.npz"
+        if not os.path.exists(f):
+            return None
+        gs.append(np.load(f, allow_pickle=True)[ch].astype(np.float64))
+    return np.mean(gs, 0)
 
 
 def list_samples(base: str = OUT) -> list[str]:
@@ -189,7 +207,7 @@ def sv_size(df: pd.DataFrame) -> pd.Series:
 def build_p0(sv_only: bool = False, cache: bool = True) -> pd.Series:
     """Founding (gen-0) per-record AF = mean alt_freq over the 8 SEEDMIX reps.
 
-    Returns a Series indexed by rec_key. Cached to results/grenenet_gea/.
+    Returns a Series indexed by rec_key. Cached to analysis/grenenet_gea/.
     """
     tag = "sv" if sv_only else "all"
     cache_path = f"{GEA}/p0_seedmix_{tag}.pkl"   # pickle: no pyarrow dependency
@@ -225,7 +243,7 @@ def build_qc_table(samples: list[str] | None = None, base: str = OUT,
 
     Per sample: record/SV/SNP counts, finite-AF fraction, AF means (all + SV),
     called-mask stats, + joined coverage/generation/climate + eff_n_founders.
-    Cache to results/grenenet_gea/pilot_qc.csv so notebooks just load it.
+    Cache to analysis/grenenet_gea/pilot_qc.csv so notebooks just load it.
     """
     if samples is None:
         samples = list_samples(base)
@@ -269,7 +287,7 @@ def build_group_means(samples: list[str] | None = None, base: str = OUT,
     POSITION (fast numpy), not string keys. Returns record meta
     (chrom,pos,ref_len,alt_len) + p0 (mean over SEEDMIX reps) + one column per
     group `<climate>_g<gen>` (NaN-aware mean) + `<...>_n`. This is the Δp
-    foundation: Δp_group = group_col - p0. Cached to results/grenenet_gea/.
+    foundation: Δp_group = group_col - p0. Cached to analysis/grenenet_gea/.
     """
     # numpy .npz cache: readable across pandas versions (the pickle cache broke
     # when written by pandas 3.x and read by 2.x — StringDtype pickle mismatch).
@@ -492,7 +510,7 @@ def multisite_gwas_raw(tag: str = "clq90_pc1") -> dict:
 
     Recomputes chi2_joint/p_joint/z_global/z_clim from the raw Z (M markers x S sites,
     genomic-controlled) and cross-site null covariance C in
-    results/grenenet_gea/hapfreq/multisite_founder_gwas_{tag}.npz, using the identical
+    analysis/grenenet_gea/archive/window_hapfreq_retired/hapfreq/multisite_founder_gwas_{tag}.npz, using the identical
     formulas as founder_gwas_multisite.py. Self-checks the recomputed JOINT lambda_GC
     against the saved _meta.json so a silent Z/C misread can't drift unnoticed (the npz
     doesn't store the derived per-marker stats, and the sibling .csv is p_joint-sorted so

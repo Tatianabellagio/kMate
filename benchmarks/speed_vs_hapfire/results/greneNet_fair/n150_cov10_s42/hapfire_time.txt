@@ -1,0 +1,23 @@
+	Command being timed: "/global/home/users/tbellg/miniforge3/envs/hapfire/bin/python /global/scratch/users/tbellg/kmate/external/HapFIRE/hapFIRE.py -vcf /global/scratch/users/tbellg/kmate/benchmarks/speed_vs_hapfire/work/greneNet_chr1.vcf.gz -bam /global/scratch/users/tbellg/kmate/benchmarks/speed_vs_hapfire/results/greneNet_fair/n150_cov10_s42/sim.srt.bam -fa /global/scratch/users/tbellg/pang/ref_xing/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa -output greneNet_hapfire_n150_cov10_s42"
+	User time (seconds): 1000.43
+	System time (seconds): 34.26
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 17:19.32
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 16062648
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 15028305
+	Voluntary context switches: 4595
+	Involuntary context switches: 2057
+	Swaps: 0
+	File system inputs: 828016
+	File system outputs: 15080936
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

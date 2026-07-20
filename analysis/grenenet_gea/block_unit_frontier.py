@@ -21,7 +21,7 @@ from eval_block_coherence import load_allclass_af, pc1_var_explained
 from block_haplotype_counts import hap_counts
 from block_cluster_pc1ve import cluster_founders, SIG_PRESENT, SIG_DIFF   # shim applied on import
 
-BR = os.environ.get("BLOCKS_DIR", "results/grenenet_gea/blocks_recompute")
+BR = os.environ.get("BLOCKS_DIR", "analysis/grenenet_gea/blocks_recompute")
 MAF = 0.05
 MINCF = float(os.environ.get("MINCF", "0.5"))   # must match the block-build filter
 

@@ -13,7 +13,7 @@ so downstream code can re-standardize the exact same markers with no position-ma
 (build_sv_snp_ld.py's prior SV-only run matched by position, fine there since it was a standalone
 diagnostic; here we need exact GRM-column identity).
 
-Output -> results/grenenet_gea/varexp/nonsnp_tagging_{chrom}.npz
+Output -> analysis/grenenet_gea/varexp/nonsnp_tagging_{chrom}.npz
   col_idx, pos, cls(1=indel,2=sv), best_r2, best_snp_pos, n_snp_window
 Env: kmate. Run on a compute node (Lustre I/O + O(n_markers) windowed matmuls).
 """

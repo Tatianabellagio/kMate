@@ -6,7 +6,7 @@ deg2 (canonical, primary regime for the clq90 run — see STATUS_clq90.md), comp
 BH-FDR on the block p (Z_pVal) and take the blocks with q < --fdr. For each
 significant block:
   - reconstruct its genomic SPAN from the clq0.9 BigLD interval TSVs
-    (results/grenenet_gea/blocks_mcf90/chr{N}_clq0.9_blocks_clq0.9.tsv),
+    (analysis/grenenet_gea/blocks_mcf90/chr{N}_clq0.9_blocks_clq0.9.tsv),
   - list every TAIR10 gene overlapping that span (local GFF, lib.load_genes),
   - enrich each gene AT-id with its SYMBOL + DESCRIPTION via the Ensembl Plants
     REST API (TAIR10 assembly; no auth, batch POST).
@@ -14,7 +14,7 @@ significant block:
 This is the clq0.9-block counterpart of build_significant_genes.py (which uses
 the coarse phase-1 hapFIRE blocks / snp+smallindel+sv / deg7cap2000).
 
-Output (results/grenenet_gea/phase1_replication/clq90/):
+Output (analysis/grenenet_gea/phase1_replication/results/clq90/):
   significant_genes_clq90_gen9_bio1_deg2.csv  one row per (block, gene):
     gene, symbol, description, block, region, chrom, start, end, span_bp,
     n_variants, n_genes_in_block, n_sig_combos, sig_models, sig_classes,
@@ -30,8 +30,8 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-WDIR = f"{lib.GEA}/phase1_replication/clq90/wza"
-OUTDIR = f"{lib.GEA}/phase1_replication/clq90"
+WDIR = f"{lib.GEA}/phase1_replication/results/clq90/wza"
+OUTDIR = f"{lib.GEA}/phase1_replication/results/clq90"
 MODELS = ["kendall", "lfmm", "binomial"]
 CLASSES = ["snp", "nonsnp"]
 ENSEMBL = "https://rest.ensembl.org/lookup/id"

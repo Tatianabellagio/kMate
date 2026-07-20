@@ -10,7 +10,7 @@
 #SBATCH --output=logs/gen_mat_%A_%a.out
 #SBATCH --error=logs/gen_mat_%A_%a.err
 
-# Rebuild results/grenenet_gea/gen_matrices/ from the on-cluster af_store.
+# Rebuild analysis/grenenet_gea/gen_matrices/ from the on-cluster af_store.
 # 9 array tasks = 3 generations x 3 kinds (snp, nonsnp, smallindel); each task
 # writes ONE gen{g}_{kind}_af.npy. Idempotent: a task whose output already
 # exists with the right shape is skipped, so preempted tasks resume cleanly.
@@ -28,7 +28,7 @@
 
 set -uo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/grenenet_gea/gen_matrices
+mkdir -p logs analysis/grenenet_gea/gen_matrices
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 
 GENS=(1 2 3)

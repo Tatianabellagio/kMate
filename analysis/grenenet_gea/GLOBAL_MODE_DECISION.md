@@ -31,7 +31,7 @@ kMate projects `AF(variant v, pool s) = Σ_founders h[s,f] · G[f,v]` where `G` 
 So PC1-variance-explained / any linkage metric computed on kMate's *projected* evolved
 AF reflects the **founder panel's** covariance, not the evolved population. It cannot
 detect recombination. This makes the older
-`results/grenenet_gea/gen9_window/breakage_global_vs_window.png` and the r≈0.99
+`analysis/grenenet_gea/archive/window_hapfreq_retired/gen9_window/breakage_global_vs_window.png` and the r≈0.99
 `hapfreq/site4_block_vs_global_h.png` "everything is linked" reads **partly circular** —
 consistent with the null, but not proof of it. (They were also built with the
 prior-anchored + global-fallback window run, so the "window" side was partly global by
@@ -98,19 +98,6 @@ artifacts in this system). Intact linkage is an **assumption to state**, not a b
 > generations, new recombination is expected to be negligible and, where it occurs, to
 > fall below the detection limit of panel-based pooled-sequence allele-frequency
 > estimation; founder haplotype linkage is therefore treated as preserved.
-
-## If a defensible *bound* is ever wanted (expect a null result)
-
-Do not use the simulation floor. Instead:
-1. **Internal gen0 empirical null** — run the identical coarse `--local-only` pipeline on
-   the real gen0 pools (they carry every real artifact but have no new recombination), and
-   accept a gen3 "break" only if it exceeds the gen0 `|h₁−h₂|` floor **at the same locus**
-   (location pairing kills location-specific deterministic artifacts).
-2. **Panel leave-one-out** — a real breakpoint is robust to dropping any single founder; a
-   panel-incompleteness artifact swings wildly. This is the diagnostic that actually
-   discriminates misspecification from biology.
-3. Define the break metric on a **collinearity-robust projected functional**, not raw `h`.
-4. Require a **positive control** (a known outcross/admixture locus) to fire first.
 
 ## Update (2026-07-08): machinery archived; GLOBAL = `--unit chrom`
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Per-unit metrics for the final dynamic-LD unit map: n_variants, panel_kmers (from the map),
 mean within-unit founder LD (r2), and PC1-VE on the gen9 pools. One row per unit.
-Output: results/grenenet_gea/blocks_mcf90/final_units_dynld_K500_metrics.csv
+Output: analysis/grenenet_gea/blocks_mcf90/final_units_dynld_K500_metrics.csv
 """
 import os, sys
 import numpy as np, pandas as pd
@@ -10,7 +10,7 @@ from recompute_blocks import build_common_matrix
 from eval_block_coherence import load_allclass_af, pc1_var_explained
 
 MAF, MINCF = 0.05, 0.9
-BR = "results/grenenet_gea/blocks_mcf90"
+BR = "analysis/grenenet_gea/blocks_mcf90"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 
 

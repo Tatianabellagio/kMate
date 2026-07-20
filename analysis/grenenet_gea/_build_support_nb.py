@@ -28,9 +28,9 @@ import nbformat as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
 
 PROJ = "/global/scratch/users/tbellg/kmate"
-GEA = f"{PROJ}/results/grenenet_gea"
+GEA = f"{PROJ}/analysis/grenenet_gea"
 STORE = f"{GEA}/af_store"
-OUTBASE = f"{PROJ}/results/grenenet_gea/rerun_kfw_hb/evolved"  # repointed 2026-07-07 (full-panel-Kf_w + --unit chrom rerun)
+OUTBASE = f"{PROJ}/analysis/grenenet_gea/rerun_kfw_hb/evolved"  # repointed 2026-07-07 (full-panel-Kf_w + --unit chrom rerun)
 NBDIR = f"{PROJ}/analysis/grenenet_gea/notebooks"
 OUT = f"{NBDIR}/06_sv_support_filter.ipynb"
 CACHE = f"{STORE}/sv_support_cache.npz"
@@ -128,7 +128,7 @@ SV = `|alt_len − ref_len| > 50 bp`.
 code_load = r"""
 import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
-CACHE = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/af_store/sv_support_cache.npz"
+CACHE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/af_store/sv_support_cache.npz"
 z = np.load(CACHE, allow_pickle=True)
 nc    = z["n_called"].astype(int)         # panel-level, per SV
 size  = z["size"].astype(int)

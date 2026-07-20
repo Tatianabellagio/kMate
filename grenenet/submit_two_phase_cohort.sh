@@ -23,7 +23,7 @@
 #
 # Example (full evolved cohort, --unit chrom — the production set):
 #   grenenet/submit_two_phase_cohort.sh data/sample_manifest_usesample.tsv \
-#       results/grenenet_gea/rerun_kfw_hb/evolved $SCRATCH/kmate_dbs 200 chrom 200
+#       analysis/grenenet_gea/rerun_kfw_hb/evolved $SCRATCH/kmate_dbs 200 chrom 200
 # ============================================================================
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate

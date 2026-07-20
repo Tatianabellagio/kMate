@@ -7,14 +7,14 @@ NOTE: floor is on n_variants (the proxy we have); the benchmark agent should ide
 sweep a min-OBSERVED-KMER floor (they have the per-block k-mer counts). Variant-floor maps
 are the starting sweep.
 
-Input  : results/grenenet_gea/blocks_mcf90/chr{N}_clq0.9_blocks_clq0.9.tsv
-Output : results/grenenet_gea/blocks_mcf90/coarse/chr{N}_floor{F}.tsv  (chrom start end n_variants n_merged)
+Input  : analysis/grenenet_gea/blocks_mcf90/chr{N}_clq0.9_blocks_clq0.9.tsv
+Output : analysis/grenenet_gea/blocks_mcf90/coarse/chr{N}_floor{F}.tsv  (chrom start end n_variants n_merged)
 Usage  : make_coarse_blocks.py --floors 8,15,25,40
 """
 import os, argparse
 import numpy as np, pandas as pd
 
-BR = "results/grenenet_gea/blocks_mcf90"
+BR = "analysis/grenenet_gea/blocks_mcf90"
 OUTD = f"{BR}/coarse"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 

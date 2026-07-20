@@ -41,7 +41,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm
 import wza_core as wc
 
-KEN = ("/global/scratch/users/tbellg/kmate/results/grenenet_gea/"
+KEN = ("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/"
        "phase1_replication/kendall/kendall_snp_gen1_bio1.csv")
 df = pd.read_csv(KEN)
 df = df[df.MAF >= 0.05].copy()                 # phase-1 maf05

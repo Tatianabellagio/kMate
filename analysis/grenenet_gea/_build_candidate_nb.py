@@ -121,7 +121,7 @@ import numpy as np, pandas as pd, sys
 import matplotlib.pyplot as plt
 from matplotlib import cm
 sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"); import lib
-C = np.load("/global/scratch/users/tbellg/kmate/results/grenenet_gea/gea/candidate_block_cache.npz", allow_pickle=True)
+C = np.load("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea/candidate_block_cache.npz", allow_pickle=True)
 bm = pd.DataFrame({k[3:]: C[k] for k in C.files if k.startswith("bm_")})
 lead = int(C["lead_local"]); sites3 = C["sites3"]; bio1 = C["bio1_3"]
 traj = C["traj"]; dp3 = C["dp3"]; p0 = C["p0"]

@@ -5,7 +5,7 @@ already clear K are untouched; sub-K blocks absorb their most-LD-linked neighbou
 merging stops at a true LD break (inter-block r2 < FLOOR) -> those stay small (desert/fallback).
 
 inter-block LD = r2 between adjacent units' founder PC1 (dominant haplotype axis).
-Output: results/grenenet_gea/blocks_mcf90/chr{n}_units_dynld_K{K}.tsv
+Output: analysis/grenenet_gea/blocks_mcf90/chr{n}_units_dynld_K{K}.tsv
 
 CORRECTNESS (2026-06-19 audit fixes):
  - panel k-mers per unit = # bubble CENTROIDS in the unit's [start,end] interval, computed
@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from recompute_blocks import build_common_matrix
 
 MAF, MINCF = 0.05, 0.9
-BR = "results/grenenet_gea/blocks_mcf90"
+BR = "analysis/grenenet_gea/blocks_mcf90"
 
 
 def pc1(geno, lo, hi):

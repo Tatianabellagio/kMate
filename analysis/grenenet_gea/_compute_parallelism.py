@@ -13,7 +13,7 @@ frequency-controlled). REPEATABILITY (PicMin-style) = # sites where the variant 
 
 Saves per variant (all SV+indel-subsample+SNP-subsample): p0, class, isdel, n_sites, resp_count,
 mean_rho, mean_absz, mean_signed_slope, and the per-site signed mean-slope matrix for a climate cross.
-Env: kmate.  Writes results/grenenet_gea/sv_adaptive/parallelism.npz .
+Env: kmate.  Writes analysis/grenenet_gea/sv_adaptive/parallelism.npz .
 """
 import os, sys, glob
 import numpy as np, pandas as pd

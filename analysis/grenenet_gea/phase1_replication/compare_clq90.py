@@ -68,12 +68,12 @@ def load_one(path: str, fdr: float) -> dict | None:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--wza", default=f"{lib.GEA}/phase1_replication/clq90/wza")
+    ap.add_argument("--wza", default=f"{lib.GEA}/phase1_replication/results/clq90/wza")
     ap.add_argument("--fdr", type=float, default=0.05)
     ap.add_argument("--gene", default="AT2G27030", help="target gene (default CAM5)")
     ap.add_argument("--r2", type=float, default=0.9)
     ap.add_argument("--deg", default="deg2", choices=["deg2", "deg7cap2000", "both"])
-    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/clq90/compare_clq90.csv")
+    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/clq90/compare_clq90.csv")
     args = ap.parse_args()
 
     paths = sorted(glob.glob(f"{args.wza}/wza_*.csv"))

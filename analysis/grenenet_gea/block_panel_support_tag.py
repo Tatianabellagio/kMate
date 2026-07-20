@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from block_haplotype_counts import hap_counts
 from block_cluster_pc1ve import cluster_founders   # numpy.warnings shim applied on import
 
-BR = "results/grenenet_gea/blocks_recompute"
+BR = "analysis/grenenet_gea/blocks_recompute"
 MAF, MINCF = 0.05, 0.5
 GATE = 2.0
 

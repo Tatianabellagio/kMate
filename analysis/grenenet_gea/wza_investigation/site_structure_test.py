@@ -15,11 +15,11 @@ import os
 import numpy as np, pandas as pd
 from scipy.stats import kendalltau
 
-CM = ("/global/scratch/users/tbellg/kmate/results/grenenet_gea/"
+CM = ("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/"
       "phase1_replication/class_matrices")
-KEN = ("/global/scratch/users/tbellg/kmate/results/grenenet_gea/"
+KEN = ("/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/"
        "phase1_replication/kendall/kendall_snp_gen1_bio1.csv")
-OUT = "/global/scratch/users/tbellg/kmate/results/grenenet_gea/wza_investigation"
+OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/wza_investigation/results"
 RNG = np.random.default_rng(0)
 BLOCKS = {"4_2519": "Chr4 CRK", "2_1265": "CAM5"}
 

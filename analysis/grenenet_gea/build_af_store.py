@@ -48,7 +48,7 @@ import pandas as pd
 
 PROJ = "/global/scratch/users/tbellg/kmate"
 # Repointed 2026-07-07 to the full-panel-Kf_w + haploblock (--unit chrom) rerun.
-OUT = f"{PROJ}/results/grenenet_gea/rerun_kfw_hb/evolved"
+OUT = f"{PROJ}/analysis/grenenet_gea/rerun_kfw_hb/evolved"
 N_FULL_EXPECTED = 8_489_646   # segregating-only arch3 panel (sanity guard)
 SUBDIRS = ("af_nonsnp", "af_snp", "nc_nonsnp", "nc_snp")
 AF_SCALE = 10000        # alt_freq stored as uint16 round(af * AF_SCALE)

@@ -20,7 +20,7 @@ principled aggregation and used throughout this pipeline, e.g. run_betabinom_lat
 
 DOES NOT touch/overwrite anything under clq90/{kendall,wza,wza_in}/ or
 clq90/compare_clq90.csv (frozen production). Writes only to:
-  results/grenenet_gea/phase1_replication/clq90/kendall_fix_test/site_collapsed/
+  analysis/grenenet_gea/phase1_replication/results/clq90/kendall_fix_test/site_collapsed/
 
 Usage:
   PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
@@ -36,9 +36,9 @@ from scipy.stats import kendalltau, chi2
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 
-CMDIR = f"{lib.GEA}/phase1_replication/class_matrices"
-PRODDIR = f"{lib.GEA}/phase1_replication/clq90/wza_in"       # frozen production, READ-ONLY
-OUT = f"{lib.GEA}/phase1_replication/clq90/kendall_fix_test/site_collapsed"
+CMDIR = f"{lib.GEA}/phase1_replication/results/class_matrices"
+PRODDIR = f"{lib.GEA}/phase1_replication/results/clq90/wza_in"       # frozen production, READ-ONLY
+OUT = f"{lib.GEA}/phase1_replication/results/clq90/kendall_fix_test/site_collapsed"
 GEN = 9
 CLIM = "bio1"
 CLASSES = ["snp", "nonsnp"]

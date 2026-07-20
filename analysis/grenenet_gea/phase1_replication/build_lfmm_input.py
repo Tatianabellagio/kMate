@@ -30,8 +30,8 @@ def main():
                     choices=["snp", "sv", "smallindel", "nonsnp"])
     ap.add_argument("--gen", type=int, default=9)
     ap.add_argument("--climate", default="bio1")
-    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/class_matrices")
-    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/lfmm")
+    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/lfmm")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 

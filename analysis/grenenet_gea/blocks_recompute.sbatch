@@ -16,7 +16,7 @@
 
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/grenenet_gea/blocks_recompute
+mkdir -p logs analysis/grenenet_gea/blocks_recompute
 export LD_LIBRARY_PATH=/usr/lib64:${LD_LIBRARY_PATH:-}
 
 CLQ=(0.5 0.7 0.9)
@@ -30,6 +30,6 @@ echo "[$(date)] $CHR coarse corr=0.2 + BigLD CLQcut=$c"
 $PY analysis/grenenet_gea/recompute_blocks.py \
     --var-pa-prefix panel/arch3/${chrlc}/var_pa_231_arch3_${chrlc} \
     --chrom "$CHR" --corr 0.2 --window 50 --maf 0.05 --clqcut "$c" \
-    --out results/grenenet_gea/blocks_recompute/${chrlc}_clq${c} \
+    --out analysis/grenenet_gea/blocks_recompute/${chrlc}_clq${c} \
     --rscript "$RSCRIPT" --bigld-dir /global/scratch/users/tbellg/HapFM/bin
 echo "[$(date)] done CLQcut=$c"
