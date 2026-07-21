@@ -61,6 +61,17 @@ def build(gen: int, cls: str, pooldir: str, store: str, out: str,
         print(f"  SKIP gen{gen} {cls}: missing {mat_path}", flush=True)
         return
     pmeta = pd.read_csv(meta_path)                      # pools x (pool,site,plot,bio1..)
+    # climate PC1 = first PC of the 19 standardized bioclim vars, +bio1-oriented
+    # (matches axis_scan/build_power_inputs.pc1). Multiaxis uses --climate pc1, so
+    # the pools table must carry it or those tasks KeyError on 'pc1'.
+    if "pc1" not in pmeta.columns:
+        _m = pmeta[[f"bio{i}" for i in range(1, 20)]].to_numpy(float)
+        _Z = (_m - _m.mean(0)) / _m.std(0, ddof=0)
+        _U, _S, _ = np.linalg.svd(_Z - _Z.mean(0), full_matrices=False)
+        _sc = _U[:, 0] * _S[0]
+        if np.corrcoef(_sc, _m[:, 0])[0, 1] < 0:        # orient to +bio1
+            _sc = -_sc
+        pmeta["pc1"] = (_sc - _sc.mean()) / _sc.std(ddof=0)
     idx = dict(np.load(f"{store}/index_{src}.npz", allow_pickle=True))
     cmask = class_mask(idx, cls)                        # columns of source belonging to cls
 
