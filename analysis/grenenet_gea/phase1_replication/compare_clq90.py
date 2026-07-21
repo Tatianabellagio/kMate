@@ -23,7 +23,7 @@ import lib
 
 PCOL = "Z_pVal"
 _NAME_RE = re.compile(
-    r"wza_(?P<model>\w+?)_(?P<cls>snp|nonsnp)_gen(?P<gen>\d+)_"
+    r"wza_(?P<model>\w+?)_(?P<cls>snp|sv|smallindel|nonsnp)_gen(?P<gen>\d+)_"
     r"(?P<clim>bio\d+)_(?P<regime>deg2|deg7cap2000)\.csv$")
 
 
@@ -102,24 +102,33 @@ def main():
         rows.append(dict(model=o["model"], cls=o["cls"], regime=o["regime"],
                          n_blocks=o["n"], n_bh=o["n_bh"], n_bonf=o["n_bonf"], cam5=cam))
 
-    # cross-class + cross-model recurrence of BH-sig blocks (per regime)
+    # cross-class + cross-model recurrence of BH-sig blocks (per regime).
+    # Class list is discovered from the outputs, so this handles the 3-class
+    # (snp / sv / smallindel) scheme as well as the legacy 2-class (snp / nonsnp).
     for regime in sorted({o["regime"] for o in outs}):
         print(f"\n=== BH<{args.fdr} block recurrence ({regime}) ===")
         sig = {(o["model"], o["cls"]): set(o["df"].loc[o["df"].q < args.fdr, "block"])
                for o in outs if o["regime"] == regime}
-        for model in sorted({k[0] for k in sig}):
+        classes = sorted({c for (_, c) in sig})
+        models = sorted({m for (m, _) in sig})
+        for model in models:
             cls_sets = {c: s for (mo, c), s in sig.items() if mo == model}
             if len(cls_sets) >= 2:
                 shared = set.intersection(*cls_sets.values())
-                print(f"  {model}: snp({len(cls_sets.get('snp',[]))}) ∩ "
-                      f"nonsnp({len(cls_sets.get('nonsnp',[]))}) = {len(shared)} shared "
+                counts = " ∩ ".join(f"{c}({len(cls_sets[c])})" for c in sorted(cls_sets))
+                print(f"  {model}: {counts} = {len(shared)} shared "
                       f"{sorted(shared)[:10]}")
-        for cls in ("snp", "nonsnp"):
+        for cls in classes:
             msets = {m: s for (m, c), s in sig.items() if c == cls}
             if len(msets) >= 2:
                 allm = set.intersection(*msets.values())
                 print(f"  {cls}: blocks BH-sig in ALL models {sorted(msets)}: "
                       f"{len(allm)} {sorted(allm)[:10]}")
+        # blocks BH-sig in EVERY (model x class) combination — the reproducible core
+        if len(sig) >= 2:
+            core = set.intersection(*sig.values())
+            print(f"  CORE (BH-sig in all {len(sig)} model×class combos): "
+                  f"{len(core)} {sorted(core)[:10]}")
 
     pd.DataFrame(rows).to_csv(args.out, index=False)
     print(f"\n  summary -> {args.out}")

@@ -23,7 +23,7 @@ W = f"{lib.GEA}/phase1_replication/results/clq90/wza"
 CHROM_LEN = {"Chr1": 30427671, "Chr2": 19698289, "Chr3": 23459830,
              "Chr4": 18585056, "Chr5": 26975502}
 MODELS = ["kendall", "lfmm", "binomial"]
-CLASSES = ["snp", "nonsnp"]
+CLASSES = ["snp", "sv", "smallindel"]
 
 
 def bh(p):
@@ -77,14 +77,17 @@ def main():
                            label=f"BH q<.05 ({int((w.q<0.05).sum())})")
                 ax.legend(fontsize=7, loc="upper right")
             nsig = int((w.q < 0.05).sum())
-            ax.set_title(f"{model} · {cls}  ({len(w):,} blocks, {nsig} BH-sig)", fontsize=9)
+            # No titles (repo convention): panel identity via an in-panel corner
+            # annotation; model/class/regime context lives in the notebook markdown.
+            ax.annotate(f"{model} · {cls}\n{len(w):,} blk · {nsig} BH-sig",
+                        xy=(0.015, 0.97), xycoords="axes fraction",
+                        ha="left", va="top", fontsize=8,
+                        bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.7))
             ax.set_ylabel("-log10 p", fontsize=8)
     for j, cls in enumerate(CLASSES):
         axes[-1, j].set_xticks([off[c] + CHROM_LEN[c] / 2 for c in off])
         axes[-1, j].set_xticklabels(list(off), fontsize=8)
-    fig.suptitle(f"clq0.9-block WZA Manhattan — gen9, bio1, {args.regime} "
-                 f"(red line = CAM5 Chr2:11.53 Mb)", fontsize=12)
-    fig.tight_layout(rect=[0, 0, 1, 0.98])
+    fig.tight_layout()
     out = args.out or f"{lib.GEA}/phase1_replication/results/clq90/manhattan_clq90_{args.regime}.png"
     fig.savefig(out, dpi=140)
     print("wrote", out)
