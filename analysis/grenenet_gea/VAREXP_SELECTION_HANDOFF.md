@@ -299,10 +299,39 @@ MYB89, NAC093, SUMO5, and PAP-family** genes.
 the other doesn't) — mostly FDR-only, per-site, and/or flank hits, inheriting the bioclim-null caveat.
 A hypothesis-generating list, not confirmed loci.
 
+### GO / stress-term enrichment (2026-07-21) — the candidate list is NOT stress-enriched ★
+
+`go_enrichment_nonsnp.py` (new; hypergeometric ORA, GO annotations from the GO-Consortium TAIR GAF
++ go-basic OBO propagated up is_a/part_of, no external GO package). Foreground = non-SNP-only genes
+(FDR n=969, Bonferroni n=132); **universe = the 25,603 genes overlapping any *scanned* clq0.9 block
+±2 kb** (NOT all 27 k — GWAS only interrogates gene-dense testable blocks), plus the sharp contrast
+with the **SNP-hit genes** as universe. Outputs `varexp/go_enrichment_{ora,themes}.csv` +
+`go_enrichment_summary.json`.
+
+**Targeted themes (cold/heat/ABA/salt/oxidative/flowering/circadian/defense): none survive BH** at
+either tier, either universe. Best raw signals are oxidative (fold 1.40, p=0.052) and salt (1.32,
+p=0.092), both n.s. after correction. **Cold (fold 0.71), heat (0.42), temperature (0.57), circadian
+(0.74) are DEPLETED, not enriched.** So the cold/ABA candidate genes spotted by eye (ADS2, COR413-PM2,
+…) sit at ~background rate — a **list-size artifact, not a signal**. vs the SNP-hit universe the
+non-SNP layer is functionally indistinguishable (oxidative 1.39, q=0.56) → reinforces "passengers".
+
+**The only real enrichment is marker biology, not adaptation.** Unbiased GO-BP ORA (non-SNP-only FDR
+vs scanned universe) gives 9 terms at q<0.1, ALL one story: **RdDM / siRNA-directed DNA methylation /
+heterochromatin formation** (fold 3.2–4.7) + **suberin biosynthesis** (7.3) + **response to metal ion**
+(2.2). This is exactly where indels/SVs (largely TE-derived) live — near the DNA-methylation/
+heterochromatin-silencing machinery — a signature of the *marker class's genomic location*, not
+climate selection (and a sensible internal check that the SV layer finds TE/heterochromatin regions).
+No stress-adaptation GO term reaches q<0.1 in any foreground/universe combination.
+
+**Net:** there is no enriched flowering / heat / cold / circadian / ABA signal in the kMate-unique
+layer — consistent with the "non-SNP = passengers" variance-partition result. Named stress genes are
+anecdotes at background frequency, not a class-level signal.
+
 ## Deliverables still TODO
-- **PI re-review of the regenerated candidate-gene themes** (`nonsnp_only_genes*` rerun 07-21 on
-  current data → 431 blocks / 969 genes; the pre-fix ADS2/GI/HSP70/ERA1 list is superseded; current
-  top symbols FTSH1/MYB112/MYB89/NAC093/SUMO5/PAP-family) — assign biological themes / sturdy-vs-tail.
+- Candidate-gene themes: **RESOLVED for the "is it stress-enriched" question** (no — see GO
+  enrichment above; regenerated list = 431 blocks / 969 genes, top symbols FTSH1/MYB112/MYB89/
+  NAC093/SUMO5/PAP-family, but no theme survives correction). Optional follow-up: are the
+  RdDM/heterochromatin/metal-ion enriched terms driven by a few TE-dense blocks or genome-wide?
 - Cross-axis multiple-testing correction on the bioclim CLIMATE hits (20 independent BH runs on
   collinear temperature vars) to confirm they are noise.
 - Pull the actual indel/SV variants inside whatever candidate blocks survive the regeneration above
