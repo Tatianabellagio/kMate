@@ -185,6 +185,12 @@ archive/**/*.tsv
 archive/**/*.tsv.gz
 archive/**/*.txt
 archive/**/*.gz
+# same policy for archive/ dirs nested anywhere (e.g. benchmarks/*/archive/)
+**/archive/**/*.tsv
+**/archive/**/*.tsv.gz
+**/archive/**/*.txt
+**/archive/**/*.gz
+**/archive/**/*-checkpoint.*
 
 # --- benchmark result TSVs (per-record AF, MB-scale per file; regeneratable) ---
 benchmarks/p80/results/cactus_em_*/
