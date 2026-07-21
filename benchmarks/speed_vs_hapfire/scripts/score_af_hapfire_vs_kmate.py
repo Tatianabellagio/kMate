@@ -14,6 +14,11 @@ against different SNP sets of different sizes (see n_snps columns below). It IS
 the fair, matched-pool comparison: same founder draw, each tool's own natural
 truth, mirroring how the h-accuracy figure is already built.
 
+kMate's snp_R2/snp_RMSE come from score_snp_vs_nonsnp.py's table, which now
+reports the >=90%-called (n_called>=208) filtered values by default -- so kMate's
+side of this comparison is scored on sites called in >=90% of the 231-founder
+panel, the fair basis against hapFIRE's fully-imputed zero-missingness panel.
+
 Reuses ALL already-computed outputs -- no new simulation or estimator runs are
 triggered by this script itself: hapFIRE's snp_frequency.txt (from the
 greneNet_fair grid, benchmarks/speed_vs_hapfire/results/greneNet_fair/), kMate's
@@ -120,7 +125,7 @@ plt.rcParams.update({
     "axes.axisbelow": True, "xtick.bottom": False, "ytick.left": False,
 })
 TOOL_COLOR = {"kmate": "#54a24b", "hapfire": "#e45756"}
-TOOL_LABEL = {"kmate": "kMate (arch3 SNPs)", "hapfire": "hapFIRE (greneNet SNPs)"}
+TOOL_LABEL = {"kmate": "kMate (arch3 SNPs, ≥90% called)", "hapfire": "hapFIRE (greneNet SNPs)"}
 JITTER_RNG = np.random.RandomState(0)
 PRESENT_N = [n for n in POOL_SIZES if n in df.N.unique()]
 

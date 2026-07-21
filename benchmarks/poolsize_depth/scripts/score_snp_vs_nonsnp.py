@@ -5,6 +5,12 @@ as hapfire_vs_kmate_af_accuracy.png -- but hue = variant type instead of tool
 Reuses already-computed kMate tsv outputs + recomb_truth_raw.tsv.gz, no new
 compute needed.
 
+The PRIMARY snp_R2/snp_RMSE/nonsnp_* columns are computed on records called in
+>=90% of the 231-founder panel (n_called>=208), for a fair comparison against
+hapFIRE's fully-imputed zero-missingness greneNet panel; unfiltered values are
+kept in *_allrecords columns. This table feeds score_af_hapfire_vs_kmate.py, so
+the kMate side of the cross-tool AF comparison inherits the same filter.
+
 Run with the `basic` env:
     /global/home/users/tbellg/miniforge3/envs/basic/bin/python \
         benchmarks/poolsize_depth/scripts/score_snp_vs_nonsnp.py
@@ -25,6 +31,13 @@ POOL_SIZES = [2, 5, 20, 50, 150, 231]
 DEPTHS = [1, 10]
 SEEDS = [42, 43, 44, 45, 46]
 REL_EPS = 1e-6
+# Missingness filter: keep kMate records called in >=90% of the 231-founder panel
+# (n_called >= 208, i.e. <=10% missing). hapFIRE's greneNet panel is fully imputed
+# (zero missingness), so scoring kMate on comparably-complete sites is the fair
+# apples-to-apples basis; this is the PRIMARY reported number. All-records values
+# are retained in the *_allrecords columns for provenance.
+FULL_PANEL = 231
+MISS_THRESH = int(np.ceil(0.9 * FULL_PANEL))  # 208
 
 
 def r2_rmse(est, truth):
@@ -52,21 +65,35 @@ for n in POOL_SIZES:
             est = pd.read_csv(kmate_tsv, sep="\t")
             truth = pd.read_csv(truth_path, sep="\t").dropna(subset=["truth_af"])
             # multi-allelic sites repeat (chrom,pos,ref_len,alt_len); cumcount as an
-            # occurrence tie-breaker avoids a many-to-many cartesian blowup on merge
+            # occurrence tie-breaker avoids a many-to-many cartesian blowup on merge.
+            # NOTE: occ pairs by record order, not allele sequence (neither file carries
+            # the allele), so same-length multiallelic sites are matched positionally.
+            # Audited immaterial: max aggregate RMSE impact ~3e-6 (order matches at all
+            # N=2 sites, differs at only ~2.6% of multiallelic sites by N=231).
             truth = truth.copy(); truth["occ"] = truth.groupby(KEYS).cumcount()
             est = est.copy(); est["occ"] = est.groupby(KEYS).cumcount()
-            m = truth.merge(est[KEYS + ["occ", "alt_freq"]], on=KEYS + ["occ"], how="inner")
+            m = truth.merge(est[KEYS + ["occ", "alt_freq", "n_called"]], on=KEYS + ["occ"], how="inner")
 
             is_snp = (m.ref_len == 1) & (m.alt_len == 1)
-            snp_r2, snp_rmse = r2_rmse(m.loc[is_snp, "alt_freq"].values, m.loc[is_snp, "truth_af"].values)
-            nonsnp_r2, nonsnp_rmse = r2_rmse(m.loc[~is_snp, "alt_freq"].values, m.loc[~is_snp, "truth_af"].values)
+            keep = m["n_called"] >= MISS_THRESH  # missingness filter (fair vs hapFIRE)
+            snp_k = m[is_snp & keep]; nonsnp_k = m[(~is_snp) & keep]
+            snp_a = m[is_snp]; nonsnp_a = m[~is_snp]
+
+            # PRIMARY: >=90%-called (fair comparison basis)
+            snp_r2, snp_rmse = r2_rmse(snp_k["alt_freq"].values, snp_k["truth_af"].values)
+            nonsnp_r2, nonsnp_rmse = r2_rmse(nonsnp_k["alt_freq"].values, nonsnp_k["truth_af"].values)
+            # PROVENANCE: all records, unfiltered
+            snp_r2_a, snp_rmse_a = r2_rmse(snp_a["alt_freq"].values, snp_a["truth_af"].values)
+            nonsnp_r2_a, nonsnp_rmse_a = r2_rmse(nonsnp_a["alt_freq"].values, nonsnp_a["truth_af"].values)
 
             rows.append(dict(N=n, depth=cov, seed=seed,
-                             snp_R2=snp_r2, snp_RMSE=snp_rmse, snp_n=int(is_snp.sum()),
-                             nonsnp_R2=nonsnp_r2, nonsnp_RMSE=nonsnp_rmse, nonsnp_n=int((~is_snp).sum())))
-            print(f"n={n:>3} cov={cov:>2}x s={seed}: "
-                  f"SNP R2={snp_r2:.4f} RMSE={snp_rmse:.4f} (n={is_snp.sum():,}) | "
-                  f"non-SNP R2={nonsnp_r2:.4f} RMSE={nonsnp_rmse:.4f} (n={(~is_snp).sum():,})")
+                             snp_R2=snp_r2, snp_RMSE=snp_rmse, snp_n=len(snp_k),
+                             nonsnp_R2=nonsnp_r2, nonsnp_RMSE=nonsnp_rmse, nonsnp_n=len(nonsnp_k),
+                             snp_R2_allrecords=snp_r2_a, snp_RMSE_allrecords=snp_rmse_a, snp_n_allrecords=len(snp_a),
+                             nonsnp_R2_allrecords=nonsnp_r2_a, nonsnp_RMSE_allrecords=nonsnp_rmse_a, nonsnp_n_allrecords=len(nonsnp_a)))
+            print(f"n={n:>3} cov={cov:>2}x s={seed}: [>=90% called] "
+                  f"SNP R2={snp_r2:.4f} RMSE={snp_rmse:.4f} (n={len(snp_k):,}) | "
+                  f"non-SNP R2={nonsnp_r2:.4f} RMSE={nonsnp_rmse:.4f} (n={len(nonsnp_k):,})")
 
 df = pd.DataFrame(rows)
 table_path = f"{OUT}/snp_vs_nonsnp_table.tsv"
@@ -113,10 +140,10 @@ for ci, depth in enumerate(DEPTHS):
     box_panel(axes[0][ci], sub, "snp_R2", "nonsnp_R2")
     axes[0][ci].text(0.5, 1.04, f"{depth}×", transform=axes[0][ci].transAxes,
                      fontsize=10, color="#999999", ha="center", va="bottom")
-    if ci == 0: axes[0][ci].set_ylabel("R² (AF)", fontsize=10)
+    if ci == 0: axes[0][ci].set_ylabel("R² (AF, ≥90% called)", fontsize=10)
     box_panel(axes[1][ci], sub, "snp_RMSE", "nonsnp_RMSE")
     axes[1][ci].set_xlabel("number of pooled founders")
-    if ci == 0: axes[1][ci].set_ylabel("RMSE (AF)", fontsize=10)
+    if ci == 0: axes[1][ci].set_ylabel("RMSE (AF, ≥90% called)", fontsize=10)
 
 from matplotlib.lines import Line2D
 handles = [Line2D([0], [0], marker="o", color="none", markerfacecolor=TYPE_COLOR[t],
