@@ -6,6 +6,22 @@
 > See **"§0 BUG + FIX"** right after this box for the full story; all numbers
 > further down in this file are already updated to the corrected regime.
 
+> ## ⚠ UPDATE (2026-07-21) — the deg-2 "fix" above was INCOMPLETE. Removing the
+> ## SD-floor hack + capping stopped the *negative*-SD→p≈0 path, but deg-2's SD
+> ## polynomial still **turns over and under-predicts** near the cap on these
+> ## sparse-tail clq0.9/mcf90 blocks → it still fabricated `Z_pVal==0` for
+> ## unremarkable (cap-size) blocks and NaN in the sparse SV class. Confirmed it
+> ## fabricates **even under a signal-free permutation null** (climate shuffled
+> ## across the 31 sites); the null SD-vs-SNP-count is genuinely
+> ## monotone-up-then-plateau (isotonic-R²≈0.98). **PRODUCTION CORRECTION IS NOW
+> ## `--sd-fit isotonic`** (monotone-non-decreasing SD + empirical-interp mean,
+> ## `wza_script.adjust_WZA_with_spline`): 0 fabricated p==0 / 0 NaN across all
+> ## 189 bio1+multiaxis outputs. deg-2/deg-7 kept as options only. Full validation:
+> ## `../wza_investigation/wza_sd_fix_test.ipynb` (+ permutation null + independent
+> ## audit). BH-sig counts drop sharply (deg-2 over-called the whole large-block
+> ## tail): snp kendall 30→2, binomial 35→2, lfmm 77→10. Manhattan/compare default
+> ## regime is now `isotonic`.
+
 Re-run of the phase-1 GrENE-Net GEA (Kendall-τ + LFMM K=16 + binomial → WZA) on
 kMate AF, but with **finer LD blocks** (clq0.9 BigLD islands, 58,376 blocks) in
 place of the coarse phase-1 hapFIRE blocks (16,674). Motivation: the coarse blocks

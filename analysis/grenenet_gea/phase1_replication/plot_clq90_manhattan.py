@@ -41,7 +41,7 @@ def offsets():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--regime", default="deg2")
+    ap.add_argument("--regime", default="isotonic")
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
     off, total = offsets()

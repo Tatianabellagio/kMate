@@ -24,7 +24,7 @@ import lib
 PCOL = "Z_pVal"
 _NAME_RE = re.compile(
     r"wza_(?P<model>\w+?)_(?P<cls>snp|sv|smallindel|nonsnp)_gen(?P<gen>\d+)_"
-    r"(?P<clim>bio\d+)_(?P<regime>deg2|deg7cap2000)\.csv$")
+    r"(?P<clim>bio\d+)_(?P<regime>isotonic|deg2|deg7cap2000)\.csv$")
 
 
 def bh_fdr(p: np.ndarray) -> np.ndarray:
@@ -72,7 +72,7 @@ def main():
     ap.add_argument("--fdr", type=float, default=0.05)
     ap.add_argument("--gene", default="AT2G27030", help="target gene (default CAM5)")
     ap.add_argument("--r2", type=float, default=0.9)
-    ap.add_argument("--deg", default="deg2", choices=["deg2", "deg7cap2000", "both"])
+    ap.add_argument("--deg", default="isotonic", choices=["isotonic", "deg2", "deg7cap2000", "both"])
     ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/clq90/compare_clq90.csv")
     args = ap.parse_args()
 

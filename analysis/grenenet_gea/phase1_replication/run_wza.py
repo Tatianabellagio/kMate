@@ -34,7 +34,7 @@ PY = sys.executable
 
 def run(in_csv: str, out_csv: str, min_snps: int, verbose: bool,
         poly_deg: int | None = None, sample_snps: int | None = None,
-        min_entries: int | None = None):
+        min_entries: int | None = None, sd_fit: str = "poly"):
     # wza_script.py exposes the SNP-number-correction knobs (--poly_deg/--roller/
     # --min_entries) and a SNP cap (--sample_snps). Defaults = canonical Booker deg-2.
     # The phase-1 / last-gen runs (and the wza_investigation finding that deg-7 fits the
@@ -55,6 +55,8 @@ def run(in_csv: str, out_csv: str, min_snps: int, verbose: bool,
         cmd += ["--min_entries", str(min_entries)]
     if sample_snps is not None:
         cmd += ["--sample_snps", str(sample_snps)]
+    if sd_fit and sd_fit != "poly":
+        cmd += ["--sd_fit", sd_fit]
     if verbose:
         cmd.append("-v")
     print("  $ " + " ".join(cmd), flush=True)
@@ -80,7 +82,10 @@ def main():
     ap.add_argument("--min-entries", type=int, default=None,
                     help="min entries per rolling window (e.g. 10 for deg-7, 40 for deg-2)")
     ap.add_argument("--regime", default=None,
-                    help="filename suffix tag, e.g. deg7nocap / deg7cap2000 (matches kendall/lfmm)")
+                    help="filename suffix tag, e.g. isotonic / deg7cap2000 (matches kendall/lfmm)")
+    ap.add_argument("--sd-fit", dest="sd_fit", default="poly", choices=["poly", "isotonic"],
+                    help="SNP-number-correction fit: 'poly' (deg via --poly-deg) or 'isotonic' "
+                         "(monotone SD + interp mean; PRIMARY for clq0.9/mcf90 sparse-tail blocks)")
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
 
@@ -114,7 +119,7 @@ def main():
         out2 = f"{args.out}/{stem}.csv"
         run(clean, out2, min_snps=args.min_snps, verbose=args.verbose,
             poly_deg=args.poly_deg, sample_snps=args.sample_snps,
-            min_entries=args.min_entries)
+            min_entries=args.min_entries, sd_fit=args.sd_fit)
         _report(out2, args.regime or ("deg%d" % args.poly_deg if args.poly_deg else "deg2"))
     finally:
         os.unlink(clean)

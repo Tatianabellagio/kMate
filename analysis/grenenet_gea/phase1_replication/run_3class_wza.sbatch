@@ -26,17 +26,21 @@ echo "== STEP 1: reblock 3 models x 3 classes onto clq0.9 (blocks_mcf90) =="
 $PY -u $PR/reblock.py --models kendall lfmm binomial \
     --classes snp sv smallindel --gen 9 --climate bio1 --r2 0.9
 
-echo "== STEP 2: WZA deg2-capped (primary) + deg7cap2000 (sensitivity) =="
+echo "== STEP 2: WZA isotonic-capped (PRIMARY) + deg7cap2000 (sensitivity) =="
+# isotonic (monotone-non-decreasing SD + interp mean) is the production correction:
+# the canonical deg-2 fabricates Z_pVal==0 for cap-size blocks on these sparse-tail
+# clq0.9/mcf90 blocks (validated: it fabricates even under a signal-free permutation
+# null; isotonic does not). See wza_investigation/wza_sd_fix_test.ipynb + STATUS_clq90 §0.
 for M in kendall lfmm binomial; do
   for C in snp sv smallindel; do
     IN=$CLQ/wza_in/${M}_${C}_gen9_bio1.csv
     [ -f "$IN" ] || { echo "  SKIP $M $C (no input $IN)"; continue; }
     CAP=350; [ "$C" = "snp" ] && CAP=1000
-    echo "  --- $M $C (deg2 cap=$CAP) ---"
+    echo "  --- $M $C (isotonic cap=$CAP) ---"
     $PY -u $PR/run_wza.py --model $M --class $C --gen 9 --climate bio1 \
-        --indir $CLQ/wza_in --out $CLQ/wza --regime deg2 \
-        --poly-deg 2 --min-entries 40 --sample-snps $CAP
-    echo "  --- $M $C (deg7cap2000) ---"
+        --indir $CLQ/wza_in --out $CLQ/wza --regime isotonic \
+        --sd-fit isotonic --sample-snps $CAP
+    echo "  --- $M $C (deg7cap2000 sensitivity) ---"
     $PY -u $PR/run_wza.py --model $M --class $C --gen 9 --climate bio1 \
         --indir $CLQ/wza_in --out $CLQ/wza --regime deg7cap2000 \
         --poly-deg 7 --min-entries 10 --sample-snps 2000

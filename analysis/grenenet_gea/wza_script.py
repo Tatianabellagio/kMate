@@ -51,7 +51,7 @@ def top_candidate(gea, thresh):
     top_candidate_p = scipy.stats.binomtest(hits, snps, thresh, alternative="greater").pvalue
     return top_candidate_p, hits
 
-def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2):
+def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2, sd_fit="poly"):
     wza_df.to_csv('before_filtering_wza_df.csv')
     # remove null Z values - they won't help us
     wza_t = wza_df[~wza_df.Z.isnull()].reset_index()
@@ -70,29 +70,33 @@ def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2):
     if rolled_Z_vars.isnull().any():
         print(f"WARNING: Rolling window calculation resulted in NaN for some windows.")
 
-    # Generating weights for polynomial function (deg, default 2 = canonical) - standard deviation
-    sd_weights = np.polyfit(rolled_mean_SNP_number, rolled_Z_sd, deg=deg)
-    sd_polynomial_model = np.poly1d(sd_weights)
-
-    # Generating weights for polynomial function (deg, default 2 = canonical) - mean
-    mean_weights = np.polyfit(rolled_mean_SNP_number, rolled_Z_means, deg=deg)
-    mean_polynomial_model = np.poly1d(mean_weights)
-
-
-    sd_predictions = sd_polynomial_model(wza_df["SNPs"])
-    # NO SAFETY FLOOR (kMate local fix, REMOVED 2026-07-03 — see
-    # analysis/grenenet_gea/wza_investigation/RESULTS.md "drop the SD safety-floor
-    # hack"): in sparse large-window tails the degree-2 polynomial can predict
-    # negative/zero SD. Flooring that to a value borrowed from elsewhere on the
-    # curve does NOT recover a valid correction — it fabricates an arbitrary
-    # normalized deviation, which silently produced Z_pVal=0 for windows with
-    # unremarkable raw Z (confirmed on the clq0.9 replication: negative-SD windows
-    # got 9-56 sigma "significance" regardless of true Z). Leave the SD negative;
-    # norm.cdf yields NaN for those windows (invalid-value warning suppressed
-    # below) and they are correctly excluded from all downstream FDR calls instead
-    # of contaminating them. The real fix is keeping --sample_snps within the
-    # rolling-window's supported SNP-count range so this NaN tail is empty/small.
-    mean_predictions = mean_polynomial_model(wza_df["SNPs"])
+    Xs = np.asarray(rolled_mean_SNP_number, dtype=float)
+    target = np.asarray(wza_df["SNPs"], dtype=float)
+    if sd_fit == "isotonic":
+        # kMate fix (2026-07-21; validated in wza_investigation/wza_sd_fix_test.ipynb
+        # via a permutation null + an independent audit): on clq0.9/mcf90 blocks the
+        # SNP-count tail is so sparse that BOTH the canonical deg-2 and the author's
+        # deg-7 SD polynomials EXTRAPOLATE pathologically near the cap — deg-2's
+        # parabola turns over and UNDER-predicts SD (positive-but-tiny -> fabricated
+        # Z_pVal==0 for unremarkable blocks; negative -> NaN), deg-7 explodes. The null
+        # SD-vs-SNP-count is genuinely monotone-up-then-plateau (permutation-null
+        # isotonic-R2~=0.98), and deg-2 fabricates p==0 even with climate SHUFFLED
+        # (signal-free) while isotonic fabricates none. So fit SD with a
+        # monotone-non-decreasing isotonic regression (flat beyond support) and the
+        # mean by empirical interpolation. See STATUS_clq90 §0.
+        from sklearn.isotonic import IsotonicRegression
+        ir = IsotonicRegression(increasing=True, out_of_bounds="clip")
+        ir.fit(Xs, np.asarray(rolled_Z_sd, dtype=float))
+        sd_predictions = ir.predict(target)
+        mean_predictions = np.interp(target, Xs, np.asarray(rolled_Z_means, dtype=float))
+    else:
+        # canonical polynomial interpolation of the rolling mean/SD (deg=2 Booker, or 7).
+        # NO SAFETY FLOOR (removed 2026-07-03): a negative-SD tail yields NaN (excluded
+        # downstream), never fabricated significance. For sparse-tail block definitions
+        # (e.g. clq0.9/mcf90) prefer sd_fit="isotonic" — the polynomial extrapolates
+        # badly there (see the isotonic branch above / STATUS_clq90 §0).
+        sd_predictions = np.poly1d(np.polyfit(Xs, np.asarray(rolled_Z_sd, dtype=float), deg=deg))(target)
+        mean_predictions = np.poly1d(np.polyfit(Xs, np.asarray(rolled_Z_means, dtype=float), deg=deg))(target)
 
     with np.errstate(invalid="ignore"):
         wza_p_values = [1 - norm.cdf(wza_df["Z"][i], loc=mean_predictions[i], scale=sd_predictions[i]) for i in range(wza_df.shape[0])]
@@ -123,6 +127,7 @@ def main():
     parser.add_argument("--poly_deg", required=False, dest="poly_deg", type=int, default=2, help="[OPTIONAL] SNP-number-correction polynomial degree (LOCAL: 2=canonical Booker; phase-1 used 7)")
     parser.add_argument("--roller", required=False, dest="roller", type=int, default=50, help="[OPTIONAL] Rolling-window size for SNP-number correction (canonical 50)")
     parser.add_argument("--min_entries", required=False, dest="min_entries", type=int, default=40, help="[OPTIONAL] Min entries per rolling window (canonical 40; phase-1 used 10)")
+    parser.add_argument("--sd_fit", required=False, dest="sd_fit", type=str, default="poly", choices=["poly", "isotonic"], help="[LOCAL] SNP-number-correction fit: 'poly' (deg via --poly_deg; canonical Booker) or 'isotonic' (monotone-non-decreasing SD + interp mean; robust for sparse-tail block defs like clq0.9/mcf90 where poly extrapolates to fabricated p==0/NaN)")
 
     args = parser.parse_args()
 
@@ -251,7 +256,7 @@ def main():
             WZA_DF_tmp.to_csv(args.output, index=False)
             return
 
-        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg)
+        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit)
     else:
         WZA_DF_tmp = pd.DataFrame(all_genes)
         if WZA_DF_tmp.SNPs.var() == 0:
@@ -264,7 +269,7 @@ def main():
             WZA_DF_tmp.to_csv(args.output, index=False)
             return
 
-        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg)
+        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit)
 
     WZA_DF.to_csv(args.output, index=False)
 
