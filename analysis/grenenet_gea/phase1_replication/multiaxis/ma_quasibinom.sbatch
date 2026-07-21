@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=110G
 #SBATCH --time=8:00:00
-#SBATCH --array=0-39
+#SBATCH --array=0-59
 #SBATCH --output=/global/scratch/users/tbellg/kmate/logs/ma_quasibinom_%A_%a.out
 #SBATCH --error=/global/scratch/users/tbellg/kmate/logs/ma_quasibinom_%A_%a.out
 # Multi-axis per-variant quasi-binomial + K=16 latent factors (the production

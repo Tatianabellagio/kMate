@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=3:00:00
-#SBATCH --array=0-39
+#SBATCH --array=0-59
 #SBATCH --output=/global/scratch/users/tbellg/kmate/logs/ma_wza_%A_%a.out
 #SBATCH --error=/global/scratch/users/tbellg/kmate/logs/ma_wza_%A_%a.out
 # Multi-axis reblock + WZA (deg-2 canonical, caps snp=1000/nonsnp=350, no floor hack).
@@ -19,7 +19,7 @@ PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 PR=analysis/grenenet_gea/phase1_replication
 MA=analysis/grenenet_gea/phase1_replication/results/multiaxis
 i=${SLURM_ARRAY_TASK_ID}; AXIS=$(axis_for $i); C=$(cls_for $i)
-CAP=1000; [ "$C" = "nonsnp" ] && CAP=350
+CAP=350; [ "$C" = "snp" ] && CAP=1000
 echo "== host $(hostname) | ma_wza $C $AXIS (cap=$CAP) =="
 
 echo "-- reblock 3 models onto clq0.9 --"

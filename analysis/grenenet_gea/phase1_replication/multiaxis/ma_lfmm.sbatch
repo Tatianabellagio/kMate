@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=180G
 #SBATCH --time=6:00:00
-#SBATCH --array=0-39
+#SBATCH --array=0-59
 #SBATCH --output=/global/scratch/users/tbellg/kmate/logs/ma_lfmm_%A_%a.out
 #SBATCH --error=/global/scratch/users/tbellg/kmate/logs/ma_lfmm_%A_%a.out
 # Multi-axis LFMM ridge K=16 + gif-calibrated test, gen9. One array task per

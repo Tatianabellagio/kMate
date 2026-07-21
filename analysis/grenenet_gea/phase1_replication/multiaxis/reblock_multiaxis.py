@@ -52,7 +52,7 @@ def reblock_one(model, cls, axis, r2):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--axis", required=True)
-    ap.add_argument("--cls", required=True, choices=["snp", "nonsnp"])
+    ap.add_argument("--cls", required=True, choices=["snp", "sv", "smallindel"])
     ap.add_argument("--models", nargs="+", default=["kendall", "lfmm", "binomial"])
     ap.add_argument("--r2", type=float, default=0.9)
     args = ap.parse_args()

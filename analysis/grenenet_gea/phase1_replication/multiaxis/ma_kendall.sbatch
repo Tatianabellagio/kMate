@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=48G
 #SBATCH --time=2:00:00
-#SBATCH --array=0-39
+#SBATCH --array=0-59
 #SBATCH --output=/global/scratch/users/tbellg/kmate/logs/ma_kendall_%A_%a.out
 #SBATCH --error=/global/scratch/users/tbellg/kmate/logs/ma_kendall_%A_%a.out
 # Multi-axis Kendall-tau: per-record tau(AF, axis) across 355 pools, gen9.
