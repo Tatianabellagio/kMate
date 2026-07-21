@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
-"""h-accuracy plot for the hapFIRE-vs-kMate poolsize x depth comparison --
-each tool on its OWN native panel (kMate: arch3, hapFIRE: greneNet), matched
-pools. Founder-recovery + speed figures now come from
-plot_recovery_and_h_rmse.py / plot_speed_vs_coverage.py.
-Reads benchmarks/speed_vs_hapfire/results/hapfire_vs_kmate_table.tsv (see
-score_hapfire_vs_kmate.py). Same visual language as
-benchmarks/poolsize_depth/scripts/score_and_plot.py (transparent boxes, jittered
-colored points, shared y per row) but hue = tool (kMate vs hapFIRE) instead of
-depth, faceted by depth instead of by panel.
+"""h-accuracy variant: top panel = founders recovered (raw counts of N pooled),
+bottom panel = RMSE/sd(truth) for founder proportions (h). Replaces the R2 top of
+hapfire_vs_kmate_h_accuracy.png with founder recovery. 2 rows x 2 depths (1x,10x).
+Reads results/hapfire_vs_kmate_table.tsv (from score_hapfire_vs_kmate.py).
 
 Run with the `basic` env:
     /global/home/users/tbellg/miniforge3/envs/basic/bin/python \
-        benchmarks/speed_vs_hapfire/scripts/plot_hapfire_vs_kmate.py
+        benchmarks/speed_vs_hapfire/scripts/plot_recovery_and_h_rmse.py
 """
 import numpy as np
 import pandas as pd
@@ -68,28 +63,25 @@ def legend_handles():
             for t in ("kmate", "hapfire")]
 
 
-def make_figure(row1_kmate, row1_hapfire, row1_label, row2_kmate, row2_hapfire, row2_label,
-               out_path, row1_log=False, row2_log=False):
-    fig, axes = plt.subplots(2, len(DEPTHS), figsize=(4.6 * len(DEPTHS), 6.6),
-                             squeeze=False, sharex="col", sharey="row")
-    for ci, depth in enumerate(DEPTHS):
-        sub = df[df.depth == depth]
-        box_panel(axes[0][ci], sub, row1_kmate, row1_hapfire, log=row1_log)
-        axes[0][ci].text(0.5, 1.04, f"{depth}×", transform=axes[0][ci].transAxes,
-                         fontsize=10, fontweight="normal", color="#999999",
-                         ha="center", va="bottom")
-        if ci == 0: axes[0][ci].set_ylabel(row1_label, fontsize=10)
-        box_panel(axes[1][ci], sub, row2_kmate, row2_hapfire, log=row2_log)
-        axes[1][ci].set_xlabel("number of pooled founders")
-        if ci == 0: axes[1][ci].set_ylabel(row2_label, fontsize=10)
-    fig.tight_layout()
-    fig.legend(handles=legend_handles(), loc="lower center", ncol=2, fontsize=9,
-               bbox_to_anchor=(0.5, -0.03), frameon=False)
-    fig.savefig(out_path, dpi=140, bbox_inches="tight")
-    plt.close(fig)
-    print("saved", out_path)
+fig, axes = plt.subplots(2, len(DEPTHS), figsize=(4.6 * len(DEPTHS), 6.6),
+                         squeeze=False, sharex="col", sharey="row")
+for ci, depth in enumerate(DEPTHS):
+    sub = df[df.depth == depth]
+    # TOP: founders recovered (raw counts)
+    box_panel(axes[0][ci], sub, "kmate_n_found", "hapfire_n_found")
+    axes[0][ci].text(0.5, 1.04, f"{depth}×", transform=axes[0][ci].transAxes,
+                     fontsize=10, color="#999999", ha="center", va="bottom")
+    if ci == 0: axes[0][ci].set_ylabel("founders recovered (of N pooled)", fontsize=10)
+    # BOTTOM: raw h RMSE (log) -- defined at every N incl. 231 (unlike the
+    # sd-normalized version, which is NaN at N=231 where truth variance is 0)
+    box_panel(axes[1][ci], sub, "kmate_h_RMSE", "hapfire_h_RMSE", log=True)
+    axes[1][ci].set_xlabel("number of pooled founders")
+    if ci == 0: axes[1][ci].set_ylabel("RMSE (h, raw, log)\n[defined at every N]", fontsize=10)
 
-
-make_figure("kmate_h_R2", "hapfire_h_R2", "R² (h)",
-            "kmate_h_RMSE_norm", "hapfire_h_RMSE_norm", "RMSE / sd(truth) (h)",
-            f"{OUT}/hapfire_vs_kmate_h_accuracy.png")
+fig.tight_layout()
+fig.legend(handles=legend_handles(), loc="lower center", ncol=2, fontsize=9,
+           bbox_to_anchor=(0.5, -0.03), frameon=False)
+out_path = f"{OUT}/hapfire_vs_kmate_recovery_and_h_rmse.png"
+fig.savefig(out_path, dpi=140, bbox_inches="tight")
+plt.close(fig)
+print("saved", out_path)

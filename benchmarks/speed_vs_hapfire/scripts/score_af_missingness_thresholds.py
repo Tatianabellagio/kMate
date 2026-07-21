@@ -5,9 +5,12 @@ alongside hapFIRE's fixed zero-missingness RMSE/R2 from hapfire_vs_kmate_af_tabl
 
 This is the detailed missingness-breakdown behind the >=90%-called filter that
 score_snp_vs_nonsnp.py applies by default: it quantifies how much the fair-
-comparison filter changes kMate's AF accuracy vs hapFIRE across the grid, and
-feeds plot_h_and_af_90pctcomplete.py. Reuses already-computed kMate tsv outputs
-+ recomb_truth_raw.tsv.gz + the hapFIRE af table -- no new compute.
+comparison filter changes kMate's AF accuracy vs hapFIRE across the grid
+(archive/plot_consolidation_2026-07-21/scripts/plot_h_and_af_90pctcomplete.py
+plotted this breakdown; superseded by hapfire_vs_kmate_af_accuracy.png /
+hapfire_vs_kmate_h_accuracy.png, which already apply the filter). Reuses
+already-computed kMate tsv outputs + recomb_truth_raw.tsv.gz + the hapFIRE af
+table -- no new compute.
 
 Run with the `basic` env:
     /global/home/users/tbellg/miniforge3/envs/basic/bin/python \
