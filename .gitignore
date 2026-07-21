@@ -317,7 +317,7 @@ archive/seedmix_kmate_arch3_oldpanel_archive/
 # above until they move). ---
 analysis/grenenet_gea/cam5_replication/results/
 analysis/grenenet_gea/driver_passenger/results/
-analysis/grenenet_gea/gea_newpanel/results/
+analysis/grenenet_gea/archive/gea_newpanel_snp_nonsnp_fork_retired/results/
 analysis/grenenet_gea/phase1_replication/results/
 analysis/grenenet_gea/wza_investigation/results/
 # rerun_kfw_hb: production AF store, per-sample TSVs (mirrors old results/**/*.tsv rule)

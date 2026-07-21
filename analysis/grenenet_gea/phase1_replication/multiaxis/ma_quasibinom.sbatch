@@ -16,10 +16,10 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 source analysis/grenenet_gea/phase1_replication/multiaxis/axes.sh
 PY=/global/home/users/tbellg/miniforge3/envs/basic/bin/python   # statsmodels in basic
-G=analysis/grenenet_gea/gea_newpanel
+PR=analysis/grenenet_gea/phase1_replication   # production quasibinom now lives here
 OUT=analysis/grenenet_gea/phase1_replication/results/multiaxis/quasibinom
 i=${SLURM_ARRAY_TASK_ID}; AXIS=$(axis_for $i); C=$(cls_for $i)
 echo "== host $(hostname) | quasibinom $C K16 gen9 $AXIS =="
-$PY -u $G/run_quasibinom_latent.py --class "$C" --gen 9 --climate "$AXIS" \
+$PY -u $PR/run_quasibinom.py --class "$C" --gen 9 --climate "$AXIS" \
     --k 16 --threads "${SLURM_CPUS_PER_TASK:-16}" --out "$OUT"
 echo "== ALLDONE_MA_QUASIBINOM $C $AXIS =="

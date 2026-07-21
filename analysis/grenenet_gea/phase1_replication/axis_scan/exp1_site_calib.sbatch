@@ -7,18 +7,18 @@
 #SBATCH --mem=192G
 #SBATCH --time=6:00:00
 #SBATCH --dependency=afterok:35492923
-#SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/exp1_site_calib_%j.out
-#SBATCH --error=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/exp1_site_calib_%j.out
+#SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/axis_scan/exp1_site_calib_%j.out
+#SBATCH --error=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/axis_scan/exp1_site_calib_%j.out
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
-NP=analysis/grenenet_gea/gea_newpanel
-SITE=analysis/grenenet_gea/gea_newpanel/results/lfmm_site
-ES=analysis/grenenet_gea/gea_newpanel/results/env_site
-EP=analysis/grenenet_gea/gea_newpanel/results/env_plot
+NP=analysis/grenenet_gea/phase1_replication/axis_scan
+SITE=analysis/grenenet_gea/phase1_replication/results/lfmm_site
+ES=analysis/grenenet_gea/phase1_replication/results/env_site
+EP=analysis/grenenet_gea/phase1_replication/results/env_plot
 PLOT=analysis/grenenet_gea/phase1_replication/results/lfmm
-POW=analysis/grenenet_gea/gea_newpanel/results/power
+POW=analysis/grenenet_gea/phase1_replication/results/power
 mkdir -p "$POW"
 echo "=== EXP1 site-level bio1 K sweep (raw vs GIF) ==="
 for CLS in snp nonsnp; do for K in 1 3 5; do

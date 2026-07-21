@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
 CMDIR = f"{lib.GEA}/phase1_replication/results/class_matrices"
-OUT = f"{lib.GEA}/gea_newpanel/results/lfmm_site"
+OUT = f"{lib.GEA}/phase1_replication/results/lfmm_site"
 _P0 = {"snp": "p0_snp.npy", "nonsnp": "p0_nonsnp.npy"}
 BIOS = [f"bio{i}" for i in range(1, 20)]
 

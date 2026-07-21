@@ -55,8 +55,12 @@ Driven off the rebuilt `af_store/` (Step 1). Key drivers (each has many follower
 5. WZA: `build_wza.py` → `gea/wza/wza_*.csv`
 6. LFMM: `build_lfmm_input.py` + `phase1_replication/run_lfmm_gea.sh`
 7. Candidates: `_build_candidate_nb.py` (delete candidate_block_cache.npz first)
-8. New-panel GEA suite: `gea_newpanel/*` (RDA `rda_prda/rda_pcreg`, perm-nulls
-   `permnull_site_gea`/`permnull_precip_gea`, `shape_gea*`, `ksweep_hits`, site matrices)
+8. New-panel GEA suite (RETIRED 2026-07-21 into
+   `archive/gea_newpanel_snp_nonsnp_fork_retired/`; unique analyses preserved
+   there): RDA `rda_prda/rda_pcreg`, perm-nulls `permnull_site_gea`/`permnull_precip_gea`,
+   `shape_gea*`, `ksweep_hits`. The site-level PC1/bio-axis LFMM scan was ported
+   into `phase1_replication/axis_scan/`; the production quasi-binomial into
+   `phase1_replication/run_quasibinom.py`.
 9. SV / temporal analyses: `_sv_*`, `_temporal_*`, `noise_check_sv_s.py`,
    `_nonsnp_temporal_*`, `_compute_s_climate_slope.py`
 10. Prediction / winners: `predict_ecotype_performance.py`, `cross_site_winners*.py`,

@@ -6,17 +6,17 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=192G
 #SBATCH --time=6:00:00
-#SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/lfmm_power_%j.out
-#SBATCH --error=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/lfmm_power_%j.out
+#SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/axis_scan/lfmm_power_%j.out
+#SBATCH --error=/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/axis_scan/lfmm_power_%j.out
 # Power experiments on the RAW LFMM: (1) site-level (31, honest unit) vs plot-level
 # (355, pseudoreplicated); (2) GIF vs no-GIF; (3) climate axis scan bio1..19.
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
-NP=analysis/grenenet_gea/gea_newpanel
-SITE=analysis/grenenet_gea/gea_newpanel/results/lfmm_site
-POW=analysis/grenenet_gea/gea_newpanel/results/power
+NP=analysis/grenenet_gea/phase1_replication/axis_scan
+SITE=analysis/grenenet_gea/phase1_replication/results/lfmm_site
+POW=analysis/grenenet_gea/phase1_replication/results/power
 PLOT=analysis/grenenet_gea/phase1_replication/results/lfmm
 mkdir -p "$POW"
 

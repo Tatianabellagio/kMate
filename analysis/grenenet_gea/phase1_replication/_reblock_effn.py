@@ -3,7 +3,7 @@
 onto OUR clq0.9 partition (lib.assign_clq_blocks), so they're comparable to the
 existing clq90 pipeline, and emit per-record diagnostics.
 
-Source: analysis/grenenet_gea/gea_newpanel/results/quasibinom/quasibinom_lf16_{cls}_gen9_bio1.csv
+Source: analysis/grenenet_gea/archive/gea_newpanel_snp_nonsnp_fork_retired/results/quasibinom/quasibinom_lf16_{cls}_gen9_bio1.csv
   columns: chrom,pos,ref_len,alt_len,MAF,block,slope,pval_binom,pval_quasi,phi,pval_effN
   (the `block` column here is from a DIFFERENT clq0.9 build (~82k blocks) - IGNORE/drop it)
 
@@ -23,7 +23,7 @@ from scipy import stats
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-SRC = f"{lib.GEA}/gea_newpanel/results/quasibinom"
+SRC = f"{lib.GEA}/archive/gea_newpanel_snp_nonsnp_fork_retired/results/quasibinom"
 # lib.GEA points at the analysis dir; results live in the mirrored results tree.
 RESULTS_GEA = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
 OUTDIR = f"{RESULTS_GEA}/phase1_replication/clq90/binom_fix_test/effn"

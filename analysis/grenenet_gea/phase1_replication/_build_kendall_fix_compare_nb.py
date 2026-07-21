@@ -57,7 +57,7 @@ from scipy.stats import chi2
 
 CLQ = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/phase1_replication/results/clq90"
 SITE = f"{CLQ}/kendall_fix_test/site_collapsed"
-MSRDIR = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/gea_newpanel/results/msr_kendall"
+MSRDIR = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/archive/gea_newpanel_snp_nonsnp_fork_retired/results/msr_kendall"
 CLASSES = ["snp", "nonsnp"]
 METHODS = ["pool_raw", "pool_gc", "site_gc", "msr"]
 METHOD_LABEL = {"pool_raw": "pool-level RAW (current, 355 pools)",

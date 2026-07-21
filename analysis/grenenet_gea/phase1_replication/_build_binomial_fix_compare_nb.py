@@ -2,8 +2,9 @@
 """Build + execute notebooks/binomial_fix_compare.ipynb (run in `basic` env).
 
 Compares 3 candidate binomial models for the clq0.9 phase-1 GEA replication —
-the current production model plus 2 alternatives explored in
-`../gea_newpanel/` and re-tested on OUR clq0.9 partition (blocks_mcf90) by
+the current production model plus 2 alternatives explored in the retired
+new-panel fork (`../archive/gea_newpanel_snp_nonsnp_fork_retired/`) and
+re-tested on OUR clq0.9 partition (blocks_mcf90) by
 parallel agents (see chat transcript, or `clq90/binom_fix_test/*/`):
 
   current   = effective-N=site binomial (production, STATUS_clq90.md) — this is

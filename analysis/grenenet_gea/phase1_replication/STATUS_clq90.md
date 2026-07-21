@@ -64,8 +64,11 @@ drivers), **all outputs under `analysis/grenenet_gea/phase1_replication/results/
    (2026-07-03, §0B below): per-variant quasi-binomial with K=16 LFMM latent
    factors** — fit `[alt,ref] ~ const + z(bio1) + LF1..LF16` at full N, estimate the
    variant's Pearson dispersion φ = PearsonChi2/df_resid (clip φ≥1), scale the
-   climate Wald z → z/√φ, recompute p from N(0,1). This is `gea_newpanel/
-   run_quasibinom_latent.py` (`pval_quasi`), reblocked onto our clq0.9 partition.
+   climate Wald z → z/√φ, recompute p from N(0,1). This is now
+   `phase1_replication/run_quasibinom.py` (`pval_quasi`) — ported verbatim from
+   the retired `gea_newpanel/run_quasibinom_latent.py` — reblocked onto our
+   clq0.9 partition (blocks_mcf90). The consolidated 3-class driver is
+   `run_3class_quasibinom.sbatch`.
    Raw per-record GIF **8.6→2.6–2.8**, no floored/underflowed p (min ~1e-13 vs the
    old ~1e-300 pile-up), and it does NOT flatten (35 snp / 27 nonsnp BH-sig blocks).
    - **Superseded: effective-N = site** (the previous production model, kept in
