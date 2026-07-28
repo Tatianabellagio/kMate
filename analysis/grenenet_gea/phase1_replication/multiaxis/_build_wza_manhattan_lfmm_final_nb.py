@@ -145,7 +145,9 @@ def wza_mirror(ax, axis, cls, s, c):
     NOT in snp -- i.e. the block is found by this variant class and missed by SNPs.\"\"\"
     bs, bc = -np.log10(0.05/len(s)), -np.log10(0.05/len(c))
     sig_s = set(s.loc[s.nlp > bs, "block"])
-    only = c[(c.nlp > bc) & (~c["block"].isin(sig_s))]
+    allsig = c[c.nlp > bc].copy()                     # EVERY Bonferroni-sig class block
+    allsig["snp_also_sig"] = allsig["block"].isin(sig_s)
+    only = allsig[~allsig.snp_also_sig]               # the subset SNPs miss (labelled on the plot)
     for i, ch in enumerate(CH):
         ss, cc = s[s.chrom == ch], c[c.chrom == ch]
         ax.scatter(ss.gpos, ss.nlp, s=6, c=(SNP_DARK if i%2==0 else SNP_LIGHT), rasterized=True, linewidths=0)
@@ -167,7 +169,7 @@ def wza_mirror(ax, axis, cls, s, c):
                 xy=(0.004, 0.97), xycoords="axes fraction", va="top", fontsize=8,
                 bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="0.7", alpha=.85))
     for sp in ["top","right"]: ax.spines[sp].set_visible(False)
-    return only
+    return allsig
 
 def qq_panel(ax, cls, s, c):
     ls_, lc_ = gif_lambda(s.Z_pVal), gif_lambda(c.Z_pVal)
@@ -187,30 +189,38 @@ for axis in AXES:
         print(f"missing {axis}"); continue
     fig = plt.figure(figsize=(19, 5.5))
     gs = fig.add_gridspec(1, 2, width_ratios=[3.5, 1], wspace=0.18)
-    only = wza_mirror(fig.add_subplot(gs[0]), axis, CLS, s, c)
+    allsig = wza_mirror(fig.add_subplot(gs[0]), axis, CLS, s, c)
     qq_panel(fig.add_subplot(gs[1]), CLS, s, c)
     fig.tight_layout(); plt.show()
-    o = only.copy(); o["axis"] = axis; o["cls_only"] = True
-    HITS.append(o[["axis","block","chrom","pos","SNPs","Z","Z_pVal","nlp","bonf"]])
+    o = allsig.copy(); o["axis"] = axis
+    HITS.append(o[["axis","block","chrom","pos","SNPs","Z","Z_pVal","nlp","bonf","snp_also_sig"]])
 HITS = pd.concat(HITS, ignore_index=True) if HITS else pd.DataFrame()
-print(f"\\ntotal {CLS}-only Bonferroni block-hits across {len(AXES)} axes: {len(HITS)}")""")
+print(f"\\nALL {CLS} Bonferroni block-hits across {len(AXES)} axes: {len(HITS)}"
+      f"   (of which missed by SNPs: {int((~HITS.snp_also_sig).sum())})")""")
 
     md(f"""## All {title_word} Bonferroni block hits, consolidated
 
-Every block that clears Bonferroni for **{cls}** while its SNP counterpart does not, pooled
-across the 20 axes. `n_axes` is how many climate axes the same block is hit in — the single
-most useful column here, because a correction artifact is axis-specific whereas a real
-signal should recur across correlated climate variables.""")
+**Every block that clears Bonferroni for {cls} in any axis** — not only the ones SNPs miss.
+`n_axes_snp_missed` records in how many of those axes the SNP scan did *not* also reach
+Bonferroni, so the SNP-blind subset is still recoverable as a filter rather than being
+baked in.
+
+`n_axes` (how many climate axes the same block is hit in) is the single most useful column
+here: a correction artifact is axis-specific, whereas real signal should recur across the
+strongly correlated climate variables.""")
 
     co("""if len(HITS):
     rec = (HITS.groupby("block")
                 .agg(n_axes=("axis","nunique"), axes=("axis", lambda s: ",".join(sorted(set(s)))),
                      chrom=("chrom","first"), pos=("pos","first"), SNPs=("SNPs","first"),
-                     best_p=("Z_pVal","min"), best_nlp=("nlp","max"))
+                     best_p=("Z_pVal","min"), best_nlp=("nlp","max"),
+                     n_axes_snp_missed=("snp_also_sig", lambda s: int((~s).sum())))
                 .sort_values(["n_axes","best_nlp"], ascending=[False, False]).reset_index())
     rec["genes"] = rec.block.map(lambda b: ";".join(genes_on(b)))
     rec["n_genes"] = rec.genes.map(lambda g: 0 if not g else len(g.split(";")))
-    print(f"{len(rec)} distinct {CLS} blocks; recurrence across axes:")
+    print(f"{len(rec)} distinct {CLS} blocks "
+          f"({int((rec.n_axes_snp_missed>0).sum())} missed by SNPs in >=1 axis); "
+          f"recurrence across axes:")
     print(rec.n_axes.value_counts().sort_index(ascending=False).to_string())
     print()
     print(rec.head(40).to_string(index=False))
@@ -220,9 +230,12 @@ else:
 
     md("""## Gene function for those blocks, from the mygene.info API
 
-Live lookup, no auth, reusing `annotate_gene_function.py::mygene_batch` (the same helper the
-significant-gene tables use) so the fields match: symbol, name, NCBI summary, GO
-biological-process and molecular-function terms.
+Via `annotate_genes_tair_uniprot.py` — **TAIR GO (GO Consortium GAF) + UniProt REST**, not
+the older mygene-only path. NCBI has no free-text summaries for Arabidopsis loci (0/73 on
+this very list), which left the previous category tags name-driven. TAIR+UniProt gives
+protein name and curated keywords for 73/73, curated FUNCTION text for 39/73, and lifts
+tagged categories 25 → 31/73. See the "Gene annotation" section of
+`analysis/grenenet_gea/README.md`.
 
 Genes are attributed to a block by **span overlap** with the tiling block interval, so a
 gene can appear for more than one block and a block can carry many genes. Overlap is
@@ -230,28 +243,29 @@ positional, not causal — nothing here establishes that a gene drives the assoc
 
     co("""import importlib.util
 spec = importlib.util.spec_from_file_location(
-    "agf", os.path.abspath(os.path.join(os.getcwd(), "..", "annotate_gene_function.py")))
-agf = importlib.util.module_from_spec(spec); spec.loader.exec_module(agf)
+    "agtu", os.path.abspath(os.path.join(os.getcwd(), "..", "annotate_genes_tair_uniprot.py")))
+agtu = importlib.util.module_from_spec(spec); spec.loader.exec_module(agtu)
 
 if len(rec):
     all_genes = sorted({g for gs in rec.genes if gs for g in gs.split(";")})
-    print(f"querying mygene.info for {len(all_genes)} genes ...", flush=True)
-    info = agf.mygene_batch(all_genes)
-    got = sum(1 for v in info.values() if v)
-    print(f"annotated {got}/{len(all_genes)}")
+    print(f"annotating {len(all_genes)} genes via TAIR GAF + UniProt ...", flush=True)
+    ANN = agtu.annotate(all_genes).set_index("gene")
 
     rows = []
     for _, r in rec.iterrows():
         for g in (r.genes.split(";") if r.genes else []):
-            i = info.get(g) or {}
-            cats, ev = agf.classify(i) if i else ([], [])
+            i = ANN.loc[g].to_dict() if g in ANN.index else {}
             rows.append(dict(block=r.block, chrom=r.chrom, pos=int(r.pos), n_axes=r.n_axes,
+                             n_axes_snp_missed=r.n_axes_snp_missed,
                              axes=r.axes, best_p=r.best_p, SNPs=r.SNPs, gene=g,
-                             symbol=i.get("symbol",""), name=i.get("name",""),
-                             categories=",".join(cats),
-                             climate_stress_flowering=bool(cats),
-                             go_bp=";".join((i.get("go_bp") or [])[:6]),
-                             summary=(i.get("summary","") or "")[:300]))
+                             symbol=i.get("symbol",""),
+                             protein_name=i.get("protein_name",""),
+                             categories=i.get("categories","") or "",
+                             climate_stress_flowering=bool(i.get("categories","")),
+                             uniprot=i.get("uniprot",""),
+                             uniprot_keywords=(i.get("uniprot_keywords","") or "")[:160],
+                             uniprot_function=(i.get("uniprot_function","") or "")[:400],
+                             go_bp=";".join((i.get("go_bp","") or "").split(";")[:6])))
     GT = pd.DataFrame(rows).sort_values(["n_axes","best_p"], ascending=[False, True])
     out = f"{GEA}/phase1_replication/results/multiaxis/{CLS}_wza_final_lfmm_bonf_genes.csv"
     GT.to_csv(out, index=False)
@@ -259,8 +273,8 @@ if len(rec):
           f"and {GT.gene.nunique()} genes -> {out}")
     print(f"climate/stress/flowering-tagged: {int(GT.climate_stress_flowering.sum())}"
           f" / {len(GT)} pairs\\n")
-    print(GT[["block","n_axes","best_p","gene","symbol","name","categories"]]
-          .head(60).to_string(index=False))
+    print(GT[["block","n_axes","n_axes_snp_missed","best_p","gene","symbol",
+              "protein_name","categories"]].head(60).to_string(index=False, max_colwidth=44))
 else:
     GT = pd.DataFrame(); print("nothing to annotate")""")
 
