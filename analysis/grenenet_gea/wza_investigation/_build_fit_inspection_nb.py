@@ -178,11 +178,17 @@ for model in [MODEL]:
 
 md_2 = r"""## 2. Mean of Z — all viable fits, full range
 
-This is the figure that started the re-examination: the decline at large blocks is obvious,
-and `const` (green) flattens straight through it."""
+This is the figure that started the re-examination: the trend at large blocks is obvious, and
+`const` (green) flattens straight through it. **`deg5_clamp` (thick blue) is production** —
+it fits the trend, and is clamped at the support edge so it cannot blow up.
+
+`const` is now **retired**: over all 24 blockdef × model × class cells its mean absolute error
+at the largest block is **2.81** (worst cell 10.35) versus **1.60** (worst 4.41) for
+`deg5_clamp`. Upstream fits the mean with a deg-2 polynomial too — fitting the trend is the
+faithful choice, and `const` was a kMate invention."""
 
 code_2 = r'''
-KM = ["const","deg2_clamp","deg5_clamp","deg7_clamp","deg10_clamp","isotonic_auto"]
+KM = ["deg5_clamp","const","deg2_clamp","deg7_clamp","deg10_clamp","isotonic_auto"]
 for model in [MODEL]:
     fig, axes = plt.subplots(2, 4, figsize=(19, 7.5))
     for i, (lab, tag) in enumerate(DEFS.items()):
@@ -191,7 +197,10 @@ for model in [MODEL]:
             ax.plot(X, mn, color="grey", lw=1.2, alpha=.75, zorder=4, label="empirical")
             grid = np.linspace(X.min(), g.SNPs.max(), 700)
             for k in KM:
-                ax.plot(grid, fit(X, mn, grid, k), color=COL[k], lw=1.8, label=k)
+                pr = "  <-- PRODUCTION" if k == "deg5_clamp" else ""
+                ax.plot(grid, fit(X, mn, grid, k), color=COL[k],
+                        lw=3.0 if k == "deg5_clamp" else 1.5,
+                        zorder=7 if k == "deg5_clamp" else 5, label=k + pr)
             above = g[g.SNPs > X.max()]
             if len(above) >= 8:
                 ax.scatter([g.SNPs.max()], [above.Z.mean()], marker="*", s=210, color="red",
@@ -224,7 +233,10 @@ for model in [MODEL]:
             ax.plot(X[sel], mn[sel], color="grey", lw=1.3, alpha=.8, label="empirical")
             grid = np.linspace(lo, mx, 500)
             for k in KM:
-                ax.plot(grid, fit(X, mn, grid, k), color=COL[k], lw=2.0, label=k)
+                pr = "  <-- PRODUCTION" if k == "deg5_clamp" else ""
+                ax.plot(grid, fit(X, mn, grid, k), color=COL[k],
+                        lw=3.2 if k == "deg5_clamp" else 1.6,
+                        zorder=7 if k == "deg5_clamp" else 5, label=k + pr)
             above = g[g.SNPs > X.max()]
             if len(above) >= 8:
                 ax.scatter([mx], [above.Z.mean()], marker="*", s=260, color="red", zorder=8,

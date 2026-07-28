@@ -468,7 +468,7 @@ for _, r in S.iterrows():
     sdrow = SDFIT[(SDFIT.blockdef == r.blockdef) & (SDFIT.cls == r.cls)].iloc[0]
     why = (f"{r.n_above} blocks past support; flat clip conservative; "
            f"deg7 oos RMSE {sdrow.deg7:.2f} vs iso {sdrow.isotonic:.2f}")
-    print(f"{r.blockdef:13s} {r.cls:11s} {'none':>6s}  {'isotonic':10s} {'const':14s} {why}")
+    print(f"{r.blockdef:13s} {r.cls:11s} {'none':>6s}  {'isotonic':10s} {'poly_clamp(5)':14s} {why}")
 print("""
 Why no cap:
   - isotonic cannot produce a negative SD, so the failure the cap was invented for is gone
@@ -483,14 +483,25 @@ Why not deg7 (Booker's suggestion for HIS data):
   - on the rank-transformed production statistic its out-of-sample RMSE blows up
     (worst case sv clq0.5: ~18 vs isotonic 0.13)
 
-Why const for the mean (not np.interp, not deg2, not isotonic_auto):
-  - np.interp: worst of six in every case; follows rolling noise instead of smoothing it
-  - deg2: ties const in-support but is UNBOUNDED past it (mean(Z) -> -289 at the largest
-    snp block vs an empirical -10.5) -> fabricated p==0, a second deg-2 bug path
-  - isotonic_auto: direction inferred from |rho|~0.001-0.03, flips between adjacent climate
-    axes in 11/12 model x class cells (mean_fit_direction_audit.py) -> arbitrary
-  - const: best out-of-sample in 9/12 cases, bounded, nothing to infer. Under the rank
-    transform E[z]=0, so a constant is the theoretically right shape too.
+Why poly_clamp(deg 5) for the mean -- and why `const` (an earlier pick here) is RETIRED:
+  UPSTREAM ALSO FITS THE TREND (unclamped deg-2, general_WZA_script.py:86), so fitting it is
+  the faithful choice. Judged at the LARGE blocks, where the candidates actually differ,
+  over all 24 blockdef x model x class cells (wza_investigation/wza_fit_decision.py):
+        mean |predicted - empirical|   worst cell
+    deg5_clamp     1.60                 4.41    <- PRODUCTION
+    isotonic_auto  1.90                 5.05
+    deg2_clamp     2.15                 7.26
+    const          2.81                10.35    <- WORST, retired
+  - np.interp: worst of six on any metric; follows rolling noise instead of smoothing
+  - unclamped deg2/deg7: mean(Z) -> -289 / -9e8 at the largest snp block (empirical -10.5)
+  - isotonic_auto: direction inferred from |rho|~0.0005-0.03, flips between adjacent climate
+    axes in 20/24 cells (mean_fit_direction_audit.py, 480 scans) -> arbitrary
+  - degrees >=15: Runge-oscillate near the sparse tail even clamped (top-band RMSE 11-216)
+  NB the unweighted OOS RMSE in section 4 favours `const`; that is a BIAS-VARIANCE ARTIFACT.
+  Each half-split holds only ~5 of the ~10 largest blocks, so the validation target is noise
+  out there and a zero-variance predictor wins even when the trend is real. Production fits
+  on ALL blocks, and the large-block slope sign replicates in >=90% of half-splits for 6/24
+  cells (clq0.9 binomial: 95-97% in all four classes).
 
 THIS IS UPSTREAM'S SETUP WITH TWO FORCED CHANGES: cap=none is upstream's own default
 (--sample_snps is never passed in ANY invocation in their repo); isotonic SD and const mean
