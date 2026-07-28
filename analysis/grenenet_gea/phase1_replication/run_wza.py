@@ -35,7 +35,7 @@ PY = sys.executable
 def run(in_csv: str, out_csv: str, min_snps: int, verbose: bool,
         poly_deg: int | None = None, sample_snps: int | None = None,
         min_entries: int | None = None, sd_fit: str = "poly",
-        mean_fit: str = "interp"):
+        mean_fit: str = "interp", mean_poly_deg: int | None = None):
     # wza_script.py exposes the SNP-number-correction knobs (--poly_deg/--roller/
     # --min_entries) and a SNP cap (--sample_snps). Defaults = canonical Booker deg-2.
     # The phase-1 / last-gen runs (and the wza_investigation finding that deg-7 fits the
@@ -60,6 +60,8 @@ def run(in_csv: str, out_csv: str, min_snps: int, verbose: bool,
         cmd += ["--sd_fit", sd_fit]
     if mean_fit and mean_fit != "interp":
         cmd += ["--mean_fit", mean_fit]
+    if mean_poly_deg is not None:
+        cmd += ["--mean_poly_deg", str(mean_poly_deg)]
     if verbose:
         cmd.append("-v")
     print("  $ " + " ".join(cmd), flush=True)
@@ -90,14 +92,15 @@ def main():
                     help="SNP-number-correction fit: 'poly' (deg via --poly-deg) or 'isotonic' "
                          "(monotone SD; PRIMARY for clq0.9/mcf90 sparse-tail blocks)")
     ap.add_argument("--mean-fit", dest="mean_fit", default="interp",
-                    choices=["interp", "isotonic_auto", "const", "poly"],
+                    choices=["interp", "isotonic_auto", "const", "poly", "poly_clamp"],
                     help="how the MEAN of Z vs SNP count is predicted (only with --sd-fit "
-                         "isotonic). 'const' = PRODUCTION 2026-07-28 (best out-of-sample in "
-                         "9/12 cases, bounded past support, no direction to infer). "
-                         "'isotonic_auto' FAILED audit -- direction flips between adjacent "
-                         "climate axes in 11/12 model x class cells (mean_fit_direction_audit.py). "
-                         "'interp' = pre-2026-07-28 unsmoothed default, worst out-of-sample in "
-                         "all 8 blockdef x class cases (notebooks/cap_poly_decision.ipynb §4)")
+                         "isotonic). 'poly_clamp' = PRODUCTION 2026-07-28 (degree via "
+                         "--mean-poly-deg, default 5; clamped at the rolling-support edge). "
+                         "Upstream fits the mean with an unclamped deg-2. 'const' scored WORST "
+                         "of four at the large blocks (mean |err| 2.81, worst cell 10.35). "
+                         "'isotonic_auto' rejected: direction flips across axes in 20/24 cells.")
+    ap.add_argument("--mean-poly-deg", dest="mean_poly_deg", type=int, default=None,
+                    help="degree for --mean-fit poly_clamp (production 5)")
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
 
@@ -131,7 +134,8 @@ def main():
         out2 = f"{args.out}/{stem}.csv"
         run(clean, out2, min_snps=args.min_snps, verbose=args.verbose,
             poly_deg=args.poly_deg, sample_snps=args.sample_snps,
-            min_entries=args.min_entries, sd_fit=args.sd_fit, mean_fit=args.mean_fit)
+            min_entries=args.min_entries, sd_fit=args.sd_fit, mean_fit=args.mean_fit,
+            mean_poly_deg=args.mean_poly_deg)
         _report(out2, args.regime or ("deg%d" % args.poly_deg if args.poly_deg else "deg2"))
     finally:
         os.unlink(clean)

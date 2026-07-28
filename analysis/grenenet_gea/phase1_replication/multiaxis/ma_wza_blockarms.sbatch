@@ -59,7 +59,8 @@ echo "== host $(hostname) | blockarms $C $AXIS | root=$ROOT =="
 #                      capping instead swaps the block's Z for an unseeded
 #                      resample-mean (wza_script.py:204-207) => irreproducible.
 #   * isotonic SD   -- deg7 out-of-sample RMSE blows up (17.7 vs 0.13 on sv/clq0.5)
-#   * const mean -- np.interp is worst of six in 12/12 cases, by 37-41%
+#   * poly_clamp mean (deg 5) -- upstream fits the mean with an unclamped deg-2; const was
+#                      WORST of four at the large blocks (|err| 2.81 vs 1.60)
 # Every arm now uses the identical correction, so the ONLY thing varying across arms
 # is blockdef x assignment. Outputs overwrite the confounded pre-2026-07-28 ones by
 # design -- those must not be cited (see the stale-results banners in STATUS_clq90).
@@ -68,14 +69,14 @@ run_arm () {
   local BD="$1" HOW="$2" SUF="$3"
   local TAG="${BD/./}"; [ "$HOW" = "tiling" ] && TAG="${TAG}_tile"
   local IND=$MA/wza_in_${TAG}
-  echo "---- arm $SUF ($BD/$HOW, no cap, isotonic SD + const mean) ----"
+  echo "---- arm $SUF ($BD/$HOW, no cap, isotonic SD + deg5-clamped mean) ----"
   $PY -u $PR/multiaxis/reblock_blockdef.py --axis "$AXIS" --cls "$C" --blockdef "$BD" --how "$HOW"
   for M in kendall lfmm binomial; do
     local IN=$IND/${M}_${C}_gen9_${AXIS}.csv
     [ -f "$IN" ] || { echo "FATAL: missing $IN" >&2; exit 2; }
     $PY -u $PR/run_wza.py --model "$M" --class "$C" --gen 9 --climate "$AXIS" \
         --indir "$IND" --out "$MA/wza_arms" \
-        --regime "$SUF" --sd-fit isotonic --mean-fit const --sample-snps 0
+        --regime "$SUF" --sd-fit isotonic --mean-fit poly_clamp --mean-poly-deg 5 --sample-snps 0
   done
 }
 

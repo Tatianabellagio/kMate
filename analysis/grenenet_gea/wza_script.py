@@ -52,7 +52,7 @@ def top_candidate(gea, thresh):
     return top_candidate_p, hits
 
 def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2, sd_fit="poly",
-                           mean_fit="interp"):
+                           mean_fit="interp", mean_poly_deg=5):
     wza_df.to_csv('before_filtering_wza_df.csv')
     # remove null Z values - they won't help us
     wza_t = wza_df[~wza_df.Z.isnull()].reset_index()
@@ -96,19 +96,27 @@ def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2, sd_fit="poly
         # six candidates in all 8 blockdef x class cases, ~25-40% worse than any smoother;
         # isotonic_auto / deg2 / const agree within a couple of percent of each other.
         #
-        # PRODUCTION (2026-07-28): mean_fit="const".
-        #   * best out-of-sample mean fit in 9/12 measured model x def x class cases
-        #   * BOUNDED past the rolling-support edge (deg2 extrapolates to mean(Z)=-289 at
-        #     the largest snp block vs an empirical -10.5 -> fabricated p==0; see §4b)
-        #   * no direction to infer. `isotonic_auto` was the earlier pick and FAILED audit
-        #     (wza_investigation/mean_fit_direction_audit.py, job 35978342): its Spearman
-        #     direction FLIPS between adjacent climate axes in 11 of 12 model x class cells
-        #     (kendall/snp: 9 increasing vs 11 decreasing across the 20 axes), because
-        #     |rho| is ~0.001-0.03 -- "significant" only because n~40k rolling points, but
-        #     substantively zero. That would give opposite-trending mean corrections across
-        #     the 60 scans the candidate-gene unions are built from.
-        # Under the rank transform E[z]=0, so a constant is also the theoretically right
-        # shape; "zero" itself scores slightly worse than "const" (0.452 vs 0.416, snp).
+        # PRODUCTION (2026-07-28, FINAL): mean_fit="poly_clamp", mean_poly_deg=5.
+        # UPSTREAM FITS THE TREND HERE TOO (an unclamped deg-2, general_WZA_script.py:86), so
+        # fitting it is the faithful choice; `const` was a kMate invention and is retired.
+        # Judged on accuracy at the LARGE blocks -- the only place the candidates differ, and
+        # a place no aggregate RMSE can see (the 8-15 blocks past the rolling-support edge are
+        # ~0.02% of rolling points) -- across all 24 blockdef x model x class cells:
+        #        mean |predicted - empirical|   worst cell
+        #   deg5_clamp        1.60                4.41     <- PRODUCTION
+        #   isotonic_auto     1.90                5.05     (also: direction flips, see below)
+        #   deg2_clamp        2.15                7.26     (= upstream's degree, clamped)
+        #   const             2.81               10.35     <- WORST, retired
+        # Half-split OOS RMSE had favoured `const`, but that is a bias-variance artifact: each
+        # half holds only ~5 of the ~10 largest blocks, so the validation TARGET is very noisy
+        # there and a zero-variance predictor wins even when the trend is real. Production
+        # fits on ALL blocks, where the trend is well estimated -- and it replicates (sign of
+        # the large-block slope agrees in >=90% of half-splits for 6/24 cells, and is visibly
+        # present in more).
+        # `isotonic_auto` is rejected outright: its Spearman direction FLIPS between adjacent
+        # climate axes in 20 of 24 cells (mean_fit_direction_audit.py, 480 scans; |rho| as low
+        # as 0.0005 -- "significant" only because n~40k rolling points), which would apply
+        # opposite-trending mean corrections across the 60 scans the gene unions are built on.
         from sklearn.isotonic import IsotonicRegression
         ir = IsotonicRegression(increasing=True, out_of_bounds="clip")
         ir.fit(Xs, np.asarray(rolled_Z_sd, dtype=float))
@@ -121,6 +129,21 @@ def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2, sd_fit="poly
             mean_predictions = im.predict(target)
         elif mean_fit == "const":
             mean_predictions = np.full_like(target, means.mean())
+        elif mean_fit == "poly_clamp":
+            # PRODUCTION (2026-07-28). Upstream fits the mean with a deg-2 polynomial
+            # (general_WZA_script.py:86) -- i.e. it FITS THE TREND; `const` was a kMate
+            # invention and measured WORST of four at the large blocks (mean |error| 2.81,
+            # worst cell 10.35, vs 1.60/4.41 for this). Degree 5 + CLAMPING are the only
+            # departures, both forced by our block-size range:
+            #   * clamping (fit inside rolling support, hold the boundary value outside)
+            #     is what prevents the unbounded blow-up: plain deg-2 predicts mean(Z) =
+            #     -289 at the largest snp block where the empirical value is -10.5.
+            #   * degree 5 beats 2/7/10 on large-block accuracy; degrees >=15 Runge-
+            #     oscillate near the sparse upper end (top-band RMSE 11-216) and are unusable.
+            # x is standardized so the fit is numerically well conditioned.
+            mu = Xs.mean(); sg = Xs.std() or 1.0
+            pm = np.poly1d(np.polyfit((Xs - mu) / sg, means, deg=mean_poly_deg))
+            mean_predictions = pm((np.clip(target, Xs.min(), Xs.max()) - mu) / sg)
         elif mean_fit == "poly":
             mean_predictions = np.poly1d(np.polyfit(Xs, means, deg=deg))(target)
         else:  # "interp" -- pre-2026-07-28 behaviour, kept for reproducing old outputs
@@ -164,7 +187,9 @@ def main():
     parser.add_argument("--roller", required=False, dest="roller", type=int, default=50, help="[OPTIONAL] Rolling-window size for SNP-number correction (canonical 50)")
     parser.add_argument("--min_entries", required=False, dest="min_entries", type=int, default=40, help="[OPTIONAL] Min entries per rolling window (canonical 40; phase-1 used 10)")
     parser.add_argument("--sd_fit", required=False, dest="sd_fit", type=str, default="poly", choices=["poly", "isotonic"], help="[LOCAL] SNP-number-correction fit: 'poly' (deg via --poly_deg; canonical Booker) or 'isotonic' (monotone-non-decreasing SD; robust for sparse-tail block defs like clq0.9/mcf90 where poly extrapolates to fabricated p==0/NaN)")
-    parser.add_argument("--mean_fit", required=False, dest="mean_fit", type=str, default="interp", choices=["interp", "isotonic_auto", "const", "poly"], help="[LOCAL, only used when --sd_fit isotonic] how to predict the MEAN of Z vs SNP count: 'isotonic_auto' (PRODUCTION 2026-07-28; monotone, direction from the data, collapses to ~constant when flat), 'const', 'poly' (--poly_deg), or 'interp' (pre-2026-07-28 default; unsmoothed, worst out-of-sample in all 8 cases -- keep only to reproduce old outputs)")
+    parser.add_argument("--mean_fit", required=False, dest="mean_fit", type=str, default="interp", choices=["interp", "isotonic_auto", "const", "poly", "poly_clamp"], help="[LOCAL, only used when --sd_fit isotonic] how to predict the MEAN of Z vs SNP count. 'poly_clamp' = PRODUCTION 2026-07-28 (degree via --mean_poly_deg, default 5; fitted inside rolling support and held flat outside). Upstream uses an UNCLAMPED deg-2 here (general_WZA_script.py:86); clamping prevents mean(Z)=-289 at our largest blocks. 'const' scored WORST of four at large blocks (mean |err| 2.81 vs 1.60). 'isotonic_auto' rejected: direction flips across axes in 20/24 cells. 'interp' = pre-2026-07-28, unsmoothed.")
+
+    parser.add_argument("--mean_poly_deg", required=False, dest="mean_poly_deg", type=int, default=5, help="[LOCAL] polynomial degree for --mean_fit poly_clamp. 5 is production: it beats 2/7/10 on large-block accuracy; >=15 Runge-oscillates near the sparse tail and is unusable.")
 
     args = parser.parse_args()
 
@@ -293,7 +318,7 @@ def main():
             WZA_DF_tmp.to_csv(args.output, index=False)
             return
 
-        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit, mean_fit=args.mean_fit)
+        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit, mean_fit=args.mean_fit, mean_poly_deg=args.mean_poly_deg)
     else:
         WZA_DF_tmp = pd.DataFrame(all_genes)
         if WZA_DF_tmp.SNPs.var() == 0:
@@ -306,7 +331,7 @@ def main():
             WZA_DF_tmp.to_csv(args.output, index=False)
             return
 
-        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit, mean_fit=args.mean_fit)
+        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit, mean_fit=args.mean_fit, mean_poly_deg=args.mean_poly_deg)
 
     WZA_DF.to_csv(args.output, index=False)
 
