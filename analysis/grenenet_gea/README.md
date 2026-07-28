@@ -121,6 +121,44 @@ which we mirror for SVs:
   (hook-enforced). Heavy jobs via **sbatch**, not background.
 - **GEA methods**: `lfmm_env` (LFMM), `baypass` (BayPass), `r_env` (MCMCglmm / WZA / BigLD).
 
+## Gene annotation — use TAIR + UniProt, not mygene alone
+
+**`phase1_replication/annotate_genes_tair_uniprot.py` is the annotator to use.** The older
+`annotate_gene_function.py` queries only mygene.info (NCBI Entrez), and **NCBI carries no
+free-text summaries for Arabidopsis loci** — measured on the 73 genes of the non-SNP WZA hit
+list, `summary` was empty for **0/73**. Since `classify()` keyword-matches against
+name + summary + GO, the functional categories were effectively name-driven (and for the 11
+genes with no GO either, name-only), i.e. an undercount of unknown size.
+
+Two steps, only one of which is an API:
+
+| step | source | notes |
+|---|---|---|
+| which genes overlap a block | **local TAIR10 GFF** via `lib.load_genes()`, span overlap | not an API; same source the SV annotation uses, so it stays internally consistent |
+| gene function | **TAIR GO (GO Consortium GAF) + UniProt REST** | `annotate_genes_tair_uniprot.py` |
+
+Coverage gained on those same 73 genes:
+
+| field | mygene only | TAIR + UniProt |
+|---|---|---|
+| protein name | 73/73 (generic GFF-style) | **73/73** (e.g. *26.5 kDa heat shock protein, mitochondrial (AtHsp26.5)*) |
+| free-text FUNCTION | **0/73** | **39/73** |
+| curated keywords | — | **73/73** |
+| GO BP | 62/73 | 62 (mygene) + 51 (TAIR GAF), merged |
+| categories assigned | 25/73 | **31/73** |
+
+Practical notes:
+- Both APIs are public / no auth, but need **outbound HTTPS** (works from savio4 compute
+  nodes) and an explicit **`User-Agent`** — `current.geneontology.org` returns **403** to
+  urllib's default UA while curl succeeds.
+- TAIR's own `arabidopsis.org/download_files/...` URLs are **403 / login-walled**; the GO
+  Consortium GAF mirror is the usable route. The GAF is cached to `results/cache/tair.gaf.gz`.
+- UniProt runs two passes: reviewed/Swiss-Prot first, then unreviewed/TrEMBL for whatever is
+  still unmapped (51 + 22 = 73 here). The tier is recorded in `uniprot_reviewed`.
+- **Do not switch to Ensembl.** Ensembl Plants serves the same TAIR10-assembly / Araport11
+  gene models and its `description` is the same string as the TAIR10 GFF `Name=` — it adds
+  coordinates we already have locally and no functional text we lack. Checked, not assumed.
+
 ## Layout
 - `lib.py` — loaders, SV filter, rec_key, p0, block collapse, eff_n_founders.
 - `phase1_replication/` — phase-1 kendall / lfmm / binomial + WZA replication on kMate AF.
