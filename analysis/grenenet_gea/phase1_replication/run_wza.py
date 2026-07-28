@@ -34,7 +34,8 @@ PY = sys.executable
 
 def run(in_csv: str, out_csv: str, min_snps: int, verbose: bool,
         poly_deg: int | None = None, sample_snps: int | None = None,
-        min_entries: int | None = None, sd_fit: str = "poly"):
+        min_entries: int | None = None, sd_fit: str = "poly",
+        mean_fit: str = "interp"):
     # wza_script.py exposes the SNP-number-correction knobs (--poly_deg/--roller/
     # --min_entries) and a SNP cap (--sample_snps). Defaults = canonical Booker deg-2.
     # The phase-1 / last-gen runs (and the wza_investigation finding that deg-7 fits the
@@ -57,6 +58,8 @@ def run(in_csv: str, out_csv: str, min_snps: int, verbose: bool,
         cmd += ["--sample_snps", str(sample_snps)]
     if sd_fit and sd_fit != "poly":
         cmd += ["--sd_fit", sd_fit]
+    if mean_fit and mean_fit != "interp":
+        cmd += ["--mean_fit", mean_fit]
     if verbose:
         cmd.append("-v")
     print("  $ " + " ".join(cmd), flush=True)
@@ -85,7 +88,16 @@ def main():
                     help="filename suffix tag, e.g. isotonic / deg7cap2000 (matches kendall/lfmm)")
     ap.add_argument("--sd-fit", dest="sd_fit", default="poly", choices=["poly", "isotonic"],
                     help="SNP-number-correction fit: 'poly' (deg via --poly-deg) or 'isotonic' "
-                         "(monotone SD + interp mean; PRIMARY for clq0.9/mcf90 sparse-tail blocks)")
+                         "(monotone SD; PRIMARY for clq0.9/mcf90 sparse-tail blocks)")
+    ap.add_argument("--mean-fit", dest="mean_fit", default="interp",
+                    choices=["interp", "isotonic_auto", "const", "poly"],
+                    help="how the MEAN of Z vs SNP count is predicted (only with --sd-fit "
+                         "isotonic). 'const' = PRODUCTION 2026-07-28 (best out-of-sample in "
+                         "9/12 cases, bounded past support, no direction to infer). "
+                         "'isotonic_auto' FAILED audit -- direction flips between adjacent "
+                         "climate axes in 11/12 model x class cells (mean_fit_direction_audit.py). "
+                         "'interp' = pre-2026-07-28 unsmoothed default, worst out-of-sample in "
+                         "all 8 blockdef x class cases (notebooks/cap_poly_decision.ipynb §4)")
     ap.add_argument("--verbose", action="store_true")
     args = ap.parse_args()
 
@@ -119,7 +131,7 @@ def main():
         out2 = f"{args.out}/{stem}.csv"
         run(clean, out2, min_snps=args.min_snps, verbose=args.verbose,
             poly_deg=args.poly_deg, sample_snps=args.sample_snps,
-            min_entries=args.min_entries, sd_fit=args.sd_fit)
+            min_entries=args.min_entries, sd_fit=args.sd_fit, mean_fit=args.mean_fit)
         _report(out2, args.regime or ("deg%d" % args.poly_deg if args.poly_deg else "deg2"))
     finally:
         os.unlink(clean)

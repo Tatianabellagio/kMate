@@ -51,7 +51,8 @@ def top_candidate(gea, thresh):
     top_candidate_p = scipy.stats.binomtest(hits, snps, thresh, alternative="greater").pvalue
     return top_candidate_p, hits
 
-def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2, sd_fit="poly"):
+def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2, sd_fit="poly",
+                           mean_fit="interp"):
     wza_df.to_csv('before_filtering_wza_df.csv')
     # remove null Z values - they won't help us
     wza_t = wza_df[~wza_df.Z.isnull()].reset_index()
@@ -82,13 +83,48 @@ def adjust_WZA_with_spline(wza_df, roller=50, minEntries=40, deg=2, sd_fit="poly
         # SD-vs-SNP-count is genuinely monotone-up-then-plateau (permutation-null
         # isotonic-R2~=0.98), and deg-2 fabricates p==0 even with climate SHUFFLED
         # (signal-free) while isotonic fabricates none. So fit SD with a
-        # monotone-non-decreasing isotonic regression (flat beyond support) and the
-        # mean by empirical interpolation. See STATUS_clq90 §0.
+        # monotone-non-decreasing isotonic regression (flat beyond support). See
+        # STATUS_clq90 §0.
+        #
+        # The MEAN fit is a separate choice (`mean_fit`), and it matters just as much:
+        # p = 1 - Phi((Z - mean)/sd). The original isotonic branch predicted the mean with
+        # np.interp -- piecewise-linear through every rolling point, i.e. NO smoothing.
+        # Because run_wza.py feeds raw p and main() rank-transforms it genome-wide
+        # (`csv["pVal"] = csv[stat].rank()/n`), E[z]=0 by construction and mean(Z) has
+        # almost no real dependence on block size -- so interp just tracks rolling noise.
+        # Measured out-of-sample (notebooks/cap_poly_decision.ipynb §4) it is the WORST of
+        # six candidates in all 8 blockdef x class cases, ~25-40% worse than any smoother;
+        # isotonic_auto / deg2 / const agree within a couple of percent of each other.
+        #
+        # PRODUCTION (2026-07-28): mean_fit="const".
+        #   * best out-of-sample mean fit in 9/12 measured model x def x class cases
+        #   * BOUNDED past the rolling-support edge (deg2 extrapolates to mean(Z)=-289 at
+        #     the largest snp block vs an empirical -10.5 -> fabricated p==0; see §4b)
+        #   * no direction to infer. `isotonic_auto` was the earlier pick and FAILED audit
+        #     (wza_investigation/mean_fit_direction_audit.py, job 35978342): its Spearman
+        #     direction FLIPS between adjacent climate axes in 11 of 12 model x class cells
+        #     (kendall/snp: 9 increasing vs 11 decreasing across the 20 axes), because
+        #     |rho| is ~0.001-0.03 -- "significant" only because n~40k rolling points, but
+        #     substantively zero. That would give opposite-trending mean corrections across
+        #     the 60 scans the candidate-gene unions are built from.
+        # Under the rank transform E[z]=0, so a constant is also the theoretically right
+        # shape; "zero" itself scores slightly worse than "const" (0.452 vs 0.416, snp).
         from sklearn.isotonic import IsotonicRegression
         ir = IsotonicRegression(increasing=True, out_of_bounds="clip")
         ir.fit(Xs, np.asarray(rolled_Z_sd, dtype=float))
         sd_predictions = ir.predict(target)
-        mean_predictions = np.interp(target, Xs, np.asarray(rolled_Z_means, dtype=float))
+        means = np.asarray(rolled_Z_means, dtype=float)
+        if mean_fit == "isotonic_auto":
+            # direction chosen by the data; collapses to ~constant when there is no trend
+            im = IsotonicRegression(increasing="auto", out_of_bounds="clip")
+            im.fit(Xs, means)
+            mean_predictions = im.predict(target)
+        elif mean_fit == "const":
+            mean_predictions = np.full_like(target, means.mean())
+        elif mean_fit == "poly":
+            mean_predictions = np.poly1d(np.polyfit(Xs, means, deg=deg))(target)
+        else:  # "interp" -- pre-2026-07-28 behaviour, kept for reproducing old outputs
+            mean_predictions = np.interp(target, Xs, means)
     else:
         # canonical polynomial interpolation of the rolling mean/SD (deg=2 Booker, or 7).
         # NO SAFETY FLOOR (removed 2026-07-03): a negative-SD tail yields NaN (excluded
@@ -127,7 +163,8 @@ def main():
     parser.add_argument("--poly_deg", required=False, dest="poly_deg", type=int, default=2, help="[OPTIONAL] SNP-number-correction polynomial degree (LOCAL: 2=canonical Booker; phase-1 used 7)")
     parser.add_argument("--roller", required=False, dest="roller", type=int, default=50, help="[OPTIONAL] Rolling-window size for SNP-number correction (canonical 50)")
     parser.add_argument("--min_entries", required=False, dest="min_entries", type=int, default=40, help="[OPTIONAL] Min entries per rolling window (canonical 40; phase-1 used 10)")
-    parser.add_argument("--sd_fit", required=False, dest="sd_fit", type=str, default="poly", choices=["poly", "isotonic"], help="[LOCAL] SNP-number-correction fit: 'poly' (deg via --poly_deg; canonical Booker) or 'isotonic' (monotone-non-decreasing SD + interp mean; robust for sparse-tail block defs like clq0.9/mcf90 where poly extrapolates to fabricated p==0/NaN)")
+    parser.add_argument("--sd_fit", required=False, dest="sd_fit", type=str, default="poly", choices=["poly", "isotonic"], help="[LOCAL] SNP-number-correction fit: 'poly' (deg via --poly_deg; canonical Booker) or 'isotonic' (monotone-non-decreasing SD; robust for sparse-tail block defs like clq0.9/mcf90 where poly extrapolates to fabricated p==0/NaN)")
+    parser.add_argument("--mean_fit", required=False, dest="mean_fit", type=str, default="interp", choices=["interp", "isotonic_auto", "const", "poly"], help="[LOCAL, only used when --sd_fit isotonic] how to predict the MEAN of Z vs SNP count: 'isotonic_auto' (PRODUCTION 2026-07-28; monotone, direction from the data, collapses to ~constant when flat), 'const', 'poly' (--poly_deg), or 'interp' (pre-2026-07-28 default; unsmoothed, worst out-of-sample in all 8 cases -- keep only to reproduce old outputs)")
 
     args = parser.parse_args()
 
@@ -256,7 +293,7 @@ def main():
             WZA_DF_tmp.to_csv(args.output, index=False)
             return
 
-        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit)
+        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit, mean_fit=args.mean_fit)
     else:
         WZA_DF_tmp = pd.DataFrame(all_genes)
         if WZA_DF_tmp.SNPs.var() == 0:
@@ -269,7 +306,7 @@ def main():
             WZA_DF_tmp.to_csv(args.output, index=False)
             return
 
-        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit)
+        WZA_DF = adjust_WZA_with_spline(WZA_DF_tmp, roller=args.roller, minEntries=args.min_entries, deg=args.poly_deg, sd_fit=args.sd_fit, mean_fit=args.mean_fit)
 
     WZA_DF.to_csv(args.output, index=False)
 
