@@ -162,19 +162,18 @@ def pcat(g):
     c = [x for x in (rep.loc[g, "categories"] or "").split(",") if x]
     return c[0] if c else "unclassified"
 
-# legibility: keep genes recurring on >= thr axes (denser rows let us show more than the
-# original <=70; target <=110). Ordered by size, NOT genomically.
-thr = 2
-while int((rep["n_axes"] >= thr).sum()) > 110 and thr < 12:
-    thr += 1
-keep = rep.index[rep["n_axes"] >= thr]
+# show ALL gene-bearing significant genes (no recurrence subsampling). The figure is
+# very tall for nonsnp/smallindel (~1,880 rows); ordered by size, NOT genomically.
+keep = rep.index
 gord = rep.loc[keep].sort_values(["size", "n_axes"]).index.tolist()          # small at bottom
+thr = 1
 yidx = {g: i for i, g in enumerate(gord)}
 xidx = {a: i for i, a in enumerate(AXES_ORD)}
 D = GA[GA["gene"].isin(keep)].drop_duplicates(["gene", "axis"])
 
 H = max(4.0, 0.16 * len(gord))                                                # denser: 0.16 in/row
-fig = plt.figure(figsize=(11, H))
+_dpi = min(110, int(62000 / H)) if H > 0 else 110                            # stay under Agg 65536px cap
+fig = plt.figure(figsize=(11, H), dpi=_dpi)
 gs = fig.add_gridspec(1, 2, width_ratios=[5.5, 1.0], wspace=0.04)
 ax = fig.add_subplot(gs[0]); axr = fig.add_subplot(gs[1], sharey=ax)
 
@@ -220,9 +219,8 @@ ax.legend(handles=_hm, title="block", loc="lower left", bbox_to_anchor=(1.28, 0.
           frameon=False, fontsize=7, title_fontsize=8)
 fig.tight_layout(); plt.show()
 _nonly = int((rep["n_axes_nonsnp_only"] > 0).reindex(gord).sum())
-print(f"dot grid: {len(gord)} genes recurring on >={thr} of 20 axes (all significant {CLS} blocks; "
-      f"black-edged dot = non-SNP-only); {_nonly} of them non-SNP-only on >=1 axis; "
-      f"{rep.shape[0]-len(gord)} lower-recurrence genes omitted (present in the CSV).")''')
+print(f"dot grid: {len(gord)} genes = ALL gene-bearing significant {CLS} blocks (no subsampling; "
+      f"black-edged dot = non-SNP-only); {_nonly} of them non-SNP-only on >=1 axis.")''')
 
     nb = new_notebook(); nb["cells"] = C
     out = os.path.join(HERE, f"newpeak_dotgrid_lfmm_{cls}.ipynb")
