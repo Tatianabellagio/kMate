@@ -1,24 +1,25 @@
 #!/usr/bin/env python
-"""Standalone dot-grid of class-only (SV / small-indel) new-peak genes across the 20
-climate axes — LFMM, raw (before-WZA), clq0.9 TILING partition.
+"""Standalone dot-grid of the significant (SV / small-indel / non-SNP) blocks across the
+20 climate axes — LFMM, raw (before-WZA), clq0.9 TILING partition.
 
 Lifted OUT of `raw_manhattan_snp_vs_{cls}_lfmm_tile.ipynb` so the dot plot can be
 regenerated on its own: that notebook is slow because it renders 20 dense per-axis
-mirror Manhattans first. Here we recompute the same `newpk` set (block whose LEAD
-class record clears Bonferroni while its lead SNP record does not — SNP-absent blocks
-count as SNP-not-sig, which is exactly the "what did SVs/indels find that SNPs missed"
-question), skip all Manhattan rendering, and go straight to the dot grid.
+mirror Manhattans first. Here we skip all Manhattan rendering and go straight to the grid.
 
-Two additions over the original dot plot:
+Shows **ALL** clq0.9 tiling blocks whose LEAD (min-p) class record clears Bonferroni on
+>=1 axis, and MARKS each (gene, axis) dot by whether the co-located SNP is also significant:
+  * black-edged / solid  = non-SNP-only (no significant SNP in that block),
+  * white-edged / faded   = SNP also significant in the same block.
+(The earlier version showed only the non-SNP-only subset; now the SNP-also blocks are
+visible too, per request.)
+
+Additions kept from before:
   * denser rows (less vertical whitespace),
   * a right-hand panel of the variant's indel/SV **size** (|alt_len-ref_len|, bp),
-    with rows ordered by that size.
+    with rows ordered by that size (size per gene = its strongest-signal lead record).
 
-Size per gene = the size of that gene's strongest-signal new-peak lead record.
-
-Emits two twin notebooks (same code, class swapped):
-  newpeak_dotgrid_lfmm_nonsnp.ipynb  -- SNP-missed pooled non-SNP peaks
-  newpeak_dotgrid_lfmm_sv.ipynb      -- SNP-missed SV peaks
+Emits twin notebooks (same code, class swapped):
+  newpeak_dotgrid_lfmm_nonsnp.ipynb  · _sv.ipynb  · _smallindel.ipynb
 """
 import sys
 import nbformat as nbf
@@ -35,17 +36,21 @@ def build(cls, title_word):
     md = lambda s: C.append(new_markdown_cell(s))
     co = lambda s: C.append(new_code_cell(s))
 
-    md(f"""# {title_word}-only new-peak genes across the 20 climate axes — LFMM, raw, clq0.9 tiling
+    md(f"""# Significant {title_word} blocks across the 20 climate axes — LFMM, raw, clq0.9 tiling
 
 Standalone dot grid, lifted out of `raw_manhattan_snp_vs_{cls}_lfmm_tile.ipynb` (which is
-slow — it renders 20 dense mirror Manhattans first). Same `newpk` definition: a clq0.9
-**tiling** block whose LEAD (min-p) {cls} record clears per-class Bonferroni (0.05/n) while
-its lead SNP record in the same block does **not** — SNP-absent blocks count as
-SNP-not-significant, which is exactly the "what did {title_word} find that SNPs missed"
-question the project is asking. Per-record `wza_in_clq09_tile` LFMM p, gen9, MAF>0.05.
+slow — it renders 20 dense mirror Manhattans first). Shows **ALL** clq0.9 **tiling** blocks
+whose LEAD (min-p) {cls} record clears per-class Bonferroni (0.05/n) on >=1 climate axis
+(bio1-19 + pc1) — gen9, MAF>0.05, `wza_in_clq09_tile` LFMM p.
 
-**Raw, uncalibrated p — no GIF correction** (see `gif_manhattan_snp_vs_{cls}_lfmm_tile.ipynb`
-for the inflation-corrected view). Rows ordered by indel/SV size; right panel shows that size.""")
+Each (gene, axis) dot is **marked by whether the co-located SNP is also significant**:
+* **black-edged, solid** = **non-SNP-only** — no significant SNP in that block ("what did
+  {title_word} find that SNPs missed"),
+* **white-edged, faded** = **SNP also significant** in the same block (shown for context).
+
+Dot **size** = -log10 p ({cls} lead); **color** = functional category; rows ordered by indel/SV
+size (right panel). **Raw, uncalibrated p — inflation acknowledged, kept deliberately** (this is
+the raw-LFMM working signal; see `nonsnp_block_characterization.ipynb` for the caveats).""")
 
     co(f"""import os, sys
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
@@ -77,7 +82,7 @@ def genes_on(block):
     return list(gc.gene)
 print("loaded:", len(SPANS), "tiling blocks,", len(GENES), "genes ; class =", CLS)""")
 
-    co("""# --- recompute new peaks across all axes (no Manhattan rendering) ---
+    co("""# --- recompute all significant class blocks across all axes (no Manhattan rendering) ---
 def load_raw(cls, axis):
     f = f"{WZAIN}/{MODEL}_{cls}_gen9_{axis}.csv"
     if not os.path.exists(f): return None
@@ -91,37 +96,43 @@ def leads(d):
     d = d[d["block"].notna() & (d["block"] != "")]
     return d.loc[d.groupby("block")["nlp"].idxmax()]         # lead (min-p) record per block
 
-def newpeaks(axis, cls):
+def sig_blocks(axis, cls):
     s, c = load_raw("snp", axis), load_raw(cls, axis)
     if s is None or c is None:
         return None
     bonf_s, bonf_c = -np.log10(0.05 / len(s)), -np.log10(0.05 / len(c))
     ls_, lc_ = leads(s), leads(c)
     m = lc_.merge(ls_[["block", "nlp"]], on="block", suffixes=("", "_snp"), how="left")
-    m["nlp_snp"] = m["nlp_snp"].fillna(0.0)                  # SNP-absent block -> SNP not sig
-    npk = m[(m["nlp"] > bonf_c) & (m["nlp_snp"] <= bonf_s)].copy()
-    npk["genes"] = npk["block"].map(lambda b: ";".join(genes_on(b)))
-    npk["axis"] = axis
-    return npk[["block", "chrom", "pos", "size", "nlp", "nlp_snp", "genes", "axis"]]
+    m["nlp_snp"] = m["nlp_snp"].fillna(0.0)                  # SNP-absent block -> lead SNP nlp 0
+    sig = m[m["nlp"] > bonf_c].copy()                        # ALL class-significant blocks
+    sig["snp_sig"] = sig["nlp_snp"] > bonf_s                 # is the co-located SNP also significant?
+    sig["genes"] = sig["block"].map(lambda b: ";".join(genes_on(b)))
+    sig["axis"] = axis
+    return sig[["block", "chrom", "pos", "size", "nlp", "nlp_snp", "snp_sig", "genes", "axis"]]
 
-all_newpk = []
+all_sig = []
 for a in AXES:
-    x = newpeaks(a, CLS)
+    x = sig_blocks(a, CLS)
     if x is None:
         print("missing", a); continue
-    all_newpk.append(x)
-    print(f"{a}: {len(x)} {CLS}-only new peaks ({(x.genes != '').sum()} gene-bearing)")
-ALLPK = pd.concat(all_newpk, ignore_index=True) if all_newpk else pd.DataFrame()
-print("total (block,axis) new peaks:", len(ALLPK))""")
+    all_sig.append(x)
+    n_only = int((~x["snp_sig"]).sum())
+    print(f"{a}: {len(x)} sig {CLS} blocks ({n_only} non-SNP-only, {len(x)-n_only} SNP-also); "
+          f"{(x.genes != '').sum()} gene-bearing")
+ALLPK = pd.concat(all_sig, ignore_index=True) if all_sig else pd.DataFrame()
+print(f"total (block,axis) significant: {len(ALLPK)} ; non-SNP-only {int((~ALLPK.snp_sig).sum())}")""")
 
     co("""# --- gene-level table: one row per (gene, axis), plus a representative (strongest) row per gene ---
 GENE = ALLPK.assign(gene=ALLPK["genes"].str.split(";")).explode("gene")
 GENE = GENE[GENE["gene"].astype(bool)].copy()
 GA = GENE.sort_values("nlp", ascending=False).drop_duplicates(["gene", "axis"])   # 1 row / (gene,axis)
 nax = GA.groupby("gene")["axis"].nunique().rename("n_axes")
+nax_only = GA[~GA["snp_sig"]].groupby("gene")["axis"].nunique().rename("n_axes_nonsnp_only")
 rep = (GA.sort_values("nlp", ascending=False).drop_duplicates("gene")             # strongest axis / gene
-         .set_index("gene").join(nax))
-print(f"{rep.shape[0]} unique gene-bearing {CLS}-only new-peak genes")""")
+         .set_index("gene").join(nax).join(nax_only))
+rep["n_axes_nonsnp_only"] = rep["n_axes_nonsnp_only"].fillna(0).astype(int)
+print(f"{rep.shape[0]} unique gene-bearing significant {CLS} genes "
+      f"({int((rep.n_axes_nonsnp_only>0).sum())} non-SNP-only on >=1 axis)")""")
 
     co('''# --- annotate genes (TAIR GO + UniProt) — the mandated annotator ---
 import importlib.util as _ilu
@@ -168,9 +179,12 @@ gs = fig.add_gridspec(1, 2, width_ratios=[5.5, 1.0], wspace=0.04)
 ax = fig.add_subplot(gs[0]); axr = fig.add_subplot(gs[1], sharey=ax)
 
 for _, rr in D.iterrows():
+    only = not rr["snp_sig"]                                  # non-SNP-only = no significant SNP in block
     ax.scatter(xidx[rr["axis"]], yidx[rr["gene"]], s=10 + rr["nlp"] * 2.0,
-               c=CATCOL.get(pcat(rr["gene"]), "#CED4DA"), edgecolors="white",
-               linewidths=0.3, alpha=0.95, zorder=3)
+               c=CATCOL.get(pcat(rr["gene"]), "#CED4DA"),
+               edgecolors=("black" if only else "white"),
+               linewidths=(0.8 if only else 0.3),
+               alpha=(0.98 if only else 0.45), zorder=(4 if only else 3))
 ax.set_xticks(range(len(AXES_ORD))); ax.set_xticklabels(AXES_ORD, rotation=90, fontsize=7)
 ax.set_yticks(range(len(gord)))
 ax.set_yticklabels([f"{(rep.loc[g,'symbol'] or g)}  ({pcat(g)})" for g in gord], fontsize=6)
@@ -195,10 +209,19 @@ axr.tick_params(axis="y", length=0)
 _present = [c for c in CATCOL if c in {pcat(g) for g in gord}]
 _h = [mlines.Line2D([], [], marker="o", ls="", ms=7, mfc=CATCOL[c], mec="white", label=c)
       for c in _present]
-ax.legend(handles=_h, title="category", loc="upper left", bbox_to_anchor=(1.28, 1.0),
+leg1 = ax.legend(handles=_h, title="category", loc="upper left", bbox_to_anchor=(1.28, 1.0),
+                 frameon=False, fontsize=7, title_fontsize=8)
+ax.add_artist(leg1)
+_hm = [mlines.Line2D([], [], marker="o", ls="", ms=8, mfc="#9AA0A6", mec="black", mew=0.9,
+                     label="non-SNP-only (no sig SNP)"),
+       mlines.Line2D([], [], marker="o", ls="", ms=8, mfc="#9AA0A6", mec="white", mew=0.9,
+                     alpha=0.5, label="SNP also significant")]
+ax.legend(handles=_hm, title="block", loc="lower left", bbox_to_anchor=(1.28, 0.0),
           frameon=False, fontsize=7, title_fontsize=8)
 fig.tight_layout(); plt.show()
-print(f"dot grid: {len(gord)} genes recurring on >={thr} of 20 axes; "
+_nonly = int((rep["n_axes_nonsnp_only"] > 0).reindex(gord).sum())
+print(f"dot grid: {len(gord)} genes recurring on >={thr} of 20 axes (all significant {CLS} blocks; "
+      f"black-edged dot = non-SNP-only); {_nonly} of them non-SNP-only on >=1 axis; "
       f"{rep.shape[0]-len(gord)} lower-recurrence genes omitted (present in the CSV).")''')
 
     nb = new_notebook(); nb["cells"] = C
