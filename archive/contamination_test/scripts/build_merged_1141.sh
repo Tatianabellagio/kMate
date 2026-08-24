@@ -1,10 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=merge_1141
-#SBATCH --output=/home/tbellagio/scratch/hapfire_sv/contamination_test/logs/merge_1141_%j.out
-#SBATCH --error=/home/tbellagio/scratch/hapfire_sv/contamination_test/logs/merge_1141_%j.err
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --time=03:00:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
+#SBATCH --output=logs/merge_1141_%j.out
+#SBATCH --error=logs/merge_1141_%j.err
 
 # Build a fully-phased 1141-ecotype panel by merging:
 #   - Panel B (1135 ecotypes, fully phased Beagle output)
@@ -17,15 +20,16 @@
 # Post-merge filter F_MISSING==0 keeps only sites present in BOTH panels --
 # at those sites all 1141 samples have phased GTs.
 
+mkdir -p logs
 set -eo pipefail
 
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate pang
 set -u
 
-PANEL_B=/carnegie/nobackup/scratch/xwu/GrENE_net/vcf/1001_genomes_snps_missing0.8_merged_imputed_biallelic_named.vcf.gz
-PANEL_231=/carnegie/nobackup/scratch/xwu/GrENE_net/greneNet_final_v1.1.recode.vcf
-OUT_DIR=/home/tbellagio/scratch/hapfire_sv/contamination_test/vcf
+PANEL_B=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/1001_genomes_snps_missing0.8_merged_imputed_biallelic_named.vcf.gz
+PANEL_231=/global/scratch/projects/fc_moilab/projects/grenenet-phase1/vcf/greneNet_final_v1.1.recode.vcf
+OUT_DIR=/global/scratch/users/tbellg/hapfire_sv/contamination_test/vcf
 EXTRAS=100001,100002,6939,9940,9977,9992
 
 mkdir -p "${OUT_DIR}"

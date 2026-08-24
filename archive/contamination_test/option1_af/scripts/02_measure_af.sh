@@ -1,10 +1,13 @@
 #!/bin/bash
 #SBATCH --job-name=mpileup_seedmix
-#SBATCH --output=/home/tbellagio/scratch/hapfire_sv/contamination_test/option1_af/logs/mpileup_%x_%j.out
-#SBATCH --error=/home/tbellagio/scratch/hapfire_sv/contamination_test/option1_af/logs/mpileup_%x_%j.err
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=moilab_htc4_normal
 #SBATCH --time=04:00:00
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=16G
+#SBATCH --output=logs/mpileup_%x_%j.out
+#SBATCH --error=logs/mpileup_%x_%j.err
 
 # For one seedmix sample, run bcftools mpileup at the diagnostic sites
 # (non-231-private SNPs, AC=0 in 231 GrENE founders) and write per-site
@@ -16,16 +19,17 @@
 # Output:
 #   af/seedmix_S${N}.af.tsv       chrom,pos,ref,alt,ad_ref,ad_alt,dp,af
 
+mkdir -p logs
 set -eo pipefail
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate pang
 set -u
 
 N="${1:?sample number 1-8 required}"
 
-ROOT=/home/tbellagio/scratch/hapfire_sv/contamination_test/option1_af
-BAM="/carnegie/nobackup/scratch/xwu/GrENE_net/seed_mix/filtered_bam/filtered_seeds-${N}.bam"
-REF=/home/tbellagio/scratch/pang/ref_xing/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa
+ROOT=/global/scratch/users/tbellg/hapfire_sv/contamination_test/option1_af
+BAM="/global/scratch/projects/fc_moilab/projects/grenenet-phase1/seed_mix/filtered_seeds-${N}.bam"
+REF=/global/scratch/users/tbellg/pang/ref_xing/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa
 
 # Targets file: chrom\tpos\tref,alt (built by 01_find_diagnostic_sites.sh).
 # bcftools mpileup -T accepts this format directly.

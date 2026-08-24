@@ -32,7 +32,7 @@ import numpy as np
 import pandas as pd
 
 
-ROOT = Path("/home/tbellagio/scratch/hapfire_sv/contamination_test/option1_af")
+ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DIAG_TSVS = sorted(ROOT.glob("sites/diag_chr*.tsv"))
 DEFAULT_AF_TSVS = sorted(ROOT.glob("af/seedmix_S*.af.tsv"))
 RESULTS = ROOT / "results"

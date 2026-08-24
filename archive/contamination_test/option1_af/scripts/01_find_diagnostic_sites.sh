@@ -1,11 +1,15 @@
 #!/bin/bash
 #SBATCH --job-name=diag_sites
-#SBATCH --output=/home/tbellagio/scratch/hapfire_sv/contamination_test/option1_af/logs/diag_chr%a.out
-#SBATCH --error=/home/tbellagio/scratch/hapfire_sv/contamination_test/option1_af/logs/diag_chr%a.err
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
 #SBATCH --time=02:00:00
 #SBATCH --cpus-per-task=2
 #SBATCH --mem=8G
 #SBATCH --array=1-5
+#SBATCH --requeue
+#SBATCH --output=logs/diag_chr%a.out
+#SBATCH --error=logs/diag_chr%a.err
 
 # For one chrom of the 1141 panel, find SNPs where every 231 GrENE founder
 # is hom-ref (no '1' in any 231 GT). Those are sites where the alt allele
@@ -18,13 +22,14 @@
 #   sites/diag_chr<N>.tsv       chrom,pos,ref,alt,ac_non231,an_non231,af_non231,carriers
 #   sites/diag_chr<N>.targets   chrom\tpos\tref,alt   (for bcftools mpileup -T)
 
+mkdir -p logs
 set -eo pipefail
 
 CH="${1:-${SLURM_ARRAY_TASK_ID}}"
 
-ROOT=/home/tbellagio/scratch/hapfire_sv/contamination_test
+ROOT=/global/scratch/users/tbellg/hapfire_sv/contamination_test
 PANEL="${ROOT}/vcf/1001G_80pilot_israel_regmap_overlapping_biallelic_chr${CH}_mac7.recode.vcf"
-S231="/home/tbellagio/scratch/hapfire_sv/data/vcf_samples_231.txt"
+S231="/global/scratch/users/tbellg/hapfire_sv/data/vcf_samples_231.txt"
 OUT_DIR="${ROOT}/option1_af/sites"
 
 OUT_TSV="${OUT_DIR}/diag_chr${CH}.tsv"

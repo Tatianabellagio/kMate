@@ -14,7 +14,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-ROOT = Path('/home/tbellagio/scratch/hapfire_sv/contamination_test/option1_af')
+ROOT = Path(__file__).resolve().parents[2]
 RESULTS = ROOT / 'results'
 
 # --- load data ---

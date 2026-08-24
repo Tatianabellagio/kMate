@@ -24,11 +24,14 @@ import sys
 import pandas as pd
 
 
+_ROOT = Path(__file__).resolve().parents[2]
+
+
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--results-dir", default="/home/tbellagio/scratch/hapfire_sv/contamination_test/results")
-    p.add_argument("--grene231-list", default="/home/tbellagio/scratch/hapfire_sv/data/vcf_samples_231.txt")
-    p.add_argument("--out-prefix", default="/home/tbellagio/scratch/hapfire_sv/contamination_test/results")
+    p.add_argument("--results-dir", default=str(_ROOT / "contamination_test/results"))
+    p.add_argument("--grene231-list", default=str(_ROOT / "data/vcf_samples_231.txt"))
+    p.add_argument("--out-prefix", default=str(_ROOT / "contamination_test/results"))
     p.add_argument("--samples", nargs="+", default=[f"SEEDMIX_S{i}" for i in range(1, 9)])
     p.add_argument("--chroms", nargs="+", default=["1", "2", "3", "4", "5"])
     return p.parse_args()

@@ -11,7 +11,7 @@
 set -eo pipefail
 
 MODE="${1:-smoke}"
-ROOT=/home/tbellagio/scratch/hapfire_sv/contamination_test
+ROOT=/global/scratch/users/tbellg/hapfire_sv/contamination_test
 RUNNER="${ROOT}/scripts/run_hapfire_perchrom.sh"
 
 mkdir -p "${ROOT}/logs"

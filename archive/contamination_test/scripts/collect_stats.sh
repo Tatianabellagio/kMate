@@ -10,14 +10,14 @@
 
 set -eo pipefail
 
-ROOT=/home/tbellagio/scratch/hapfire_sv/contamination_test
+ROOT=/global/scratch/users/tbellg/hapfire_sv/contamination_test
 OUT="${1:-${ROOT}/results/job_stats.tsv}"
 mkdir -p "$(dirname "${OUT}")"
 
 # Find all SLURM jobs whose name starts with "hapfire_" launched by us.
 # MaxRSS lives on the .batch step (not the job-level row), so we pull it
 # separately and join.
-SACCT_RAW=$(sacct --user="$USER" --partition=bse \
+SACCT_RAW=$(sacct --user="$USER" --partition=savio3_xlmem \
                   --starttime=2026-05-05 \
                   --format=JobID,JobName%50,State,Elapsed,MaxRSS,NodeList%30,Start,End,AllocCPUs,ReqMem \
                   -P -n 2>/dev/null \

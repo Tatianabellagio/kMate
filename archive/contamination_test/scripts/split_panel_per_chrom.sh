@@ -12,11 +12,11 @@ set -eo pipefail
 #   - 6 GrENE-Net extras (100001/100002/6939/9940/9977/9992) extracted from the
 #     fully-phased 231-panel greneNet_final_v1.1.recode.vcf
 # restricted to sites present in BOTH panels (so all 1141 samples have phased GTs).
-SRC=/home/tbellagio/scratch/hapfire_sv/contamination_test/vcf/panel_1141_phased.vcf.gz
-OUT=/home/tbellagio/scratch/hapfire_sv/contamination_test/vcf
+SRC=/global/scratch/users/tbellg/hapfire_sv/contamination_test/vcf/panel_1141_phased.vcf.gz
+OUT=/global/scratch/users/tbellg/hapfire_sv/contamination_test/vcf
 CH="${1:?chrom number required}"
 
-source /home/tbellagio/miniforge3/etc/profile.d/conda.sh
+source /global/home/users/tbellg/miniforge3/etc/profile.d/conda.sh
 conda activate pang
 set -u
 
