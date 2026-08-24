@@ -20,7 +20,7 @@ Two streaming passes over the 5 per-chrom var_pa npz:
 Variant class from panel meta ref_len/alt_len: SNP (1,1) | indel (non-SNP, |dlen|<=50) |
 SV (|dlen|>50). Uncalled founders imputed to the column allele frequency.
 
-Output -> analysis/grenenet_selection/ecotype_fitness/gwas/
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/ecotype_fitness/gwas/
   gwas_z.npz : chrom,pos,ref_len,alt_len,mac,vclass, Z[n_var x P] (LOCO), Znaive[n_var x P],
                pheno_names, delta[C x P], h2[C x P]
 Env: kmate. Heavy -> run via run_ecotype_gwas.sbatch (NOT the login node).
@@ -36,7 +36,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/ecotype_fitness/gwas"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/gwas"
 CHROMS = ["chr1", "chr2", "chr3", "chr4", "chr5"]
 PHENOS = [f"{a}_{f}" for f in ("rel", "cen")
           for a in ("w_global", "w_cold", "w_mid", "w_hot")]
@@ -146,7 +146,7 @@ def _wald_z(Xr, Yt, w, S1, Sy, Syy):
 def main():
     os.makedirs(OUT, exist_ok=True)
     t0 = time.time()
-    fit = pd.read_csv(f"{lib.GEA}/ecotype_fitness/ecotype_fitness.csv")
+    fit = pd.read_csv(f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/ecotype_fitness.csv")
     Y = np.column_stack([qn(fit[p].to_numpy(float)) for p in PHENOS])  # 231 x P, rank-INT
     P = Y.shape[1]
     print(f"phenotypes ({P}, rank-inverse-normal): {PHENOS}", flush=True)

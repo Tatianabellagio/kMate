@@ -28,7 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from recompute_blocks import build_common_matrix
 from eval_block_coherence import load_allclass_af, pc1_var_explained
 
-BR = "analysis/grenenet_selection/blocks_recompute"
+BR = "analysis/grenenet_selection/blocks/results/blocks_recompute"
 MAF, MINCF = 0.05, 0.5
 HAPFM_KMAX = 7          # HapFM clusters only when #unique haplotypes >= this
 SIG_PRESENT = 0.5       # variant alt-freq in cluster >= this

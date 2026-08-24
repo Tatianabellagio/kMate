@@ -21,7 +21,7 @@ and report: corr(purging, parallelism); corr(parallelism, bio1/bio18); and PARTI
 (purging~climate controlling parallelism, and purging~parallelism controlling climate) to separate
 the two explanations.
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/site_parallelism.csv (+ prints stats).
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/site_parallelism.csv (+ prints stats).
 """
 import os, sys, glob
 import numpy as np, pandas as pd
@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
 os.chdir("/global/scratch/users/tbellg/kmate")
-HCACHE = f"{lib.GEA}/ecotype_fitness/sample_global_h.npz"
+HCACHE = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/sample_global_h.npz"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 EPS, P0_FLOOR, TRAIT_GENS = 1e-3, 1e-5, (1, 2, 3)
 REAL_P0 = 1e-3   # founders with seedmix p0 above this count toward the parallelism mean
@@ -133,9 +133,9 @@ def main():
     df = pd.DataFrame(rows)
 
     # merge per-site SV purging (shift_sv = mean over strata of SV median - SNP baseline)
-    site_meta = pd.read_csv(f"{lib.GEA}/sv_adaptive/s_dist_by_stratum_sitemeta.csv")
+    site_meta = pd.read_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/s_dist_by_stratum_sitemeta.csv")
     df = df.merge(site_meta[["site", "shift_sv", "shift_ind"]], on="site", how="inner")
-    df.to_csv(f"{lib.GEA}/sv_adaptive/site_parallelism.csv", index=False)
+    df.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/site_parallelism.csv", index=False)
     print(f"\n[wrote] site_parallelism.csv ({len(df)} sites)")
 
     def sp(a, b):

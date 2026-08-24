@@ -39,7 +39,7 @@ $RCLONE copy "$GEA/phase1_replication/results/class_matrices" \
   --include "gen{0,1,2,3}.pools.csv" "${FLAGS[@]}"
 
 echo "### [2/3] raw gen_matrices (gen1/2/3, snp/nonsnp/smallindel) -> data-raw/gen_matrices/"
-$RCLONE copy "$GEA/gen_matrices" "$DEST_BASE/data-raw/gen_matrices" \
+$RCLONE copy "$GEA/common/results/gen_matrices" "$DEST_BASE/data-raw/gen_matrices" \
   --include "gen{1,2,3}_{snp,nonsnp,smallindel}_af.npy" \
   --include "gen{1,2,3}.rowmeta.csv" "${FLAGS[@]}"
 

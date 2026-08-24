@@ -7,7 +7,7 @@ Two bugs were found in the original SV-only tagging computation (see
   1. Missingness silently coded as REF (no var_called masking).
   2. No MAC floor -- singleton anchors (53.5% of SVs!) could register spurious
      r2=1 "tags" from small-N coincidence.
-This notebook uses the corrected data (`analysis/grenenet_selection/sv_snp_ld_v2/`,
+This notebook uses the corrected data (`analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld_v2/`,
 built by `build_tagging_masked.py --mac-floor 2`), extended to indels, and
 adds missingness-filter and MAF-filter sensitivity plots -- the combinatorial
 matrix of {no filter, missingness filter, MAF filter} x {SV, indel} x
@@ -57,7 +57,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 PROJ = "/global/scratch/users/tbellg/kmate"
-V2 = f"{PROJ}/analysis/grenenet_selection/sv_snp_ld_v2"
+V2 = f"{PROJ}/analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld_v2"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 NF = 231
 

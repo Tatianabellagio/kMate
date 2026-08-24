@@ -27,7 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
 os.chdir("/global/scratch/users/tbellg/kmate")
-HCACHE = f"{lib.GEA}/ecotype_fitness/sample_global_h.npz"
+HCACHE = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/sample_global_h.npz"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 EPS, P0_FLOOR, TRAIT_GENS = 1e-3, 1e-5, (1, 2, 3)
 SV_BP, MIN_MAC, CALL_MIN = 50, 12, 0.9
@@ -91,7 +91,7 @@ def main():
     print(f"  (indel per founder:  cactus={np.median(ind[is_cactus]):.0f} PG={np.median(ind[~is_cactus]):.0f}; "
           f"SNP: cactus={np.median(snp[is_cactus]):.0f} PG={np.median(snp[~is_cactus]):.0f})")
     pd.DataFrame(dict(founder=founders, is_cactus=is_cactus, sv=sv, indel=ind, snp=snp, p0=p0)).to_csv(
-        f"{lib.GEA}/sv_adaptive/founder_sv_content.csv", index=False)
+        f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/founder_sv_content.csv", index=False)
 
     # per-site founder s (mean over plots of logit-slope over gens 0..3)
     pt = lib.pool_table(); pt = pt[pt.sampleid.astype(str).isin(smap)].copy()
@@ -133,7 +133,7 @@ def main():
             lose_pct_cactus=round(float(is_cactus[lo].mean()), 2),
             rho_s_cactus=round(stats.spearmanr(s, is_cactus.astype(float)).statistic, 3)))
     df = pd.DataFrame(rows)
-    df.to_csv(f"{lib.GEA}/sv_adaptive/winners_sv_depletion.csv", index=False)
+    df.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/winners_sv_depletion.csv", index=False)
 
     print(f"\n=== does winning-ness (s) correlate with founder SV-content? (Spearman across 231 founders) ===")
     print("  negative rho_s_sv = winners are SV-depleted (the artifact direction)")

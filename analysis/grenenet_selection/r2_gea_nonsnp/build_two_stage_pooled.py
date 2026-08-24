@@ -24,7 +24,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-PM = f"{lib.GEA}/pool_matrices"; STORE = lib.AF_STORE
+PM = f"{lib.GEA}/common/results/pool_matrices"; STORE = lib.AF_STORE
 NC_MIN, SV_MIN_BP, EPS, D0, N_PERM = 150, 50, 1e-3, 4.0, 2000
 PLOIDY = 2
 
@@ -68,7 +68,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--n-perm", type=int, default=N_PERM)
-    ap.add_argument("--out", default=f"{lib.GEA}/gea")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/results/gea")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     clim = args.climate

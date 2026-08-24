@@ -7,7 +7,7 @@
     (cc_function) where a Swiss-Prot/TrEMBL entry exists -- a fuller functional sentence than the
     Ensembl one-liner. Best-effort; genes with no UniProt hit just keep the Ensembl description.
 
-Writes analysis/grenenet_selection/varexp/nonsnp_only_genes_described.csv (nonsnp_only_genes.csv + columns
+Writes analysis/grenenet_selection/r3_persite_gwas/results/varexp/nonsnp_only_genes_described.csv (nonsnp_only_genes.csv + columns
 ensembl_description, biotype, uniprot_protein, uniprot_function). Env: kmate (needs internet;
 compute node reaches rest.ensembl.org + rest.uniprot.org).
 """
@@ -19,7 +19,7 @@ import requests
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 ENS = "https://rest.ensembl.org/lookup/id"
 UNIPROT = "https://rest.uniprot.org/uniprotkb/search"
 

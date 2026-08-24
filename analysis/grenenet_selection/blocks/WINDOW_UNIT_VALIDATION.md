@@ -25,7 +25,7 @@ alongside the projected per-variant AF.
 ## 0. Block / unit definitions (the unit map)
 
 **The units** (k-mer-covered, LD-grown; = kMate h-window candidate AND selection unit):
-- genome-wide: `analysis/grenenet_selection/blocks_mcf90/final_units_dynld_K500.tsv`; per-chrom
+- genome-wide: `analysis/grenenet_selection/blocks/results/blocks_mcf90/final_units_dynld_K500.tsv`; per-chrom
   `chr{N}_units_dynld_K500.tsv`. Cols: `chrom start_pos end_pos n_variants panel_kmers covered`.
   **22,939 units; 72% COVERED** (panel_kmers≥500 → local-fit; 16,403 units), 28% desert (global
   fallback). Median 32 var / 2.1 kb / 926 panel k-mers. Built by `dynamic_ld_blocks.py` (grow CLQ0.9
@@ -46,7 +46,7 @@ alongside the projected per-variant AF.
 
 ## 1. Production window-mode run
 - Runner: `grenenet/run_site_array_perchrom.sh` with `BLOCK_MODE=window`,
-  `BLOCKS_DIR=analysis/grenenet_selection/blocks_mcf90` (units `chr{N}_units_dynld_K500.tsv`,
+  `BLOCKS_DIR=analysis/grenenet_selection/blocks/results/blocks_mcf90` (units `chr{N}_units_dynld_K500.tsv`,
   22,939 units, 72% k-mer-covered), `MIN_KMERS=50`. Output: `results/grenenet_kmate_window/`.
 - 2,168 / 2,168 samples. Per sample: `*_ChrN.h_blocks_per_chrom.npz` (per-unit h) +
   `*_ChrN.tsv` / `*.tsv` (projected per-variant AF). ~1.6 TB.

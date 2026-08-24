@@ -19,7 +19,7 @@ aggregate axes:
 Fairness: K_snp_matched (SNPs subsampled to the non-SNP count & MAC spectrum) isolates whether any
 SNP edge is just "more markers". Reports marginal (each class alone) AND conditional gain.
 
-Reads analysis/grenenet_selection/varexp/{selection_s_matrix.npz, class_grms.npz}. Writes varexp.csv,
+Reads analysis/grenenet_selection/r3_persite_gwas/results/varexp/{selection_s_matrix.npz, class_grms.npz}. Writes varexp.csv,
 varexp_persite.npz, varexp_meta.json. Env: kmate. Light (all modeling on 212x212 from cache).
 """
 from __future__ import annotations
@@ -31,7 +31,7 @@ from scipy import stats
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 CLASSES = ["snp", "nonsnp", "indel", "sv", "all", "snp_matched"]
 NFOLD, NREP, SEED = 6, 10, 0
 

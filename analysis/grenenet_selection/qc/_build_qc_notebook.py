@@ -50,7 +50,7 @@ def _find(relpath):
         if os.path.exists(p):
             return p
     return relpath
-CSV = _find('analysis/grenenet_selection/results/qc_coverage_audit.csv')
+CSV = _find('analysis/grenenet_selection/qc/results/qc_coverage_audit.csv')
 EXCL = _find('data/qc_lowcov_exclude.txt')
 print("CSV :", os.path.abspath(CSV))
 print("EXCL:", os.path.abspath(EXCL))

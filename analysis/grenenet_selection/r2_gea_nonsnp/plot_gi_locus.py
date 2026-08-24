@@ -15,7 +15,7 @@ plt.rcParams.update({"figure.dpi": 110, "font.size": 9})
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 CHROMS = ["chr1", "chr2", "chr3", "chr4", "chr5"]
 SITE = 4
 GI_START, GI_END = 8061844, 8067716

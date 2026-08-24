@@ -39,7 +39,7 @@ def mean_support(kind, n_samples):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--site", type=int, default=4)
-    ap.add_argument("--out", default=f"{lib.GEA}/site_temporal")
+    ap.add_argument("--out", default=f"{lib.GEA}/r1_sv_negative_selection/results/site_temporal")
     ap.add_argument("--n-support", type=int, default=30, help="#samples to average n_called")
     ap.add_argument("--min-p0", type=float, default=0.02)
     args = ap.parse_args()

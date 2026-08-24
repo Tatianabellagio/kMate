@@ -51,9 +51,9 @@ cells.append(nbf.v4.new_code_cell(
 import matplotlib.pyplot as plt
 
 ROOT  = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection"
-PLOTS = f"{ROOT}/lfmm"
+PLOTS = f"{ROOT}/r2_gea_nonsnp/results/lfmm"
 
-sw = pd.read_csv(f"{ROOT}/lfmm/ksweep_gif_snp_gen9_bio1.csv")
+sw = pd.read_csv(f"{ROOT}/r2_gea_nonsnp/results/lfmm/ksweep_gif_snp_gen9_bio1.csv")
 display(sw)
 
 fig, ax = plt.subplots(figsize=(8, 4.5))
@@ -103,7 +103,7 @@ Two honest caveats, so the scree is not over-read:
   We report it only for honesty."""))
 
 cells.append(nbf.v4.new_code_cell(
-'''scree  = pd.read_csv(f"{ROOT}/lfmm/scree_snp_gen9.csv")
+'''scree  = pd.read_csv(f"{ROOT}/r2_gea_nonsnp/results/lfmm/scree_snp_gen9.csv")
 prop    = scree["eig_prop"].to_numpy()
 bstick  = scree["broken_stick"].to_numpy()
 cum     = scree["cum_var"].to_numpy()

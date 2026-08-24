@@ -68,7 +68,7 @@ def main():
     eig = S ** 2
     ve = eig / eig.sum() * 100
     scores = U * S                                  # pool PC scores [pools x npc]
-    meta = pd.read_csv(f"{lib.GEA}/pool_matrices/pool_gen{args.gen}_nonsnp.meta.csv")
+    meta = pd.read_csv(f"{lib.GEA}/common/results/pool_matrices/pool_gen{args.gen}_nonsnp.meta.csv")
     meta = meta.set_index("pool").loc[pools]
     bio1 = meta.bio1.to_numpy()
     npc = min(20, scores.shape[1])

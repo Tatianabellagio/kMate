@@ -20,7 +20,7 @@ matplotlib.rcParams["pdf.fonttype"] = 42; matplotlib.rcParams["ps.fonttype"] = 4
 GFF = "/global/home/users/tbellg/ara_key_files/TAIR10_GFF3_genes_transposons.gff"
 VCF = "/global/scratch/users/tbellg/kmate/panel/arch3/chr3/merged_231_chr3_final.vcf.gz"
 BCF = "/global/home/users/tbellg/miniforge3/envs/kmate/bin/bcftools"
-FIGDIR = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/gea/figures"
+FIGDIR = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/results/gea/figures"
 GENE = "AT3G50830"; ISO = "AT3G50830.1"; CHROM = "Chr3"; SV_POS = 18895050
 
 

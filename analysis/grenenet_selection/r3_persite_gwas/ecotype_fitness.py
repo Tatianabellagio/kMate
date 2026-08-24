@@ -30,7 +30,7 @@ Per-founder CONDITIONAL-NEUTRALITY class from the zone means + a plot/site boots
 Also a RELIABILITY proxy: cross-chromosome SD of h (identifiability wobble; founders whose
 h disagrees across the 5 chromosomes are the non-identifiable ones — h-certainty work).
 
-Outputs -> analysis/grenenet_selection/ecotype_fitness/
+Outputs -> analysis/grenenet_selection/r3_persite_gwas/results/ecotype_fitness/
   ecotype_fitness.csv     (founder, h0, + w_/c_ for both flavours, cn_class, xchrom_sd)
   founder_site_dh.npz     (founders, sites, bio1, zone, DH_rel, DH_cen, H0)
   sample_global_h.npz     (cache: samples, H[n_samp x 231], SD, founders) — built once
@@ -44,7 +44,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 import lib
 
-OUT = f"{lib.GEA}/ecotype_fitness"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness"
 CACHE = f"{OUT}/sample_global_h.npz"
 CHROMS = [f"Chr{i}" for i in range(1, 6)]
 SURV = "/global/home/users/tbellg/scratch/grene/data/survival.csv"

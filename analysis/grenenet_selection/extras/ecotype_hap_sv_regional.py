@@ -15,7 +15,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-G = f"{lib.GEA}/ecotype_fitness/gwas"
+G = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/gwas"
 GFF = os.path.expanduser("~/ara_key_files/TAIR10_GFF3_genes_transposons.gff")
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 CEN = {"Chr1": 15_086_000, "Chr2": 3_607_000, "Chr3": 13_588_000,

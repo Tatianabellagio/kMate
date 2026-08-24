@@ -23,7 +23,7 @@ std, raw, positions = build_common_matrix("panel/arch3/chr1/var_pa_231_arch3_chr
 positions = np.asarray(positions)
 print(f"  founders x common-variants: {std.shape}")
 
-bl = pd.read_csv("analysis/grenenet_selection/blocks_recompute/chr1_clq0.9_blocks_clq0.9.tsv", sep="\t")
+bl = pd.read_csv("analysis/grenenet_selection/blocks/results/blocks_recompute/chr1_clq0.9_blocks_clq0.9.tsv", sep="\t")
 fves = []
 for s, e in zip(bl.start_pos, bl.end_pos):
     lo, hi = np.searchsorted(positions, s), np.searchsorted(positions, e, side="right")
@@ -31,7 +31,7 @@ for s, e in zip(bl.start_pos, bl.end_pos):
 bl["founder_ve"] = fves
 
 # merge evolved-VE (from the notebook data) by start_pos
-ev = pd.read_csv("analysis/grenenet_selection/blocks_recompute/chr1_pc1ve_by_clqcut.csv")
+ev = pd.read_csv("analysis/grenenet_selection/blocks/results/blocks_recompute/chr1_pc1ve_by_clqcut.csv")
 ev = ev[ev.clqcut == 0.9][["start_pos","pc1_ve"]].rename(columns={"pc1_ve":"evolved_ve"})
 m = bl.merge(ev, on="start_pos", how="left").dropna(subset=["founder_ve","evolved_ve"])
 
@@ -47,5 +47,5 @@ print(f"  blocks tight-in-founders(>=0.9) BUT low-in-evolved(<0.5) = recombinati
 lowev = m[m.evolved_ve < 0.5]
 print(f"  among low-evolved(<0.5) blocks: median founder_ve = {lowev.founder_ve.median():.3f} "
       f"(if high -> NOT a block-definition problem -> recombination/noise)")
-m.to_csv("analysis/grenenet_selection/blocks_recompute/chr1_clq0.9_founder_vs_evolved_ve.csv", index=False)
+m.to_csv("analysis/grenenet_selection/blocks/results/blocks_recompute/chr1_clq0.9_founder_vs_evolved_ve.csv", index=False)
 print("wrote chr1_clq0.9_founder_vs_evolved_ve.csv")

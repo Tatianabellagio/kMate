@@ -112,7 +112,7 @@ def main():
                       names=["chrom", "src", "feat", "start", "end", "sc", "st", "fr", "attr"])
     gff = gff[gff.chrom.isin(CHROMS)]
     genes = gff[gff.feat == "gene"]; tes = gff[gff.feat == "transposable_element"]
-    L = pd.read_csv("analysis/grenenet_selection/sv_adaptive/sv_landscape_clq0.9.csv")
+    L = pd.read_csv("analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/sv_landscape_clq0.9.csv")
     L["unit"] = L.block_id if "block_id" in L else (L.chrom + ":" + L.start.astype(str) + "-" + L.end.astype(str))
     nkept = L.set_index("unit").n_kept.to_dict() if "n_kept" in L else {}
 
@@ -188,8 +188,8 @@ def main():
         print(f"  {'arms_only':>16}: x{foldA:.2f}  p={pA:.4f}  ({arm[sel].mean()*100:.0f}% of top were on arms)")
         rows.append(dict(sv_mac=svmac, control="arms_only", obs=round(obsA, 4),
                          fold=round(foldA, 3), p_perm=round(pA, 4)))
-    pd.DataFrame(rows).to_csv(f"{lib.GEA}/sv_adaptive/sv_hap_context.csv", index=False)
-    print(f"\n[wrote] {lib.GEA}/sv_adaptive/sv_hap_context.csv")
+    pd.DataFrame(rows).to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_hap_context.csv", index=False)
+    print(f"\n[wrote] {lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_hap_context.csv")
 
     # ---- gene-content readout: SVs tagging a selected haplotype (MAC24, r²>=0.5) ----
     print("\n=== gene content of SVs that tag a fitness-selected haplotype (MAC24, r²>=0.5) ===")
@@ -203,8 +203,8 @@ def main():
     print(f"  {len(hi)} common SVs tag a haplotype at r²>=0.5 | {genic*100:.0f}% overlap a gene")
     top = hi[hi.n_genes > 0].sort_values("best_r2", ascending=False).head(20)
     print(top[["chrom", "pos", "ref_len", "alt_len", "best_r2", "gene", "gene_name"]].to_string(index=False))
-    hi.to_csv(f"{lib.GEA}/sv_adaptive/sv_hap_context_genes.csv", index=False)
-    print(f"[wrote] {lib.GEA}/sv_adaptive/sv_hap_context_genes.csv")
+    hi.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_hap_context_genes.csv", index=False)
+    print(f"[wrote] {lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_hap_context_genes.csv")
 
 
 if __name__ == "__main__":

@@ -83,7 +83,7 @@ plt.rcParams.update({'figure.dpi': 110, 'font.size': 8, 'axes.linewidth': 0.6})
 GEA = os.path.dirname(os.getcwd())          # .../analysis/grenenet_selection
 sys.path.insert(0, GEA)
 import lib
-G = f"{GEA}/sv_adaptive"
+G = f"{GEA}/r1_sv_negative_selection/results/sv_adaptive"
 PLOTS = f"{GEA}/notebooks/plots"; os.makedirs(PLOTS, exist_ok=True)
 COL = {"SNP": "#888888", "indel": "#0072B2", "SV": "#D55E00"}
 EPS, P0_BOUND = 1e-3, 0.02                  # EPS must match the s recompute's logit clip

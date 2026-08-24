@@ -17,7 +17,7 @@ A variant whose frequency moves the SAME direction across independent replicate 
 (small among-plot spread relative to the mean) is under selection; pure drift gives
 plot slopes scattered around 0.
 
-INPUT (GLOBAL-mode kMate AF, as requested): analysis/grenenet_selection/pool_matrices/
+INPUT (GLOBAL-mode kMate AF, as requested): analysis/grenenet_selection/common/results/pool_matrices/
     pool_gen{1,2,3}_{snp,nonsnp}_af.npy  [n_pools x n_variants] float32 AF in [0,1]
     pool_gen{g}_{snp,nonsnp}.meta.csv     row-aligned pool metadata (site/plot/flowers)
     af_store/p0_{snp,nonsnp}.npy          founding (gen-0) AF, column-aligned
@@ -27,7 +27,7 @@ CLASSES:  snp  (ref_len==1 & alt_len==1)
           smallindel  (non-SNP, |alt_len-ref_len| <= 50, incl equal-length MNPs)
           sv          (non-SNP, |alt_len-ref_len| >  50)
 
-OUTPUT (--out, default analysis/grenenet_selection/site_temporal):
+OUTPUT (--out, default analysis/grenenet_selection/r1_sv_negative_selection/results/site_temporal):
     site{S}_scoef_{class}.npz   chrom,pos,ref_len,alt_len,size,p0,s,se,z,pval,
                                 n_plots,block,keep  (keep = passed the QC/reach filter)
 
@@ -46,7 +46,7 @@ from scipy.stats import t as tdist
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 STORE = lib.AF_STORE
 EPS = 1e-3                 # logit clip
 SV_MIN_BP = 50
@@ -99,7 +99,7 @@ def site_scoef(site: int, kind: str):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--site", type=int, default=4)
-    ap.add_argument("--out", default=f"{lib.GEA}/site_temporal")
+    ap.add_argument("--out", default=f"{lib.GEA}/r1_sv_negative_selection/results/site_temporal")
     ap.add_argument("--min-p0", type=float, default=0.02,
                     help="reachability: keep variants with min-p0 <= p0 <= 1-min-p0")
     args = ap.parse_args()

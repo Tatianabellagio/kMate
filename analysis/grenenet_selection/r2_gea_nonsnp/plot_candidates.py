@@ -14,7 +14,7 @@ the candidate list.
 
 Usage:
   PLOTPY=/global/home/users/tbellg/miniforge3/envs/plotting/bin/python
-  $PLOTPY analysis/grenenet_selection/r2_gea_nonsnp/plot_candidates.py --candidates analysis/grenenet_selection/gea/poster_candidates.csv --n 6
+  $PLOTPY analysis/grenenet_selection/r2_gea_nonsnp/plot_candidates.py --candidates analysis/grenenet_selection/r2_gea_nonsnp/results/gea/poster_candidates.csv --n 6
 """
 from __future__ import annotations
 import argparse, os, sys
@@ -28,7 +28,7 @@ from scipy.stats import linregress, kendalltau
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-POOLDIR = f"{lib.GEA}/pool_matrices"
+POOLDIR = f"{lib.GEA}/common/results/pool_matrices"
 NORM = colors.Normalize(vmin=5, vmax=22)       # temperature color scale (figure)
 CMAP = cm.get_cmap("RdBu_r")
 
@@ -86,10 +86,10 @@ def plot_candidate(ax_b, ax_cold, ax_warm, rec, p0, gens, title):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--candidates", default=f"{lib.GEA}/gea/poster_candidates.csv")
+    ap.add_argument("--candidates", default=f"{lib.GEA}/r2_gea_nonsnp/results/gea/poster_candidates.csv")
     ap.add_argument("--n", type=int, default=6)
     ap.add_argument("--kind", default="nonsnp")
-    ap.add_argument("--out", default=f"{lib.GEA}/gea/figures")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/results/gea/figures")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
     cands = pd.read_csv(args.candidates).head(args.n)

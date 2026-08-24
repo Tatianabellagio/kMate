@@ -114,14 +114,14 @@ def main():
             rows.append(dict(axis=axis, sv_mac=svmac, obs=round(obs, 4), rot_fold=round(fold, 3),
                              rot_p=round(p, 4), n_tag_r2_05=ntag, distinct_blocks=ndb))
     df = pd.DataFrame(rows)
-    df.to_csv(f"{lib.GEA}/sv_adaptive/sv_hap_rotationnull.csv", index=False)
+    df.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_hap_rotationnull.csv", index=False)
     # multiplicity: BH across all cells
     df["bh_q"] = lib.bh(df.rot_p.to_numpy())
     nsig = int((df.rot_p < 0.05).sum()); nbh = int((df.bh_q < 0.1).sum())
     print(f"\ncells: {len(df)} | rot_p<0.05: {nsig} | BH q<0.1: {nbh}")
     print("surviving BH q<0.1:")
     print(df[df.bh_q < 0.1][["axis", "sv_mac", "rot_fold", "rot_p", "bh_q", "distinct_blocks"]].to_string(index=False))
-    print(f"[wrote] {lib.GEA}/sv_adaptive/sv_hap_rotationnull.csv")
+    print(f"[wrote] {lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_hap_rotationnull.csv")
 
 
 if __name__ == "__main__":

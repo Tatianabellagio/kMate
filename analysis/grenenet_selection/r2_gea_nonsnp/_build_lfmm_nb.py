@@ -34,8 +34,8 @@ After honest calibration the genome-wide SV signal nearly vanishes. Displayed: K
 
 code_load = rf"""
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
-L = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/lfmm"
-GEA = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/gea"
+L = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/results/lfmm"
+GEA = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/results/gea"
 KDISP = {KDISP}
 loci = pd.read_csv(f"{{L}}/locus_index_gen3_sv.csv")     # chrom,pos,...,rec_index (row-aligned)
 def col0(p): d=pd.read_csv(p); return d[d.columns[0]].to_numpy()

@@ -5,7 +5,7 @@ Takes the WZA block results (build_wza.py), computes BH-FDR + Bonferroni on the
 SNP-number-corrected block p (Z_pVal), reconstructs each block's genomic SPAN from
 its member SVs, and annotates with ALL TAIR10 genes overlapping that span.
 
-Outputs (analysis/grenenet_selection/gea/wza/):
+Outputs (analysis/grenenet_selection/r2_gea_nonsnp/results/gea/wza/):
   significant_blocks.csv   every block with q<FDR_THRESH OR Bonferroni, both stats,
         cols: stat, block, chrom, start, end, span_bp, n_sv, SNPs, Z, Z_pVal, fdr,
               bonferroni, dir, n_up, n_dn, n_genes, genes, gene_names, flower_loci
@@ -21,7 +21,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-GEA = lib.GEA; STORE = lib.AF_STORE; WZ = f"{GEA}/gea/wza"
+GEA = lib.GEA; STORE = lib.AF_STORE; WZ = f"{GEA}/r2_gea_nonsnp/results/gea/wza"
 FLOWER = {"AT4G00650": "FRI", "AT5G10140": "FLC", "AT1G65480": "FT",
           "AT2G45660": "SOC1", "AT5G61850": "LFY"}
 
@@ -42,8 +42,8 @@ def block_spans():
     size = np.abs(idx["alt_len"].astype(np.int64) - idx["ref_len"].astype(np.int64))
     nc = np.asarray(np.load(sorted(glob.glob(f"{STORE}/nc_nonsnp/*.npy"))[0]))
     mask = (size > 50) & (nc >= 150)
-    block = np.load(f"{GEA}/gea/twostage_blocks.npz", allow_pickle=True)["block"].astype(str)
-    z = np.load(f"{GEA}/gea/twostage_dp_bio1.npz", allow_pickle=True)
+    block = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_blocks.npz", allow_pickle=True)["block"].astype(str)
+    z = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_dp_bio1.npz", allow_pickle=True)
     d = pd.DataFrame(dict(block=block, chrom=z["chrom"].astype(str), pos=z["pos"]))
     d = d[d.block != ""]
     g = d.groupby("block").agg(chrom=("chrom", "first"), start=("pos", "min"),

@@ -15,7 +15,7 @@ s = plot-replicate mean logit-slope per variant per site (from _temporal_s_plots
 Strata = global p0 deciles. Pool contingency counts across the 31 sites; also per-site enrich for a
 sign test. Purged (down) is the focal direction (that's where any SV signal lives); UP reported too.
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/temporal_s_enrich_initqty.csv.
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/temporal_s_enrich_initqty.csv.
 """
 import os, sys, glob
 import numpy as np
@@ -30,7 +30,7 @@ _sp = importlib.util.spec_from_file_location(
 plotsmod = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(plotsmod)
 
 os.chdir("/global/scratch/users/tbellg/kmate")
-STORE = lib.AF_STORE; PM = f"{lib.GEA}/pool_matrices"
+STORE = lib.AF_STORE; PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN, TOP = 0.02, 50, 12, 10, 0.05
 
 
@@ -125,7 +125,7 @@ def main():
         up = upsel[:, ci].sum() / tot[:, ci].sum() / TOP
         print(f"  {nm:>6}: purged {dn:.3f}x  favoured {up:.3f}x   "
               f"(baseline-share-controlled, no SNP null)")
-    pd.DataFrame(rows).to_csv(f"{lib.GEA}/sv_adaptive/temporal_s_enrich_initqty.csv", index=False)
+    pd.DataFrame(rows).to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/temporal_s_enrich_initqty.csv", index=False)
     print(f"\n[wrote] temporal_s_enrich_initqty.csv")
 
 

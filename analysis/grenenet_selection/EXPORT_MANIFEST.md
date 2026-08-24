@@ -21,7 +21,7 @@ column (Manhattan y = −log10 `Z_pVal`).
 
 ## Deliberately NOT exported
 - **Code** — lives on GitHub (`Tatianabellagio/kMate`); no need to duplicate on Drive.
-- **Raw allele frequencies** — `analysis/grenenet_selection/af_store/` (52 GB), `gen_matrices/`
+- **Raw allele frequencies** — `analysis/grenenet_selection/common/results/af_store/` (52 GB), `gen_matrices/`
   (43 GB), `pool_matrices/` (35 GB), `class_matrices/`, LFMM `*.f64` memmaps. All large
   and rebuildable from the pipeline (`build_af_store.py` → `build_gen_matrices.py` →
   `build_pool_matrix.py`); they are not plotting inputs for the advisor.

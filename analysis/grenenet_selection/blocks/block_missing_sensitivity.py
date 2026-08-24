@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from block_haplotype_counts import hap_counts
 from block_cluster_pc1ve import cluster_founders   # xmeans (shim applied on import)
 
-BR = "analysis/grenenet_selection/blocks_recompute"
+BR = "analysis/grenenet_selection/blocks/results/blocks_recompute"
 MAF, MINCF, GATE = 0.05, 0.5, 2.0
 
 

@@ -6,7 +6,7 @@ Saves to notebooks/plots/site_parallelism_vs_purging.png . No titles (repo conve
 import numpy as np, pandas as pd, matplotlib as mpl, matplotlib.pyplot as plt
 from scipy import stats
 from adjustText import adjust_text
-G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/sv_adaptive"
+G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive"
 PLOTS = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/plots"
 df = pd.read_csv(f"{G}/site_parallelism.csv")
 

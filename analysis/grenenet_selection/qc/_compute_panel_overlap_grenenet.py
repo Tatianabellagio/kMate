@@ -37,7 +37,7 @@ Inputs:
     position-only and exact-4-tuple keying give identical set sizes; all the
     position-only/exact discrepancy comes from the arch3 side).
 
-Output: analysis/grenenet_selection/panel_overlap_grenenet_summary.csv
+Output: analysis/grenenet_selection/qc/results/panel_overlap_grenenet_summary.csv
   per-chrom and genome-wide, both overlap definitions.
 """
 from __future__ import annotations
@@ -51,7 +51,7 @@ PROJ = lib.PROJ
 GEA = lib.GEA
 GRENENET_VCF = ("/global/scratch/projects/fc_moilab/projects/grenenet-phase1/"
                 "vcf/greneNet_final_v1.1.recode.vcf")
-OUT_CSV = f"{GEA}/panel_overlap_grenenet_summary.csv"
+OUT_CSV = f"{GEA}/qc/results/panel_overlap_grenenet_summary.csv"
 
 
 def arch3_snp_records(chrom_n: int):

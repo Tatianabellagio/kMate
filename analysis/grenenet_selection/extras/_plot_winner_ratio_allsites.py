@@ -6,7 +6,7 @@ Env: basic. Reads winners_sv_depletion.csv. Saves notebooks/plots/winner_cactus_
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
 from scipy import stats
 from adjustText import adjust_text
-G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/sv_adaptive"
+G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive"
 PLOTS = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/plots"
 df = pd.read_csv(f"{G}/winners_sv_depletion.csv")
 BASE = 80 / 231.0

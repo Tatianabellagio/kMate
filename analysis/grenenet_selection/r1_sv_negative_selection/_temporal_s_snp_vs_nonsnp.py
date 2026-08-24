@@ -19,7 +19,7 @@ CAVEAT unchanged: pool AF is a GLOBAL-mode founder projection -> s of a variant 
 founder-h slopes; SNP-on-same-founders shares it. SNPs = realized-drift null; cannot separate SV-
 specific selection from riding selected haplotypes (needs independent local-mode/vg SV AF).
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/temporal_s_snp_vs_nonsnp.csv (+_summary.csv).
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/temporal_s_snp_vs_nonsnp.csv (+_summary.csv).
 """
 import os, sys, glob
 import numpy as np
@@ -31,7 +31,7 @@ from site_variant_temporal_scoef import site_freq_per_gen
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 STORE = lib.AF_STORE
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN, TAILQ, EPS = 0.02, 50, 12, 10, 0.95, 1e-3
 BANDS = [("rare", 0.02, 0.10), ("mid", 0.10, 0.20), ("common", 0.20, 0.501)]
 
@@ -115,7 +115,7 @@ def main():
               f"ins {rec.get('svins_dn')})", flush=True)
 
     df = pd.DataFrame(rows).sort_values("bio1")
-    df.to_csv(f"{lib.GEA}/sv_adaptive/temporal_s_snp_vs_nonsnp.csv", index=False)
+    df.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/temporal_s_snp_vs_nonsnp.csv", index=False)
 
     def sgn(col):
         c = df[col].dropna(); n = int((c > 1).sum())
@@ -132,7 +132,7 @@ def main():
             print(f"  {name:>6} {band:<7}: DOWN {md}x ({sd}, p={pd_}) | UP {mu}x ({su}, p={pu})")
     for tag in ["svdel", "svins"]:
         m, s, p = sgn(f"{tag}_dn"); print(f"  {tag:>6} DOWN(all): {m}x ({s}, p={p})")
-    df.to_csv(f"{lib.GEA}/sv_adaptive/temporal_s_snp_vs_nonsnp.csv", index=False)
+    df.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/temporal_s_snp_vs_nonsnp.csv", index=False)
     print(f"\n[wrote] temporal_s_snp_vs_nonsnp.csv")
 
 

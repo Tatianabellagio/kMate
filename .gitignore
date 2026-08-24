@@ -325,7 +325,7 @@ analysis/grenenet_selection/common/rerun_kfw_hb/**/*.tsv
 # sv_adaptive/: LIVE output dir for the s_*/parallelism/picmin/temporal_* SV-selection
 # family (Group B item 7 of docs/RERUN_AFTER_FIX.md) — data only, its ~25 driver
 # scripts are loose at analysis/grenenet_selection/ top level, not in this dir.
-analysis/grenenet_selection/sv_adaptive/
+analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/
 
 # --- 2026-07-10 retirement: window-mode / hapfreq / block_ld_lmm / sv_adaptive chain
 # confirmed stale (docs/RERUN_AFTER_FIX.md Group D) and consolidated into
@@ -423,31 +423,31 @@ benchmarks/ruth_outcross/hapfire/
 # under analysis/grenenet_selection/<topic>/ directly (no /results nesting — mirrors
 # rerun_kfw_hb). Supersedes the removed 2026-06-18 results/grenenet_gea/{af_store,
 # gen_matrices,pool_matrices,sv_snp_ld,gea,lfmm}/ block above. ---
-analysis/grenenet_selection/af_store/
-analysis/grenenet_selection/gen_matrices/
-analysis/grenenet_selection/pool_matrices/
-analysis/grenenet_selection/ecotype_fitness/
-analysis/grenenet_selection/fitness/
-analysis/grenenet_selection/gea/
-analysis/grenenet_selection/lfmm/
-analysis/grenenet_selection/site_temporal/
+analysis/grenenet_selection/common/results/af_store/
+analysis/grenenet_selection/common/results/gen_matrices/
+analysis/grenenet_selection/common/results/pool_matrices/
+analysis/grenenet_selection/r3_persite_gwas/results/ecotype_fitness/
+analysis/grenenet_selection/common/results/fitness/
+analysis/grenenet_selection/r2_gea_nonsnp/results/gea/
+analysis/grenenet_selection/r2_gea_nonsnp/results/lfmm/
+analysis/grenenet_selection/r1_sv_negative_selection/results/site_temporal/
 analysis/grenenet_selection/structure/
-analysis/grenenet_selection/sv_snp_ld/
-analysis/grenenet_selection/varexp/
-analysis/grenenet_selection/blocks_mcf90/
+analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld/
+analysis/grenenet_selection/r3_persite_gwas/results/varexp/
+analysis/grenenet_selection/blocks/results/blocks_mcf90/
 analysis/grenenet_selection/blocks_mcf90_p80/
-analysis/grenenet_selection/blocks_recompute/
+analysis/grenenet_selection/blocks/results/blocks_recompute/
 # generic loose GEA-level caches (misc pilot figures, QC/coverage/fallback tables)
-analysis/grenenet_selection/results/
+analysis/grenenet_selection/qc/results/
 # ...except the small pilot figures/tables that were already tracked before the move
-!analysis/grenenet_selection/results/01_pilot_qc.png
-!analysis/grenenet_selection/results/02_candidate_adaptive_svs.csv
-!analysis/grenenet_selection/results/02_candidate_trajectories.png
-!analysis/grenenet_selection/results/02_sv_dp_hot_vs_cold.png
-!analysis/grenenet_selection/results/02_sv_size_and_snp_compare.png
-!analysis/grenenet_selection/results/pilot_sample_map.csv
-# group_means.npz lives bare under grenenet_gea/ (matches lib.py's {GEA}/group_means.npz)
-analysis/grenenet_selection/group_means.npz
+!analysis/grenenet_selection/qc/results/01_pilot_qc.png
+!analysis/grenenet_selection/qc/results/02_candidate_adaptive_svs.csv
+!analysis/grenenet_selection/qc/results/02_candidate_trajectories.png
+!analysis/grenenet_selection/qc/results/02_sv_dp_hot_vs_cold.png
+!analysis/grenenet_selection/qc/results/02_sv_size_and_snp_compare.png
+!analysis/grenenet_selection/qc/results/pilot_sample_map.csv
+# group_means.npz lives bare under grenenet_gea/ (matches lib.py's {GEA}/common/results/group_means.npz)
+analysis/grenenet_selection/common/results/group_means.npz
 analysis/grenenet_selection/group_means.pkl
 
 # =============================================================================

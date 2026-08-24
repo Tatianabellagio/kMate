@@ -12,7 +12,7 @@
 # STEP 1: founder->haplotype membership (projection matrix M_b) on the dynld-K500 units.
 set -eo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs analysis/grenenet_selection/blocks_mcf90/hap_membership
+mkdir -p logs analysis/grenenet_selection/blocks/results/blocks_mcf90/hap_membership
 CHRS=(Chr1 Chr2 Chr3 Chr4 Chr5); CHR=${CHRS[$SLURM_ARRAY_TASK_ID]}
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 echo "[$(date)] $CHR haplotype membership build"

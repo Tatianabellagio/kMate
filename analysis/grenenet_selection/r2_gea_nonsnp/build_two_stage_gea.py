@@ -36,7 +36,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 STORE = lib.AF_STORE
 CACHE = f"{STORE}/sv_support_cache.npz"
 NC_MIN = 150            # SV support filter (see notebooks/06_sv_support_filter)
@@ -216,7 +216,7 @@ def main():
     ap.add_argument("--stat", nargs="+", default=["dp", "scoef"], choices=["dp", "scoef"])
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--n-perm", type=int, default=N_PERM)
-    ap.add_argument("--out", default=f"{lib.GEA}/gea")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/results/gea")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 

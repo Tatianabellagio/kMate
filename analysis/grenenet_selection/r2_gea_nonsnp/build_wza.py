@@ -28,10 +28,10 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-GEA = lib.GEA; STORE = lib.AF_STORE; PM = f"{GEA}/pool_matrices"
+GEA = lib.GEA; STORE = lib.AF_STORE; PM = f"{GEA}/common/results/pool_matrices"
 WZA_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wza_script.py")
-BLKCACHE = f"{GEA}/gea/twostage_blocks.npz"
-OUTDIR = f"{GEA}/gea/wza"
+BLKCACHE = f"{GEA}/r2_gea_nonsnp/results/gea/twostage_blocks.npz"
+OUTDIR = f"{GEA}/r2_gea_nonsnp/results/gea/wza"
 NC_MIN, SV_MIN_BP = 150, 50    # SV set (must match build_two_stage_gea)
 FLOWER = {"AT4G00650": "FRI", "AT5G10140": "FLC", "AT1G65480": "FT",
           "AT2G45660": "SOC1", "AT5G61850": "LFY"}
@@ -67,7 +67,7 @@ def contemporary_maf():
 
 
 def run_stat(stat, climate, pcol, maf_source, maf_filter, tag, genes, cmaf=None):
-    z = np.load(f"{GEA}/gea/twostage_{stat}_{climate}.npz", allow_pickle=True)
+    z = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_{stat}_{climate}.npz", allow_pickle=True)
     if pcol not in z.files:
         raise SystemExit(f"{pcol} not in {stat} npz (rerun build_two_stage_gea.py)")
     chrom = z["chrom"].astype(str); pos = z["pos"]

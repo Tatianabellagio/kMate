@@ -3,7 +3,7 @@
 map and each merge-floor map (floor 8/15/25/40). Merging across LD boundaries should lower
 PC1-VE; this quantifies the coherence we trade for trackability.
 
-Output: analysis/grenenet_selection/blocks_mcf90/coarse/coherence_vs_floor.csv (floor,chrom,start,end,n_gen9,pc1_ve)
+Output: analysis/grenenet_selection/blocks/results/blocks_mcf90/coarse/coherence_vs_floor.csv (floor,chrom,start,end,n_gen9,pc1_ve)
 Run in kmate env.
 """
 import os, sys
@@ -11,7 +11,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from eval_block_coherence import load_allclass_af, pc1_var_explained
 
-BR = "analysis/grenenet_selection/blocks_mcf90"
+BR = "analysis/grenenet_selection/blocks/results/blocks_mcf90"
 COARSE = f"{BR}/coarse"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 FLOORS = [0, 8, 15, 25, 40]   # 0 = base CLQ0.9 map

@@ -44,8 +44,8 @@ def main():
     ap.add_argument("--gen", type=int, default=3)
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--kind", default="nonsnp")
-    ap.add_argument("--pooldir", default=f"{lib.GEA}/pool_matrices")
-    ap.add_argument("--out", default=f"{lib.GEA}/gea")
+    ap.add_argument("--pooldir", default=f"{lib.GEA}/common/results/pool_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/results/gea")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--sv-min-bp", type=int, default=50)
     ap.add_argument("--sv-only", action="store_true",

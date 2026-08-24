@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..")))
 import lib
 
 WZAIN = f"{lib.GEA}/phase1_replication/results/multiaxis/wza_in_clq09_tile"
-GROUP_MEANS = f"{lib.GEA}/group_means.npz"
+GROUP_MEANS = f"{lib.GEA}/common/results/group_means.npz"
 BIO_CSV = ("/global/scratch/users/tbellg/gea_grene-net/key_files/"
            "1001g_regmap_grenet_ecotype_info_corrected_bioclim_2024May16.csv")
 BCF = "/global/home/users/tbellg/miniforge3/envs/kmate/bin/bcftools"

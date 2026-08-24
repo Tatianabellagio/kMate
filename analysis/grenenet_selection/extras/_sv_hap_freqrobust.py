@@ -128,8 +128,8 @@ def main():
         rows.append(dict(axis=axis, sv_mac=svmac, obs=round(obs, 4), coarse_fold=round(cf, 3),
                          coarse_p=round(cp, 4), exact_fold=round(ef, 3), exact_p=round(ep, 4),
                          survives_exact=(ep < 0.05)))
-    pd.DataFrame(rows).to_csv(f"{lib.GEA}/sv_adaptive/sv_hap_freqrobust.csv", index=False)
-    print(f"\n[wrote] {lib.GEA}/sv_adaptive/sv_hap_freqrobust.csv")
+    pd.DataFrame(rows).to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_hap_freqrobust.csv", index=False)
+    print(f"\n[wrote] {lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_hap_freqrobust.csv")
 
 
 if __name__ == "__main__":

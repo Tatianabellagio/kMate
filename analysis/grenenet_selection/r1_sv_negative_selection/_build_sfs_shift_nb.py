@@ -48,7 +48,7 @@ from scipy import stats
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 plt.rcParams.update({'figure.dpi':110, 'font.size':8, 'axes.linewidth':0.6})
-G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/sv_adaptive"
+G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive"
 long = pd.read_csv(f"{G}/sfs_shift_by_site.csv")
 meta = pd.read_csv(f"{G}/sfs_shift_by_site_sitemeta.csv").sort_values("bio1").reset_index(drop=True)
 npz  = np.load(f"{G}/sfs_shift_by_site.npz")

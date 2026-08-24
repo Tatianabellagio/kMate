@@ -51,7 +51,7 @@ import matplotlib as mpl
 os.chdir("/global/scratch/users/tbellg/kmate")
 sys.path.insert(0, "analysis/grenenet_selection")
 import lib
-DIR = "analysis/grenenet_selection/varexp"
+DIR = "analysis/grenenet_selection/r3_persite_gwas/results/varexp"
 PLOTS = f"{DIR}/gwas_plots"; os.makedirs(PLOTS, exist_ok=True)
 CHROM_ORDER = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 CONTRAST = "p_joint"        # headline = multi-trait JOINT

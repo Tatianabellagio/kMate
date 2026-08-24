@@ -18,7 +18,7 @@ Two nulls, per site:
 MAF band = min(p0,1-p0): rare [0.02,0.10) / mid [0.10,0.20) / common [0.20,0.50]. Reports SV, indel,
 nonSNP DOWN-fold per band; SV split ins/del. Aggregate across sites (median + sign test).
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/temporal_sel_drift_maf.csv (+ _summary.csv).
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/temporal_sel_drift_maf.csv (+ _summary.csv).
 """
 import os, sys, glob
 import numpy as np
@@ -30,10 +30,10 @@ from site_variant_temporal_scoef import site_freq_per_gen
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 STORE = lib.AF_STORE
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN, TAILQ = 0.02, 50, 12, 10, 0.95
 BANDS = [("rare", 0.02, 0.10), ("mid", 0.10, 0.20), ("common", 0.20, 0.501)]
-CENSUS = pd.read_csv("analysis/grenenet_selection/fitness/site_census_N.csv").set_index("site")["N_per_gen"]
+CENSUS = pd.read_csv("analysis/grenenet_selection/common/results/fitness/site_census_N.csv").set_index("site")["N_per_gen"]
 
 
 def down_fold(dp, p0, snp_dn, binf, band):
@@ -126,7 +126,7 @@ def main():
               f"| calib Ne={rec.get('B_calib_Ne')} SVfold={rec.get('B_calib_sv_fold')}", flush=True)
 
     df = pd.DataFrame(rows).sort_values("bio1")
-    df.to_csv(f"{lib.GEA}/sv_adaptive/temporal_sel_drift_maf.csv", index=False)
+    df.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/temporal_sel_drift_maf.csv", index=False)
 
     def sgn(col):
         c = df[col].dropna(); n = int((c > 1).sum())
@@ -148,7 +148,7 @@ def main():
     m, s, p = sgn("B_calib_sv_fold")
     print(f"  calibrated-Ne (SNP down=2.5% by design) median Ne={int(df['B_calib_Ne'].median())}; "
           f"SV-down fold median {m}x  >1 at {s}  sign-p={p}")
-    df.to_csv(f"{lib.GEA}/sv_adaptive/temporal_sel_drift_maf.csv", index=False)
+    df.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/temporal_sel_drift_maf.csv", index=False)
     print(f"\n[wrote] temporal_sel_drift_maf.csv")
 
 

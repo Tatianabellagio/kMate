@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Build per-GENERATION per-sample AF matrices (snp / nonsnp / smallindel), float16.
 
-Reproduces analysis/grenenet_selection/gen_matrices/ DIRECTLY from the on-cluster
+Reproduces analysis/grenenet_selection/common/results/gen_matrices/ DIRECTLY from the on-cluster
 af_store (no TSV re-read, no EM, no 1.6 TB rebuild). The 2,168 cohort samples
 are individual collection TIMEPOINTS spanning 3 generations; here each sample's
 compact per-sample AF vector is stacked into a per-generation matrix.
@@ -13,7 +13,7 @@ Validated byte-for-byte against the Jun-2026 Drive copy:
          nonsnp     2,252,583 records (index_nonsnp.npz)     all non-SNP
          smallindel 2,026,115 records (index_smallindel.npz) non-SNP, |dlen| <= 50
 
-Outputs (--out, default analysis/grenenet_selection/gen_matrices):
+Outputs (--out, default analysis/grenenet_selection/common/results/gen_matrices):
   gen{g}_{kind}_af.npy   float16 [n_samples_g x n_rec_kind]
   gen{g}.rowmeta.csv     sampleid,site,plot,generation,flowerscollected,coverage
   index_smallindel.npz   chrom,pos,ref_len,alt_len for the small-indel subset (once)
@@ -127,7 +127,7 @@ def build(gen: int, kind: str, store: str, out: str, simask):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--store", default=lib.AF_STORE)
-    ap.add_argument("--out", default=f"{lib.GEA}/gen_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/common/results/gen_matrices")
     ap.add_argument("--gens", type=int, nargs="+", default=[1, 2, 3])
     ap.add_argument("--kinds", nargs="+", default=list(KINDS), choices=KINDS)
     args = ap.parse_args()

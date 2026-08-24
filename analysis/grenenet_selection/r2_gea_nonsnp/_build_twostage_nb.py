@@ -28,13 +28,13 @@ import lib
 
 PROJ = "/global/scratch/users/tbellg/kmate"
 GEA = f"{PROJ}/analysis/grenenet_selection"
-PM = f"{GEA}/pool_matrices"; STORE = lib.AF_STORE
+PM = f"{GEA}/common/results/pool_matrices"; STORE = lib.AF_STORE
 NBDIR = f"{PROJ}/analysis/grenenet_selection/notebooks"
 OUT = f"{NBDIR}/07_twostage_gea.ipynb"
-CACHE = f"{GEA}/gea/twostage_diag_cache.npz"
-TOPCSV = f"{GEA}/gea/twostage_top_annotated.csv"
-BLKCACHE = f"{GEA}/gea/twostage_blocks.npz"
-BLKTOPCSV = f"{GEA}/gea/twostage_block_candidates.csv"
+CACHE = f"{GEA}/r2_gea_nonsnp/results/gea/twostage_diag_cache.npz"
+TOPCSV = f"{GEA}/r2_gea_nonsnp/results/gea/twostage_top_annotated.csv"
+BLKCACHE = f"{GEA}/r2_gea_nonsnp/results/gea/twostage_blocks.npz"
+BLKTOPCSV = f"{GEA}/r2_gea_nonsnp/results/gea/twostage_block_candidates.csv"
 FLOWER = {"AT4G00650": "FRI", "AT5G10140": "FLC", "AT1G65480": "FT",
           "AT2G45660": "SOC1", "AT5G61850": "LFY"}
 
@@ -67,7 +67,7 @@ def precompute():
     genes = lib.load_genes()
     frames = []
     for stat in ("dp", "scoef"):
-        z = np.load(f"{GEA}/gea/twostage_{stat}_bio1.npz", allow_pickle=True)
+        z = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_{stat}_bio1.npz", allow_pickle=True)
         d = pd.DataFrame(dict(chrom=z["chrom"].astype(str), pos=z["pos"],
                               ref_len=z["ref_len"], alt_len=z["alt_len"],
                               sv_size=z["sv_size"], p0=z["p0"], beta=z["beta"],
@@ -89,14 +89,14 @@ def precompute_blocks():
     cache block ids, and build a block-collapsed (lead-SV/block) annotated table."""
     if os.path.exists(BLKCACHE) and os.path.exists(BLKTOPCSV):
         print("block cache exists -> skipping"); return
-    zd = np.load(f"{GEA}/gea/twostage_dp_bio1.npz", allow_pickle=True)
+    zd = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_dp_bio1.npz", allow_pickle=True)
     chrom = zd["chrom"].astype(str); pos = zd["pos"].astype(np.int64)
     block = lib.assign_ld_blocks(chrom, pos)
     np.savez(BLKCACHE, block=np.asarray(block, dtype=object))
     genes = lib.load_genes()
     frames = []
     for stat in ("dp", "scoef"):
-        z = np.load(f"{GEA}/gea/twostage_{stat}_bio1.npz", allow_pickle=True)
+        z = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_{stat}_bio1.npz", allow_pickle=True)
         d = pd.DataFrame(dict(block=block, chrom=chrom, pos=pos, ref_len=z["ref_len"],
                               alt_len=z["alt_len"], sv_size=z["sv_size"], p0=z["p0"],
                               beta=z["beta"], z_emp=z["z_emp"], p_perm=z["p_perm"]))
@@ -135,7 +135,7 @@ code_load = r"""
 import numpy as np, pandas as pd, sys
 import matplotlib.pyplot as plt
 sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection"); import lib
-G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/gea"
+G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/results/gea"
 R = {s: np.load(f"{G}/twostage_{s}_bio1.npz", allow_pickle=True) for s in ("dp","scoef")}
 diag = np.load(f"{G}/twostage_diag_cache.npz", allow_pickle=True)
 for s in ("dp","scoef"):

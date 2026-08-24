@@ -3,7 +3,7 @@
 
 One-time Lustre-heavy pass (genome_h loads 5 window npz per sample). Reused by the
 Price/fitness analyses (plot composition <-> realized census fitness). Output:
-analysis/grenenet_selection/fitness/sample_genome_h.npz  ->  samples (str[N]), H (N x 231), founders.
+analysis/grenenet_selection/common/results/fitness/sample_genome_h.npz  ->  samples (str[N]), H (N x 231), founders.
 Env: kmate. Run via run_sample_h_cache.sbatch.
 """
 import os, sys, glob
@@ -13,7 +13,7 @@ import lib
 from lib import genome_h, CHROMS
 
 WIN = lib.OUT
-OUT = "analysis/grenenet_selection/fitness"
+OUT = "analysis/grenenet_selection/common/results/fitness"
 
 
 def main():

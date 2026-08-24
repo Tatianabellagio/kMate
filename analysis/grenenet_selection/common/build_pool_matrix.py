@@ -24,7 +24,7 @@ Pooled means are floats -> stored float32 (gen1 nonsnp ~ 326 x 2.25M ~ 2.9 GB).
 Usage:
   PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
   $PY analysis/grenenet_selection/common/build_pool_matrix.py --kind nonsnp --gens 1 2 3 \
-      --out analysis/grenenet_selection/pool_matrices
+      --out analysis/grenenet_selection/common/results/pool_matrices
 """
 from __future__ import annotations
 import argparse, json, os, sys
@@ -73,7 +73,7 @@ def build(gen: int, kind: str, store: str, out: str):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--store", default=lib.AF_STORE)
-    ap.add_argument("--out", default=f"{lib.GEA}/pool_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/common/results/pool_matrices")
     ap.add_argument("--kind", default="nonsnp", choices=["nonsnp", "snp"])
     ap.add_argument("--gens", type=int, nargs="+", default=[1, 2, 3])
     args = ap.parse_args()

@@ -59,7 +59,7 @@ variance (a "231-founder" GWAS is really ~10 clades). The fix = **selection coef
 log-odds space**: `s = logit-slope of h over gens 0→3` → skew +1, variance spread across founders.
 
 **Locked trait** = per-founder, per-site **logit-slope selection coefficient** `s[site×founder]`:
-- built by `build_selection_trait.py` → `analysis/grenenet_selection/varexp/selection_s_matrix.npz`
+- built by `build_selection_trait.py` → `analysis/grenenet_selection/r3_persite_gwas/results/varexp/selection_s_matrix.npz`
   (`S[30×231]`, `sites`, `founders`, `bio1`, `p0`, `analyzable`(bool), `n_plots`, `freq_last`).
 - GLOBAL-mode chrom-averaged `h` (reused from `ecotype_fitness/sample_global_h.npz`, GLOBAL_MODE_DECISION).
 - founding reference `p0` = mean over 8 SEEDMIX reps (ESTIMATED, not forced uniform 1/231 — the
@@ -76,7 +76,7 @@ log-odds space**: `s = logit-slope of h over gens 0→3` → skew +1, variance s
 ## What was built
 
 1. `build_selection_trait.py` → `selection_s_matrix.npz`. **DONE.** (trait skew −0.88, excess kurtosis +1.4, 30 sites, 231 founders — well-behaved, variance spread across founders.)
-2. `build_class_grms.py` + `run_class_grms.sbatch` → `analysis/grenenet_selection/varexp/class_grms.npz`.
+2. `build_class_grms.py` + `run_class_grms.sbatch` → `analysis/grenenet_selection/r3_persite_gwas/results/varexp/class_grms.npz`.
    **DONE** (job 35513509). Per-class founder GRMs (231×231), standardized `Z=(g−p)/√(p(1−p))`
    — **0/1 founder presence = haploid coding** (inbred lines; NOT the diploid 2p form). Markers:
    MAC≥5, call≥0.9. `K_snp` (1.75M), `K_indel` (512k), `K_sv` (12.8k), `K_nonsnp` (525k),
@@ -119,7 +119,7 @@ even when non-SNP markers are restricted to ones with essentially zero local LD 
    approximation). For each of the 525,043 non-SNP markers, max founder-genotype r² against any
    panel SNP within ±50kb (SNP side unfiltered — max chance to tag). Run per-chrom directly on
    the compute node (~35–120s/chrom, no sbatch needed). Output:
-   `analysis/grenenet_selection/varexp/nonsnp_tagging_chr{1..5}.npz` (col_idx, pos, cls, best_r2,
+   `analysis/grenenet_selection/r3_persite_gwas/results/varexp/nonsnp_tagging_chr{1..5}.npz` (col_idx, pos, cls, best_r2,
    best_snp_pos, n_snp_window).
    **Finding en route:** tagging is far tighter than expected — even at a lenient r²≥0.2 bar,
    **99.7% of non-SNP markers genome-wide are tagged.** Only 1,383/525,043 (0.26%) have NO
@@ -129,12 +129,12 @@ even when non-SNP markers are restricted to ones with essentially zero local LD 
    `build_class_grms._ZZt`): `K_untagged_r02` (1,383 markers, 1,360 indel + 23 SV,
    corr with K_snp = **0.364** — genuinely decorrelated) and `K_untagged_r05` (42,140 markers,
    1,068 SV, corr with K_snp = 0.950 — still fairly tied to it). ->
-   `analysis/grenenet_selection/varexp/untagged_grms.npz`. (These GRMs are panel-genotype-derived, so
+   `analysis/grenenet_selection/r3_persite_gwas/results/varexp/untagged_grms.npz`. (These GRMs are panel-genotype-derived, so
    independent of the Kf_w founder-h fix; the h²/gain numbers below are on the post-fix trait.)
 3. `varexp_untagged.py` — reruns marginal h², joint 2-GRM REML+LRT, GBLUP CV gain (imports the
    estimators straight from `varexp_selection.py`) for `K_snp` + `K_untagged_{r02,r05}`, across
    the 4 aggregate axes (w_global + 3 bio1-tercile zones) × {raw, RINT}. ->
-   `analysis/grenenet_selection/varexp/varexp_untagged.csv`. (Minor bug, harmless: the summary printer
+   `analysis/grenenet_selection/r3_persite_gwas/results/varexp/varexp_untagged.csv`. (Minor bug, harmless: the summary printer
    crashes on `df.thresh` — pandas resolves `.thresh` to a builtin, not the column; fixed to use
    `df["thresh"]`, but the CSV itself is already complete before the crash — no rerun needed.)
 
@@ -205,7 +205,7 @@ SV-vs-SNP is far weaker (ρ=0.126, top-0.1% Jaccard 0.14) — SV's sparse 12.8k-
 converge on the SNP peaks the way non-SNP does. Both classes: **0 significant CLIMATE hits**
 (consistent with the established climate-null), but real JOINT hits — 751 FDR<0.05 / 49 Bonferroni
 (SNP) vs 160 / 24 (non-SNP) vs 10 / 2 (SV), roughly tracking the marker-count ratios. Outputs:
-`analysis/grenenet_selection/varexp/class_gwas_{snp,nonsnp,sv}.npz` + `class_gwas_summary.json`.
+`analysis/grenenet_selection/r3_persite_gwas/results/varexp/class_gwas_{snp,nonsnp,sv}.npz` + `class_gwas_summary.json`.
 
 **Net:** sharpens the kinship-level conclusion — it's not only that SNP/non-SNP panels explain
 the same *total* variance, an actual per-marker scan on each panel independently converges on
@@ -235,7 +235,7 @@ Chosen phenotype = per-founder **origin climate bio1–19** (worldclim), keyed t
 - Methods: reuse `varexp_selection.py` estimators verbatim (AI-REML marginal h²+SE+LRT, joint 2-GRM
   partition + LRT for the SV/non-SNP layer beyond SNP, repeated 6-fold×10 GBLUP CV predictive R²).
   Headline gain = CV R²(SNP+SV) − R²(SNP), across bio1-19 × {raw, RINT}.
-- Script `varexp_bioclim.py` → `analysis/grenenet_selection/varexp/bioclim_varexp.csv` +
+- Script `varexp_bioclim.py` → `analysis/grenenet_selection/r3_persite_gwas/results/varexp/bioclim_varexp.csv` +
   `bioclim_varexp_summary.json`. Env kmate. GRM corrs at the matched set: **corr(K_snp,K_sv)=0.955,
   corr(K_snp,K_nonsnp)=0.998, corr(K_snp,K_untagged_r02)=0.364.**
 - **Prior expectation (honest):** aggregate GRM gain likely small — origin climate is heavily
@@ -274,7 +274,7 @@ the ~20 collinear climate axes → **FDR-tail noise, not real climate adaptation
 climate-null). Bug fixed en route (still in place): `lib.collapse_to_blocks` picks the block lead by
 MAX |stat|; passing `-p` made `abs(-p)` pick the *least* significant marker — switched to `-log10(p)`.
 
-**Plots:** `plot_class_gwas_pngs.py` → PNGs in `analysis/grenenet_selection/varexp/gwas_plots/`
+**Plots:** `plot_class_gwas_pngs.py` → PNGs in `analysis/grenenet_selection/r3_persite_gwas/results/varexp/gwas_plots/`
 (multitrait = contrasts × 3 classes × {manhattan,qq}; per-site = gardens × 3 classes ×
 {manhattan,qq}). Threshold lines drawn at the **block level** (fix: originally marker-level, so the
 FDR line silently vanished when marker-level FDR was empty); legend shows significant-block count.

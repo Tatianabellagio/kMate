@@ -22,7 +22,7 @@ conda activate kmate
 echo "host: $(hostname)  start: $(date)"
 # remove the stale caches so build_group_means regenerates (it only writes .npz;
 # the orphaned .pkl is from an older code path and is removed too)
-rm -fv analysis/grenenet_selection/group_means.npz analysis/grenenet_selection/group_means.pkl
+rm -fv analysis/grenenet_selection/common/results/group_means.npz analysis/grenenet_selection/group_means.pkl
 
 cd analysis/grenenet_selection
 python - <<'PY'

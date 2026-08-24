@@ -129,7 +129,7 @@ genuinely-novel candidate: significant, no co-significant SNP, not even taggable
 Raw p is uncalibrated (no GIF).""")
 
 co('''
-LDDIR = f"{GEA}/sv_snp_ld_v2_maconly"
+LDDIR = f"{GEA}/r3_persite_gwas/results/sv_snp_ld_v2_maconly"
 R2 = {}; POS2 = {}
 for kind in ("sv", "indel"):
     for ci in range(1, 6):

@@ -14,7 +14,7 @@
 # not the login/interactive-shell cgroup (matches project convention for heavy kMate compute).
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs analysis/grenenet_selection/varexp
+mkdir -p logs analysis/grenenet_selection/r3_persite_gwas/results/varexp
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
 echo "[$(date)] class-split GWAS start on $(hostname)"

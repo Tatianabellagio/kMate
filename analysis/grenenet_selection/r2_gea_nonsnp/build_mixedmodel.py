@@ -54,15 +54,15 @@ def main():
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--limit", type=int, default=0, help="benchmark: only first N SVs")
-    ap.add_argument("--out", default=f"{lib.GEA}/gea")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/results/gea")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
-    D = f"{lib.GEA}/pool_matrices"
+    D = f"{lib.GEA}/common/results/pool_matrices"
     mt = pd.read_csv(f"{D}/pool_gen{args.gen}_nonsnp.meta.csv")
     af = np.load(f"{D}/pool_gen{args.gen}_nonsnp_af.npy", mmap_mode="r")
     p0 = np.load(f"{lib.AF_STORE}/p0_nonsnp.npy")
-    loci = pd.read_csv(f"{lib.GEA}/lfmm/locus_index_gen{args.gen}_sv.csv")
+    loci = pd.read_csv(f"{lib.GEA}/r2_gea_nonsnp/results/lfmm/locus_index_gen{args.gen}_sv.csv")
     rec = loci.rec_index.to_numpy()
     if args.limit:
         rec = rec[:args.limit]; loci = loci.iloc[:args.limit]

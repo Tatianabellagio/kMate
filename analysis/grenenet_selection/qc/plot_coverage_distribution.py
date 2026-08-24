@@ -14,7 +14,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = "/global/scratch/users/tbellg/kmate"
-CSV = f"{ROOT}/analysis/grenenet_selection/results/qc_coverage_audit.csv"
+CSV = f"{ROOT}/analysis/grenenet_selection/qc/results/qc_coverage_audit.csv"
 OUT = f"{ROOT}/analysis/grenenet_selection/notebooks/plots/coverage_distribution.png"
 
 GREY = "#4d4d4d"

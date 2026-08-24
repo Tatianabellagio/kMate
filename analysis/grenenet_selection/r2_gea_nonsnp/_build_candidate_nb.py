@@ -26,10 +26,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
 PROJ = "/global/scratch/users/tbellg/kmate"
-GEA = lib.GEA; PM = f"{GEA}/pool_matrices"; STORE = lib.AF_STORE
+GEA = lib.GEA; PM = f"{GEA}/common/results/pool_matrices"; STORE = lib.AF_STORE
 NBDIR = f"{PROJ}/analysis/grenenet_selection/notebooks"
 OUT = f"{NBDIR}/08_candidate_block.ipynb"
-CACHE = f"{GEA}/gea/candidate_block_cache.npz"
+CACHE = f"{GEA}/r2_gea_nonsnp/results/gea/candidate_block_cache.npz"
 CAND_BLOCK = "4_2781"
 CHR_INT = int(CAND_BLOCK.split("_")[0])
 CHROM = f"Chr{CHR_INT}"
@@ -40,9 +40,9 @@ def precompute():
     size = np.abs(idx["alt_len"].astype(np.int64) - idx["ref_len"].astype(np.int64))
     nc = np.asarray(np.load(sorted(glob.glob(f"{STORE}/nc_nonsnp/*.npy"))[0]))
     mask = (size > 50) & (nc >= 150); sv_idx = np.where(mask)[0]
-    block = np.load(f"{GEA}/gea/twostage_blocks.npz", allow_pickle=True)["block"].astype(str)
-    zd = np.load(f"{GEA}/gea/twostage_dp_bio1.npz", allow_pickle=True)
-    zs = np.load(f"{GEA}/gea/twostage_scoef_bio1.npz", allow_pickle=True)
+    block = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_blocks.npz", allow_pickle=True)["block"].astype(str)
+    zd = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_dp_bio1.npz", allow_pickle=True)
+    zs = np.load(f"{GEA}/r2_gea_nonsnp/results/gea/twostage_scoef_bio1.npz", allow_pickle=True)
     sel = np.where(block == CAND_BLOCK)[0]
     nonsnp_idx = sv_idx[sel]
     p0 = zd["p0"][sel].astype(float)
@@ -85,8 +85,8 @@ def precompute():
     # SNP-vs-SV LD for the lead SV (assembly panel + short-read)
     lead_pos = int(bm["pos"][lead_local])
     ld = {}
-    for tag, f in [("panel", f"{GEA}/sv_snp_ld/sv_snp_ld_panel_{CHROM}.npz"),
-                   ("shortread", f"{GEA}/sv_snp_ld/sv_snp_ld_shortread_{CHROM}.npz")]:
+    for tag, f in [("panel", f"{GEA}/r3_persite_gwas/results/sv_snp_ld/sv_snp_ld_panel_{CHROM}.npz"),
+                   ("shortread", f"{GEA}/r3_persite_gwas/results/sv_snp_ld/sv_snp_ld_shortread_{CHROM}.npz")]:
         if os.path.exists(f):
             z = np.load(f, allow_pickle=True)
             j = np.argmin(np.abs(z["pos"] - lead_pos))
@@ -121,7 +121,7 @@ import numpy as np, pandas as pd, sys
 import matplotlib.pyplot as plt
 from matplotlib import cm
 sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection"); import lib
-C = np.load("/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/gea/candidate_block_cache.npz", allow_pickle=True)
+C = np.load("/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/results/gea/candidate_block_cache.npz", allow_pickle=True)
 bm = pd.DataFrame({k[3:]: C[k] for k in C.files if k.startswith("bm_")})
 lead = int(C["lead_local"]); sites3 = C["sites3"]; bio1 = C["bio1_3"]
 traj = C["traj"]; dp3 = C["dp3"]; p0 = C["p0"]

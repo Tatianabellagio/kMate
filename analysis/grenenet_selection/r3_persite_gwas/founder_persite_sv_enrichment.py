@@ -25,7 +25,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-ST = f"{lib.GEA}/site_temporal"
+ST = f"{lib.GEA}/r1_sv_negative_selection/results/site_temporal"
 FG = f"{lib.GEA}/hapfreq/multisite_founder_gwas_clq90_pc1"
 
 

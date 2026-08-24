@@ -8,7 +8,7 @@
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 export PATH="/global/home/users/tbellg/miniforge3/envs/kmate/bin:$PATH"
-OUT=analysis/grenenet_selection/sv_adaptive
+OUT=analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive
 mkdir -p "$OUT"
 for c in 1 2 3 4 5; do
   echo "[chr$c] start $(date)"

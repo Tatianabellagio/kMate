@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Cross-site synthesis of the per-site temporal SV-enrichment (clq0.9 blocks).
 
-Reads every analysis/grenenet_selection/site_temporal/site{N}_sv_enrichment.json produced by
+Reads every analysis/grenenet_selection/r1_sv_negative_selection/results/site_temporal/site{N}_sv_enrichment.json produced by
 site_sv_enrichment.py and answers the headline question across sites:
   Is there SV enrichment in the temporally-selected haploblocks -- anywhere, consistently?
 
@@ -21,7 +21,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-ST = f"{lib.GEA}/site_temporal"
+ST = f"{lib.GEA}/r1_sv_negative_selection/results/site_temporal"
 
 
 def main():
@@ -41,7 +41,7 @@ def main():
     # trajectory length per site (from pool metas): 3=gen1-3, 2, 1=Δp-only
     ng = {}
     for g in (1, 2, 3):
-        m = pd.read_csv(f"{lib.GEA}/pool_matrices/pool_gen{g}_nonsnp.meta.csv")
+        m = pd.read_csv(f"{lib.GEA}/common/results/pool_matrices/pool_gen{g}_nonsnp.meta.csv")
         for s in m.site.unique():
             ng[int(s)] = ng.get(int(s), 0) + 1
     df["n_gens"] = df.site.map(ng)

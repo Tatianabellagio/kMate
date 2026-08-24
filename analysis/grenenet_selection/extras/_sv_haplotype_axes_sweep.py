@@ -182,9 +182,9 @@ def main():
                           base_tag_r2_09=round(base09, 4), mean_r2=round(float(sv_r2.mean()), 4)))
 
     df = pd.DataFrame(rows)
-    out = f"{lib.GEA}/sv_adaptive/sv_haplotype_axes_sweep.csv"
+    out = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_haplotype_axes_sweep.csv"
     df.to_csv(out, index=False)
-    pd.DataFrame(prows).to_csv(f"{lib.GEA}/sv_adaptive/sv_haplotype_axes_power.csv", index=False)
+    pd.DataFrame(prows).to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_haplotype_axes_power.csv", index=False)
     print(f"\n[wrote] {out}")
 
     # ---- positive control: spike a known fold into the JOINT top-1%, confirm recovery ----
@@ -210,7 +210,7 @@ def main():
                             n_events=int(round(obs * n)), detected=(p < 0.05)))
         print(f"  spiked x{target}: recovered x{obs/med:.2f}  p={p:.4f}  "
               f"({int(round(obs*n))} tagged of {n})  {'DETECTED' if p<0.05 else 'missed'}")
-    pd.DataFrame(pc_rows).to_csv(f"{lib.GEA}/sv_adaptive/sv_haplotype_axes_poscontrol.csv", index=False)
+    pd.DataFrame(pc_rows).to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_haplotype_axes_poscontrol.csv", index=False)
     print("[wrote] sv_haplotype_axes_poscontrol.csv")
 
 

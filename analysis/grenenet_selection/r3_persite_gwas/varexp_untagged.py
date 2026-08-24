@@ -9,7 +9,7 @@ non-SNP layer add that SNPs can't see". Here K_nonsnp is replaced by K_untagged_
 within +/-50kb) and re-run through the same three estimators as varexp_selection.py (marginal
 h2, joint 2-GRM REML + LRT, GBLUP CV gain), reusing its functions directly.
 
-Reads analysis/grenenet_selection/varexp/{selection_s_matrix.npz, class_grms.npz, untagged_grms.npz}.
+Reads analysis/grenenet_selection/r3_persite_gwas/results/varexp/{selection_s_matrix.npz, class_grms.npz, untagged_grms.npz}.
 Writes varexp_untagged.csv. Env: kmate.
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 from varexp_selection import h2_1grm, joint_2grm, gblup_cv, rint
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 THRESHOLDS = ["r02", "r05"]
 
 

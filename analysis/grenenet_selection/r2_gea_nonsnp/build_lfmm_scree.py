@@ -9,7 +9,7 @@ import numpy as np, pandas as pd
 
 ROOT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection"
 STEM = f"{ROOT}/phase1_replication/lfmm/lfmm_snp_gen9"
-OUT  = f"{ROOT}/lfmm/scree_snp_gen9.csv"
+OUT  = f"{ROOT}/r2_gea_nonsnp/results/lfmm/scree_snp_gen9.csv"
 
 np_pools, nr = np.loadtxt(f"{STEM}_dims.txt", dtype=int)
 np_pools, nr = int(np_pools), int(nr)

@@ -23,7 +23,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-G = f"{lib.GEA}/ecotype_fitness/gwas"
+G = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/gwas"
 # SFX matches ecotype_hap_sv_enrichment.py: "" = all-class clq90, "_clq90nosv" = SNP+indel-only
 # clustering (self-tagging control). Reads hap_sv_table{SFX}.csv, writes hap_sv_rotation2{SFX}.*
 MEMB_TAG = os.environ.get("HAPMEMB_TAG", "clq90")

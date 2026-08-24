@@ -1,5 +1,5 @@
 import numpy as np, pandas as pd
-ST = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/site_temporal"
+ST = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r1_sv_negative_selection/results/site_temporal"
 tab = pd.read_parquet(f"{ST}/site4_clq90_blocks.parquet")
 scored = tab[tab.n_snp >= 3].copy()
 rng = np.random.default_rng(0)

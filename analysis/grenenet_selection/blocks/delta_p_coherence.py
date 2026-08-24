@@ -54,7 +54,7 @@ recs["key"] = lib.rec_key(recs)
 p0v = recs["key"].map(p0).values.astype(float)
 dP = AF - p0v[None, :]                            # pools x variants, change from founding
 
-bl = pd.read_csv("analysis/grenenet_selection/blocks_recompute/chr1_clq0.9_blocks_clq0.9.tsv", sep="\t")
+bl = pd.read_csv("analysis/grenenet_selection/blocks/results/blocks_recompute/chr1_clq0.9_blocks_clq0.9.tsv", sep="\t")
 rows = []
 for s, e in zip(bl.start_pos, bl.end_pos):
     lo, hi = np.searchsorted(pos, s), np.searchsorted(pos, e, side="right")
@@ -62,7 +62,7 @@ for s, e in zip(bl.start_pos, bl.end_pos):
     rows.append((s, e, hi-lo, pc1_ve(AF[:, lo:hi]), pc1_ve(dP[:, lo:hi]),
                  eff_dim(dP[:, lo:hi]), abs_dp(dP[:, lo:hi])))
 r = pd.DataFrame(rows, columns=["start_pos","end_pos","n","af_ve","dp_ve","eff_dim","abs_dp"])
-r.to_csv("analysis/grenenet_selection/blocks_recompute/chr1_clq0.9_directionality.csv", index=False)
+r.to_csv("analysis/grenenet_selection/blocks/results/blocks_recompute/chr1_clq0.9_directionality.csv", index=False)
 print(f"CLQcut 0.9, {len(r)} blocks (>=2 variants):")
 print(f"  median AF-VE   (static LD coherence)   : {r.af_ve.median():.3f}")
 print(f"  median dP-VE   (CHANGE coherence)      : {r.dp_ve.median():.3f}   <- moved as one unit (handles anti-phase)")

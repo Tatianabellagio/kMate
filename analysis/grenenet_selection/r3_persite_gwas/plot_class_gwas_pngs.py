@@ -4,7 +4,7 @@ notebook, for browsing on demand): multitrait JOINT/GLOBAL/CLIMATE (all 19 biocl
 per-site individual scans, for SNP/non-SNP/SV-only. Companion to class_gwas_multitrait.ipynb /
 class_gwas_persite.ipynb (which show only the peak-overlap TABLES, no plots, per user request).
 
-Output -> analysis/grenenet_selection/varexp/gwas_plots/{multitrait,persite}_{class}_{name}_{manhattan,qq}.png
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/varexp/gwas_plots/{multitrait,persite}_{class}_{name}_{manhattan,qq}.png
 Env: basic (matplotlib hangs in `plotting`).
 """
 import os, sys, time
@@ -18,7 +18,7 @@ plt.rcParams.update({"figure.dpi": 100, "font.size": 9})
 sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection")
 import lib
 
-OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/varexp"
+OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r3_persite_gwas/results/varexp"
 PLOTDIR = f"{OUT}/gwas_plots"
 os.makedirs(PLOTDIR, exist_ok=True)
 CHROMS = ["chr1", "chr2", "chr3", "chr4", "chr5"]

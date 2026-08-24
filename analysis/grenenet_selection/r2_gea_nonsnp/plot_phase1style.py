@@ -26,8 +26,8 @@ matplotlib.rcParams["pdf.fonttype"] = 42      # TrueType (editable), not Type-3 
 matplotlib.rcParams["ps.fonttype"] = 42
 matplotlib.rcParams["svg.fonttype"] = "none"
 
-PM = f"{lib.GEA}/pool_matrices"; STORE = lib.AF_STORE
-FIGDIR = f"{lib.GEA}/gea/figures"
+PM = f"{lib.GEA}/common/results/pool_matrices"; STORE = lib.AF_STORE
+FIGDIR = f"{lib.GEA}/r2_gea_nonsnp/results/gea/figures"
 SITES_NAMES = "/global/scratch/users/tbellg/gea_grene-net/key_files/sites_simple_names.csv"
 
 

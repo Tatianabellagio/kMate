@@ -31,7 +31,7 @@ Missingness, two separate levels (user 2026-07-14):
     final-generation mean (checked: a 4x floor drops ~20% of plots and only 1-2 of 31 sites, no
     site left with <2 surviving plots at its final generation).
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/sfs_shift_by_site.{npz,csv} + _sitemeta.csv.
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/sfs_shift_by_site.{npz,csv} + _sitemeta.csv.
 """
 import os, sys, glob
 import numpy as np
@@ -42,7 +42,7 @@ import lib
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 STORE = lib.AF_STORE
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN = 0.02, 50, 12, 10
 EXT_THR, FIX_THR = 0.01, 0.95
 MIN_COV = 4.0                    # pool-seq coverage floor (per plot); see missingness note above
@@ -137,10 +137,10 @@ def main():
               flush=True)
 
     long = pd.DataFrame(long_rows); meta = pd.DataFrame(site_meta)
-    os.makedirs(f"{lib.GEA}/sv_adaptive", exist_ok=True)
-    long.to_csv(f"{lib.GEA}/sv_adaptive/sfs_shift_by_site.csv", index=False)
-    meta.to_csv(f"{lib.GEA}/sv_adaptive/sfs_shift_by_site_sitemeta.csv", index=False)
-    np.savez_compressed(f"{lib.GEA}/sv_adaptive/sfs_shift_by_site.npz", p0q=p0q)
+    os.makedirs(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive", exist_ok=True)
+    long.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sfs_shift_by_site.csv", index=False)
+    meta.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sfs_shift_by_site_sitemeta.csv", index=False)
+    np.savez_compressed(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sfs_shift_by_site.npz", p0q=p0q)
     print(f"\n[wrote] sfs_shift_by_site.{{csv,npz}} + _sitemeta.csv  ({len(meta)} sites)")
     m = meta.dropna(subset=["shift_sv"])
     print(f"median across sites: SV shift = {m.shift_sv.median():+.4f}  "

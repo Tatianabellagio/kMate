@@ -7,7 +7,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 os.chdir("/global/scratch/users/tbellg/kmate")
-HCACHE = f"{lib.GEA}/ecotype_fitness/sample_global_h.npz"
+HCACHE = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/sample_global_h.npz"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]; EPS, P0_FLOOR = 1e-3, 1e-5
 PURGE = [4, 32, 43, 60, 26]; TOPQ = [0.90, 0.95, 0.80]   # top 10% / 5% / 20%
 

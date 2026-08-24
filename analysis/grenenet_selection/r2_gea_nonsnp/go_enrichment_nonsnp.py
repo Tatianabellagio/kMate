@@ -18,7 +18,7 @@ go-basic OBO (propagated up is_a/part_of), cached under CACHE. Rolls its own hyp
 (scipy) -- no goatools/gseapy needed. Env: kmate (needs internet; compute node reaches
 current.geneontology.org + purl.obolibrary.org).
 
-Writes analysis/grenenet_selection/varexp/go_enrichment_{ora,themes}.csv + go_enrichment_summary.json.
+Writes analysis/grenenet_selection/r3_persite_gwas/results/varexp/go_enrichment_{ora,themes}.csv + go_enrichment_summary.json.
 """
 from __future__ import annotations
 import os, sys, re, gzip, json
@@ -30,8 +30,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 import nonsnp_only_genes as N   # reuse load_class/sig_blocks/climate_p/block_interval_map/FLANK
 
-OUT = f"{lib.GEA}/varexp"
-CACHE = f"{lib.GEA}/varexp/go_cache"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
+CACHE = f"{lib.GEA}/r3_persite_gwas/results/varexp/go_cache"
 GAF_URL = "http://current.geneontology.org/annotations/tair.gaf.gz"
 OBO_URL = "http://purl.obolibrary.org/obo/go/go-basic.obo"
 AGI_RE = re.compile(r"AT[1-5CM]G\d{5}", re.I)

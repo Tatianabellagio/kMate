@@ -24,7 +24,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 import lib
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-GM = f"{lib.GEA}/gen_matrices"
+GM = f"{lib.GEA}/common/results/gen_matrices"
 CHROM, POS, RL, AL = "Chr2", 13_127_635, 1, 5129
 KEY = f"{CHROM}:{POS}:{RL}:{AL}"
 
@@ -59,7 +59,7 @@ def sv_site_traj():
 
     # gen 0 = founding p0 (same for every garden); pull from the fast group_means
     # cache (SEEDMIX mean) rather than re-reading the 8 SEEDMIX TSVs.
-    z = np.load(f"{lib.GEA}/group_means.npz", allow_pickle=False)
+    z = np.load(f"{lib.GEA}/common/results/group_means.npz", allow_pickle=False)
     pm = np.where((z["chrom"] == CHROM) & (z["pos"] == POS) &
                   (z["ref_len"] == RL) & (z["alt_len"] == AL))[0]
     p0 = float(z["p0"][pm[0]]) if len(pm) else np.nan

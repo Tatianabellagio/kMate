@@ -34,8 +34,8 @@ and to run efficiently at ~2.3M-marker scale):
     windows, per-window max -log10(p_joint) correlated between classes (Spearman) as the
     "same regions light up" test; top-N hit window overlap (Jaccard).
 
-Reads analysis/grenenet_selection/varexp/selection_s_matrix.npz + panel/arch3 var_pa per chrom.
-Writes analysis/grenenet_selection/varexp/class_gwas_{snp,nonsnp}.npz + class_gwas_summary.json.
+Reads analysis/grenenet_selection/r3_persite_gwas/results/varexp/selection_s_matrix.npz + panel/arch3 var_pa per chrom.
+Writes analysis/grenenet_selection/r3_persite_gwas/results/varexp/class_gwas_{snp,nonsnp}.npz + class_gwas_summary.json.
 Env: kmate. Compute-node only (dense per-chrom marker blocks).
 """
 from __future__ import annotations
@@ -48,7 +48,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 from founder_genotype import emma_reml_delta
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 CHROMS = ["chr1", "chr2", "chr3", "chr4", "chr5"]
 MIN_MAC_TEST = 5
 MIN_MAC_GRM = 12

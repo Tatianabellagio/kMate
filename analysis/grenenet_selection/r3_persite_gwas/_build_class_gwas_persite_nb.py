@@ -42,7 +42,7 @@ plt.rcParams.update({'figure.dpi': 120, 'font.size': 10})
 os.chdir("/global/scratch/users/tbellg/kmate")
 sys.path.insert(0, "analysis/grenenet_selection")
 import lib
-OUT = "analysis/grenenet_selection/varexp"
+OUT = "analysis/grenenet_selection/r3_persite_gwas/results/varexp"
 COLORS = {"snp": ["#3b4cc0", "#7aa0c4"], "nonsnp": ["#D55E00", "#f2a679"], "sv": ["#009E73", "#66c2a5"]}
 LABEL = {"snp": "SNP-only", "nonsnp": "non-SNP (indel+SV)", "sv": "SV-only"}
 CLASSES = ["snp", "nonsnp", "sv"]

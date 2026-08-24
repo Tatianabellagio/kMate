@@ -19,7 +19,7 @@ strongly-MOVING haplotypes than matched SNPs" — it CANNOT separate non-SNP-SPE
 non-SNPs riding selected haplotypes (passenger co-occurrence). It is the honest answer to the literal
 frequency question; an independent per-variant SV AF (local-mode/vg) is the only way past that.
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/temporal_selection_snp_vs_nonsnp.csv (per site)
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/temporal_selection_snp_vs_nonsnp.csv (per site)
 and _summary.csv (across sites).
 """
 import os, sys, glob
@@ -32,7 +32,7 @@ from site_variant_temporal_scoef import site_freq_per_gen
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 STORE = lib.AF_STORE
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0 = 0.02
 SV_BP = 50
 MIN_MAC = 12
@@ -125,7 +125,7 @@ def main():
               f"indel {rec['indel_fold']:.2f}x  SV {rec['sv_fold']:.2f}x")
 
     df = pd.DataFrame(rows).sort_values("bio1")
-    out = f"{lib.GEA}/sv_adaptive/temporal_selection_snp_vs_nonsnp.csv"
+    out = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/temporal_selection_snp_vs_nonsnp.csv"
     df.to_csv(out, index=False)
     print(f"\n[wrote] {out}")
 
@@ -143,7 +143,7 @@ def main():
             lbl = {"fold": "|Δp| (either dir)", "up_fold": "UP (favoured)", "dn_fold": "DOWN (purged)"}[tail]
             print(f"  {name:>6} {lbl:<18}: median {med:.2f}x  |  >1 at {nsg}/{len(col)} sites  (sign p={p:.3f})")
     pd.DataFrame(srows).to_csv(
-        f"{lib.GEA}/sv_adaptive/temporal_selection_snp_vs_nonsnp_summary.csv", index=False)
+        f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/temporal_selection_snp_vs_nonsnp_summary.csv", index=False)
     print("\n>1 & most sites & sign-p<0.05 => category IS under selection more often than matched SNPs.")
     print("~1 => behaves like frequency-matched SNPs (no category-specific selection signal).")
 

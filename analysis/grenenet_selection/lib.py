@@ -39,7 +39,7 @@ SAMPLES_DATA = ("/global/scratch/projects/fc_moilab/projects/grenenet-phase1/"
 # per-site ERA5 bioclim (bio1-19), all 31 cohort sites (+ more); col `site`.
 BIOCLIM = ("/global/scratch/projects/fc_moilab/projects/grenenet-phase1/"
            "drive_zenodo/data-intermediate/bioclimvars_experimental_sites_era5.csv")
-AF_STORE = f"{GEA}/af_store"             # compact per-sample NPY store (build_af_store.py)
+AF_STORE = f"{GEA}/common/results/af_store"             # compact per-sample NPY store (build_af_store.py)
 AF_SCALE, AF_NAN = 10000, 65535          # uint16 AF encoding (4-decimal + NaN sentinel)
 # TAIR10 gene annotation (Chr1..Chr5, matches our SV `chrom` exactly): one row per
 # gene. Sibling *_genes_transposons.gff adds TEs (the adaptive-SV class). Canonical
@@ -56,7 +56,7 @@ LD_BLOCKS = ("/global/scratch/users/tbellg/gea_grene-net/ARCHIVE/"
 # clq0.9 = 58,376 blocks (vs 16,674 hapFIRE) -> the finer window definition for the
 # phase-1 GEA re-run. Interval-based (unlike hapFIRE's nearest-SNP map), so they do
 # NOT tile the genome: variants in inter-block gaps are unassigned (return '').
-CLQ_BLOCKS_DIR = f"{GEA}/blocks_mcf90"
+CLQ_BLOCKS_DIR = f"{GEA}/blocks/results/blocks_mcf90"
 
 # Pilot sites (extend as the cohort grows). site -> (label, role)
 SITE_CLIMATE = {4: "hot", 54: "cold"}   # 4=Cadiz/Madrid region Spain, 54=Cologne DE
@@ -80,7 +80,7 @@ def decode_af(u: np.ndarray) -> np.ndarray:
 # QC exclusion: samples with too little USABLE panel data (Chr1 nonzero-k-mer
 # fraction < 0.10) — dead/contaminated libraries whose h/AF are garbage. NOT a
 # sequencing-depth cut (depth doesn't isolate them; corr(depth,nzfrac)~0.57). See
-# analysis/grenenet_selection/results/qc_coverage_audit.csv + analysis/grenenet_selection/notebooks/qc_coverage_audit.ipynb. Applied globally so no pool/
+# analysis/grenenet_selection/qc/results/qc_coverage_audit.csv + analysis/grenenet_selection/notebooks/qc_coverage_audit.ipynb. Applied globally so no pool/
 # site/analysis sees them. Set 2026-07-07.
 QC_EXCLUDE_FILE = f"{os.path.dirname(os.path.abspath(__file__))}/../../data/qc_lowcov_exclude.txt"
 def qc_excluded() -> set[str]:
@@ -295,7 +295,7 @@ def build_group_means(samples: list[str] | None = None, base: str = OUT,
     """
     # numpy .npz cache: readable across pandas versions (the pickle cache broke
     # when written by pandas 3.x and read by 2.x — StringDtype pickle mismatch).
-    cache_path = f"{GEA}/group_means.npz"
+    cache_path = f"{GEA}/common/results/group_means.npz"
     if cache and os.path.exists(cache_path):
         z = np.load(cache_path, allow_pickle=False)
         names = [str(c) for c in z["_columns"]]

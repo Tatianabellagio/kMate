@@ -30,7 +30,7 @@ CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 Tg = np.array([0.0, 1.0, 2.0, 3.0])
 PANEL = "panel/arch3"
 FG = f"{lib.GEA}/hapfreq/multisite_founder_gwas_clq90_pc1"
-SVL = f"{lib.GEA}/sv_adaptive/sv_landscape_clq0.9.csv"
+SVL = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_landscape_clq0.9.csv"
 
 
 def genome_h(samp, base):
@@ -46,7 +46,7 @@ def genome_h(samp, base):
 def per_founder_global_fitness():
     """Per-founder frequency SLOPE (p0->gen1->2->3), flower-weighted per site-gen, then
     averaged over sites = each ecotype's overall win/loss rate. Uses cached sample h."""
-    cache = np.load(f"{lib.GEA}/fitness/sample_genome_h.npz", allow_pickle=True)
+    cache = np.load(f"{lib.GEA}/common/results/fitness/sample_genome_h.npz", allow_pickle=True)
     H = cache["H"]; samples = cache["samples"].astype(str); founders = cache["founders"].astype(str)
     hmap = {s: i for i, s in enumerate(samples)}
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
@@ -161,8 +161,8 @@ def main():
     print(f"\nBASELINE (SVs in NON-top-JOINT blocks, n={len(base)}): "
           f"carrier fitter in {100*(base>0).mean():.0f}%, median Δ {np.median(base):+.4f}")
 
-    R.to_csv(f"{lib.GEA}/sv_adaptive/sv_founder_mechanism.csv", index=False)
-    print(f"\n[done] -> {lib.GEA}/sv_adaptive/sv_founder_mechanism.csv")
+    R.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_founder_mechanism.csv", index=False)
+    print(f"\n[done] -> {lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_founder_mechanism.csv")
 
 
 if __name__ == "__main__":

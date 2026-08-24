@@ -13,7 +13,7 @@ frequency-controlled). REPEATABILITY (PicMin-style) = # sites where the variant 
 
 Saves per variant (all SV+indel-subsample+SNP-subsample): p0, class, isdel, n_sites, resp_count,
 mean_rho, mean_absz, mean_signed_slope, and the per-site signed mean-slope matrix for a climate cross.
-Env: kmate.  Writes analysis/grenenet_selection/sv_adaptive/parallelism.npz .
+Env: kmate.  Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/parallelism.npz .
 """
 import os, sys, glob
 import numpy as np, pandas as pd
@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
 os.chdir("/global/scratch/users/tbellg/kmate")
-STORE = lib.AF_STORE; PM = f"{lib.GEA}/pool_matrices"
+STORE = lib.AF_STORE; PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN, RESP_Q, EPS = 0.02, 50, 12, 10, 0.10, 1e-3
 logit = lambda p: np.log(np.clip(p, EPS, 1-EPS)/(1-np.clip(p, EPS, 1-EPS)))
 
@@ -140,7 +140,7 @@ def main():
         z_sv=np.vstack(perz["non"]).T[is_sv].astype(np.float32), z_indel=np.vstack(perz["non"]).T[~is_sv].astype(np.float32),
         z_snp=np.vstack(perz["sn"]).T.astype(np.float32),
         rhops_sv=np.vstack(perrho["non"]).T[is_sv].astype(np.float32), rhops_snp=np.vstack(perrho["sn"]).T.astype(np.float32))
-    np.savez_compressed(f"{lib.GEA}/sv_adaptive/parallelism.npz", **out)
+    np.savez_compressed(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/parallelism.npz", **out)
 
     from scipy import stats as st
     def matchcmp(a_val, a_p0, b_val, b_p0):

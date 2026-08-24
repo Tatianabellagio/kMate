@@ -19,7 +19,7 @@ GRMs are built on all 231 founders (relatedness is a founder property); the mode
 to the analyzable set. Two streaming passes over the 5 per-chrom var_pa npz (pass 1: class GRMs +
 MAC spectra; pass 2: MAC-matched SNP GRM). Heavy Lustre I/O -> run via sbatch, NOT the login node.
 
-Output -> analysis/grenenet_selection/varexp/class_grms.npz
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/varexp/class_grms.npz
   founders, K_snp, K_indel, K_sv, K_nonsnp, K_all, K_snp_matched, n_markers{dict}, MIN_MAC, CALL_MIN
 Env: kmate.
 """
@@ -31,7 +31,7 @@ import scipy.sparse as sp
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 CHROMS = ["chr1", "chr2", "chr3", "chr4", "chr5"]
 N = 231
 MIN_MAC = 5           # MAF ~2% floor for GRM markers

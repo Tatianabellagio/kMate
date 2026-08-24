@@ -19,7 +19,7 @@ Unit = clq90 hap-cluster (blocks_mcf90/hap_membership/chr{N}_hapmemb_clq90.npz: 
 
 SV MAF floors swept (MAC 12/24/46 = MAF 5/10/20%) to reproduce the frequency dependence.
 
-Output -> analysis/grenenet_selection/ecotype_fitness/gwas/hap_sv_enrichment.{csv,json}
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/ecotype_fitness/gwas/hap_sv_enrichment.{csv,json}
 Env: kmate.
 """
 from __future__ import annotations
@@ -29,8 +29,8 @@ import numpy as np, pandas as pd, scipy.sparse as sp
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-G = f"{lib.GEA}/ecotype_fitness/gwas"
-MEMB = f"{lib.GEA}/blocks_mcf90/hap_membership"
+G = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/gwas"
+MEMB = f"{lib.GEA}/blocks/results/blocks_mcf90/hap_membership"
 # HAPMEMB_TAG selects the founder->hap partition: "clq90" (default, all-class) or "clq90nosv"
 # (SNP+indel-only clustering, self-tagging circularity control). SFX suffixes all outputs so the
 # nosv run does not clobber the original table.
@@ -56,7 +56,7 @@ def r2_vec(a, B):
 
 def main():
     # founder fitness aligned to membership founder order
-    fit = pd.read_csv(f"{lib.GEA}/ecotype_fitness/ecotype_fitness.csv").set_index("founder")
+    fit = pd.read_csv(f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/ecotype_fitness.csv").set_index("founder")
     m0 = np.load(f"{MEMB}/chr1_hapmemb_{MEMB_TAG}.npz", allow_pickle=True)
     founders = m0["founders"].astype(str)
     fit = fit.loc[[int(f) if f.isdigit() else f for f in founders]] \

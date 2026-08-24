@@ -29,7 +29,7 @@ per founder so divergence-matching removes the residual):
 Causal tier (--causal-only): restrict to SVs in low founder-LD (max r2 < 0.2 to any common SNP
 in its cis window) -- the only SVs where no co-segregating SNP can be the driver.
 
-Env: kmate.  Writes analysis/grenenet_selection/sv_adaptive/sv_winning_genetics{_suffix}.{csv,json}.
+Env: kmate.  Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/sv_winning_genetics{_suffix}.{csv,json}.
 """
 import os, sys, json, glob
 import numpy as np
@@ -53,7 +53,7 @@ EPS = 1e-3
 
 def per_founder_selection():
     """sel_DH[site,f] and sel_SLOPE[site,f] (nsite x 231), + site ids and p0."""
-    c = np.load("analysis/grenenet_selection/fitness/sample_genome_h.npz", allow_pickle=True)
+    c = np.load("analysis/grenenet_selection/common/results/fitness/sample_genome_h.npz", allow_pickle=True)
     H = c["H"]; samples = c["samples"].astype(str); founders = c["founders"].astype(str)
     hmap = {s: i for i, s in enumerate(samples)}
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
@@ -268,7 +268,7 @@ def main():
                   f"n={int(m.sum())}) -> -ve = SVs purged more at HOT sites  [G1 = window-immune control]")
 
     print("[4/4] writing ...")
-    out = f"{lib.GEA}/sv_adaptive/sv_winning_genetics{suffix}"
+    out = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_winning_genetics{suffix}"
     pd.DataFrame(rows).to_csv(f"{out}.csv", index=False)
     ps.to_csv(f"{out}_persite.csv", index=False)
     json.dump(dict(mac_min=MAC_MIN, sites=sites.tolist(), n_null=args.n_null,

@@ -17,7 +17,7 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import lib  # noqa: E402
-DIR = f"{lib.GEA}/varexp"
+DIR = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 
 _sp = ilu.spec_from_file_location(
     "ann_tu", f"{lib.GEA}/phase1_replication/annotate_genes_tair_uniprot.py")

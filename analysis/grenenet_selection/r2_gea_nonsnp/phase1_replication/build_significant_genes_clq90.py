@@ -6,7 +6,7 @@ deg2 (canonical, primary regime for the clq90 run — see STATUS_clq90.md), comp
 BH-FDR on the block p (Z_pVal) and take the blocks with q < --fdr. For each
 significant block:
   - reconstruct its genomic SPAN from the clq0.9 BigLD interval TSVs
-    (analysis/grenenet_selection/blocks_mcf90/chr{N}_clq0.9_blocks_clq0.9.tsv),
+    (analysis/grenenet_selection/blocks/results/blocks_mcf90/chr{N}_clq0.9_blocks_clq0.9.tsv),
   - list every TAIR10 gene overlapping that span (local GFF, lib.load_genes),
   - enrich each gene AT-id with its SYMBOL + DESCRIPTION via the Ensembl Plants
     REST API (TAIR10 assembly; no auth, batch POST).

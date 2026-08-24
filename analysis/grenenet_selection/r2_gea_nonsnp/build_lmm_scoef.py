@@ -57,7 +57,7 @@ def main():
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--threads", type=int, default=16)
     ap.add_argument("--limit", type=int, default=0, help="debug: first N SVs only")
-    ap.add_argument("--out", default=f"{lib.GEA}/gea")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/results/gea")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
@@ -66,7 +66,7 @@ def main():
     p0 = np.load(f"{lib.AF_STORE}/p0_nonsnp.npy")[mask].astype(np.float64)
     s, site, _, unit = stage1_scoef(sv_idx, p0)      # s [nL x nSV], site [nL]
     # climate per lineage (its site's bio1), standardized
-    m3 = pd.read_csv(f"{lib.GEA}/pool_matrices/pool_gen3_nonsnp.meta.csv")
+    m3 = pd.read_csv(f"{lib.GEA}/common/results/pool_matrices/pool_gen3_nonsnp.meta.csv")
     bio = m3.groupby("site")[args.climate].first()
     x = bio.loc[site].to_numpy(float); x = (x - x.mean()) / x.std()
 

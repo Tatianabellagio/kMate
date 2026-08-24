@@ -21,8 +21,8 @@ always a unique key (~5.6% of chr1 rows share a length-key with a same-position,
 different-sequence allele) -- duplicates are mean-aggregated before joining, matching
 how kMate's TSV already collapses to one row per (locus,ref_len,alt_len) (lib.rec_key).
 
-Env: kmate. Reads analysis/grenenet_selection/sv_adaptive/{s_climate_slope.npz,vcf_callqual_chr*.tsv}.
-Writes analysis/grenenet_selection/sv_adaptive/sv_callqual_artifact.npz + prints a text summary.
+Env: kmate. Reads analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/{s_climate_slope.npz,vcf_callqual_chr*.tsv}.
+Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/sv_callqual_artifact.npz + prints a text summary.
 """
 import os, sys, glob
 import numpy as np, pandas as pd
@@ -50,7 +50,7 @@ def load_callqual() -> pd.DataFrame:
     """Concat the per-chrom bcftools-extracted call-quality TSVs (non-SNP records),
     mean-aggregated over duplicate (chrom,pos,ref_len,alt_len) length-keys."""
     cols = ["chrom", "pos", "ref_len", "alt_len", "f_missing", "conflict", "ma"]
-    fs = sorted(glob.glob(f"{lib.GEA}/sv_adaptive/vcf_callqual_chr*.tsv"))
+    fs = sorted(glob.glob(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/vcf_callqual_chr*.tsv"))
     if not fs:
         raise FileNotFoundError("run _extract_vcf_callqual.sh first")
     d = pd.concat([pd.read_csv(f, sep="\t", header=None, names=cols) for f in fs],
@@ -99,7 +99,7 @@ def main():
     # ---- (B) does the beta purging signal survive within quality tiers? ----
     print("\n" + "=" * 70)
     print("(B) climate-slope beta, insertions only, split by call quality")
-    z = np.load(f"{lib.GEA}/sv_adaptive/s_climate_slope.npz")
+    z = np.load(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/s_climate_slope.npz")
     # recover chrom/pos for the SAME cols_non/sv_k ordering used to build z (deterministic,
     # matches _compute_s_climate_slope.py / _audit_s_classes.py exactly)
     p0_non = np.load(f"{STORE}/p0_nonsnp.npy").astype(np.float64)
@@ -146,7 +146,7 @@ def main():
         print(f"     Spearman(F_MISSING, beta) among insertions: {rf:+.3f} (p={pf:.2g})  "
               f"Spearman(MA, beta): {rm:+.3f} (p={pm:.2g})  [artifact predicts negative r]")
 
-    np.savez_compressed(f"{lib.GEA}/sv_adaptive/sv_callqual_artifact.npz",
+    np.savez_compressed(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_callqual_artifact.npz",
                         key_sv=key_sv.to_numpy(), f_missing=qB.f_missing.to_numpy(),
                         ma=qB.ma.to_numpy(), well=well, ins_mask=ins_mask,
                         beta_sv_bio1=z["beta_sv_bio1"], beta_sv_bio18=z["beta_sv_bio18"],

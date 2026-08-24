@@ -16,7 +16,7 @@ import os
 import pandas as pd
 from scipy import optimize
 
-HM = "analysis/grenenet_selection/blocks_mcf90/hap_membership"
+HM = "analysis/grenenet_selection/blocks/results/blocks_mcf90/hap_membership"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 
 

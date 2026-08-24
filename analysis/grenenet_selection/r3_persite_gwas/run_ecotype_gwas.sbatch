@@ -13,7 +13,7 @@
 # 8 fitness axes ({relative,census} x {global,cold,mid,hot}). See ecotype_fitness_gwas.py.
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs analysis/grenenet_selection/ecotype_fitness/gwas
+mkdir -p logs analysis/grenenet_selection/r3_persite_gwas/results/ecotype_fitness/gwas
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 export OMP_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 MKL_NUM_THREADS=8
 echo "[$(date)] ecotype fitness GWAS start on $(hostname)"

@@ -19,7 +19,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from recompute_blocks import build_common_matrix
 
-BR = "analysis/grenenet_selection/blocks_recompute"
+BR = "analysis/grenenet_selection/blocks/results/blocks_recompute"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 MAF, MINCF = 0.05, 0.5
 

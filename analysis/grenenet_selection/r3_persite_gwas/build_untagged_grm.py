@@ -9,7 +9,7 @@ Two thresholds: 0.2 (the number named in the handoff) and 0.5 (secondary/more ge
 0.2 turned out extremely strict genome-wide -- only ~0.26% of non-SNP markers survive it) so the
 marker-count/power tradeoff is visible alongside the result.
 
-Output -> analysis/grenenet_selection/varexp/untagged_grms.npz
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/varexp/untagged_grms.npz
   founders, K_untagged_r02, K_untagged_r05, n_markers (json: per-threshold total/indel/sv counts)
 Env: kmate.
 """
@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 from build_class_grms import _load_chrom, _ZZt, N
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 CHROMS = ["chr1", "chr2", "chr3", "chr4", "chr5"]
 THRESHOLDS = {"r02": 0.2, "r05": 0.5}
 

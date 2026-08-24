@@ -5,7 +5,7 @@ import nbformat as nbf
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 
 ROOT = "/global/scratch/users/tbellg/kmate"
-BR = f"{ROOT}/analysis/grenenet_selection/blocks_mcf90"
+BR = f"{ROOT}/analysis/grenenet_selection/blocks/results/blocks_mcf90"
 OUT = f"{ROOT}/analysis/grenenet_selection/notebooks/blocks_units_decision.ipynb"
 cells = []
 

@@ -25,7 +25,7 @@ Design (matches ecotype_selection_site.py, extended to all sites, GLOBAL-mode h)
     p0>1e-3 drop-floor that discarded ~19 legitimate rare-start founders (was 212 analyzable).
     NO reliability/cross-chrom weighting (chrom-averaging regularizes h).
 
-Output -> analysis/grenenet_selection/varexp/selection_s_matrix.npz
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/varexp/selection_s_matrix.npz
   S[n_site x 231] logit-slope, sites, founders, bio1, p0, analyzable(bool 231), n_plots[n_site],
   freq_last[n_site x 231] (QC). Env: kmate. Light (runs off the cache in seconds).
 """
@@ -37,8 +37,8 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/varexp"
-HCACHE = f"{lib.GEA}/ecotype_fitness/sample_global_h.npz"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
+HCACHE = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/sample_global_h.npz"
 CHROMS = [f"Chr{i}" for i in range(1, 6)]
 EPS = 1e-4            # logit clip
 # p0 FLOOR (decision 2026-07-07): rather than DROP near-zero founders, floor the

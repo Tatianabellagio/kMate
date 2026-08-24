@@ -6,12 +6,12 @@ panel k-mers = # allele-specific k-mers in the filtered index whose bubble centr
 in the block (coverage-independent; assign_kmers_to_blocks scheme). status (from the base
 window run) = 0 local-fit (>=50 OBSERVED at 10x) / 1 fallback / 2 empty.
 
-Output: analysis/grenenet_selection/blocks_mcf90/chr1_block_kmer_coverage.csv
+Output: analysis/grenenet_selection/blocks/results/blocks_mcf90/chr1_block_kmer_coverage.csv
 """
 import numpy as np, pandas as pd
 
 META = "data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1.meta.npz"
-BLOCKS = "analysis/grenenet_selection/blocks_mcf90/chr1_clq0.9_blocks_clq0.9.tsv"
+BLOCKS = "analysis/grenenet_selection/blocks/results/blocks_mcf90/chr1_clq0.9_blocks_clq0.9.tsv"
 STATUS = "benchmarks/ldblock_window_test/sweep_s42_base.h_blocks_per_chrom.npz"
 
 
@@ -37,7 +37,7 @@ def main():
     st = np.load(STATUS, allow_pickle=True)["Chr1_status"]
     assert len(st) == len(b), (len(st), len(b))
     b["status"] = st
-    b.to_csv("analysis/grenenet_selection/blocks_mcf90/chr1_block_kmer_coverage.csv", index=False)
+    b.to_csv("analysis/grenenet_selection/blocks/results/blocks_mcf90/chr1_block_kmer_coverage.csv", index=False)
 
     print("\npanel k-mers by benchmark status (0=local,1=fallback,2=empty):")
     print(b.groupby("status").panel_kmers.describe()[["count", "25%", "50%", "75%"]].round(0).to_string())

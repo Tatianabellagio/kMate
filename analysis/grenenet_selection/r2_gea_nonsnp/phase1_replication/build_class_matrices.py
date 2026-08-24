@@ -126,7 +126,7 @@ def build(gen: int, cls: str, pooldir: str, store: str, out: str,
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pooldir", default=f"{lib.GEA}/pool_matrices")
+    ap.add_argument("--pooldir", default=f"{lib.GEA}/common/results/pool_matrices")
     ap.add_argument("--store", default=lib.AF_STORE)
     ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
     ap.add_argument("--classes", nargs="+", default=list(CLASSES), choices=CLASSES)

@@ -43,8 +43,8 @@ PROJ = "/global/scratch/users/tbellg/kmate"
 VPA   = f"{PROJ}/panel/arch3/{{cl}}/var_pa_231_arch3_{{cl}}.var_pa.npz"
 VC    = f"{PROJ}/panel/arch3/{{cl}}/var_pa_231_arch3_{{cl}}.var_called.npz"
 VMETA = f"{PROJ}/panel/arch3/{{cl}}/var_pa_231_arch3_{{cl}}.meta.npz"
-SR_GENO = f"{PROJ}/analysis/grenenet_selection/sv_snp_ld/shortread_geno_{{Cl}}.npz"
-OUTDIR = f"{PROJ}/analysis/grenenet_selection/sv_snp_ld_v2"
+SR_GENO = f"{PROJ}/analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld/shortread_geno_{{Cl}}.npz"
+OUTDIR = f"{PROJ}/analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld_v2"
 
 
 def _load_panel(chrom):

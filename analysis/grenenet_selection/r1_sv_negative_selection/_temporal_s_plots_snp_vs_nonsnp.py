@@ -23,7 +23,7 @@ slopes and a SNP on the same founders shares it -> cannot separate SV-specific s
 selected haplotypes; needs independent local-mode/vg SV AF. (But plot replicates DO remove the
 drift-vs-selection ambiguity, which Δp could not.)
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/temporal_s_plots_snp_vs_nonsnp.csv (+_summary).
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/temporal_s_plots_snp_vs_nonsnp.csv (+_summary).
 """
 import os, sys, glob
 import numpy as np
@@ -34,7 +34,7 @@ import lib
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 STORE = lib.AF_STORE
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN, TAILQ, EPS = 0.02, 50, 12, 10, 0.95, 1e-3
 BANDS = [("rare", 0.02, 0.10), ("mid", 0.10, 0.20), ("common", 0.20, 0.501)]
 
@@ -150,7 +150,7 @@ def main():
               f"{rec.get('sv_mid_dn')}/{rec.get('sv_common_dn')}", flush=True)
 
     df = pd.DataFrame(rows).sort_values("bio1")
-    df.to_csv(f"{lib.GEA}/sv_adaptive/temporal_s_plots_snp_vs_nonsnp.csv", index=False)
+    df.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/temporal_s_plots_snp_vs_nonsnp.csv", index=False)
 
     def sgn(col, ref=1.0):
         c = df[col].dropna(); n = int((c > ref).sum())

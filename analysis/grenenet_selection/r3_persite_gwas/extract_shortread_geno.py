@@ -24,7 +24,7 @@ def main():
     ap.add_argument("--vcf", required=True)
     ap.add_argument("--chrom-vcf", required=True, help="chrom name in the VCF (e.g. 1)")
     ap.add_argument("--chrom-out", required=True, help="output tag (e.g. Chr1)")
-    ap.add_argument("--out", default=f"{lib.GEA}/sv_snp_ld")
+    ap.add_argument("--out", default=f"{lib.GEA}/r3_persite_gwas/results/sv_snp_ld")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 

@@ -17,10 +17,10 @@
 #
 # Usage (run `init` ONCE first, then submit the array):
 #   PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
-#   $PY analysis/grenenet_selection/common/build_af_store.py init --out-dir analysis/grenenet_selection/af_store
-#   N=$($PY -c "import json;print(json.load(open('analysis/grenenet_selection/af_store/meta.json'))['n_samples'])")
+#   $PY analysis/grenenet_selection/common/build_af_store.py init --out-dir analysis/grenenet_selection/common/results/af_store
+#   N=$($PY -c "import json;print(json.load(open('analysis/grenenet_selection/common/results/af_store/meta.json'))['n_samples'])")
 #   CHUNK=70; NT=$(( (N + CHUNK - 1) / CHUNK ))
-#   sbatch --array=1-${NT}%32 --export=ALL,OUT_DIR=analysis/grenenet_selection/af_store,CHUNK=$CHUNK \
+#   sbatch --array=1-${NT}%32 --export=ALL,OUT_DIR=analysis/grenenet_selection/common/results/af_store,CHUNK=$CHUNK \
 #     analysis/grenenet_selection/common/build_af_store_array.sh
 
 set -uo pipefail

@@ -11,7 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-BASE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/site_temporal"
+BASE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r1_sv_negative_selection/results/site_temporal"
 IN = f"{BASE}/site4_sv_enrichment_plotdata.npz"
 OUT = f"{BASE}/site4_sv_enrichment.png"
 

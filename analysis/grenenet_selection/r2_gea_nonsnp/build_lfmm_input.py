@@ -25,11 +25,11 @@ def main():
     ap.add_argument("--maf", type=float, default=0.05)
     ap.add_argument("--min-count-frac", type=float, default=0.05)
     ap.add_argument("--bios", nargs="+", default=["bio1"])
-    ap.add_argument("--out", default=f"{lib.GEA}/lfmm")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/results/lfmm")
     args = ap.parse_args()
     os.makedirs(args.out, exist_ok=True)
 
-    D = f"{lib.GEA}/pool_matrices"
+    D = f"{lib.GEA}/common/results/pool_matrices"
     mt = pd.read_csv(f"{D}/pool_gen{args.gen}_nonsnp.meta.csv")
     af = np.load(f"{D}/pool_gen{args.gen}_nonsnp_af.npy")            # [pools x rec]
     p0 = np.load(f"{lib.AF_STORE}/p0_nonsnp.npy")

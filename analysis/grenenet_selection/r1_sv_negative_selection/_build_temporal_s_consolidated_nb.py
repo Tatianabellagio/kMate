@@ -89,7 +89,7 @@ import numpy as np, pandas as pd, matplotlib as mpl, matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from scipy import stats
 plt.rcParams.update({'figure.dpi':110, 'font.size':8, 'axes.linewidth':0.6})
-G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/sv_adaptive"
+G = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive"
 PLOTS = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/plots"  # figures saved here
 os.makedirs(PLOTS, exist_ok=True)
 COL = {"SNP":"#888888", "indel":"#0072B2", "SV":"#D55E00", "ins":"#D55E00", "del":"#009E73"}

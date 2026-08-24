@@ -17,7 +17,7 @@ artifact):
     two readouts: has_sv (>=1 SV in block) and sv_frac (SV share of block variants, size-robust).
     Size-matched permutation null (lib.matched_perm_test style).
 
-Output -> analysis/grenenet_selection/ecotype_fitness/gwas/block_sv_enrichment.{csv,json}
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/ecotype_fitness/gwas/block_sv_enrichment.{csv,json}
 Env: kmate. Light.
 """
 from __future__ import annotations
@@ -28,8 +28,8 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-G = f"{lib.GEA}/ecotype_fitness/gwas"
-BD = f"{lib.GEA}/blocks_mcf90"
+G = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/gwas"
+BD = f"{lib.GEA}/blocks/results/blocks_mcf90"
 TOP = [0.02, 0.01, 0.005]
 MIN_SNP = 3
 NPERM = 20000

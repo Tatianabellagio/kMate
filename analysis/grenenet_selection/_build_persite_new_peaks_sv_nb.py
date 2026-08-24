@@ -46,7 +46,7 @@ import matplotlib as mpl, matplotlib.pyplot as plt
 os.chdir("__ROOT__")
 sys.path.insert(0, "analysis/grenenet_selection")
 import lib
-DIR = "analysis/grenenet_selection/varexp"
+DIR = "analysis/grenenet_selection/r3_persite_gwas/results/varexp"
 CHROM_ORDER = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 # SNP grey (chrom-alternating); SV terracotta/red (matches the raw_manhattan SV twin)
 SNP_GREY = {"Chr1": "#868E96", "Chr2": "#CED4DA", "Chr3": "#868E96", "Chr4": "#CED4DA", "Chr5": "#868E96"}

@@ -17,7 +17,7 @@ _sp = importlib.util.spec_from_file_location(
 pm = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(pm)
 
 os.chdir("/global/scratch/users/tbellg/kmate")
-STORE = lib.AF_STORE; PM = f"{lib.GEA}/pool_matrices"
+STORE = lib.AF_STORE; PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, EPS = 0.02, 50, 12, 1e-3
 logit = lambda p: np.log(np.clip(p, EPS, 1-EPS)/(1-np.clip(p, EPS, 1-EPS)))
 
@@ -49,7 +49,7 @@ print(f"  SNP vs nonSNP are separate indices (different files): "
       f"snp n={pos_snp.size:,} non n={pos_non.size:,}")
 
 print("="*70); print("CHECK 2: saved per-class s arrays are DIFFERENT data (not aliased)")
-npz = np.load(f"{lib.GEA}/sv_adaptive/s_dist_by_stratum.npz")
+npz = np.load(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/s_dist_by_stratum.npz")
 s_sn = npz["4_s_SNP"]; s_in = npz["4_s_indel"]; s_sv = npz["4_s_SV"]
 print(f"  site4 sizes: SNP={s_sn.size} indel={s_in.size} SV={s_sv.size} (distinct sizes)")
 print(f"  SNP≡indel? {np.array_equal(s_sn[:s_in.size], s_in)}   "

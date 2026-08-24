@@ -50,7 +50,7 @@ REGION_VCF = f"{HERE}/cark_region.vcf.gz"
 BIO_CSV = ("/global/scratch/users/tbellg/gea_grene-net/key_files/"
            "1001g_regmap_grenet_ecotype_info_corrected_bioclim_2024May16.csv")
 WZAIN = f"{lib.GEA}/phase1_replication/results/multiaxis/wza_in_clq09_tile"
-GROUP_MEANS = f"{lib.GEA}/group_means.npz"
+GROUP_MEANS = f"{lib.GEA}/common/results/group_means.npz"
 GENES_HL = {"AT2G30730": "CARK9", "AT2G30740": "CARK8"}   # highlighted
 LEAD_POS = 13_127_635                                 # the 5.1 kb insertion
 

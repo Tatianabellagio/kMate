@@ -13,7 +13,7 @@ so downstream code can re-standardize the exact same markers with no position-ma
 (build_sv_snp_ld.py's prior SV-only run matched by position, fine there since it was a standalone
 diagnostic; here we need exact GRM-column identity).
 
-Output -> analysis/grenenet_selection/varexp/nonsnp_tagging_{chrom}.npz
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/varexp/nonsnp_tagging_{chrom}.npz
   col_idx, pos, cls(1=indel,2=sv), best_r2, best_snp_pos, n_snp_window
 Env: kmate. Run on a compute node (Lustre I/O + O(n_markers) windowed matmuls).
 """
@@ -25,7 +25,7 @@ import scipy.sparse as sp
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 N = 231
 MIN_MAC = 5
 CALL_MIN = 0.9

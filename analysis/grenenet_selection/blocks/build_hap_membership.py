@@ -2,7 +2,7 @@
 """STEP 1 of haploblock-frequency projection: build the persisted founder->haplotype
 membership (the projection matrix M_b) on the dynld-K500 units.
 
-For each dynld-K500 unit (analysis/grenenet_selection/blocks_mcf90/chr{N}_units_dynld_K500.tsv),
+For each dynld-K500 unit (analysis/grenenet_selection/blocks/results/blocks_mcf90/chr{N}_units_dynld_K500.tsv),
 partition the 231 founders into haplotypes using the FAITHFUL HapFM-xmeans rule
 (copied verbatim from block_cluster_pc1ve.cluster_founders, + seeded for reproducibility):
   <2 unique haplotypes  -> 1 cluster (the whole block segregates as one unit)
@@ -14,7 +14,7 @@ Founder genotype matrix + unit slicing are built IDENTICALLY to dynamic_ld_block
 of each unit reproduces the dynld map exactly. Founder ORDER == window-run h founder order
 (var_pa meta 'founders'; verified equal to *.h_blocks_per_chrom.npz 'founders').
 
-Output per chrom: analysis/grenenet_selection/blocks_mcf90/hap_membership/{chrlc}_hapmemb_K500.npz
+Output per chrom: analysis/grenenet_selection/blocks/results/blocks_mcf90/hap_membership/{chrlc}_hapmemb_K500.npz
   founders     (231,)        founder ids (projection-aligned to h_blocks)
   unit_chrom/start/end       (U,)  per-unit interval (== dynld unit map)
   unit_nvar/kmers/covered    (U,)  per-unit n_variants, panel_kmers, covered flag
@@ -66,7 +66,7 @@ def common_is_sv(var_pa_prefix, maf, min_called_frac):
         if p not in seen:
             seen.add(p); is_sv.append(bool(dl[c] > 50))
     return np.array(is_sv, bool)
-BR = "analysis/grenenet_selection/blocks_mcf90"
+BR = "analysis/grenenet_selection/blocks/results/blocks_mcf90"
 HAPFM_KMAX = 7                  # HapFM: cluster (xmeans) only when #unique haplotypes >= this
 SEED = 0
 

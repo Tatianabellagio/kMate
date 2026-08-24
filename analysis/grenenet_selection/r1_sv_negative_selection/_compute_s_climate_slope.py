@@ -10,7 +10,7 @@ hitchhiking offset and the p0/logit artifact (both per-variant constants across 
  (2) SIGN ENRICHMENT vs bio1 (user's idea): per site, frequency-matched fraction with s<0 (purged)
      for SV / indel / matched-SNP; regress the SV-SNP purging excess on bio1. Saved per site.
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/s_climate_slope.npz + _sign_by_site.csv .
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/s_climate_slope.npz + _sign_by_site.csv .
 """
 import os, sys, glob
 import numpy as np, pandas as pd
@@ -22,7 +22,7 @@ _sp = importlib.util.spec_from_file_location(
 pm = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(pm)
 
 os.chdir("/global/scratch/users/tbellg/kmate")
-STORE = lib.AF_STORE; PM = f"{lib.GEA}/pool_matrices"
+STORE = lib.AF_STORE; PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN, NDRAW = 0.02, 50, 12, 25, 20000
 rng = np.random.default_rng(0)
 
@@ -96,8 +96,8 @@ def main():
         out[f"beta_snp_{k}"] = bsnp[i_sn].astype(np.float32)
         out[f"beta_sv_{k}"] = bnon[sv_k].astype(np.float32)
         out[f"beta_indel_{k}"] = bnon[ind_k].astype(np.float32)
-    np.savez_compressed(f"{lib.GEA}/sv_adaptive/s_climate_slope.npz", **out)
-    pd.DataFrame(sign).to_csv(f"{lib.GEA}/sv_adaptive/s_climate_slope_sign_by_site.csv", index=False)
+    np.savez_compressed(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/s_climate_slope.npz", **out)
+    pd.DataFrame(sign).to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/s_climate_slope_sign_by_site.csv", index=False)
     # quick text summary (uses the saved, subsampled arrays)
     from scipy import stats
     for k in CVARS:

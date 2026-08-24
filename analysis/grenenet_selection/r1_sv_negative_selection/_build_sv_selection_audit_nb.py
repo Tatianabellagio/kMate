@@ -99,7 +99,7 @@ can be a *constituent* of a haplotype (r²=1 by construction). This does not fab
 code_setup = '''import os, numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 os.chdir("/global/scratch/users/tbellg/kmate")
-SV = "analysis/grenenet_selection/sv_adaptive"
+SV = "analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive"
 SW = pd.read_csv(f"{SV}/sv_haplotype_axes_sweep.csv")       # naive mac-matched null, full grid
 FR = pd.read_csv(f"{SV}/sv_hap_freqrobust.csv")             # exact-mac matching
 CX = pd.read_csv(f"{SV}/sv_hap_context.csv")                # pericentro/TE/gene/arms controls

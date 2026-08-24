@@ -48,7 +48,7 @@ from scipy import stats
 os.chdir("/global/scratch/users/tbellg/kmate")
 sys.path.insert(0, "analysis/grenenet_selection")
 import lib
-OUT = "analysis/grenenet_selection/varexp"
+OUT = "analysis/grenenet_selection/r3_persite_gwas/results/varexp"
 CLASSES = ["snp", "nonsnp", "sv"]
 
 def load_class(name):

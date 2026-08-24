@@ -16,10 +16,10 @@
 # Output: chr{N}_hapmemb_clq90nosv.npz (originals chr{N}_hapmemb_clq90.npz untouched).
 set -eo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs analysis/grenenet_selection/blocks_mcf90/hap_membership
+mkdir -p logs analysis/grenenet_selection/blocks/results/blocks_mcf90/hap_membership
 CHRS=(Chr1 Chr2 Chr3 Chr4 Chr5); CHR=${CHRS[$SLURM_ARRAY_TASK_ID]}
 CHRLC=$(echo "$CHR" | tr 'A-Z' 'a-z')
-UNITS="analysis/grenenet_selection/blocks_mcf90/${CHRLC}_clq0.9_blocks_clq0.9.tsv"
+UNITS="analysis/grenenet_selection/blocks/results/blocks_mcf90/${CHRLC}_clq0.9_blocks_clq0.9.tsv"
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 echo "[$(date)] $CHR clq0.9 SNP+indel-only haplotype membership build from $UNITS"
 $PY -u analysis/grenenet_selection/blocks/build_hap_membership.py --chrom "$CHR" --units "$UNITS" \

@@ -8,7 +8,7 @@ spread) + n, and a frequency-matched SV-vs-SNP / indel-vs-SNP median shift. Save
 30-panel (one-per-site) figure. Also a small per-variant subsample per site (all SVs + matched SNP/
 indel sample) for optional violins.
 
-Env: kmate. Writes analysis/grenenet_selection/sv_adaptive/s_dist_by_stratum.{npz,csv}.
+Env: kmate. Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/s_dist_by_stratum.{npz,csv}.
 """
 import os, sys, glob
 import numpy as np
@@ -23,7 +23,7 @@ _sp = importlib.util.spec_from_file_location(
 plotsmod = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(plotsmod)
 
 os.chdir("/global/scratch/users/tbellg/kmate")
-STORE = lib.AF_STORE; PM = f"{lib.GEA}/pool_matrices"
+STORE = lib.AF_STORE; PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN = 0.02, 50, 12, 10
 
 
@@ -97,9 +97,9 @@ def main():
               f"indel={site_meta[-1]['shift_ind']:+.3f} (wilcoxon p={wil:.3f})", flush=True)
 
     long = pd.DataFrame(long_rows); meta = pd.DataFrame(site_meta)
-    long.to_csv(f"{lib.GEA}/sv_adaptive/s_dist_by_stratum.csv", index=False)
-    meta.to_csv(f"{lib.GEA}/sv_adaptive/s_dist_by_stratum_sitemeta.csv", index=False)
-    np.savez_compressed(f"{lib.GEA}/sv_adaptive/s_dist_by_stratum.npz",
+    long.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/s_dist_by_stratum.csv", index=False)
+    meta.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/s_dist_by_stratum_sitemeta.csv", index=False)
+    np.savez_compressed(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/s_dist_by_stratum.npz",
                         p0q=p0q, **sub)
     print(f"\n[wrote] s_dist_by_stratum.{{csv,npz}} + _sitemeta.csv  ({len(meta)} sites)")
     print("\n=== per-site SV s-shift vs SNP (freq-matched, mean over strata) ===")

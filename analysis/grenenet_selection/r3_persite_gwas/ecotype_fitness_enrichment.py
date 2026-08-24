@@ -14,7 +14,7 @@ founder MAC? Three things make this the honest version:
 Also reports the LOCO-vs-NAIVE contrast (naive = no kinship): how much apparent SV signal is
 just ecotype sorting / clade structure.
 
-Output -> analysis/grenenet_selection/ecotype_fitness/gwas/enrichment.{csv,json}
+Output -> analysis/grenenet_selection/r3_persite_gwas/results/ecotype_fitness/gwas/enrichment.{csv,json}
 Env: kmate (numpy/scipy/pandas). Light — run after the GWAS sbatch.
 """
 from __future__ import annotations
@@ -25,8 +25,8 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-G = f"{lib.GEA}/ecotype_fitness/gwas"
-LD = f"{lib.GEA}/sv_snp_ld"
+G = f"{lib.GEA}/r3_persite_gwas/results/ecotype_fitness/gwas"
+LD = f"{lib.GEA}/r3_persite_gwas/results/sv_snp_ld"
 TOP_Q = [0.02, 0.01, 0.005]       # hit = top-q of |z| (per phenotype)
 NPERM = 10000
 

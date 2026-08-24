@@ -23,7 +23,7 @@ and ask:
        fully a founder-carrier-composition effect (audit finding M1/M4).
 
 Env: kmate. Reads selection_s_matrix.npz, s_climate_slope.npz, panel/arch3, af_store.
-Writes analysis/grenenet_selection/sv_adaptive/founder_load_test.npz + prints summary.
+Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/founder_load_test.npz + prints summary.
 """
 import os, sys, glob
 import numpy as np, pandas as pd
@@ -34,7 +34,7 @@ import lib
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 STORE = lib.AF_STORE; GEA = lib.GEA; PROJ = "/global/scratch/users/tbellg/kmate"
-PM = f"{GEA}/pool_matrices"
+PM = f"{GEA}/common/results/pool_matrices"
 MIN_P0, SV_BP, MIN_MAC, NBIN, NDRAW = 0.02, 50, 12, 25, 20000
 rng = np.random.default_rng(0)
 
@@ -52,7 +52,7 @@ def match_to(tp0, ss, sp0):
 
 def main():
     # ---------- founder climate-response gamma_f (bio1, bio18) ----------
-    Z = np.load(f"{GEA}/varexp/selection_s_matrix.npz", allow_pickle=True)
+    Z = np.load(f"{GEA}/r3_persite_gwas/results/varexp/selection_s_matrix.npz", allow_pickle=True)
     S = Z["S"]                      # [31 sites x 231 founders]  founder selection coef per site
     founders = Z["founders"].astype("U6")
     sites = Z["sites"].astype(int)
@@ -189,7 +189,7 @@ def main():
     # ============ T3: does gbar predict the ACTUAL temporal beta? align via callqual recipe ============
     print("\n" + "=" * 74)
     print("T3  Does founder-composition gbar predict the actual per-variant temporal beta?")
-    b = np.load(f"{GEA}/sv_adaptive/s_climate_slope.npz")
+    b = np.load(f"{GEA}/r1_sv_negative_selection/results/sv_adaptive/s_climate_slope.npz")
     idx_non = np.load(f"{STORE}/index_nonsnp.npz")
     ch_non = idx_non["chrom"].astype("U5"); pos_non = idx_non["pos"].astype(np.int64)
     rl_n = idx_non["ref_len"].astype(np.int64); al_n = idx_non["alt_len"].astype(np.int64)
@@ -223,7 +223,7 @@ def main():
               f"ins-vs-del KS on RAW beta p={ks_raw:.1e}  ->  on beta|gbar RESIDUAL p={ks_res:.1e}   "
               f"(residual >> raw => asymmetry explained by founder composition)")
 
-    np.savez_compressed(f"{GEA}/sv_adaptive/founder_load_test.npz",
+    np.savez_compressed(f"{GEA}/r1_sv_negative_selection/results/sv_adaptive/founder_load_test.npz",
                         gamma_bio1=gamma["bio1"], gamma_bio18=gamma["bio18"], founders=founders,
                         ins_load=ins_load, del_load=del_load, tot_carry=tot_carry, analyz=analyz, p0f=p0f,
                         gsv_bio1=gsv1, gsv_bio18=gsv18, beta_sv_bio1=b["beta_sv_bio1"],

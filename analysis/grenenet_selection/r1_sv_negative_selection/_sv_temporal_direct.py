@@ -19,7 +19,7 @@ CAVEAT: pool_matrices AF is GLOBAL-mode founder projection (dp[v] is algebraical
 per-founder h change beta uses). So agreement here VALIDATES the pipeline + shows the real
 magnitudes/trajectories; it is NOT an independent instrument (that needs local-mode / vg SV AF).
 
-Env: kmate.  Writes analysis/grenenet_selection/sv_adaptive/sv_temporal_direct.csv.
+Env: kmate.  Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/sv_temporal_direct.csv.
 """
 import os, sys, glob
 import numpy as np
@@ -31,7 +31,7 @@ from site_variant_temporal_scoef import site_freq_per_gen
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 STORE = lib.AF_STORE
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0 = 0.02
 SV_BP = 50
 
@@ -96,7 +96,7 @@ def main():
               f"SV-SNP={diff:+.4f}) | {100*frac_sv_down:.0f}% SVs down | del{dp_del:+.4f} ins{dp_ins:+.4f}")
 
     df = pd.DataFrame(rows).sort_values("bio1")
-    out = f"{lib.GEA}/sv_adaptive/sv_temporal_direct.csv"
+    out = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_temporal_direct.csv"
     df.to_csv(out, index=False)
     print(f"\n[wrote] {out}")
 

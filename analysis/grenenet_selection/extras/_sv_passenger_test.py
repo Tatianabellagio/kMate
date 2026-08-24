@@ -24,7 +24,7 @@ SEED = lib.SEEDMIX
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 PANEL = "panel/arch3"
 FG = f"{lib.GEA}/hapfreq/multisite_founder_gwas_clq90_pc1"
-SVL = f"{lib.GEA}/sv_adaptive/sv_landscape_clq0.9.csv"
+SVL = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_landscape_clq0.9.csv"
 
 
 def genome_h(samp, base):
@@ -38,7 +38,7 @@ def genome_h(samp, base):
 
 
 def per_founder_fitness():
-    cache = np.load(f"{lib.GEA}/fitness/sample_genome_h.npz", allow_pickle=True)
+    cache = np.load(f"{lib.GEA}/common/results/fitness/sample_genome_h.npz", allow_pickle=True)
     H = cache["H"]; samples = cache["samples"].astype(str); founders = cache["founders"].astype(str)
     hmap = {s: i for i, s in enumerate(samples)}
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
@@ -142,7 +142,7 @@ def main():
     kmap = {f"{c}:{p}": i for c, p, i in zip(nchrom, npos, range(len(npos)))}
     want = [kmap[f"{ch}:{p}"] for ch in CHROMS for p in sv_cols_by_ch.get(ch, []) if f"{ch}:{p}" in kmap]
     want = np.array(sorted(set(want)))
-    PM = f"{lib.GEA}/pool_matrices"
+    PM = f"{lib.GEA}/common/results/pool_matrices"
     num = np.zeros(len(want)); den = np.zeros(len(want))
     for g in (1, 2, 3):
         m = pd.read_csv(f"{PM}/pool_gen{g}_nonsnp.meta.csv")

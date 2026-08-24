@@ -21,7 +21,7 @@ CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 MAC_FLOOR = 2
 MIN_PAIR_FRAC = 0.5
 N_SAMPLE_PER_CHROM = 400   # per (class, mode) per chrom -> ~2000 draws genome-wide per combo
-OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/sv_snp_ld_v2/tagging_null.npz"
+OUT = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld_v2/tagging_null.npz"
 
 rng = np.random.default_rng(1)
 records = []  # (cls, mode, chrom, real_r2, null_r2)

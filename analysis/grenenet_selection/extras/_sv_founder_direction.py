@@ -24,7 +24,7 @@ SEED = lib.SEEDMIX
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 PANEL = "panel/arch3"
 FG = f"{lib.GEA}/hapfreq/multisite_founder_gwas_clq90_pc1"
-SVL = f"{lib.GEA}/sv_adaptive/sv_landscape_clq0.9.csv"
+SVL = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_landscape_clq0.9.csv"
 
 
 def genome_h(samp, base):
@@ -39,7 +39,7 @@ def genome_h(samp, base):
 
 def per_site_fitness():
     """(n_site x 231) per-founder frequency slope at each site + site ids."""
-    cache = np.load(f"{lib.GEA}/fitness/sample_genome_h.npz", allow_pickle=True)
+    cache = np.load(f"{lib.GEA}/common/results/fitness/sample_genome_h.npz", allow_pickle=True)
     H = cache["H"]; samples = cache["samples"].astype(str)
     hmap = {s: i for i, s in enumerate(samples)}
     seeds = sorted({p.split("/")[-1].split("_Chr")[0]
@@ -138,7 +138,7 @@ def main():
     key = pd.Series(idx_non["chrom"].astype(str)) + ":" + pd.Series(idx_non["pos"].astype(np.int64).astype(str))
     kmap = {k: i for i, k in enumerate(key)}
     # evolved AF = flower-weighted mean over all evolved pools (gen1-3), from pool_matrices
-    PM = f"{lib.GEA}/pool_matrices"
+    PM = f"{lib.GEA}/common/results/pool_matrices"
     ev = np.zeros(len(p0)); w = 0.0
     for g in (1, 2, 3):
         m = pd.read_csv(f"{PM}/pool_gen{g}_nonsnp.meta.csv")
@@ -159,8 +159,8 @@ def main():
           f"rose in {100*(dltop>0).mean():.0f}% | |Δp| median {np.nanmedian(np.abs(dltop)):.4f}")
     print(f"  => {'rises' if np.nanmean(dltop)>0.005 else ('falls' if np.nanmean(dltop)<-0.005 else 'flat on average')} "
           f"in the pooled evolved population")
-    RT.to_csv(f"{lib.GEA}/sv_adaptive/sv_founder_direction.csv", index=False)
-    print(f"\n[done] -> {lib.GEA}/sv_adaptive/sv_founder_direction.csv")
+    RT.to_csv(f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_founder_direction.csv", index=False)
+    print(f"\n[done] -> {lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/sv_founder_direction.csv")
 
 
 if __name__ == "__main__":

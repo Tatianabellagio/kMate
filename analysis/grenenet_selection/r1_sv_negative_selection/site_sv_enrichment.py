@@ -52,7 +52,7 @@ from site_variant_temporal_scoef import site_scoef, STORE
 
 CLASSES = ("snp", "smallindel", "sv")
 SV_MIN_BP = 50
-BD = f"{lib.GEA}/blocks_mcf90"
+BD = f"{lib.GEA}/blocks/results/blocks_mcf90"
 
 
 def load_variants(site, sdir, min_p0=0.02, min_mac=2):
@@ -136,7 +136,7 @@ def part_A(V):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--site", type=int, default=4)
-    ap.add_argument("--out", default=f"{lib.GEA}/site_temporal")
+    ap.add_argument("--out", default=f"{lib.GEA}/r1_sv_negative_selection/results/site_temporal")
     ap.add_argument("--top-frac", type=float, default=0.01, help="selected = top tail of block score")
     ap.add_argument("--min-snp", type=int, default=3, help="min SNPs to score a block")
     ap.add_argument("--min-mac", type=int, default=12,

@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import lib
 
 FINAL_GEN = "/global/scratch/users/tbellg/gea_grene-net/key_files/final_gen.csv"
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 OUT_GEN = 9  # pseudo-generation label for the merged last-gen set
 
 

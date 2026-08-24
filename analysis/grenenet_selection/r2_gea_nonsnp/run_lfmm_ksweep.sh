@@ -12,8 +12,8 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate/analysis/grenenet_selection
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 STEM=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/lfmm/lfmm_snp_gen9
-OUT=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/lfmm/ksweep_gif_snp_gen9_bio1.csv
+OUT=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/results/lfmm/ksweep_gif_snp_gen9_bio1.csv
 mkdir -p "$(dirname "$OUT")"
 # SNP-based calibration (apply chosen K to all classes). K=16 = phase-1 value, in the sweep.
-$R run_lfmm_ksweep.R "$STEM" "$OUT" "1,2,3,4,6,8,10,12,14,16,18,20"
+$R r2_gea_nonsnp/run_lfmm_ksweep.R "$STEM" "$OUT" "1,2,3,4,6,8,10,12,14,16,18,20"
 echo DONE_KSWEEP

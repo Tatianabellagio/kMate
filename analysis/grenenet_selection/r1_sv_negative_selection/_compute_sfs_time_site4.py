@@ -7,7 +7,7 @@ uint16-encoded AF vectors) rather than the raw per-sample TSVs, so this runs in
 seconds. Reads only the ~57 site-4 evolved samples + the founding p0 already cached
 in the store (mean over the 8 SEEDMIX reps).
 
-Output: analysis/grenenet_selection/sfs_time_site4.npz
+Output: analysis/grenenet_selection/r1_sv_negative_selection/results/sfs_time_site4.npz
   <class>_<gen>   float32 array of per-record alt_freq, class in {snp,indel,sv},
                   gen in {p0,g1,g2,g3}. NaN dropped (record not observed at that
                   timepoint in any site-4 sample of that generation).
@@ -23,10 +23,10 @@ import pandas as pd
 import lib
 
 GEA = lib.GEA
-STORE = f"{GEA}/af_store"
+STORE = f"{GEA}/common/results/af_store"
 SITE = 4
-OUT_NPZ = f"{GEA}/sfs_time_site4.npz"
-OUT_CSV = f"{GEA}/sfs_time_site4_summary.csv"
+OUT_NPZ = f"{GEA}/r1_sv_negative_selection/results/sfs_time_site4.npz"
+OUT_CSV = f"{GEA}/r1_sv_negative_selection/results/sfs_time_site4_summary.csv"
 
 
 def gen_mean(sample_ids: list[str], subdir: str, n: int) -> tuple[np.ndarray, int]:

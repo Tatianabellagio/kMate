@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 import varexp_selection as vs          # aireml, h2_1grm, joint_2grm, gblup_cv, rint
 
-OUT = f"{lib.GEA}/varexp"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 BIOCLIM_CSV = ("/global/scratch/users/tbellg/gea_grene-net/key_files/"
                "1001g_regmap_grenet_ecotype_info_corrected_bioclim_2024May16.csv")
 BIOS = [f"bio{i}" for i in range(1, 20)]

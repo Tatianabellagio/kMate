@@ -39,7 +39,7 @@ Each is a stacked, x-aligned LocusZoom-style panel (PNG + vector PDF):
 - `cam5_region.vcf.gz` — 231-founder genotypes in the region (panel VCF).
 - `cam5_features.tsv` — TAIR10 isoform/exon model.
 - `cam5_variants_gen9.tsv` — per-variant GEA stats: `tau, kendall_p, cls, lfmm_p, dp`
-  (dp = p_final − p0 from `analysis/grenenet_selection/group_means.npz`; p0 = SEEDMIX).
+  (dp = p_final − p0 from `analysis/grenenet_selection/common/results/group_means.npz`; p0 = SEEDMIX).
 
 ## Notes worth remembering
 - **Bonferroni is gene-level** (0.05 / 71 tested variants in CAM5), NOT genome-wide.

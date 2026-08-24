@@ -14,7 +14,7 @@ side by side so the category is decomposed.
 CAVEAT (same as SV test): pool_matrices AF is GLOBAL-mode founder projection; this is a consistency
 readout of the founder-h trajectories, NOT an independent instrument (that needs local-mode/vg AF).
 
-Env: kmate.  Writes analysis/grenenet_selection/sv_adaptive/nonsnp_temporal_category.csv.
+Env: kmate.  Writes analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/nonsnp_temporal_category.csv.
 """
 import os, sys, glob
 import numpy as np
@@ -26,7 +26,7 @@ from site_variant_temporal_scoef import site_freq_per_gen
 
 os.chdir("/global/scratch/users/tbellg/kmate")
 STORE = lib.AF_STORE
-PM = f"{lib.GEA}/pool_matrices"
+PM = f"{lib.GEA}/common/results/pool_matrices"
 MIN_P0 = 0.02
 SV_BP = 50
 MIN_MAC = 12
@@ -98,7 +98,7 @@ def main():
               f"{100*rec['frac_nonsnp_down']:.0f}% nonSNP down")
 
     df = pd.DataFrame(rows).sort_values("bio1")
-    out = f"{lib.GEA}/sv_adaptive/nonsnp_temporal_category.csv"
+    out = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/nonsnp_temporal_category.csv"
     df.to_csv(out, index=False)
     print(f"\n[wrote] {out}")
 

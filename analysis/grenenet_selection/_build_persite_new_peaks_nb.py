@@ -74,7 +74,7 @@ os.chdir("{ROOT}")
 sys.path.insert(0, "analysis/grenenet_selection")
 import lib, blocks_tiling as bt
 plt.rcParams.update({{"figure.dpi": 120, "font.size": 10}})
-DIR = "analysis/grenenet_selection/varexp"
+DIR = "analysis/grenenet_selection/r3_persite_gwas/results/varexp"
 CLS = "{cls}"
 CHROM_ORDER = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 

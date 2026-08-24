@@ -9,14 +9,14 @@ Emits one row per block with class counts, length, SV density (per kb) and SV
 fraction, plus block midpoint + distance to the (peri)centromere — the covariates
 the enrichment test will need to control for (block size, genomic context).
 
-Run in the `kmate` env (numpy 2 / scipy). Output CSV -> analysis/grenenet_selection/sv_adaptive/results/.
+Run in the `kmate` env (numpy 2 / scipy). Output CSV -> analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/results/.
 """
 from pathlib import Path
 import numpy as np, pandas as pd, scipy.sparse as sp
 
 PANEL = Path("panel/arch3")
-BLKDIR = Path("analysis/grenenet_selection/blocks_mcf90")
-OUT = Path("analysis/grenenet_selection/sv_adaptive/results"); OUT.mkdir(parents=True, exist_ok=True)
+BLKDIR = Path("analysis/grenenet_selection/blocks/results/blocks_mcf90")
+OUT = Path("analysis/grenenet_selection/r1_sv_negative_selection/results/sv_adaptive/results"); OUT.mkdir(parents=True, exist_ok=True)
 CHROMS = [f"Chr{i}" for i in range(1, 6)]
 # COMMON-SV founder floor: MAF>=0.05 (MAC>=12 among the 231 founders). Decision
 # (2026-07-01, reverting the brief MAC>=2 no-singleton trial): rely on COMMON SVs only,
