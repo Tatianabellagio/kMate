@@ -37,6 +37,11 @@ nothing to the polygenic selection signal**; what little it flags uniquely is sc
 marginal, and mostly sub-Bonferroni. (Distinct from the per-variant *temporal* SV insertion
 signal in `SV_TEMPORAL_PURGING_SUMMARY.md` — different question and unit.)
 
+> **Design A (`varexp_bioclim.py`, `lasso_bioclim.py`, `lasso_bioclim.sbatch`) was retired
+> 2026-08-24** to `archive/retired_2026-08-24/code/`. It predicted founder *origin climate*
+> from genotype (the Zhou et al. 2022 analog) — a different question from this document's
+> selection-trait variance partition — and was superseded. The sections below that describe
+> it are kept as the record; the scripts are no longer in `r3_persite_gwas/`.
 ## The question (reframed this session)
 
 Prior GWAS work asked "which individual SVs/haploblocks are under selection?" → **null**
