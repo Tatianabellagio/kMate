@@ -17,7 +17,7 @@ analysis/
       lib.py                   <- shared loaders. STAYS at this level.
       README.md  LAYOUT.md  GLOBAL_MODE_DECISION.md  EXPORT_MANIFEST.md
       logs/                    <- SLURM job logs (sbatch writes here)
-      notebooks/               <- rendered .ipynb for the whole tree
+      notebooks/               <- ALL rendered .ipynb, tree-wide (see its README)
       archive/                 <- retired work, never deleted
       <section>/
           *.py *.sh *.sbatch   <- the scripts, loose in the section
@@ -75,7 +75,12 @@ renamed. Always confirm with:
 git check-ignore -v analysis/grenenet_selection/<section>/results/<newdir>
 ```
 
-**4. Figures go in a `plots/` subdirectory. Never loose in a results dir.**
+**4. Rendered notebooks go in the tree-level `notebooks/`, not in a section.**
+Notebooks are outputs, but they are the *presentation* layer, so they are
+centralized to be browsable in one place; their `_build_*_nb.py` builders stay
+in the owning section. `notebooks/README.md` indexes every one by result.
+
+**5. Figures go in a `plots/` subdirectory. Never loose in a results dir.**
 A results directory should hold data (`.npz`, `.csv`, `.tsv`) and one `plots/`
 subdirectory — not 30 PNGs interleaved with the CSVs. Write figures as:
 
@@ -99,7 +104,7 @@ hand:
 `notebooks/_recreate_density_snp_only.py`, and the three `genes_expl/plot_*.py`
 (left untouched as uncommitted work).
 
-**5. Scripts reach `lib.py` by counting directory levels.** The idiom is
+**6. Scripts reach `lib.py` by counting directory levels.** The idiom is
 
 ```python
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -119,11 +124,11 @@ Two related traps:
   that path is a symlink to the real repo root — but prefer the `__file__`-
   relative form.
 
-**6. Retire, don't delete.** Superseded work moves to `archive/` with a note
+**7. Retire, don't delete.** Superseded work moves to `archive/` with a note
 saying what replaced it. Before moving anything, grep for inbound references:
 several directories here look stale but are load-bearing (see below).
 
-**7. Do not rewrite paths inside `archive/`.** Archived scripts were written
+**8. Do not rewrite paths inside `archive/`.** Archived scripts were written
 against the layout of their time; repointing them at today's paths would
 falsify the record.
 
@@ -162,9 +167,6 @@ producer. Check for the data file before concluding anything is orphaned.
 
 ## Known loose ends
 
-- `notebooks/` is a single flat directory for the whole tree, while every
-  builder script now lives in its section — so a notebook and its `_build_*.py`
-  are no longer adjacent. Kept flat deliberately; revisit if it gets painful.
 - A few uncommitted items remain at this top level (`genes_expl/` and several
   `_build_*_nb.py`), held back as a separate workstream.
 - 25 `savefig` calls in 16 files still write figures loose (rule 4 above).

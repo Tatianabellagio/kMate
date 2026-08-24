@@ -238,5 +238,5 @@ md("""## Summary
 - **DECISION:** per_founder is THE normalization (default everywhere, global + window); multinomial deprecated to legacy flag. Global mode drops omega=1/m_b, keeps filt2inv. Window mode: local-only is the meaningful mode (per_founder wins ~20% RMSE); star2 anchor/smoothing difference was marginal.""")
 
 nb['cells']=C
-with open(f"{SV}/kmate_founder_fix_results.ipynb","w") as f: nbf.write(nb,f)
+with open(f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/kmate_founder_fix_results.ipynb","w") as f: nbf.write(nb,f)
 print("wrote notebook with",len(C),"cells")

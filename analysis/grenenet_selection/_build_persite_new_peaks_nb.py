@@ -372,7 +372,7 @@ a block's footprint, so an SV block's *gene* label may include distant unlinked 
 headline SV locus with founder r² before trusting the attribution (see the SV block-merge note).""")
 
     nb = new_notebook(); nb["cells"] = C
-    out = f"{NBDIR}/persite_new_peaks_{cls}.ipynb"
+    out = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/persite_new_peaks_{cls}.ipynb"
     ep = ExecutePreprocessor(timeout=3600, kernel_name="basic", startup_timeout=180)
     ep.preprocess(nb, {"metadata": {"path": NBDIR}})
     with open(out, "w") as f:

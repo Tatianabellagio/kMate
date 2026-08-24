@@ -54,7 +54,7 @@ from scipy import stats
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
 import lib
 GEA = lib.GEA
-WZAIN = f"{{GEA}}/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+WZAIN = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 AXES = [f"bio{{i}}" for i in range(1, 20)] + ["pc1"]
 MODEL = "{MODEL}"
 CLS = "{cls}"

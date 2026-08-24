@@ -42,7 +42,7 @@ MODELS = {"kendall": "Kendall's tau", "lfmm": "LFMM (K=16 latent factors)",
 MODEL = sys.argv[1] if len(sys.argv) > 1 else "lfmm"
 assert MODEL in MODELS, f"model must be one of {list(MODELS)}"
 MODEL_LABEL = MODELS[MODEL]
-OUT = f"{ROOT}/analysis/grenenet_selection/wza/investigation/fit_inspection_{MODEL}.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/fit_inspection_{MODEL}.ipynb"
 
 md_title = r"""# Inspecting every candidate WZA fit (SD and mean), on **__MODEL_LABEL__**, per block definition × class
 

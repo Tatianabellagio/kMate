@@ -15,7 +15,7 @@ from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 from nbconvert.preprocessors import ExecutePreprocessor
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
-OUT = f"{ROOT}/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/notebooks/nonsnp_bonf_overlap.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/nonsnp_bonf_overlap.ipynb"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 md_title = r"""# non-SNP Bonferroni hits — overlap across models and across climate axes

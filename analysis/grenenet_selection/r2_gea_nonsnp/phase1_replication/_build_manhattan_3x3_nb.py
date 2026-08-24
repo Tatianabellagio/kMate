@@ -21,7 +21,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication"
 OUTDIR = f"{HERE}/notebooks"
-OUT = f"{OUTDIR}/manhattan_3models_deg7cap2000.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/manhattan_3models_deg7cap2000.ipynb"
 os.makedirs(OUTDIR, exist_ok=True)
 
 nb = nbf.v4.new_notebook()

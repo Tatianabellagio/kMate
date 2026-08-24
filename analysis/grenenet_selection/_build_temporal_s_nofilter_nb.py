@@ -27,7 +27,7 @@ from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = f"{HERE}/notebooks/temporal_s_nofilter.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/temporal_s_nofilter.ipynb"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 md_intro = r"""# Per-site de-trended `s` — **no-filter twin** of the production panel

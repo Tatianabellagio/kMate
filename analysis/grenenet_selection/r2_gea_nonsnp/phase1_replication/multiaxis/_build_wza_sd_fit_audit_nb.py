@@ -28,7 +28,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(HERE))))
-OUT = f"{ROOT}/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/notebooks/wza_sd_fit_audit.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/wza_sd_fit_audit.ipynb"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 md_title = r"""# WZA SD-correction audit — which fit is actually right on the *current* blocks?

@@ -21,7 +21,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 PROJ = "/global/scratch/users/tbellg/kmate"
 NBDIR = f"{PROJ}/analysis/grenenet_selection/notebooks"
-OUT = f"{NBDIR}/panel_stats_arch3.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/panel_stats_arch3.ipynb"
 
 md_intro = r"""# Panel composition — arch3 (production, 231 founders)
 

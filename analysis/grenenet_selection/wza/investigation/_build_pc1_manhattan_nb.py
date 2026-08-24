@@ -15,7 +15,7 @@ import nbformat as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/wza/investigation"
-OUT = f"{HERE}/pc1_manhattan.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/pc1_manhattan.ipynb"
 RES = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/wza/investigation/results"
 
 nb = nbf.v4.new_notebook()

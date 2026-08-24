@@ -14,7 +14,7 @@ import nbformat as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/wza/investigation"
-OUT = f"{HERE}/wza_manhattan_cap_vs_nocap.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/wza_manhattan_cap_vs_nocap.ipynb"
 
 nb = nbf.v4.new_notebook()
 C = []

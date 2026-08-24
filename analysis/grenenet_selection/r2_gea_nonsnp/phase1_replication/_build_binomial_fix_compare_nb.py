@@ -35,7 +35,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication"
 OUTDIR = f"{HERE}/notebooks"
-OUT = f"{OUTDIR}/binomial_fix_compare.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/binomial_fix_compare.ipynb"
 os.makedirs(OUTDIR, exist_ok=True)
 
 nb = nbf.v4.new_notebook()

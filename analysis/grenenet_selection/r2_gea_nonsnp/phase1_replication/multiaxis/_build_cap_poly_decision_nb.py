@@ -43,7 +43,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(HERE))))
-OUT = f"{ROOT}/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/notebooks/cap_poly_decision.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/cap_poly_decision.ipynb"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 md_title = r"""# Choosing the WZA cap, SD fit and mean fit **from the data**, per block definition × class

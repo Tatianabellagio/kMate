@@ -170,5 +170,5 @@ md("""## Summary
   (current HEAD), not a standalone reimplementation.""")
 
 nb['cells']=C
-with open(f"{SV}/kmate_kfw_fullpanel_results.ipynb","w") as f: nbf.write(nb,f)
+with open(f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/kmate_kfw_fullpanel_results.ipynb","w") as f: nbf.write(nb,f)
 print("wrote notebook with",len(C),"cells")

@@ -107,7 +107,7 @@ else:
 
 nb["cells"] = cells
 nb["metadata"]["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
-out = "/global/home/users/tbellg/scratch/kmate/analysis/grenenet_selection/r2_gea_nonsnp/cam5_replication/notebooks/lfmm_k_calibration.ipynb"
+out = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/lfmm_k_calibration.ipynb"
 with open(out, "w") as f:
     nbf.write(nb, f)
 print("wrote", out)

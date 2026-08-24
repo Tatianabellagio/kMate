@@ -79,7 +79,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..")))
 import lib
 GEA = lib.GEA
-WZA = f"{{GEA}}/phase1_replication/results/multiaxis/wza"
+WZA = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza"
 AXES = [f"bio{{i}}" for i in range(1, 20)] + ["pc1"]
 MODEL, CLS, REGIME = "{MODEL}", "{cls}", "{REGIME}"
 CHROM_LEN = {{"Chr1":30427671,"Chr2":19698289,"Chr3":23459830,"Chr4":18585056,"Chr5":26975502}}

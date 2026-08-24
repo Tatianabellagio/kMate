@@ -196,7 +196,7 @@ pd.DataFrame(rows)''' ))
 
 nb["cells"] = cells
 nb["metadata"]["kernelspec"] = {"name": "python3", "display_name": "Python 3", "language": "python"}
-out = "/global/home/users/tbellg/scratch/kmate/analysis/grenenet_selection/r2_gea_nonsnp/cam5_replication/notebooks/manhattan_byclass_wza.ipynb"
+out = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/manhattan_byclass_wza.ipynb"
 with open(out, "w") as f:
     nbf.write(nb, f)
 print("wrote", out)

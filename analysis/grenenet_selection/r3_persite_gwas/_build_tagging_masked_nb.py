@@ -22,7 +22,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 PROJ = "/global/scratch/users/tbellg/kmate"
 NBDIR = f"{PROJ}/analysis/grenenet_selection/notebooks"
-OUT = f"{NBDIR}/sv_indel_tagging_masked.ipynb"
+OUT = f"/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/notebooks/sv_indel_tagging_masked.ipynb"
 
 md_intro = r"""# SV & indel-SNP tagging (corrected) — arch3 panel vs GrENE-Net short-read SNPs
 
