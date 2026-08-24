@@ -13,10 +13,10 @@
 # emit NaN AF (NOT global_h), HMM smoothing still applies to local fits.
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-mkdir -p logs results/localonly_smoke
+mkdir -p logs analysis/panel_qc/localonly_smoke
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 D=benchmarks/p80/sims/cov10_n50_g3_s42_hotspots_p80_chr1
-OUT=results/localonly_smoke
+OUT=analysis/panel_qc/localonly_smoke
 
 run() {  # mode-label  extra-flags...
   local label=$1; shift
@@ -40,7 +40,7 @@ echo "=== NaN summary (local-only should have NaN AF in low/empty windows) ==="
 $PY - <<'PYEOF'
 import pandas as pd, numpy as np
 for lab in ("localonly","anchored"):
-    df = pd.read_csv(f"results/localonly_smoke/g3_{lab}.tsv", sep="\t")
+    df = pd.read_csv(f"analysis/panel_qc/localonly_smoke/g3_{lab}.tsv", sep="\t")
     n = len(df); nan = df["alt_freq"].isna().sum()
     print(f"{lab:10s}  records={n:,}  NaN_AF={nan:,} ({100*nan/n:.2f}%)  "
           f"finite_AF_mean={np.nanmean(df['alt_freq']):.4f}")

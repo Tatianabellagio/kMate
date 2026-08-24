@@ -137,7 +137,7 @@ For the hapFIRE methods-comparison column on the v3 panel, the conversion pipeli
 - The arch3 (current production panel) equivalent — variant-class composition,
   SV size spectrum, AF/missingness distributions, genomic density — is
   `analysis/grenenet_gea/notebooks/panel_stats_arch3.ipynb`, backed by the
-  numbers in `results/panel_stats/PANEL_STATS.md`.
+  numbers in `analysis/panel_qc/panel_stats/PANEL_STATS.md`.
 
 ## Audit trail
 

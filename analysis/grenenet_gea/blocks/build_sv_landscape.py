@@ -15,7 +15,7 @@ from pathlib import Path
 import numpy as np, pandas as pd, scipy.sparse as sp
 
 PANEL = Path("panel/arch3")
-BLKDIR = Path("results/grenenet_gea/blocks_mcf90")
+BLKDIR = Path("analysis/grenenet_gea/blocks_mcf90")
 OUT = Path("analysis/grenenet_gea/sv_adaptive/results"); OUT.mkdir(parents=True, exist_ok=True)
 CHROMS = [f"Chr{i}" for i in range(1, 6)]
 # COMMON-SV founder floor: MAF>=0.05 (MAC>=12 among the 231 founders). Decision

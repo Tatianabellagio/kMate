@@ -86,7 +86,7 @@ The remaining cost of no-caps is therefore **purely computational**, not statist
 
 ## 4. Index-level result (Chr1 canary)
 
-`scripts/nocap_chr1_canary.sh` → `results/nocap_vs_capped_kmer_pa_chr1.txt`
+`scripts/nocap_chr1_canary.sh` → `analysis/panel_qc/nocap_vs_capped_kmer_pa_chr1.txt`
 (comparator `scripts/compare_kmer_pa_dirs.py`). No-cap index → K_pa, both `filt2inv`:
 
 | | k-mers | nnz | per-founder ratio |

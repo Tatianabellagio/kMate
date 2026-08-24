@@ -77,7 +77,7 @@ echo "[$(date)] === STAGE 3: compare NO-CAP K_pa vs CAPPED production K_pa ==="
 $PY -u $BASE/scripts/compare_kmer_pa_dirs.py \
     --a "$KPA_DIR"    --a-label nocap \
     --b "$CAPPED_KPA" --b-label capped \
-    --chroms "$CHR" | tee $BASE/results/nocap_vs_capped_kmer_pa_chr1.txt
+    --chroms "$CHR" | tee $BASE/analysis/panel_qc/nocap_vs_capped_kmer_pa_chr1.txt
 
 echo
-echo "[$(date)] DONE — report in results/nocap_vs_capped_kmer_pa_chr1.txt"
+echo "[$(date)] DONE — report in analysis/panel_qc/nocap_vs_capped_kmer_pa_chr1.txt"

@@ -26,7 +26,7 @@ REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/ch
 RD=/global/scratch/users/tbellg/pang/grenenet_reads/seed_mix_trimmed
 R1=$RD/seeds-1.1.fastq.gz
 R2=$RD/seeds-1.2.fastq.gz
-OUT=/global/scratch/users/tbellg/kmate/results/seedmix_duprate
+OUT=/global/scratch/users/tbellg/kmate/analysis/panel_qc/seedmix_duprate
 mkdir -p "$OUT"
 TMP=$OUT/tmp_s1
 mkdir -p "$TMP"

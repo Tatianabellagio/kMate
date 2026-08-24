@@ -4,7 +4,7 @@
 Descriptive visualization of variant-class / SV-size / AF / missingness / genomic
 distributions in the current production (arch3) 231-founder panel. Numbers are
 computed directly from `panel/arch3/chr{N}/var_pa_231_arch3_chr{N}.*` and should
-reconcile exactly with the tables in `results/panel_stats/PANEL_STATS.md`
+reconcile exactly with the tables in `analysis/panel_qc/panel_stats/PANEL_STATS.md`
 (`scripts/panel_stats_for_paper.py`) -- this notebook adds the plots that
 markdown-table report doesn't have.
 
@@ -30,7 +30,7 @@ Descriptive distributions of the current production panel: variant classes
 per-founder carrier counts (cactus long-read vs PanGenie short-read cohorts),
 and genomic density. All numbers computed directly from
 `panel/arch3/chr{1..5}/var_pa_231_arch3_chr{1..5}.{var_pa,var_called,meta}.npz`
-and should reconcile with `results/panel_stats/PANEL_STATS.md`
+and should reconcile with `analysis/panel_qc/panel_stats/PANEL_STATS.md`
 (`scripts/panel_stats_for_paper.py`) -- that report has the authoritative tables;
 this notebook is the plotted companion.
 
@@ -174,7 +174,7 @@ code_composition = r"""
 # 1. Variant class composition (SNP / indel / SV), genome-wide + per chromosome
 counts = rec.cls.value_counts().reindex(CLASS_ORDER)
 print("genome-wide:", dict(counts))
-print("(cross-check vs results/panel_stats/PANEL_STATS.md §2: "
+print("(cross-check vs analysis/panel_qc/panel_stats/PANEL_STATS.md §2: "
       "SNP 6,237,063 / indel 2,026,115 / SV 226,468)")
 
 fig, axes = plt.subplots(1, 2, figsize=(13, 4.6))
@@ -211,7 +211,7 @@ kind_counts = rec[rec.cls.isin(["indel", "SV"])].groupby(["cls", "kind"]).size()
 kind_counts = kind_counts.reindex(
     pd.MultiIndex.from_product([["indel", "SV"], KIND_ORDER], names=["cls", "kind"]), fill_value=0)
 print(kind_counts.rename("n"))
-print("(cross-check vs results/panel_stats/PANEL_STATS.md §2 INS/DEL/MNP genome-wide: "
+print("(cross-check vs analysis/panel_qc/panel_stats/PANEL_STATS.md §2 INS/DEL/MNP genome-wide: "
       "887,314 / 953,574 / 411,695)")
 
 fig, axes = plt.subplots(1, 3, figsize=(18, 4.8))
@@ -426,7 +426,7 @@ plt.show()
 md_close = r"""## Takeaways
 
 - **Composition** (genome-wide, 8,489,646 records): 73.5% SNP, 23.9% indel
-  (&le;50bp), 2.7% SV (&gt;50bp) &mdash; matches `results/panel_stats/PANEL_STATS.md` §2
+  (&le;50bp), 2.7% SV (&gt;50bp) &mdash; matches `analysis/panel_qc/panel_stats/PANEL_STATS.md` §2
   exactly.
 - **Insertion vs deletion** (indels + SVs; SNPs have no direction): indels are
   deletion-leaning (899,326 DEL vs 715,094 INS vs 411,695 MNP), but **SVs are

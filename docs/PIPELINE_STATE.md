@@ -20,7 +20,7 @@ anywhere disagrees with §0, §0 wins — fix the other place.
 > 17.8% were monomorphic, almost all AC=0). V_pa is built 1:1 from this VCF, so it is
 > segregating-only too. K_pa is unaffected (monomorphic variants contribute no k-mers;
 > filt2inv already bounds founders-per-k-mer to [2,230]). Stats + the exact commands:
-> `results/panel_stats/PANEL_STATS.md`.
+> `analysis/panel_qc/panel_stats/PANEL_STATS.md`.
 
 | What | Production artifact (the ONLY thing consumed) |
 |---|---|
@@ -104,7 +104,7 @@ For each panel record, estimate per-record ALT allele frequency from pool-seq re
 
 | Change | Why |
 |---|---|
-| **Panel filtered to segregating-only (2026-06-02)** | A4 Step-3 filter widened from `AN=0`-only to `AC=0 \|\| AC=AN`. Dropped 1,835,718 monomorphic records (17.8%); VCF + V_pa overwritten in place, 10,325,364 → 8,489,646. Estimates on kept records unchanged (per-record projection). See `results/panel_stats/PANEL_STATS.md`, `scripts/apply_monomorphic_filter.py`. |
+| **Panel filtered to segregating-only (2026-06-02)** | A4 Step-3 filter widened from `AN=0`-only to `AC=0 \|\| AC=AN`. Dropped 1,835,718 monomorphic records (17.8%); VCF + V_pa overwritten in place, 10,325,364 → 8,489,646. Estimates on kept records unchanged (per-record projection). See `analysis/panel_qc/panel_stats/PANEL_STATS.md`, `scripts/apply_monomorphic_filter.py`. |
 | Arch decomposition replaces `norm -m -any` for var_pa | annotate_vcf + convert-to-biallelic produces symbolic-ID biallelic catalog with +17pp hapFIRE-SNP coverage gain (`project_arch3_chr1_validation` memory) |
 | `var_pa_atomized` added as a production deliverable | Per-base SNP catalog with carriers UNIONed across overlapping records. −23% RMSE, −43% outliers for SNP-level GEA (`project_arch3_atomization_result`) |
 | MAR projection in window mode | Previously window mode silently treated `.` as REF (different from global mode's called-mask normalization). Inconsistent semantics fixed 2026-05-21. Star2 numbers prior to this patch are stale. |

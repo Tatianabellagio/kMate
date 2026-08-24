@@ -26,8 +26,8 @@ data/*_manifest.tsv
 data/seedmix_S1_*
 data/*.tsv.gz
 # poolfreq/results merged into root results/
-results/seedmix_231*
-results/*aggregate*.tsv
+analysis/panel_qc/seedmix_231*
+analysis/panel_qc/*aggregate*.tsv
 panel/imputation/work/
 panel/imputation/logs/
 pangenie_test/
@@ -77,8 +77,8 @@ logs/
 panel/pangenie_genotyping/data/pang_*_pangenie_index_*kmers.tsv.gz
 
 # --- per-record TSVs in results dirs (one per sample, MB-scale) ---
-results/**/per_sample_*/
-results/**/*.tsv
+analysis/panel_qc/**/per_sample_*/
+analysis/panel_qc/**/*.tsv
 
 # --- analysis output dirs producing >GB intermediate text files ---
 preprocess_qc/output/ld/*_chr*.tsv
@@ -259,7 +259,7 @@ contamination_test/
 # SAM (intermediate alignment text; *.bam/*.cram already ignored)
 *.sam
 # the root results/**/*.tsv rule did NOT cover gzipped result tables
-results/**/*.tsv.gz
+analysis/panel_qc/**/*.tsv.gz
 # benchmarks/ has nested results/ dirs the root-anchored results/** rules miss.
 # Target only the bulky regeneratable outputs, not the small tracked summaries.
 # (3x 95M per-record AF TSVs):
@@ -302,8 +302,8 @@ __pycache__/
 !src/kmate/data/selftest/*.fq.gz
 
 # --- 2026-06-20 window-mode unit validation outputs (bulky / regenerable) ---
-results/grenenet_gea/window_vs_global/
-results/grenenet_gea/gen9_window/
+analysis/panel_qc/grenenet_gea/window_vs_global/
+analysis/panel_qc/grenenet_gea/gen9_window/
 
 # --- 2026-07-10 cleanup: stale/superseded result trees consolidated under archive/ ---
 archive/results_archive_stale/

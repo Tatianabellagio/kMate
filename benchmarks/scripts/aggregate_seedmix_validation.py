@@ -8,16 +8,16 @@ For each (panel, replicate, ac_bin) cell we report n, R², RMSE, Pearson r.
 Usage:
     python aggregate_seedmix_validation.py \\
         --label-82 "82-founder" \\
-        --dir-82 results/seedmix_82 \\
+        --dir-82 analysis/panel_qc/seedmix_82 \\
         --var-pa-82 data/var_pa_82.var_pa.npz \\
         --meta-82 data/var_pa_82.meta.npz \\
         --panel-map ../data/sv_panel_to_accession_id.tsv \\
         --label-231 "231-founder" \\
-        --dir-231 results/seedmix_231 \\
+        --dir-231 analysis/panel_qc/seedmix_231 \\
         --var-pa-231 data/var_pa_231.var_pa.npz \\
         --meta-231 data/var_pa_231.meta.npz \\
         --recipe ../data/seedmix_recipe_normalized.tsv \\
-        --out results/seedmix_aggregate.tsv
+        --out analysis/panel_qc/seedmix_aggregate.tsv
 
 The 231-founder panel uses 1001G IDs as founder names directly (no
 panel-map needed).
