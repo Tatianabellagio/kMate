@@ -315,13 +315,13 @@ archive/seedmix_kmate_arch3_oldpanel_archive/
 # stageable" policy at the new location (mirrors the block above, moved topics
 # only — topics not yet migrated keep their results/grenenet_gea/<topic>/ rule
 # above until they move). ---
-analysis/grenenet_gea/cam5_replication/results/
-analysis/grenenet_gea/driver_passenger/results/
+analysis/grenenet_gea/r2_gea_nonsnp/cam5_replication/results/
+analysis/grenenet_gea/extras/driver_passenger/results/
 analysis/grenenet_gea/archive/gea_newpanel_snp_nonsnp_fork_retired/results/
-analysis/grenenet_gea/phase1_replication/results/
-analysis/grenenet_gea/wza_investigation/results/
+analysis/grenenet_gea/r2_gea_nonsnp/phase1_replication/results/
+analysis/grenenet_gea/r2_gea_nonsnp/wza_investigation/results/
 # rerun_kfw_hb: production AF store, per-sample TSVs (mirrors old results/**/*.tsv rule)
-analysis/grenenet_gea/rerun_kfw_hb/**/*.tsv
+analysis/grenenet_gea/common/rerun_kfw_hb/**/*.tsv
 # sv_adaptive/: LIVE output dir for the s_*/parallelism/picmin/temporal_* SV-selection
 # family (Group B item 7 of docs/RERUN_AFTER_FIX.md) — data only, its ~25 driver
 # scripts are loose at analysis/grenenet_gea/ top level, not in this dir.
@@ -351,7 +351,7 @@ analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.bak
 # hap_blocks/ and seedmix_validation/ moved wholesale (code+data intermixed,
 # same as before the move) — restore the .tsv protection the generic
 # results/**/*.tsv rule provided; leave code/small-config/plots taggable as before.
-analysis/grenenet_gea/hap_blocks/**/*.tsv
+analysis/grenenet_gea/blocks/hap_blocks/**/*.tsv
 
 # =============================================================================
 # 2026-07-10 benchmarks/ cleanup audit: the --unit chrom/ld refresh (2026-07-07/08)
