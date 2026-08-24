@@ -5,7 +5,7 @@ Rules for adding work to this tree, so it stops sprawling. This file is about
 analyses found, see the per-section docs and `README.md`.
 
 Set 2026-08-24, when the tree was reorganised: 198 loose files and 40
-undocumented directories at this top level became the seven sections below.
+undocumented directories at this top level became the eight sections below.
 
 ---
 
@@ -22,6 +22,7 @@ analysis/
       <section>/
           *.py *.sh *.sbatch   <- the scripts, loose in the section
           results/             <- everything those scripts write
+              plots/           <- figures. never loose beside the data
           <subproject>/        <- same scripts+results/ shape, one level down
   panel_qc/                    <- kMate panel/method QC (NOT GrENE-Net biology)
 ```
@@ -29,12 +30,22 @@ analysis/
 | section | what belongs in it | scripts | subprojects |
 |---|---|---|---|
 | `r1_sv_negative_selection/` | Result 1 — SVs vs SNPs matched on initial frequency; climate correlation | 32 | — |
-| `r2_gea_nonsnp/` | Result 2 — GEA hits visible only in non-SNP data | 33 | `phase1_replication/`, `wza_investigation/`, `cam5_replication/` |
-| `r3_persite_gwas/` | Result 3 — per-site GWAS, ecotype-selection coefficient as trait | 28 | — |
+| `r2_gea_nonsnp/` | Result 2 — GEA hits visible only in non-SNP data | 7 | `phase1_replication/`, `cam5_replication/` |
+| `r3_persite_gwas/` | Result 3 — per-site GWAS, ecotype-selection coefficient as trait | 34 | — |
 | `extras/` | side investigations that are **not** one of the three results | 23 | `driver_passenger/` |
 | `common/` | inputs shared by more than one section (AF store, per-gen and pool matrices, p0, founder h) | 10 | `rerun_kfw_hb/` |
-| `blocks/` | LD-block / analysis-unit definition and its diagnostics | 39 | `hap_blocks/`, `bigld_env/` |
+| `blocks/` | LD-block / analysis-unit definition (what a test unit *is*) | 39 | `hap_blocks/`, `bigld_env/` |
+| `wza/` | the WZA block-aggregation method: shared `wza_script.py` + the investigation that settled the regime | 1 | `investigation/` |
 | `qc/` | QC of *this* analysis (coverage, panel overlap, seed-mix identifiability) | 10 | `seedmix_validation/` |
+
+`blocks/` and `wza/` are **method** sections, not results: `blocks/` defines the
+unit, `wza/` aggregates per-variant p-values over it. `wza_script.py` lives there
+rather than in a results section because it has ~19 referrers spanning
+`phase1_replication/`, `wza/investigation/` and `extras/driver_passenger/`.
+
+`r2_gea_nonsnp/` is small at the top level because its production pipeline is the
+`phase1_replication/` subproject; the gen-3 SV pilot that used to sit beside it
+was retired 2026-08-24 (gen 9 is the current generation).
 
 `panel_qc/` is a sibling of `grenenet_selection/`, not part of it: it holds
 kMate method/panel validation (k-mer index comparison, panel stats, seed-mix
@@ -156,9 +167,8 @@ producer. Check for the data file before concluding anything is orphaned.
   are no longer adjacent. Kept flat deliberately; revisit if it gets painful.
 - A few uncommitted items remain at this top level (`genes_expl/` and several
   `_build_*_nb.py`), held back as a separate workstream.
-- `r2_gea_nonsnp/` still holds a gen-3, SV-only, 193-pool pilot generation
-  (`build_kendall.py`, `build_mixedmodel.py`, `build_two_stage_*.py`,
-  `build_wza.py`, `run_lfmm_kscan.sh` and notebooks `01`–`09`) alongside the
-  current gen-9, three-class `phase1_replication/` production pipeline. Whether
-  the pilot is retired is an open question for the author, not something the
-  repo can answer.
+- 25 `savefig` calls in 16 files still write figures loose (rule 4 above).
+- Sections should not read each other's `results/`. The gene-layer scripts that
+  did (they read *and wrote* r3's `varexp`) moved r2 -> r3 on 2026-08-24; if a
+  new cross-section dependency appears, promote the shared input to `common/`
+  rather than reaching across.
