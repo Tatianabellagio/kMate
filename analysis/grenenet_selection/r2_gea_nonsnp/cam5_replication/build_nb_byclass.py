@@ -156,8 +156,8 @@ fig.suptitle("WZA Manhattan by variation type \\u2014 kMate phase-1 replication,
              "red dashed = BH q<0.05 cutoff | green = CAM5 (2_1265)",
              y=1.0, fontsize=12)
 fig.tight_layout()
-fig.savefig(f"{PLOTS}/manhattan_byclass_grid.png", dpi=200, bbox_inches="tight")
-fig.savefig(f"{PLOTS}/manhattan_byclass_grid.pdf", bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/manhattan_byclass_grid.png", dpi=200, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/manhattan_byclass_grid.pdf", bbox_inches="tight")
 print("saved", f"{PLOTS}/manhattan_byclass_grid.png")
 plt.show()''' ))
 

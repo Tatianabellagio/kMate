@@ -91,7 +91,7 @@ def main():
     ax[2].axvline(df.fold.median(), color="#ee6677", lw=2, label=f"median {df.fold.median():.2f}")
     ax[2].set_xlabel("SV-bearing fold across sites"); ax[2].set_ylabel("n sites")
     ax[2].set_title("C. fold distribution"); ax[2].legend()
-    fig.tight_layout(); fig.savefig(f"{ST}/cross_site_enrichment.png", dpi=130)
+    fig.tight_layout(); fig.savefig(f"{ST}/plots/cross_site_enrichment.png", dpi=130)
     print(f"\n-> {ST}/cross_site_enrichment.csv + .png")
 
 

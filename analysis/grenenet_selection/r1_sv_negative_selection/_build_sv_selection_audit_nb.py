@@ -132,7 +132,7 @@ for i in range(3):
                 color="white" if abs(c.values[i,j]-1)>0.35 else "black")
 ax.set_title("Null A (frequency-matched): apparent MAF-dependent SV enrichment\\n(* p<0.05; JOINT rises with MAF, TEMPORAL falls, CLIMATE flat)",fontsize=9,loc="left")
 plt.colorbar(im,label="fold (obs/null)"); plt.tight_layout()
-plt.savefig(f"{SV}/audit_1_apparent_signal.png",dpi=140); plt.show()'''
+plt.savefig(f"{SV}/plots/audit_1_apparent_signal.png",dpi=140); plt.show()'''
 
 md_robust = r"""### 4b. It even survived frequency / size / pericentromere / repeat / gene controls
 
@@ -153,7 +153,7 @@ ax.set_xticklabels(order,rotation=25,ha="right",fontsize=8)
 ax.set_ylabel("fold (obs/matched null)"); ax.legend(fontsize=8)
 ax.set_title("Null A robustness: JOINT high-MAF survives every COVARIATE control\\n(but every bar still uses the cluster-resample null)",fontsize=9,loc="left")
 ax.spines[["top","right"]].set_visible(False); plt.tight_layout()
-plt.savefig(f"{SV}/audit_2_covariate_robust.png",dpi=140); plt.show()'''
+plt.savefig(f"{SV}/plots/audit_2_covariate_robust.png",dpi=140); plt.show()'''
 
 md_audit = r"""## 5. The audit — Null B (genome rotation) overturns it
 
@@ -188,7 +188,7 @@ ax[1].set_xticks(x); ax[1].set_xticklabels([f"{a[:4]}{m}" for a,m in zip(comp.ax
 ax[1].set_ylabel("permutation p"); ax[1].set_yscale("log")
 ax[1].set_title("(b) rotation p: 0/15 cells < 0.05",fontsize=9,loc="left")
 ax[1].legend(fontsize=8); ax[1].spines[["top","right"]].set_visible(False)
-plt.tight_layout(); plt.savefig(f"{SV}/audit_3_rotation_null.png",dpi=140); plt.show()
+plt.tight_layout(); plt.savefig(f"{SV}/plots/audit_3_rotation_null.png",dpi=140); plt.show()
 print("rotation null: cells p<0.05 =", int((RN.rot_p<0.05).sum()), "/", len(RN))
 print(RN[["axis","sv_mac","obs","rot_fold","rot_p","n_tag_r2_05","distinct_blocks"]].to_string(index=False))'''
 

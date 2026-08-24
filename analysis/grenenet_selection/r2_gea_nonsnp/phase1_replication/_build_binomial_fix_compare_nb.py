@@ -167,7 +167,7 @@ for ax, cls in zip(axes, CLASSES):
     ax.legend(fontsize=7.5, loc="upper left")
 fig.suptitle("QQ: 3 binomial-model candidates (raw per-record p)", fontsize=12)
 fig.tight_layout(rect=[0, 0, 1, 0.95])
-fig.savefig(f"{FIX}/qq_binomial_fix_compare.png", dpi=140, bbox_inches="tight")
+fig.savefig(f"{FIX}/plots/qq_binomial_fix_compare.png", dpi=140, bbox_inches="tight")
 plt.show()"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""## Raw per-record Manhattan (pre-WZA-aggregation)
@@ -207,7 +207,7 @@ for ax in axes[-1, :]:
     ax.set_xlabel("genome position (per-record)")
 fig.suptitle("Binomial-model candidates x class — RAW per-record Manhattan (pre-WZA)", fontsize=12)
 fig.tight_layout(rect=[0, 0, 1, 0.97])
-fig.savefig(f"{FIX}/manhattan_raw_binomial_fix_compare.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{FIX}/plots/manhattan_raw_binomial_fix_compare.png", dpi=130, bbox_inches="tight")
 plt.show()"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""## For reference: WZA-level summary (BH counts, core-block survival)

@@ -88,7 +88,7 @@ fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,marker="o",ms=4,label=c)
                     for c in ["SNP","indel","SV"]],
            loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.99,1.005))
 fig.tight_layout(rect=[0.02,0.02,1,0.99])
-fig.savefig(f"{G}/sfs_shift_by_site.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{G}/plots/sfs_shift_by_site.png", dpi=130, bbox_inches="tight")
 plt.show()
 print("saved sfs_shift_by_site.png  (* = Wilcoxon p<0.05 on per-stratum SV-vs-SNP shift)")
 """
@@ -175,7 +175,7 @@ for j, metric in enumerate(["ext_rate", "sweep_rate", "fix_rate"]):
     ax[j].set_xscale("log"); ax[j].set_xlabel("initial frequency $p_0$ (log)")
     ax[j].annotate(metric, xy=(0.97, 0.06), xycoords="axes fraction", ha="right", va="bottom", fontsize=9)
 ax[0].set_ylabel("median across sites"); ax[0].legend(frameon=False, fontsize=8, loc="upper right")
-fig.tight_layout(); fig.savefig(f"{G}/sfs_shift_ratebystratum.png", dpi=130, bbox_inches="tight")
+fig.tight_layout(); fig.savefig(f"{G}/plots/sfs_shift_ratebystratum.png", dpi=130, bbox_inches="tight")
 plt.show()
 print("extinction/sweep excess concentrates in the rare-folded-frequency strata (the two ends of the "
       "raw p0 decile range, which both fold down to a small folded_p0) -- consistent with the earlier "
@@ -225,7 +225,7 @@ ax[1].scatter(mm.bio1, mm.ext_delta, c="#D55E00", s=28)
 ax[1].set_xlabel("site mean annual temp (bio1)"); ax[1].set_ylabel("SV − SNP extinction-rate excess")
 ax[1].annotate("extinction excess: present at nearly all sites\n(no strong climate gradient)",
                xy=(0.97,0.95), xycoords="axes fraction", ha="right", va="top", fontsize=8)
-fig.tight_layout(); fig.savefig(f"{G}/sfs_shift_vs_climate.png", dpi=130, bbox_inches="tight")
+fig.tight_layout(); fig.savefig(f"{G}/plots/sfs_shift_vs_climate.png", dpi=130, bbox_inches="tight")
 plt.show()
 from scipy.stats import spearmanr
 r, p = spearmanr(mm.bio1, mm.ext_delta)

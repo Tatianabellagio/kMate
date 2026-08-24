@@ -33,5 +33,5 @@ for ax, (col, lab) in zip(axes, xs):
                 arrowprops=dict(arrowstyle="-", color="0.75", lw=0.4))
     ax.set_xlabel(lab, fontsize=8); ax.set_ylabel("SV purging   mean (s − SNP baseline)")
 cb = fig.colorbar(sc, ax=axes, fraction=0.025, pad=0.01); cb.set_label("site bio1 (°C)", fontsize=8)
-fig.savefig(f"{PLOTS}/site_parallelism_vs_purging.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/site_parallelism_vs_purging.png", dpi=130, bbox_inches="tight")
 print(f"saved {PLOTS}/site_parallelism_vs_purging.png")

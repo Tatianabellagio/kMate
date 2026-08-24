@@ -64,7 +64,31 @@ renamed. Always confirm with:
 git check-ignore -v analysis/grenenet_selection/<section>/results/<newdir>
 ```
 
-**4. Scripts reach `lib.py` by counting directory levels.** The idiom is
+**4. Figures go in a `plots/` subdirectory. Never loose in a results dir.**
+A results directory should hold data (`.npz`, `.csv`, `.tsv`) and one `plots/`
+subdirectory — not 30 PNGs interleaved with the CSVs. Write figures as:
+
+```python
+plt.savefig(f"{OUT}/plots/my_figure.png", dpi=150, bbox_inches="tight")
+```
+
+If `OUT` is a new directory, create `OUT/plots` alongside it. 416 existing
+figures were swept into 19 `plots/` dirs on 2026-08-24 and 83 `savefig` paths
+repointed; **25 calls in 16 files still write loose** because they pass a
+variable built at runtime rather than an inline path, so they need a look by
+hand:
+
+`blocks/plot_sv_landscape.py`, `blocks/plot_unit_distributions.py`,
+`qc/plot_coverage_distribution.py`,
+`r1_sv_negative_selection/{_build_sv_polarity_manhattan_nb,_render_site4_enrichment_fig}.py`,
+`r2_gea_nonsnp/cam5_replication/{build_nb,build_nb_byclass}.py`,
+`r2_gea_nonsnp/phase1_replication/{_build_manhattan_3x3_nb,_build_manhattan_clq90_nb,plot_clq90_manhattan}.py`,
+`r3_persite_gwas/plot_class_gwas_pngs.py`,
+`wza/investigation/_build_manhattan_nb.py`,
+`notebooks/_recreate_density_snp_only.py`, and the three `genes_expl/plot_*.py`
+(left untouched as uncommitted work).
+
+**5. Scripts reach `lib.py` by counting directory levels.** The idiom is
 
 ```python
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -84,11 +108,11 @@ Two related traps:
   that path is a symlink to the real repo root — but prefer the `__file__`-
   relative form.
 
-**5. Retire, don't delete.** Superseded work moves to `archive/` with a note
+**6. Retire, don't delete.** Superseded work moves to `archive/` with a note
 saying what replaced it. Before moving anything, grep for inbound references:
 several directories here look stale but are load-bearing (see below).
 
-**6. Do not rewrite paths inside `archive/`.** Archived scripts were written
+**7. Do not rewrite paths inside `archive/`.** Archived scripts were written
 against the layout of their time; repointing them at today's paths would
 falsify the record.
 

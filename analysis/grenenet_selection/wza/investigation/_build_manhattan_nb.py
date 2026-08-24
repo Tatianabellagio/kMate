@@ -125,7 +125,7 @@ for ax in axes[1, :]:
     ax.set_xticks(ticks); ax.set_xticklabels(CHROMS)
 fig.suptitle("WZA block-Manhattan — cap vs no-cap × deg-2 vs deg-7 (gen1 SNP, bio1); y clipped at 14", fontsize=13)
 fig.tight_layout()
-OUT_PNG = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/wza/investigation/results/fig9_manhattan_cap_vs_nocap.png"
+OUT_PNG = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/wza/investigation/results/plots/fig9_manhattan_cap_vs_nocap.png"
 fig.savefig(OUT_PNG, dpi=130); plt.show()
 print("saved", OUT_PNG)"""))
 

@@ -68,7 +68,7 @@ venn2(subsets=(only_a, only_g, shared),
 ax.set_title(f"Genome-wide SNP overlap (exact chrom,pos,ref,alt match)\n"
              f"shared={shared:,}  ({tot.pct_grenenet_in_arch3_exact:.2f}% of GrENE-Net)", fontsize=11)
 fig.tight_layout()
-fig.savefig(f"{PLOTS}/panel_overlap_grenenet_venn_total.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/panel_overlap_grenenet_venn_total.png", dpi=130, bbox_inches="tight")
 plt.show()
 print(f"exact match: {tot.pct_grenenet_in_arch3_exact:.2f}% of GrENE-Net SNPs also in arch3 "
       f"(vs 55.05% for the old v3 panel, position-only)")
@@ -94,7 +94,7 @@ ax.set_title(f"Genome-wide SNP overlap, arch3 singletons dropped (exact match)\n
              f"shared={shared:,}  ({tot.pct_grenenet_in_arch3_exact_nosingleton:.2f}% of GrENE-Net)",
              fontsize=11)
 fig.tight_layout()
-fig.savefig(f"{PLOTS}/panel_overlap_grenenet_venn_total_nosingleton.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/panel_overlap_grenenet_venn_total_nosingleton.png", dpi=130, bbox_inches="tight")
 plt.show()
 print(f"arch3 SNP singletons dropped: {int(tot.n_arch3_singleton_dropped):,} "
       f"(of {int(tot.n_arch3_exact):,} total arch3 SNP records)")

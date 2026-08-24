@@ -205,7 +205,7 @@ fig.supylabel("s − same-$p_0$ SNP baseline   (below 0 = more purged)", x=0.006
 fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,label=c) for c in ["SNP","indel","SV"]],
            loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.995,1.004))
 fig.tight_layout(rect=[0.02,0.02,1,0.99])
-fig.savefig(f"{PLOTS}/s_distribution_by_site.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/s_distribution_by_site.png", dpi=130, bbox_inches="tight")
 plt.show()
 print(f"saved {PLOTS}/s_distribution_by_site.png  (shared ylim={YLIM}, true data min/max -- no clipping)")
 """
@@ -226,7 +226,7 @@ def summary_clean(cvar, cmap):
                 xycoords="axes fraction", fontsize=9, color="0.3")
     ax.set_xlabel(cvar); ax.set_ylabel("mean (s − baseline)")
     ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
-    fig.tight_layout(); fig.savefig(f"{PLOTS}/s_distribution_summary_{cvar}.png", dpi=130, bbox_inches="tight")
+    fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/s_distribution_summary_{cvar}.png", dpi=130, bbox_inches="tight")
     plt.show()
     nneg = int((m.shift_sv<0).sum())
     print(f"{cvar}: rho={r.statistic:+.3f} p={r.pvalue:.4f}; SV median excess={m.shift_sv.median():+.4f} (below baseline at {nneg}/{len(m)})")
@@ -315,7 +315,7 @@ fig.legend(handles=[Line2D([0],[0],color=COL["ins"],lw=2,label=f"insertion (n={n
                     Line2D([0],[0],color=COL["del"],lw=2,label=f"deletion (n={n_del})")],
            loc="upper right", ncol=2, fontsize=9, frameon=False, bbox_to_anchor=(0.995,1.004))
 fig.tight_layout(rect=[0.02,0.02,1,0.99])
-fig.savefig(f"{PLOTS}/s_distribution_insdel_by_site.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/s_distribution_insdel_by_site.png", dpi=130, bbox_inches="tight")
 plt.show()
 print(f"saved {PLOTS}/s_distribution_insdel_by_site.png  (ins n={n_ins}, del n={n_del}; ylim={YLIM_ID})")
 """
@@ -362,7 +362,7 @@ fig.supylabel("ΔCDF = P(class ≤ s) − P(matched-SNP ≤ s)", x=0.004, fontsi
 fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,label=c) for c in ["SV","indel"]],
            loc="upper right", ncol=2, fontsize=9, frameon=False, bbox_to_anchor=(0.99,1.004))
 fig.tight_layout(rect=[0.03,0.02,1,0.99])
-fig.savefig(f"{G}/s_ecdf_difference_by_site.png", dpi=130, bbox_inches="tight"); plt.show()
+fig.savefig(f"{G}/plots/s_ecdf_difference_by_site.png", dpi=130, bbox_inches="tight"); plt.show()
 
 terc = pd.qcut(meta.bio1, 3, labels=["cold","mid","hot"])
 tcol = {"cold":"#3B6FB6","mid":"#8858AA","hot":"#D55E00"}
@@ -378,7 +378,7 @@ ax.set_xlabel("selection coefficient s"); ax.set_ylabel("ΔCDF (SV − matched S
 ax.annotate("SV left-shift (purging) grows cold→hot; peak = KS distance", xy=(0.97,0.05),
             xycoords="axes fraction", ha="right", fontsize=8)
 ax.legend(frameon=False)
-fig.tight_layout(); fig.savefig(f"{G}/s_ecdf_difference_summary.png", dpi=130, bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{G}/plots/s_ecdf_difference_summary.png", dpi=130, bbox_inches="tight"); plt.show()
 print("saved s_ecdf_difference_by_site.png + _summary.png")
 """
 
@@ -427,7 +427,7 @@ fig.supylabel("shift vs matched SNP:  Q$_{class}$(τ) − Q$_{SNP}$(τ)", x=0.00
 fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,label=c) for c in ["SV","indel"]],
            loc="upper right", ncol=2, fontsize=9, frameon=False, bbox_to_anchor=(0.99,1.004))
 fig.tight_layout(rect=[0.03,0.02,1,0.99])
-fig.savefig(f"{G}/s_shiftfunction_by_site.png", dpi=130, bbox_inches="tight"); plt.show()
+fig.savefig(f"{G}/plots/s_shiftfunction_by_site.png", dpi=130, bbox_inches="tight"); plt.show()
 
 terc = pd.qcut(meta.bio1, 3, labels=["cold","mid","hot"])
 tcol = {"cold":"#3B6FB6","mid":"#8858AA","hot":"#D55E00"}
@@ -443,7 +443,7 @@ ax.set_xlabel("percentile τ (low = most purged)"); ax.set_ylabel("SV − matche
 ax.annotate("SV purged-tail excess concentrated at HOT sites, low percentiles", xy=(0.5,0.05),
             xycoords="axes fraction", ha="center", fontsize=8)
 ax.legend(frameon=False)
-fig.tight_layout(); fig.savefig(f"{G}/s_shiftfunction_summary.png", dpi=130, bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{G}/plots/s_shiftfunction_summary.png", dpi=130, bbox_inches="tight"); plt.show()
 print("saved s_shiftfunction_by_site.png + _summary.png  (* = 90% bootstrap band excludes 0 in lower tail)")
 """
 
@@ -475,7 +475,7 @@ for a,(col,lab) in zip(ax, [("d_mean","mean s"),("d_p10","10th-pct s (purged tai
     a.annotate(f"ρ={r.statistic:+.2f} (p={r.pvalue:.3f})", xy=(0.97,0.05), xycoords="axes fraction",
                ha="right", fontsize=8)
     a.legend(frameon=False, fontsize=9)
-fig.tight_layout(); fig.savefig(f"{G}/s_vs_climate.png", dpi=130, bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{G}/plots/s_vs_climate.png", dpi=130, bbox_inches="tight"); plt.show()
 nneg_hot=int(((d.bio1>=15)&(d.d_p10<0)).sum()); nhot=int((d.bio1>=15).sum())
 print(f"purged-tail (10th pct) SV<SNP at hot sites (bio1>=15): {nneg_hot}/{nhot}")
 print(f"mean-s difference: median across sites {d.d_mean.median():+.4f}; indel-SNP median {d.ind_mean.median():+.4f} (~0)")
@@ -533,7 +533,7 @@ def make(cvar, label, sign_sign):
     ax[2].annotate(f"(C) SV purging excess vs {label}\nSpearman ρ={r.statistic:+.2f} (p={r.pvalue:.3f})",
                    xy=(0.03,0.95), xycoords="axes fraction", va="top", fontsize=8)
     ax[2].legend(frameon=False,fontsize=9)
-    fig.tight_layout(); fig.savefig(f"{G}/s_climate_slope_{cvar}.png",dpi=130,bbox_inches="tight"); plt.show()
+    fig.tight_layout(); fig.savefig(f"{G}/plots/s_climate_slope_{cvar}.png",dpi=130,bbox_inches="tight"); plt.show()
 
 make("bio1","temperature",+1)
 make("bio18","dry-summer precip (aridity)",-1)
@@ -557,7 +557,7 @@ for a,(cv,lab) in zip(ax,[("bio18","precip warmest qtr (low = arid)"),("bio1","m
     a.annotate(f"{cv}: overall purging ρ={r.statistic:+.2f} (p={r.pvalue:.3f})", xy=(0.03,0.95),
                xycoords="axes fraction", va="top", fontsize=8)
     a.legend(frameon=False,fontsize=8)
-fig.tight_layout(); fig.savefig(f"{G}/s_purging_intensity.png",dpi=130,bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{G}/plots/s_purging_intensity.png",dpi=130,bbox_inches="tight"); plt.show()
 print(f"overall intensity (matched SNP purged frac, NOT the SV-specific number): "
       f"range {d.msnp_neg.min():.2f}-{d.msnp_neg.max():.2f}")
 print(f"corr(intensity, bio18)={stats.spearmanr(d.bio18,d.msnp_neg).statistic:+.2f}  "

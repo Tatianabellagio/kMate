@@ -200,7 +200,7 @@ ax.set_ylabel("# records"); ax.set_xlabel("")
 ax.legend(frameon=False, title=None, loc="upper right")
 
 plt.tight_layout()
-fig.savefig(f"{PLOTDIR}/01_variant_class_composition.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTDIR}/plots/01_variant_class_composition.png", dpi=150, bbox_inches="tight")
 plt.show()
 """
 
@@ -236,7 +236,7 @@ for ax, cl_ in zip(axes[1:], ["indel", "SV"]):
     ax.annotate(cl_, xy=(0.03, 0.95), xycoords="axes fraction", ha="left", va="top", fontweight="bold")
     ax.legend(frameon=False, title=None, fontsize=8)
 plt.tight_layout()
-fig.savefig(f"{PLOTDIR}/02_insertion_deletion.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTDIR}/plots/02_insertion_deletion.png", dpi=150, bbox_inches="tight")
 plt.show()
 """
 
@@ -261,7 +261,7 @@ ax.set_xticks(ticks); ax.set_xticklabels([f"{t:,}" for t in ticks], rotation=45,
 ax.xaxis.set_minor_formatter(plt.NullFormatter())
 ax.set_xlabel("SV length change (bp)"); ax.set_ylabel("# SVs")
 plt.tight_layout()
-fig.savefig(f"{PLOTDIR}/03_sv_size_spectrum.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTDIR}/plots/03_sv_size_spectrum.png", dpi=150, bbox_inches="tight")
 plt.show()
 """
 
@@ -280,7 +280,7 @@ for ax, c in zip(axes, CLASS_ORDER):
     ax.grid(axis="x", visible=False)
 axes[-1].set_xlabel("MAF (among called founders)")
 plt.tight_layout()
-fig.savefig(f"{PLOTDIR}/04a_maf_spectrum.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTDIR}/plots/04a_maf_spectrum.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 # MAC survival: the panel is segregating-only by construction (0<AC<AN for every
@@ -312,7 +312,7 @@ sns.barplot(data=mac_df, x="MAC_label", y="pct", hue="class", order=mac_order,
 ax.set_xlabel(""); ax.set_ylabel("% records kept"); ax.set_ylim(0, 108)
 ax.legend(frameon=False, title=None, loc="upper right", ncol=3, fontsize=9)
 plt.tight_layout()
-fig.savefig(f"{PLOTDIR}/04b_mac_survival.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTDIR}/plots/04b_mac_survival.png", dpi=150, bbox_inches="tight")
 plt.show()
 """
 
@@ -352,7 +352,7 @@ ax.set_xlabel("missing genotype % per founder"); ax.set_ylabel("# founders")
 ax.legend(frameon=False, fontsize=9)
 ax.grid(axis="x", visible=False)
 plt.tight_layout()
-fig.savefig(f"{PLOTDIR}/05_missingness.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTDIR}/plots/05_missingness.png", dpi=150, bbox_inches="tight")
 plt.show()
 """
 
@@ -381,7 +381,7 @@ for col_i, (col_all, col_mac2, xlabel) in enumerate(panels):
         ax.legend(frameon=False, fontsize=8)
         ax.grid(axis="x", visible=False)
 plt.tight_layout()
-fig.savefig(f"{PLOTDIR}/06_founder_carrier_counts.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTDIR}/plots/06_founder_carrier_counts.png", dpi=150, bbox_inches="tight")
 plt.show()
 
 for coh in ["long-read", "short-read"]:
@@ -419,7 +419,7 @@ for ax, c in zip(axes, CHROMS):
 axes[-1].set_xlabel("position (Mb)")
 axes[0].legend(frameon=False, loc="upper right", ncol=4, fontsize=9)
 plt.tight_layout()
-fig.savefig(f"{PLOTDIR}/07_genomic_density.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTDIR}/plots/07_genomic_density.png", dpi=150, bbox_inches="tight")
 plt.show()
 """
 

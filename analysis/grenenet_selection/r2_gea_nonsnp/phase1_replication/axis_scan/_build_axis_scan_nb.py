@@ -115,7 +115,7 @@ C.append(new_code_cell(
     "        if j==0: axes[i,j].set_ylabel('obs -log10 p')\n"
     "        if i==len(AXES)-1: axes[i,j].set_xlabel('exp -log10 p')\n"
     "fig.suptitle(f'QQ: site-level LFMM (K=3, {TAG}) per axis x class',y=1.0)\n"
-    "fig.tight_layout(); fig.savefig(f'{OUT}/qq_axis_scan{SUFFIX}.png',dpi=140,bbox_inches='tight')\n"
+    "fig.tight_layout(); fig.savefig(f'{OUT}/plots/qq_axis_scan{SUFFIX}.png',dpi=140,bbox_inches='tight')\n"
     "print('wrote', f'qq_axis_scan{SUFFIX}.png'); plt.show()"))
 
 C.append(new_markdown_cell(
@@ -145,7 +145,7 @@ C.append(new_code_cell(
     "    lam=' | '.join(f'{NAME[c]} λ={gif(load_p(c,axname)):.2f}' for c in CLS)\n"
     "    fig.suptitle(f'{axname} — site-level LFMM ({TAG})   [{lam}]',y=0.995)\n"
     "    fig.tight_layout(); fn=f'manhattan_{axname}_snp_nonsnp_sv{SUFFIX}.png'\n"
-    "    fig.savefig(f'{OUT}/{fn}',dpi=140,bbox_inches='tight'); print('wrote',fn); plt.show()"))
+    "    fig.savefig(f'{OUT}/plots/{fn}',dpi=140,bbox_inches='tight'); print('wrote',fn); plt.show()"))
 for ax in ["bio5", "pc1", "bio12", "bio13", "bio16", "bio19"]:
     C.append(new_markdown_cell(f"### {ax}"))
     C.append(new_code_cell(f"manhattan_axis('{ax}')"))

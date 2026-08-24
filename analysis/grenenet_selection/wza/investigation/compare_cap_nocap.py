@@ -123,7 +123,7 @@ def _plot(res):
               title=f"{lab}: per-block p, cap vs no-cap")
         plt.colorbar(sc, ax=a, label="log10(SNPs/block)")
     fig.suptitle("Full cap-vs-no-cap comparison (gen1 SNP, bio1) — color = block SNP count")
-    fig.tight_layout(); fig.savefig(f"{OUT}/fig8_cap_vs_nocap_allblocks.png", dpi=130)
+    fig.tight_layout(); fig.savefig(f"{OUT}/plots/fig8_cap_vs_nocap_allblocks.png", dpi=130)
     plt.close(fig)
 
 

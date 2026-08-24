@@ -122,7 +122,7 @@ def main():
     for i, b in enumerate(["4_2519", "2_1265"]):
         ax[1].text(i, s.loc[b, "inflation"]+.05, f"M_eff={s.loc[b,'M_eff']}\nof N={s.loc[b,'N']}",
                    ha="center", fontsize=9)
-    fig.tight_layout(); fig.savefig(f"{OUT}/fig10_pseudoreplication.png", dpi=130)
+    fig.tight_layout(); fig.savefig(f"{OUT}/plots/fig10_pseudoreplication.png", dpi=130)
     print(f"\nwrote fig10_pseudoreplication.png")
 
 

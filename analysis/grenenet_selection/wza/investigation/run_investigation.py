@@ -142,7 +142,7 @@ def _plots(base, keep, ov, lbl):
               xlabel="SNPs per block (tail)", ylabel="predicted SD of Z",
               title="tail zoom: deg curves -> negative SD")
     ax[2].legend(fontsize=8)
-    fig.tight_layout(); fig.savefig(f"{OUT}/fig1_snp_dist_and_sd_curves.png", dpi=130)
+    fig.tight_layout(); fig.savefig(f"{OUT}/plots/fig1_snp_dist_and_sd_curves.png", dpi=130)
     plt.close(fig)
 
     # Fig 2: Z_pVal vs SNP count (overweighting scatter)
@@ -155,7 +155,7 @@ def _plots(base, keep, ov, lbl):
               title=tag, ylabel="-log10(Z_pVal)")
         a.axhline(-np.log10(0.05 / len(w)), color="red", ls="--", lw=1)
     fig.suptitle("Per-block significance vs SNP count (worry #3)")
-    fig.tight_layout(); fig.savefig(f"{OUT}/fig2_sig_vs_snpcount.png", dpi=130)
+    fig.tight_layout(); fig.savefig(f"{OUT}/plots/fig2_sig_vs_snpcount.png", dpi=130)
     plt.close(fig)
 
     # Fig 3: fraction significant per SNP bin
@@ -167,7 +167,7 @@ def _plots(base, keep, ov, lbl):
     ax.set(xlabel="SNPs per block (bin)", ylabel="fraction Z_pVal < 0.05",
            title="Overweighting test: fraction significant by window SNP count")
     ax.legend(); plt.xticks(rotation=45)
-    fig.tight_layout(); fig.savefig(f"{OUT}/fig3_overweighting_by_snpbin.png", dpi=130)
+    fig.tight_layout(); fig.savefig(f"{OUT}/plots/fig3_overweighting_by_snpbin.png", dpi=130)
     plt.close(fig)
 
 

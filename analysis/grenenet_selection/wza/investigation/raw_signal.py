@@ -72,7 +72,7 @@ def main():
                          frac_snps_same_sign=round(max(frac_neg, 1-frac_neg), 3),
                          median_abs_snp_tau=round(np.nanmedian(np.abs(ktau)), 3),
                          n_sites=site_means.shape[0]))
-    fig.tight_layout(); fig.savefig(f"{OUT}/fig11_raw_signal.png", dpi=130)
+    fig.tight_layout(); fig.savefig(f"{OUT}/plots/fig11_raw_signal.png", dpi=130)
     s = pd.DataFrame(summ); s.to_csv(f"{OUT}/raw_signal_summary.csv", index=False)
     print(s.to_string(index=False))
     print(f"\nwrote fig11_raw_signal.png")

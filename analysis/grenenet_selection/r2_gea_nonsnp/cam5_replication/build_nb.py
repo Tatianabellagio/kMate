@@ -187,8 +187,8 @@ axes[0].set_xlabel("")
 fig.suptitle("Combined-variation WZA Manhattan (SNP \\u2022 small indel \\u25b2 SV \\u25a0) \\u2014 kMate phase-1 replication, last_gen bio1",
              y=0.995, fontsize=13)
 fig.tight_layout()
-fig.savefig(f"{PLOTS}/manhattan_combined_both.png", dpi=200, bbox_inches="tight")
-fig.savefig(f"{PLOTS}/manhattan_combined_both.pdf", bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/manhattan_combined_both.png", dpi=200, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/manhattan_combined_both.pdf", bbox_inches="tight")
 print("saved", f"{PLOTS}/manhattan_combined_both.png")
 plt.show()''' ))
 

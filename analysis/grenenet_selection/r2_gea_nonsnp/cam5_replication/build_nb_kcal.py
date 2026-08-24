@@ -72,7 +72,7 @@ ax[1].axvline(K_bstick, color="red", ls=":"); ax[1].axvline(16, color="green", l
 ax[1].axhline(0.8, color="0.6", ls="--", lw=0.8)
 ax[1].set_xlabel("component"); ax[1].set_ylabel("cumulative variance"); ax[1].set_title("cumulative variance explained")
 fig.tight_layout()
-fig.savefig(f"{PLOTS}/lfmm_k_scree.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/lfmm_k_scree.png", dpi=150, bbox_inches="tight")
 print("saved", f"{PLOTS}/lfmm_k_scree.png")
 plt.show()''' ))
 
@@ -100,7 +100,7 @@ if os.path.exists(KS):
     ok = sw[(sw["gif"] - 1.0).abs() <= 0.05]
     if len(ok):
         print("smallest K with |GIF-1|<=0.05:", int(ok["K"].min()))
-    fig.tight_layout(); fig.savefig(f"{PLOTS}/lfmm_k_gif.png", dpi=150, bbox_inches="tight"); plt.show()
+    fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/lfmm_k_gif.png", dpi=150, bbox_inches="tight"); plt.show()
 else:
     print("GIF sweep not done yet — run:  sbatch run_ksweep.sh   then re-run this cell.")
     print("expected:", KS)''' ))

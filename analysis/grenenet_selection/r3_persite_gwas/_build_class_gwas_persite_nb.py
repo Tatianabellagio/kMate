@@ -75,7 +75,7 @@ ax.set_xlabel("site (ordered cold → hot by bio1)"); ax.set_ylabel(r"per-site $
 ax.set_title("Per-site genomic-control inflation, by marker class", loc="left")
 ax.spines[["top", "right"]].set_visible(False); ax.legend(frameon=False)
 fig.tight_layout()
-fig.savefig(f"{OUT}/persite_lambda_3way.png", dpi=150, bbox_inches="tight")
+fig.savefig(f"{OUT}/plots/persite_lambda_3way.png", dpi=150, bbox_inches="tight")
 plt.show()
 print("cross-site corr(lambda_snp, lambda_nonsnp) =",
       round(np.corrcoef(data['snp'][4], data['nonsnp'][4])[0,1], 3))

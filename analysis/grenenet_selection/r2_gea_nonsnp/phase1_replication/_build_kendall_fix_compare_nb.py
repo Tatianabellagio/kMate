@@ -145,7 +145,7 @@ for ax, cls in zip(axes, CLASSES):
     ax.legend(fontsize=7.5, loc="upper left")
 fig.suptitle("QQ: Kendall-tau correction candidates (raw per-record p)", fontsize=12)
 fig.tight_layout(rect=[0, 0, 1, 0.95])
-fig.savefig(f"{CLQ}/kendall_fix_test/qq_kendall_fix_compare.png", dpi=140, bbox_inches="tight")
+fig.savefig(f"{CLQ}/plots/kendall_fix_test/qq_kendall_fix_compare.png", dpi=140, bbox_inches="tight")
 plt.show()"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""## Raw per-record Manhattan (pre-WZA)
@@ -190,7 +190,7 @@ axes[0, 0].plot([], [], color="orange", ls=":", lw=0.8, label="BH q<0.05 (per-re
 axes[0, 0].legend(fontsize=7, loc="upper right")
 fig.suptitle("Kendall-tau correction candidates — RAW per-record Manhattan (pre-WZA)", fontsize=12)
 fig.tight_layout(rect=[0, 0, 1, 0.98])
-fig.savefig(f"{CLQ}/kendall_fix_test/manhattan_raw_kendall_fix_compare.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{CLQ}/plots/kendall_fix_test/manhattan_raw_kendall_fix_compare.png", dpi=130, bbox_inches="tight")
 plt.show()"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""## Summary + CAM5 spot-check"""))

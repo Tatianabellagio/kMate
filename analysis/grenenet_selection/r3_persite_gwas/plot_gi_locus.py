@@ -96,7 +96,7 @@ axZ.set_title(f"Chr1 zoom: GI is ~{bs-GI_END:,} bp upstream of the FDR-significa
 axZ.spines[["top", "right"]].set_visible(False); axZ.legend(frameon=False, fontsize=8, loc="upper right")
 
 fig.tight_layout()
-fig.savefig(f"{OUT}/gwas_plots/GI_locus_site4_nonsnp.png", dpi=120, bbox_inches="tight")
+fig.savefig(f"{OUT}/plots/gwas_plots/GI_locus_site4_nonsnp.png", dpi=120, bbox_inches="tight")
 print(f"lam={lam:.3f} bonf_-log10={-np.log10(bonf_p):.2f} fdr_-log10={-np.log10(fdr_p):.2f}")
 print(f"block {BLOCK}: {bs:,}-{be:,}; GI: {GI_START:,}-{GI_END:,}; gap {bs-GI_END:,} bp")
 zt = z2.copy(); zt["nlp"] = -np.log10(np.clip(zt.p, 1e-300, 1))

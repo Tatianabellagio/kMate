@@ -163,7 +163,7 @@ def mirror(bottom, bcol, bonly, tag, fname):
                 xycoords="axes fraction", fontsize=9, color="#6c757d", va="bottom")
     for sp in ["top", "right"]:
         ax.spines[sp].set_visible(False)
-    fig.tight_layout(); fig.savefig(f"{PLOTS}/{fname}", dpi=150, bbox_inches="tight"); plt.show()
+    fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/{fname}", dpi=150, bbox_inches="tight"); plt.show()
 
 mirror("sv", SVC, SVONLY["bonf"], "SV", "mirror_manhattan_snp_vs_sv.png")
 '''
@@ -196,7 +196,7 @@ ax.set_xticks(ticks); ax.set_xticklabels(CHROM_ORDER); ax.set_xlim(0, cum)
 ax.set_ylabel("−log10 p  (JOINT)"); ax.legend(loc="upper right", frameon=False, markerscale=2)
 for sp in ["top", "right"]:
     ax.spines[sp].set_visible(False)
-fig.tight_layout(); fig.savefig(f"{PLOTS}/overlay_manhattan_snp_sv.png", dpi=150, bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/overlay_manhattan_snp_sv.png", dpi=150, bbox_inches="tight"); plt.show()
 '''
 
 md_o3 = r"""## Option 3 — Differential Manhattan (per-block Δ −log10p)
@@ -219,7 +219,7 @@ for ax, (cls, col, tag) in zip(axes, [("sv", SVC, "SV"), ("nonsnp", NSC, "non-SN
                 (0.01, 0.94), xycoords="axes fraction", fontsize=9, va="top", color=col)
     for sp in ["top", "right"]:
         ax.spines[sp].set_visible(False)
-fig.tight_layout(); fig.savefig(f"{PLOTS}/differential_manhattan.png", dpi=150, bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/differential_manhattan.png", dpi=150, bbox_inches="tight"); plt.show()
 '''
 
 md_o4 = r"""## Option 4 — Concordance scatter (per-block lead −log10p)
@@ -245,7 +245,7 @@ for ax, (cls, col, tag, only) in zip(axes, [("sv", SVC, "SV", SVONLY), ("nonsnp"
     ax.annotate(f"{tag}-only (Bonf): {len(only['bonf'])}", (0.03, 0.95), xycoords="axes fraction",
                 fontsize=9, va="top", color=col)
     ax.set_aspect("equal")
-fig.tight_layout(); fig.savefig(f"{PLOTS}/concordance_scatter.png", dpi=150, bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/concordance_scatter.png", dpi=150, bbox_inches="tight"); plt.show()
 '''
 
 md_o5 = r"""## Option 5 — Zoom locus panels (top SV-only peaks)
@@ -276,7 +276,7 @@ for ax, (_, r) in zip(axes, top.iterrows()):
     for sp in ["top", "right"]:
         ax.spines[sp].set_visible(False)
 axes[0].legend(loc="upper left", frameon=False, markerscale=1.6, fontsize=8)
-fig.tight_layout(); fig.savefig(f"{PLOTS}/sv_only_zoom_loci.png", dpi=150, bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/sv_only_zoom_loci.png", dpi=150, bbox_inches="tight"); plt.show()
 '''
 
 md_bottom = r"""## Pick one

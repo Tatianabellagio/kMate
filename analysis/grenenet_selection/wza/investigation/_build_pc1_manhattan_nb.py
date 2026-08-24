@@ -91,7 +91,7 @@ ax[1].set(ylabel="−log10  site-perm p", xlabel="genomic position",
 ax[1].set_xticks(ticks); ax[1].set_xticklabels(CHROMS); ax[1].legend(fontsize=8, loc="upper right")
 plt.colorbar(sc, ax=ax[1], label="PC1 variance explained", pad=0.01)
 fig.suptitle("gen1 × bio1: raw WZA peaks (top) collapse once pseudo-replication is removed (bottom)", fontsize=13)
-fig.tight_layout(); fig.savefig(f"{RES}/fig12_manhattan_wza_vs_pc1.png", dpi=130); plt.show()
+fig.tight_layout(); fig.savefig(f"{RES}/plots/fig12_manhattan_wza_vs_pc1.png", dpi=130); plt.show()
 print("saved fig12_manhattan_wza_vs_pc1.png")"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""## QQ plots — calibration (is the genome-wide null inflated?)
@@ -124,7 +124,7 @@ for a, (lab, p, c) in zip(ax, panels):
 ax[2].axhline(-np.log10(5e-5), color="grey", ls=":", lw=1)
 ax[2].text(0.3, -np.log10(5e-5)+0.1, "perm floor (20k perms)", fontsize=7, color="grey")
 fig.suptitle("QQ plots: WZA has a runaway TAIL (a few blocks); PC1+site-perm has no tail but a mild diffuse shift", fontsize=12)
-fig.tight_layout(); fig.savefig(f"{RES}/fig13_qq_calibration.png", dpi=130); plt.show()
+fig.tight_layout(); fig.savefig(f"{RES}/plots/fig13_qq_calibration.png", dpi=130); plt.show()
 print("saved fig13_qq_calibration.png")"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""**QQ read-out (the honest reading — λ alone is misleading here).**

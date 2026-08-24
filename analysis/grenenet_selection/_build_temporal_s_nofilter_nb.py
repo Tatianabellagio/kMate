@@ -211,7 +211,7 @@ fig.supylabel("s − same-$p_0$ SNP baseline   (below 0 = more purged)", x=0.006
 fig.legend(handles=[Line2D([0], [0], color=COL[c], lw=2, label=c) for c in ["SNP", "indel", "SV"]],
            loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.995, 1.004))
 fig.tight_layout(rect=[0.02, 0.02, 1, 0.99])
-fig.savefig(f"{PLOTS}/s_distribution_by_site_nofilter_prodrange.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/s_distribution_by_site_nofilter_prodrange.png", dpi=130, bbox_inches="tight")
 plt.show()
 print(f"ylim={yl} (robust 0.5/99.5 pct — excursions beyond this run off-panel)")
 '''
@@ -240,7 +240,7 @@ fig.supylabel("s − same-$p_0$ SNP baseline   (below 0 = more purged)", x=0.006
 fig.legend(handles=[Line2D([0], [0], color=COL[c], lw=2, label=c) for c in ["SNP", "indel", "SV"]],
            loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.995, 1.004))
 fig.tight_layout(rect=[0.02, 0.02, 1, 0.99])
-fig.savefig(f"{PLOTS}/s_distribution_by_site_nofilter_lowp0_win{WIN_SMOOTH}.png",
+fig.savefig(f"{PLOTS}/plots/s_distribution_by_site_nofilter_lowp0_win{WIN_SMOOTH}.png",
             dpi=130, bbox_inches="tight")
 plt.show()
 print(f"window={WIN_SMOOTH} (matched)  xlim=({LOW[0]:.5f}, {LOW[1]})  ylim={yl}")
@@ -268,7 +268,7 @@ fig.supylabel("s − same-$p_0$ SNP baseline   (below 0 = more purged)", x=0.006
 fig.legend(handles=[Line2D([0], [0], color=COL[c], lw=2, label=c) for c in ["SNP", "indel", "SV"]],
            loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.995, 1.004))
 fig.tight_layout(rect=[0.02, 0.02, 1, 0.99])
-fig.savefig(f"{PLOTS}/s_distribution_by_site_nofilter_prodrange_win{WIN_SMOOTH}_linearx.png",
+fig.savefig(f"{PLOTS}/plots/s_distribution_by_site_nofilter_prodrange_win{WIN_SMOOTH}_linearx.png",
             dpi=130, bbox_inches="tight")
 plt.show()
 print(f"window={WIN_SMOOTH}, LINEAR x  ylim={yl}")
@@ -305,7 +305,7 @@ fig.supylabel("s − same-$p_0$ SNP baseline   (below 0 = more purged)", x=0.006
 fig.legend(handles=[Line2D([0], [0], color=COL[c], lw=2, label=c) for c in ["SNP", "indel", "SV"]],
            loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.995, 1.004))
 fig.tight_layout(rect=[0.02, 0.02, 1, 0.99])
-fig.savefig(f"{PLOTS}/s_distribution_by_site_nofilter_prodrange_win{WIN_SMOOTH}.png",
+fig.savefig(f"{PLOTS}/plots/s_distribution_by_site_nofilter_prodrange_win{WIN_SMOOTH}.png",
             dpi=130, bbox_inches="tight")
 plt.show()
 sh_sm = np.array([mean_over(*curves_smooth[s]["SV"], *XLIM) for s in sites])
@@ -324,7 +324,7 @@ fig.supylabel("s − same-$p_0$ SNP baseline   (below 0 = more purged)", x=0.006
 fig.legend(handles=[Line2D([0], [0], color=COL[c], lw=2, label=c) for c in ["SNP", "indel", "SV"]],
            loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.995, 1.004))
 fig.tight_layout(rect=[0.02, 0.02, 1, 0.99])
-fig.savefig(f"{PLOTS}/s_distribution_by_site_nofilter_fullrange.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/s_distribution_by_site_nofilter_fullrange.png", dpi=130, bbox_inches="tight")
 plt.show()
 print(f"ylim={yl}")
 '''
@@ -349,7 +349,7 @@ fig.supylabel("s − same-$p_0$ SNP baseline   (below 0 = more purged)", x=0.006
 fig.legend(handles=[Line2D([0], [0], color=COL[c], lw=2, label=c) for c in ["SNP", "indel", "SV"]],
            loc="upper right", ncol=3, fontsize=9, frameon=False, bbox_to_anchor=(0.995, 1.004))
 fig.tight_layout(rect=[0.02, 0.02, 1, 0.99])
-fig.savefig(f"{PLOTS}/s_distribution_by_site_nofilter_fullrange_win{WIN_FULL_SMOOTH}.png",
+fig.savefig(f"{PLOTS}/plots/s_distribution_by_site_nofilter_fullrange_win{WIN_FULL_SMOOTH}.png",
             dpi=130, bbox_inches="tight")
 plt.show()
 sh_v = np.array([mean_over(*curves_vsmooth[s]["SV"], *XLIM) for s in sites])
@@ -384,7 +384,7 @@ for ax, (cvar, cvals, cmap_name) in zip(axs, [("bio1", bio1, "coolwarm"), ("bio1
                 xycoords="axes fraction", fontsize=9, color="0.3")
     ax.set_xlabel(cvar); ax.set_ylabel("mean (s − same-$p_0$ SNP baseline)")
 axs[0].legend(frameon=False, loc="upper right")
-fig.tight_layout(); fig.savefig(f"{PLOTS}/s_nofilter_climate_scatter.png", dpi=130, bbox_inches="tight")
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/s_nofilter_climate_scatter.png", dpi=130, bbox_inches="tight")
 plt.show()
 print(f"SV median shift={np.nanmedian(shift):+.4f}  below baseline at {int((shift<0).sum())}/{len(shift)} sites")
 '''
@@ -568,7 +568,7 @@ def matched_panel(tag, logx, ylab, fname):
     fig.legend(handles=[Line2D([0], [0], color=COL[c], lw=2, label=c) for c in ["indel", "SV"]],
                loc="upper right", ncol=2, fontsize=9, frameon=False, bbox_to_anchor=(0.995, 1.004))
     fig.tight_layout(rect=[0.02, 0.02, 1, 0.99])
-    fig.savefig(f"{PLOTS}/{fname}", dpi=130, bbox_inches="tight")
+    fig.savefig(f"{PLOTS}/plots/{fname}", dpi=130, bbox_inches="tight")
     plt.show()
     print(f"{tag} logx={logx}  ylim={ylim}")
 

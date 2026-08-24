@@ -31,7 +31,7 @@ adjust_text(texts, ax=ax, expand=(1.4, 1.6), arrowprops=dict(arrowstyle="-", col
 ax.set_xlabel("site mean annual temperature  bio1 (°C)")
 ax.set_ylabel("long-read (cactus) fraction of winners")
 ax.legend(frameon=False, fontsize=8, loc="upper left")
-fig.tight_layout(); fig.savefig(f"{PLOTS}/winner_cactus_fraction_vs_bio1.png", dpi=130, bbox_inches="tight")
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/winner_cactus_fraction_vs_bio1.png", dpi=130, bbox_inches="tight")
 print(f"saved {PLOTS}/winner_cactus_fraction_vs_bio1.png")
 print(f"all-site rho(win_pct_cactus, bio1) = {r.statistic:+.3f} p={r.pvalue:.3f}; "
       f"mean winners cactus frac = {df.win_pct_cactus.mean():.3f} (baseline {BASE:.3f})")

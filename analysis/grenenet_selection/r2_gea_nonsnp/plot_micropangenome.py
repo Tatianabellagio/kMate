@@ -143,7 +143,7 @@ def main():
                  fontsize=11, y=0.99)
     os.makedirs(FIGDIR, exist_ok=True)
     for ext in ("pdf", "png"):
-        fig.savefig(f"{FIGDIR}/micropangenome_COR413.{ext}", bbox_inches="tight", dpi=150)
+        fig.savefig(f"{FIGDIR}/plots/micropangenome_COR413.{ext}", bbox_inches="tight", dpi=150)
     print(f"wrote {FIGDIR}/micropangenome_COR413.pdf (+.png)")
 
 

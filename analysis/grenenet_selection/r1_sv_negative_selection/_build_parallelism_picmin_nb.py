@@ -118,7 +118,7 @@ ax[3].bar(xs-0.2,ob,0.4,color=COL["SV"],label="SV"); ax[3].bar(xs+0.2,nb_,0.4,ye
 for i,(o,n,p) in enumerate(zip(ob,nb_,pb)): ax[3].text(i,max(o,n)*1.05,f"{o/n:.2f}x\np={p:.3f}",ha="center",fontsize=8)
 ax[3].set_xticks(xs); ax[3].set_xticklabels([b[2] for b in bands]); ax[3].set_ylabel("repeatable-responder frac")
 corner(ax[3],"(D) enrichment by MAF band"); ax[3].legend(frameon=False)
-fig.tight_layout(); fig.savefig(f"{G}/parallelism.png",dpi=130,bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{G}/plots/parallelism.png",dpi=130,bbox_inches="tight"); plt.show()
 
 rep=rep_sv>=1/3; hi_clim=np.abs(r_sv)>np.quantile(np.abs(r_sv),0.7)
 print(f"SV repeatable-responder rate: overall={rep.mean():.3f}; among climate-differential SVs={rep[hi_clim].mean():.3f}; among non={rep[~hi_clim].mean():.3f}")
@@ -191,7 +191,7 @@ cats=["SV\nins","SV\ndel","indel","SNP"]; vals=[sig_sv[~isd].mean(), sig_sv[isd]
 ax[2].bar(cats,vals,color=[COL["ins"],COL["del"],COL["indel"],COL["SNP"]])
 for i,v in enumerate(vals): ax[2].text(i,v*1.03,f"{v*100:.1f}%",ha="center",fontsize=9)
 ax[2].set_ylabel(f"frac repeated-adaptation (BH q<{q})"); corner(ax[2],"(C) ins-driven; del ~ SNP")
-fig.tight_layout(); fig.savefig(f"{G}/picmin.png",dpi=130,bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{G}/plots/picmin.png",dpi=130,bbox_inches="tight"); plt.show()
 print(f"PicMin BH q<0.05: SV {sig_sv.mean()*100:.1f}% (ins {sig_sv[~isd].mean()*100:.1f}%, del {sig_sv[isd].mean()*100:.1f}%), "
       f"matched-SNP {bh(match(p0sv,p_sn,p0sn),0.05).mean()*100:.1f}%; folds q<0.1/q<0.05 = {ob[0]/nb_[0]:.2f}x / {ob[1]/nb_[1]:.2f}x")
 """
@@ -246,7 +246,7 @@ for i,c in enumerate(order):
     ax.tick_params(labelsize=6)
 fig.supxlabel("parallelism rho (right = more parallel across replicate plots)",y=0.005,fontsize=10)
 fig.supylabel("dCDF: matched-SNP - SV   (positive hump = SVs MORE parallel at this site)",x=0.004,fontsize=9)
-fig.tight_layout(rect=[0.03,0.02,1,0.99]); fig.savefig(f"{G}/parallelism_by_site.png",dpi=130,bbox_inches="tight"); plt.show()
+fig.tight_layout(rect=[0.03,0.02,1,0.99]); fig.savefig(f"{G}/plots/parallelism_by_site.png",dpi=130,bbox_inches="tight"); plt.show()
 
 # excess-only (SV - matched-SNP) per site vs climate
 figA,axA=plt.subplots(1,2,figsize=(12,4.4))
@@ -256,7 +256,7 @@ for a,(cv,lab) in zip(axA,[(b1,"bio1 mean annual temp"),(b18,"bio18 precip warme
     m,c0=np.polyfit(cv,exv,1); xs=np.array([cv.min(),cv.max()]); a.plot(xs,c0+m*xs,color="#D55E00",ls="--")
     r=stats.spearmanr(cv,exv); a.set_xlabel(f"site {lab}"); a.set_ylabel("SV - matched-SNP mean rho (per site)")
     corner(a,f"{lab.split()[0]}: rho={r.statistic:+.2f} p={r.pvalue:.3f}")
-figA.tight_layout(); figA.savefig(f"{G}/parallelism_by_site_excess.png",dpi=130,bbox_inches="tight"); plt.show()
+figA.tight_layout(); figA.savefig(f"{G}/plots/parallelism_by_site_excess.png",dpi=130,bbox_inches="tight"); plt.show()
 
 # both series (SV + matched-SNP baseline) + the gap
 sv_mean=np.array([RSV[:,c].mean() for c in range(len(sites))])
@@ -273,7 +273,7 @@ for a,(cv,lab) in zip(ax2,[(b1,"bio1 mean annual temp"),(b18,"bio18 precip warme
     a.set_xlabel(f"site {lab}"); a.set_ylabel("mean parallelism rho (per site)")
     corner(a,f"{lab.split()[0]}: SV {rS.statistic:+.2f} | SNP {rN.statistic:+.2f} | excess {rE.statistic:+.2f} (p={rE.pvalue:.3f})")
     a.legend(frameon=False,fontsize=8)
-fig2.tight_layout(); fig2.savefig(f"{G}/parallelism_by_site_summary.png",dpi=130,bbox_inches="tight"); plt.show()
+fig2.tight_layout(); fig2.savefig(f"{G}/plots/parallelism_by_site_summary.png",dpi=130,bbox_inches="tight"); plt.show()
 print(f"SV mean-rho: corr bio1 {stats.spearmanr(b1,sv_mean).statistic:+.2f}; matched-SNP baseline corr bio1 {stats.spearmanr(b1,sn_mean).statistic:+.2f}")
 print(f"SV mean-rho: corr bio18 {stats.spearmanr(b18,sv_mean).statistic:+.2f}; matched-SNP baseline corr bio18 {stats.spearmanr(b18,sn_mean).statistic:+.2f}")
 print(f"EXCESS (SV-SNP): corr bio1 {stats.spearmanr(b1,sv_mean-sn_mean).statistic:+.2f} (p={stats.spearmanr(b1,sv_mean-sn_mean).pvalue:.3f}); "

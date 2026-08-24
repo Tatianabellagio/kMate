@@ -27,7 +27,7 @@ for ax, (col, lab) in zip(axes, panels):
                 xycoords="axes fraction", fontsize=9, color="0.3")
     ax.set_xlabel("site mean annual temperature  bio1 (°C)"); ax.set_ylabel(lab, fontsize=8)
     ax.legend(frameon=False, fontsize=8, loc="upper right")
-fig.tight_layout(); fig.savefig(f"{PLOTS}/winners_sv_depletion.png", dpi=130, bbox_inches="tight")
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/winners_sv_depletion.png", dpi=130, bbox_inches="tight")
 print(f"saved {PLOTS}/winners_sv_depletion.png")
 print(f"corr(rho_s_sv, bio1): {stats.spearmanr(df.bio1, df.rho_s_sv).statistic:+.3f} p={stats.spearmanr(df.bio1, df.rho_s_sv).pvalue:.3f}")
 print(f"corr(win_pct_cactus, bio1): {stats.spearmanr(df.bio1, df.win_pct_cactus).statistic:+.3f} p={stats.spearmanr(df.bio1, df.win_pct_cactus).pvalue:.3f}")

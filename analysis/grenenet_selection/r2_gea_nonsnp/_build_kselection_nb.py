@@ -63,7 +63,7 @@ ax.axvspan(14, 20, color="green", alpha=0.08, label="GIF plateau (K≥14)")
 ax.axvline(16, color="green", ls=":", lw=2, label="K=16 (chosen)")
 ax.set_xlabel("K (latent factors)"); ax.set_ylabel("GIF (genomic inflation factor)")
 ax.set_title("LFMM GIF vs K — SNP Δp, bio1"); ax.legend(fontsize=8)
-fig.tight_layout(); fig.savefig(f"{PLOTS}/lfmm_k_gif.png", dpi=150, bbox_inches="tight"); plt.show()'''))
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/lfmm_k_gif.png", dpi=150, bbox_inches="tight"); plt.show()'''))
 
 cells.append(nbf.v4.new_code_cell(
 '''g = sw.set_index("K")["gif"]
@@ -129,7 +129,7 @@ ax[1].axvline(16, color="green", ls=":", lw=2)
 ax[1].axhline(0.5, color="0.6", ls="--", lw=0.8, label="50% variance")
 ax[1].set_xlabel("component"); ax[1].set_ylabel("cumulative variance")
 ax[1].set_title("cumulative variance explained"); ax[1].legend(fontsize=8)
-fig.tight_layout(); fig.savefig(f"{PLOTS}/lfmm_k_scree.png", dpi=150, bbox_inches="tight"); plt.show()
+fig.tight_layout(); fig.savefig(f"{PLOTS}/plots/lfmm_k_scree.png", dpi=150, bbox_inches="tight"); plt.show()
 print("→ by K=16 the per-component variance has dropped ~6.4x from PC1 and is in the flat tail;")
 print("  K=16 captures ~50% of the structure variance.")'''))
 

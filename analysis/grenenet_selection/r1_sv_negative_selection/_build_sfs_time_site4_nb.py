@@ -73,7 +73,7 @@ fig.legend(handles=[Line2D([0],[0],color=COL[c],lw=2,label=LABEL[c]) for c in ["
 fig.suptitle("Site 4 (hot): allele-frequency spectrum, seedmix → gen 3 — SNP / indel / SV",
              fontsize=12, y=1.06)
 fig.tight_layout()
-fig.savefig(f"{PLOTS}/sfs_time_site4_grid.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/sfs_time_site4_grid.png", dpi=130, bbox_inches="tight")
 plt.show()
 print("saved sfs_time_site4_grid.png")
 """
@@ -96,7 +96,7 @@ for ax, ttl, ylab in zip(
 axes[0].legend(fontsize=8, frameon=False)
 fig.suptitle("Site 4: SFS summary statistics vs time, by class", fontsize=11, y=1.03)
 fig.tight_layout()
-fig.savefig(f"{PLOTS}/sfs_time_site4_trend.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{PLOTS}/plots/sfs_time_site4_trend.png", dpi=130, bbox_inches="tight")
 plt.show()
 print("saved sfs_time_site4_trend.png")
 """

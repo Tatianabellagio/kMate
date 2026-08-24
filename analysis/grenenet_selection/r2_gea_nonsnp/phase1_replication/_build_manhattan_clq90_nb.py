@@ -149,7 +149,7 @@ axes[0, 0].plot([], [], color="orange", ls=":", lw=0.8, label="BH q<0.05 (per-re
 axes[0, 0].legend(fontsize=7, loc="upper right")
 fig.suptitle("Raw per-record results (pre-WZA aggregation) — gen9, bio1, MAF>=0.05", fontsize=11)
 fig.tight_layout(rect=[0, 0, 1, 0.97])
-fig.savefig(f"{CLQ}/manhattan_clq90_raw_grid.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{CLQ}/plots/manhattan_clq90_raw_grid.png", dpi=130, bbox_inches="tight")
 plt.show()"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""## Raw p-value distribution
@@ -177,7 +177,7 @@ for ax in axes[-1, :]:
 axes[0, 0].legend(fontsize=7)
 fig.suptitle("Raw per-record p-value distribution (pre-WZA) — gen9, bio1, MAF>=0.05", fontsize=11)
 fig.tight_layout(rect=[0, 0, 1, 0.95])
-fig.savefig(f"{CLQ}/pval_hist_clq90_raw_grid.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{CLQ}/plots/pval_hist_clq90_raw_grid.png", dpi=130, bbox_inches="tight")
 plt.show()"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""## Aggregated WZA Manhattan grid (CORRECTED deg-2)"""))
@@ -315,7 +315,7 @@ for i, row in overlap_df.iterrows():
     ax.annotate(f"J={row.jaccard}", (i, total + ymax * 0.03), ha="center", fontsize=8)
 ax.legend(fontsize=8, loc="upper left", bbox_to_anchor=(1.0, 1.0))
 fig.tight_layout()
-fig.savefig(f"{CLQ}/snp_nonsnp_overlap_clq90.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{CLQ}/plots/snp_nonsnp_overlap_clq90.png", dpi=130, bbox_inches="tight")
 plt.show()"""))
 
 C.append(nbf.v4.new_markdown_cell(r"""## Significant-block overlap ACROSS models (per class)
@@ -368,7 +368,7 @@ for i, row in model_overlap_df.iterrows():
     ax.annotate(f"J(all3)={row.jaccard_all3}", (i, row.n_union + ymax * 0.03), ha="center", fontsize=8)
 ax.legend(fontsize=8, loc="upper left", bbox_to_anchor=(1.0, 1.0))
 fig.tight_layout()
-fig.savefig(f"{CLQ}/model_overlap_clq90.png", dpi=130, bbox_inches="tight")
+fig.savefig(f"{CLQ}/plots/model_overlap_clq90.png", dpi=130, bbox_inches="tight")
 plt.show()"""))
 
 nb["cells"] = C

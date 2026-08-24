@@ -38,7 +38,7 @@ for j, sid in enumerate(samples):
 axes[0, 0].legend(fontsize=6, loc="lower left")
 fig.suptitle("Seed-mix per-founder h: light=per-chromosome, red=chrom-mean, dashed=1/231", fontsize=10)
 fig.tight_layout(rect=[0, 0, 1, 0.96])
-fig.savefig(f"{OUT}/seedmix_perchrom_prod_vs_fix.png", dpi=130)
+fig.savefig(f"{OUT}/plots/seedmix_perchrom_prod_vs_fix.png", dpi=130)
 print("wrote seedmix_perchrom_prod_vs_fix.png")
 
 # ---- Figure 2: does the average approach 1/231? distribution + absorbed count ----
@@ -74,5 +74,5 @@ ax[2].set_xticks(pos); ax[2].set_xticklabels([s.replace("SEEDMIX_", "") for s in
 ax[2].set_ylabel("RMSE(aggregate h, 1/231)"); ax[2].set_title("distance of chrom-average from equimolar")
 ax[2].legend(fontsize=8)
 fig.tight_layout()
-fig.savefig(f"{OUT}/seedmix_average_vs_uniform.png", dpi=130)
+fig.savefig(f"{OUT}/plots/seedmix_average_vs_uniform.png", dpi=130)
 print("wrote seedmix_average_vs_uniform.png")
