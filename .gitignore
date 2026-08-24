@@ -311,47 +311,47 @@ archive/grenenet_kmate_arch3_oldpanel_archive/
 archive/seedmix_kmate_arch3_oldpanel_archive/
 
 # --- 2026-07-10 cleanup: results/grenenet_gea/<topic> data centralized under
-# analysis/grenenet_gea/<topic>/results/. Re-assert the same "data never
+# analysis/grenenet_selection/<topic>/results/. Re-assert the same "data never
 # stageable" policy at the new location (mirrors the block above, moved topics
 # only — topics not yet migrated keep their results/grenenet_gea/<topic>/ rule
 # above until they move). ---
-analysis/grenenet_gea/r2_gea_nonsnp/cam5_replication/results/
-analysis/grenenet_gea/extras/driver_passenger/results/
-analysis/grenenet_gea/archive/gea_newpanel_snp_nonsnp_fork_retired/results/
-analysis/grenenet_gea/r2_gea_nonsnp/phase1_replication/results/
-analysis/grenenet_gea/r2_gea_nonsnp/wza_investigation/results/
+analysis/grenenet_selection/r2_gea_nonsnp/cam5_replication/results/
+analysis/grenenet_selection/extras/driver_passenger/results/
+analysis/grenenet_selection/archive/gea_newpanel_snp_nonsnp_fork_retired/results/
+analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/
+analysis/grenenet_selection/r2_gea_nonsnp/wza_investigation/results/
 # rerun_kfw_hb: production AF store, per-sample TSVs (mirrors old results/**/*.tsv rule)
-analysis/grenenet_gea/common/rerun_kfw_hb/**/*.tsv
+analysis/grenenet_selection/common/rerun_kfw_hb/**/*.tsv
 # sv_adaptive/: LIVE output dir for the s_*/parallelism/picmin/temporal_* SV-selection
 # family (Group B item 7 of docs/RERUN_AFTER_FIX.md) — data only, its ~25 driver
-# scripts are loose at analysis/grenenet_gea/ top level, not in this dir.
-analysis/grenenet_gea/sv_adaptive/
+# scripts are loose at analysis/grenenet_selection/ top level, not in this dir.
+analysis/grenenet_selection/sv_adaptive/
 
 # --- 2026-07-10 retirement: window-mode / hapfreq / block_ld_lmm / sv_adaptive chain
 # confirmed stale (docs/RERUN_AFTER_FIX.md Group D) and consolidated into
 # archive/window_hapfreq_retired/ alongside its already-archived code. Never
 # tracked before the move; keep it that way — code (.py/.md/.sh/.sbatch/.ipynb)
 # stays taggable, bulk output does not. ---
-analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.csv
-analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.png
-analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.json
-analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.npy
-analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.samples
-analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.txt
-analysis/grenenet_gea/archive/window_hapfreq_retired/**/*.bak
+analysis/grenenet_selection/archive/window_hapfreq_retired/**/*.csv
+analysis/grenenet_selection/archive/window_hapfreq_retired/**/*.png
+analysis/grenenet_selection/archive/window_hapfreq_retired/**/*.json
+analysis/grenenet_selection/archive/window_hapfreq_retired/**/*.npy
+analysis/grenenet_selection/archive/window_hapfreq_retired/**/*.samples
+analysis/grenenet_selection/archive/window_hapfreq_retired/**/*.txt
+analysis/grenenet_selection/archive/window_hapfreq_retired/**/*.bak
 # same policy for the sibling pipelineB_hapfreq_retired/ archive (also never
 # tracked, also missed this coverage — pre-existing gap, closed alongside)
-analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.csv
-analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.png
-analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.json
-analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.npy
-analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.samples
-analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.txt
-analysis/grenenet_gea/archive/pipelineB_hapfreq_retired/**/*.bak
+analysis/grenenet_selection/archive/pipelineB_hapfreq_retired/**/*.csv
+analysis/grenenet_selection/archive/pipelineB_hapfreq_retired/**/*.png
+analysis/grenenet_selection/archive/pipelineB_hapfreq_retired/**/*.json
+analysis/grenenet_selection/archive/pipelineB_hapfreq_retired/**/*.npy
+analysis/grenenet_selection/archive/pipelineB_hapfreq_retired/**/*.samples
+analysis/grenenet_selection/archive/pipelineB_hapfreq_retired/**/*.txt
+analysis/grenenet_selection/archive/pipelineB_hapfreq_retired/**/*.bak
 # hap_blocks/ and seedmix_validation/ moved wholesale (code+data intermixed,
 # same as before the move) — restore the .tsv protection the generic
 # results/**/*.tsv rule provided; leave code/small-config/plots taggable as before.
-analysis/grenenet_gea/blocks/hap_blocks/**/*.tsv
+analysis/grenenet_selection/blocks/hap_blocks/**/*.tsv
 
 # =============================================================================
 # 2026-07-10 benchmarks/ cleanup audit: the --unit chrom/ld refresh (2026-07-07/08)
@@ -420,35 +420,35 @@ benchmarks/ruth_outcross/hapfire/
 
 # --- 2026-07-10 cleanup: remaining results/grenenet_gea/<topic> data (foundational
 # shared stores + self-contained topics with no single owning script) centralized
-# under analysis/grenenet_gea/<topic>/ directly (no /results nesting — mirrors
+# under analysis/grenenet_selection/<topic>/ directly (no /results nesting — mirrors
 # rerun_kfw_hb). Supersedes the removed 2026-06-18 results/grenenet_gea/{af_store,
 # gen_matrices,pool_matrices,sv_snp_ld,gea,lfmm}/ block above. ---
-analysis/grenenet_gea/af_store/
-analysis/grenenet_gea/gen_matrices/
-analysis/grenenet_gea/pool_matrices/
-analysis/grenenet_gea/ecotype_fitness/
-analysis/grenenet_gea/fitness/
-analysis/grenenet_gea/gea/
-analysis/grenenet_gea/lfmm/
-analysis/grenenet_gea/site_temporal/
-analysis/grenenet_gea/structure/
-analysis/grenenet_gea/sv_snp_ld/
-analysis/grenenet_gea/varexp/
-analysis/grenenet_gea/blocks_mcf90/
-analysis/grenenet_gea/blocks_mcf90_p80/
-analysis/grenenet_gea/blocks_recompute/
+analysis/grenenet_selection/af_store/
+analysis/grenenet_selection/gen_matrices/
+analysis/grenenet_selection/pool_matrices/
+analysis/grenenet_selection/ecotype_fitness/
+analysis/grenenet_selection/fitness/
+analysis/grenenet_selection/gea/
+analysis/grenenet_selection/lfmm/
+analysis/grenenet_selection/site_temporal/
+analysis/grenenet_selection/structure/
+analysis/grenenet_selection/sv_snp_ld/
+analysis/grenenet_selection/varexp/
+analysis/grenenet_selection/blocks_mcf90/
+analysis/grenenet_selection/blocks_mcf90_p80/
+analysis/grenenet_selection/blocks_recompute/
 # generic loose GEA-level caches (misc pilot figures, QC/coverage/fallback tables)
-analysis/grenenet_gea/results/
+analysis/grenenet_selection/results/
 # ...except the small pilot figures/tables that were already tracked before the move
-!analysis/grenenet_gea/results/01_pilot_qc.png
-!analysis/grenenet_gea/results/02_candidate_adaptive_svs.csv
-!analysis/grenenet_gea/results/02_candidate_trajectories.png
-!analysis/grenenet_gea/results/02_sv_dp_hot_vs_cold.png
-!analysis/grenenet_gea/results/02_sv_size_and_snp_compare.png
-!analysis/grenenet_gea/results/pilot_sample_map.csv
+!analysis/grenenet_selection/results/01_pilot_qc.png
+!analysis/grenenet_selection/results/02_candidate_adaptive_svs.csv
+!analysis/grenenet_selection/results/02_candidate_trajectories.png
+!analysis/grenenet_selection/results/02_sv_dp_hot_vs_cold.png
+!analysis/grenenet_selection/results/02_sv_size_and_snp_compare.png
+!analysis/grenenet_selection/results/pilot_sample_map.csv
 # group_means.npz lives bare under grenenet_gea/ (matches lib.py's {GEA}/group_means.npz)
-analysis/grenenet_gea/group_means.npz
-analysis/grenenet_gea/group_means.pkl
+analysis/grenenet_selection/group_means.npz
+analysis/grenenet_selection/group_means.pkl
 
 # =============================================================================
 # 2026-07-20: post-checkpoint-commit audit (a bare `git add -A` staged ~300 GB
