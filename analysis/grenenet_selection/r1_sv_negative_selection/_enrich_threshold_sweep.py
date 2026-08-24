@@ -1,3 +1,16 @@
+"""Threshold-sensitivity check for the site-4 SV block-enrichment.
+
+Is "temporally-selected blocks are SV-enriched" (`site_sv_enrichment.py`) an
+artefact of the arbitrary top-fraction cut? Sweeps top_frac over
+0.02 / 0.01 / 0.005 / 0.001 of `block_score` and, at each cut, compares the
+fraction of selected blocks carrying an SV against a **block-size-matched**
+permutation null (3,000 draws, sampling non-selected blocks at the nearest
+`n_var`). Size-matching is the point: bigger blocks trivially carry more SVs.
+
+Reads  results/site_temporal/site4_clq90_blocks.parquet (n_snp >= 3)
+Prints one row per threshold: n_sel, hasSV_sel, null median, fold, empirical p.
+Stdout only — writes nothing.
+"""
 import numpy as np, pandas as pd
 ST = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r1_sv_negative_selection/results/site_temporal"
 tab = pd.read_parquet(f"{ST}/site4_clq90_blocks.parquet")
