@@ -15,12 +15,12 @@
 # the pool of sv+smallindel per-record LFMM. Output schema matches reblock_multiaxis.
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-source analysis/grenenet_gea/phase1_replication/multiaxis/axes.sh
+source analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/multiaxis/axes.sh
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
-PR=analysis/grenenet_gea/phase1_replication
-CMDIR=analysis/grenenet_gea/phase1_replication/results/class_matrices
-LDIR=analysis/grenenet_gea/phase1_replication/results/multiaxis/lfmm
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
+CMDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices
+LDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/lfmm
 AXIS=${AXES[$SLURM_ARRAY_TASK_ID]}; C=nonsnp
 WORK=$LDIR/work_${C}_${AXIS}; mkdir -p "$WORK"
 echo "== host $(hostname) | lfmm nonsnp gen9 $AXIS (work=$WORK) =="
@@ -31,8 +31,8 @@ $R $PR/multiaxis/run_lfmm_nogif.R "$WORK/lfmm_${C}_gen9" 16 \
 $PY - "$C" "$AXIS" <<'EOF'
 import sys, pandas as pd
 cls, axis = sys.argv[1], sys.argv[2]
-CMDIR="analysis/grenenet_gea/phase1_replication/results/class_matrices"
-LDIR="analysis/grenenet_gea/phase1_replication/results/multiaxis/lfmm"
+CMDIR="analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices"
+LDIR="analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/lfmm"
 rec=pd.read_csv(f"{CMDIR}/{cls}_gen9.records.csv")
 pv=pd.read_csv(f"{LDIR}/lfmm_{cls}_gen9_{axis}_calibp.csv")["pval"].to_numpy()
 assert len(pv)==len(rec),(len(pv),len(rec))

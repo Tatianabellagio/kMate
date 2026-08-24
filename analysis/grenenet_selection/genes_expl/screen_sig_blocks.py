@@ -38,7 +38,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..")))
 import lib
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "phase1_replication", "multiaxis"))
 
-WZAIN = f"{lib.GEA}/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 CLASSES = ["sv", "smallindel", "nonsnp"]
 GFF = lib.TAIR10_GENES_TE                      # full hierarchy incl. TEs

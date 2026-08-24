@@ -28,7 +28,7 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(HERE))))
-OUT = f"{ROOT}/analysis/grenenet_gea/phase1_replication/notebooks/wza_sd_fit_audit.ipynb"
+OUT = f"{ROOT}/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/notebooks/wza_sd_fit_audit.ipynb"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 md_title = r"""# WZA SD-correction audit — which fit is actually right on the *current* blocks?
@@ -63,7 +63,7 @@ import matplotlib.pyplot as plt
 from scipy.stats import norm
 from sklearn.isotonic import IsotonicRegression
 os.chdir("__ROOT__")
-WD = "analysis/grenenet_gea/phase1_replication/results/multiaxis/wza"
+WD = "analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza"
 COL = {"deg2": "#B7C0CC", "deg7": "#E07A5F", "isotonic": "#3A5A98", "empirical": "k"}
 
 def load(model, cls, axis, regime):

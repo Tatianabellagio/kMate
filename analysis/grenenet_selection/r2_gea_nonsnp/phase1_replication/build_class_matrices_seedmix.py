@@ -7,7 +7,7 @@ p0) instead of a site_gen_plot pool matrix — so gen1/gen2/gen3/gen9 (evolved)
 and gen0 (founding) end up in the exact same {class}_gen{g}_af.npy /
 {class}_gen{g}.records.csv layout.
 
-Outputs (--out, default analysis/grenenet_gea/phase1_replication/results/class_matrices):
+Outputs (--out, default analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices):
   {class}_gen0_af.npy       float32 [8 reps x n_kept]   (one row per SEEDMIX rep)
   {class}_gen0.records.csv  chrom,pos,ref_len,alt_len,p_bar,maf,n_finite,col
   gen0.pools.csv            rep id (SEEDMIX_S1..S8)
@@ -86,7 +86,7 @@ def build(cls: str, store: str, out: str, maf_min: float):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--store", default=lib.AF_STORE)
-    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices")
     ap.add_argument("--classes", nargs="+", default=list(CLASSES), choices=CLASSES)
     ap.add_argument("--maf-min", type=float, default=0.05)
     args = ap.parse_args()

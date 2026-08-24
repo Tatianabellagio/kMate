@@ -33,7 +33,7 @@ def main():
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--gen", type=int, default=9)
     args = ap.parse_args()
-    base = f"{lib.GEA}/phase1_replication/results"
+    base = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results"
     src = f"{base}/significant_genes_annotated_gen{args.gen}_{args.climate}_{args.regime}.csv"
     d = pd.read_csv(src)
     d = d[d.gene.notna() & (d.gene.astype(str) != "")].copy()

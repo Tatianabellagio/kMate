@@ -89,7 +89,7 @@ def CompleteLDPartition(standardized_genotype_matrix,cutoff,window_size):
 ROOT="/global/scratch/users/tbellg/kmate"
 CHR="Chr1"; CHRNUM="Chr1"
 VP=f"{ROOT}/panel/arch3/chr1/var_pa_231_arch3_chr1"
-OUT=f"{ROOT}/analysis/grenenet_selection/hap_blocks"
+OUT=f"{ROOT}/analysis/grenenet_selection/blocks/hap_blocks"
 CUTOFFS=[0.1,0.2,0.3,0.4]; WINDOW=100; MAF=0.05; CALLRATE_MIN=0.9
 CHR1_LEN=30427671   # TAIR10 Chr1, so blocks tile to the true chromosome end
 

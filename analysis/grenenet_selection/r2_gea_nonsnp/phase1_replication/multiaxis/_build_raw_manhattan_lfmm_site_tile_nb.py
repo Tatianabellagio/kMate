@@ -46,7 +46,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
 import lib
 GEA = lib.GEA
-WZAIN = f"{GEA}/phase1_replication/results/multiaxis/wza_in_clq09_tile_site"
+WZAIN = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile_site"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 CLS = "__CLS__"; QCUT = 0.05
 
@@ -112,7 +112,7 @@ if len(GF):
     _A = _ann.annotate(sorted(candf["gene"].unique()))
     candf = candf.merge(_A[["gene", "protein_name", "categories", "uniprot_function"]], on="gene", how="left")
     candf["categories"] = candf["categories"].fillna("")
-    _out = f"{GEA}/phase1_replication/results/multiaxis/raw_manhattan_newpeak_genes_{CLS}_site_tile_FDR.csv"
+    _out = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/raw_manhattan_newpeak_genes_{CLS}_site_tile_FDR.csv"
     candf.to_csv(_out, index=False)
     _ntag = int((candf["categories"].str.len() > 0).sum())
     print(f"\n{len(candf)} unique {CLS}-only FDR(q<{QCUT}) new-peak genes across 20 axes "
@@ -345,7 +345,7 @@ if len(G):
     sym = ensembl_symbols(sorted(cand.gene.unique()))
     cand["symbol"] = cand.gene.map(lambda x: sym.get(x, ("", ""))[0])
     cand["description"] = cand.gene.map(lambda x: sym.get(x, ("", ""))[1])
-    cand.to_csv(f"{lib.GEA}/phase1_replication/results/multiaxis/raw_manhattan_newpeak_genes_{CLS}_site_tile.csv", index=False)
+    cand.to_csv(f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/raw_manhattan_newpeak_genes_{CLS}_site_tile.csv", index=False)
     print(f"{len(cand)} unique {CLS}-only new-peak genes (site-collapsed) across 20 axes")
     display(cand[["gene", "symbol", "description", "block", "chrom", "pos", "n_axes", "nlp"]].head(50))
 else:
@@ -374,7 +374,7 @@ if "cand" in dir() and len(cand):
              "uniprot_function", "uniprot_keywords"]
     cand_annot = cand.merge(_A[_cols], on="gene", how="left")
     cand_annot["categories"] = cand_annot["categories"].fillna("")
-    _outp = f"{lib.GEA}/phase1_replication/results/multiaxis/raw_manhattan_newpeak_genes_{CLS}_site_tile_annotated.csv"
+    _outp = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/raw_manhattan_newpeak_genes_{CLS}_site_tile_annotated.csv"
     cand_annot.to_csv(_outp, index=False)
     _ntag = int((cand_annot["categories"].str.len() > 0).sum())
     print(f"{len(cand_annot)} genes annotated ; {_ntag} tagged to >=1 climate/stress/flowering/defense category")

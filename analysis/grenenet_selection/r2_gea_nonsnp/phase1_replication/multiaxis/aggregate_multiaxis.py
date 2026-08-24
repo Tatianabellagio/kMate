@@ -17,7 +17,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 import lib
 
-WD = f"{lib.GEA}/phase1_replication/results/multiaxis/wza"
+WD = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 MODELS = ["kendall", "lfmm", "binomial"]
 CLASSES = ["snp", "nonsnp"]
@@ -57,7 +57,7 @@ def main():
                     top_block=str(w.loc[w["Z_pVal"].idxmin(), "block"]),
                     cam5_q=cam_q))
     df = pd.DataFrame(rows)
-    out = f"{lib.GEA}/phase1_replication/results/multiaxis/multiaxis_summary.csv"
+    out = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/multiaxis_summary.csv"
     df.to_csv(out, index=False)
     ok = df[df.status == "ok"]
     print(f"present: {len(ok)}/{len(df)} outputs")

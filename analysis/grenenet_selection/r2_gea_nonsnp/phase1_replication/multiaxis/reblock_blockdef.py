@@ -28,7 +28,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 import lib
 
-MA = f"{lib.GEA}/phase1_replication/results/multiaxis"
+MA = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 
 SRC = {
     "kendall":  ("kendall/kendall_{cls}_gen9_{axis}.csv", "pval"),

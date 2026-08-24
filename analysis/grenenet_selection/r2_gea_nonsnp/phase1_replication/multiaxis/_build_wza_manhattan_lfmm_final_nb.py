@@ -267,7 +267,7 @@ if len(rec):
                              uniprot_function=(i.get("uniprot_function","") or "")[:400],
                              go_bp=";".join((i.get("go_bp","") or "").split(";")[:6])))
     GT = pd.DataFrame(rows).sort_values(["n_axes","best_p"], ascending=[False, True])
-    out = f"{GEA}/phase1_replication/results/multiaxis/{CLS}_wza_final_lfmm_bonf_genes.csv"
+    out = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/{CLS}_wza_final_lfmm_bonf_genes.csv"
     GT.to_csv(out, index=False)
     print(f"\\n{len(GT)} (block, gene) pairs over {GT.block.nunique()} blocks "
           f"and {GT.gene.nunique()} genes -> {out}")

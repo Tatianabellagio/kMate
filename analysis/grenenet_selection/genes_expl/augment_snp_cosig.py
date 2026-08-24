@@ -24,7 +24,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..")))
 import lib
 
-WZAIN = f"{lib.GEA}/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 WIN = 2000
 SNP_BONF_NLP = 7.606                      # 0.05 / n_snp(MAF>0.05), genome-wide

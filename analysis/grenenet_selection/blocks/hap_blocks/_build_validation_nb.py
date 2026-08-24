@@ -23,7 +23,7 @@ haploblock reframe is a near-no-op at this block size and does NOT beat the
 import nbformat as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
 
-HB = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/hap_blocks"
+HB = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/blocks/hap_blocks"
 OUT = f"{HB}/haploblock_r2010_eps0_validation.ipynb"
 
 md_intro = r"""# r2=0.10, eps=0 haploblock validation  — CORRECTED

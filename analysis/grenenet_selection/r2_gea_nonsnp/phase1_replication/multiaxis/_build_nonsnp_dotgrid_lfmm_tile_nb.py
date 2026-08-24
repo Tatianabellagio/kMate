@@ -51,7 +51,7 @@ import numpy as np, pandas as pd, matplotlib as mpl, matplotlib.pyplot as plt
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
 import lib
 GEA = lib.GEA
-MA = f"{GEA}/phase1_replication/results/multiaxis"
+MA = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 IND = f"{MA}/wza_in_clq09_tile"
 OUTDIR = MA
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]

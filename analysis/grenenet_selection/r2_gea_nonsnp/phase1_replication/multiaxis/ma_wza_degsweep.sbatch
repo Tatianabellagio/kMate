@@ -36,16 +36,16 @@ set -euo pipefail
 # 1-second "COMPLETED"). Use SLURM_SUBMIT_DIR (submit from the repo root) and walk
 # up to the dir that actually contains the tree, then VERIFY -- never cd blindly.
 ROOT="${SLURM_SUBMIT_DIR:-$PWD}"
-while [ "$ROOT" != "/" ] && [ ! -d "$ROOT/analysis/grenenet_gea/phase1_replication" ]; do
+while [ "$ROOT" != "/" ] && [ ! -d "$ROOT/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication" ]; do
   ROOT="$(dirname "$ROOT")"
 done
-if [ ! -d "$ROOT/analysis/grenenet_gea/phase1_replication" ]; then
+if [ ! -d "$ROOT/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication" ]; then
   echo "FATAL: cannot locate repo root from SLURM_SUBMIT_DIR=${SLURM_SUBMIT_DIR:-unset}" >&2
   exit 1
 fi
 cd "$ROOT"
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
-PR=analysis/grenenet_gea/phase1_replication
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 MA=$PR/results/multiaxis
 
 AXES=(bio1 bio2 bio3 bio4 bio5 bio6 bio7 bio8 bio9 bio10 bio11 bio12 bio13 bio14 bio15 bio16 bio17 bio18 bio19 pc1)

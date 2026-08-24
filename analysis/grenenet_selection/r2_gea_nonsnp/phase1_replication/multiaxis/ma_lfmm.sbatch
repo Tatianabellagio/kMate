@@ -19,7 +19,7 @@ cd /global/scratch/users/tbellg/kmate
 source analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/multiaxis/axes.sh
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
-PR=analysis/grenenet_selection/phase1_replication
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 CMDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices
 LDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/lfmm
 i=${SLURM_ARRAY_TASK_ID}; AXIS=$(axis_for $i); C=$(cls_for $i)

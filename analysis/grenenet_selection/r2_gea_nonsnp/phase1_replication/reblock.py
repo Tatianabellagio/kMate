@@ -34,7 +34,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
-BASE = f"{lib.GEA}/phase1_replication/results"
+BASE = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results"
 CLQ = f"{BASE}/clq90"
 
 # where each (model, class) per-record source lives. binomial is the freshly-built

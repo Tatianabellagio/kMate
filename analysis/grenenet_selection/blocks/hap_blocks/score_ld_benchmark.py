@@ -5,7 +5,7 @@ Metrics per config: coverage (finite-AF frac), AF RMSE/MAE/Pearson over finite
 records, block count + median block width, block resolve/NaN status.
 """
 import numpy as np, pandas as pd, json, os
-HB="/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/hap_blocks"
+HB="/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/blocks/hap_blocks"
 OUT=f"{HB}/bench_g0_231"
 SIM="/global/scratch/users/tbellg/kmate/benchmarks/p231/sims/cov10_n231_g0_s42_hotspots_p231_chr1"
 

@@ -21,7 +21,7 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(os.path.dirname(HERE)))
 import lib  # noqa: E402
-RES = f"{lib.GEA}/phase1_replication/results/multiaxis"
+RES = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 
 _sp = ilu.spec_from_file_location("ann_tu", f"{os.path.dirname(HERE)}/annotate_genes_tair_uniprot.py")
 ann_tu = ilu.module_from_spec(_sp); _sp.loader.exec_module(ann_tu)

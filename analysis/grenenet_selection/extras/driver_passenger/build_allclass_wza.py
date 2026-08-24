@@ -163,11 +163,11 @@ def main():
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--indir", default=None,
                     help="dir of per-class model CSVs (default ../phase1_replication/<model>)")
-    ap.add_argument("--out", default=f"{lib.GEA}/driver_passenger/results")
+    ap.add_argument("--out", default=f"{lib.GEA}/extras/driver_passenger/results")
     ap.add_argument("--min-snps", type=int, default=2)
     args = ap.parse_args()
 
-    indir = args.indir or f"{lib.GEA}/phase1_replication/results/{args.model}"
+    indir = args.indir or f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/{args.model}"
     os.makedirs(args.out, exist_ok=True)
     stem = f"allclass_{args.model}_gen{args.gen}_{args.climate}"
 

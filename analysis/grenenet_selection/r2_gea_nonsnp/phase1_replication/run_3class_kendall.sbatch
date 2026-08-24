@@ -14,7 +14,7 @@
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
-PR=analysis/grenenet_selection/phase1_replication
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 echo "== host $(hostname) =="
 for CLS in snp sv smallindel; do
   echo "===== kendall $CLS gen9 bio1 ====="

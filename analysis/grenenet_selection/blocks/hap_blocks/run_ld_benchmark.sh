@@ -8,7 +8,7 @@ mamba activate kmate 2>/dev/null || true
 set -euo pipefail
 echo "python=$(which python)"
 ROOT=/global/scratch/users/tbellg/kmate
-HB=$ROOT/analysis/grenenet_selection/hap_blocks
+HB=$ROOT/analysis/grenenet_selection/blocks/hap_blocks
 SIM=$ROOT/benchmarks/p231/sims/cov10_n231_g0_s42_hotspots_p231_chr1
 KMER=$ROOT/benchmarks/p231/data/kmer_pa_p231_filt2inv/kmer_pa
 VARPA=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz

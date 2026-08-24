@@ -62,9 +62,9 @@ from scipy import stats
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
 import lib
 GEA = lib.GEA
-WZAIN = f"{GEA}/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+WZAIN = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
-OUTDIR = f"{GEA}/phase1_replication/results/multiaxis"
+OUTDIR = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 plt.rcParams.update({"figure.dpi": 110, "axes.spines.top": False, "axes.spines.right": False})
 
 CHROM_LEN = {"Chr1":30427671,"Chr2":19698289,"Chr3":23459830,"Chr4":18585056,"Chr5":26975502}

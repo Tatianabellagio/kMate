@@ -17,7 +17,7 @@ GEN=${2:-9}
 CLIM=${3:-bio1}
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/basic/bin/python   # statsmodels lives in basic
-PR=analysis/grenenet_selection/phase1_replication
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 
 echo "== host $(hostname) | class=$CLS gen=$GEN clim=$CLIM | cpus=${SLURM_CPUS_PER_TASK:-8} =="
 $PY -u $PR/run_binomial.py --class "$CLS" --gen "$GEN" --climate "$CLIM" \

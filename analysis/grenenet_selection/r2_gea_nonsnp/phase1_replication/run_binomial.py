@@ -92,8 +92,8 @@ def main():
                     choices=["snp", "sv", "smallindel", "nonsnp"])
     ap.add_argument("--gen", type=int, required=True)
     ap.add_argument("--climate", default="bio1")
-    ap.add_argument("--cmdir", default=f"{lib.GEA}/phase1_replication/results/class_matrices")
-    ap.add_argument("--out", default=f"{lib.GEA}/phase1_replication/results/binomial")
+    ap.add_argument("--cmdir", default=f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices")
+    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/binomial")
     ap.add_argument("--threads", type=int, default=8)
     ap.add_argument("--effective-n", dest="eff_n", default="none",
                     choices=["none", "site"],

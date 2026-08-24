@@ -26,7 +26,7 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
-WDIR = f"{lib.GEA}/phase1_replication/results/wza"
+WDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/wza"
 MODELS = ["kendall", "lfmm", "binomial"]
 CLASSES = ["snp", "smallindel", "sv"]
 ENSEMBL = "https://rest.ensembl.org/lookup/id"
@@ -167,7 +167,7 @@ def main():
     out = pd.DataFrame(rows)
     # sort: most-supported blocks first, then by block, gene
     out = out.sort_values(["n_sig_combos", "block", "gene"], ascending=[False, True, True])
-    path = args.out or (f"{lib.GEA}/phase1_replication/results/"
+    path = args.out or (f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/"
                         f"significant_genes_gen{args.gen}_{args.climate}_{args.regime}.csv")
     out.to_csv(path, index=False)
     named = out[out.symbol != ""]

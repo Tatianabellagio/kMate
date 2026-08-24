@@ -14,11 +14,11 @@
 # current-AF nonsnp class matrix; the 3-class run stays the primary product).
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-source analysis/grenenet_gea/phase1_replication/multiaxis/axes.sh
+source analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/multiaxis/axes.sh
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 AXIS=${AXES[$SLURM_ARRAY_TASK_ID]}
-OUT=analysis/grenenet_gea/phase1_replication/results/multiaxis/kendall
+OUT=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/kendall
 echo "== host $(hostname) | kendall nonsnp gen9 $AXIS =="
-$PY -u analysis/grenenet_gea/phase1_replication/run_kendall.py \
+$PY -u analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/run_kendall.py \
     --class nonsnp --gen 9 --climate "$AXIS" --threads "${SLURM_CPUS_PER_TASK:-8}" --out "$OUT"
 echo "== ALLDONE_MAN_KENDALL nonsnp $AXIS =="

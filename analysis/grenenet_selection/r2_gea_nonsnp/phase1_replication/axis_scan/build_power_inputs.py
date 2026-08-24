@@ -16,8 +16,8 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 import lib
 
-CMDIR = f"{lib.GEA}/phase1_replication/results/class_matrices"
-BASE = f"{lib.GEA}/phase1_replication/results"
+CMDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices"
+BASE = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results"
 SITE = f"{BASE}/lfmm_site"
 ENV_SITE = f"{BASE}/env_site"
 ENV_PLOT = f"{BASE}/env_plot"

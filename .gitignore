@@ -319,7 +319,7 @@ analysis/grenenet_selection/r2_gea_nonsnp/cam5_replication/results/
 analysis/grenenet_selection/extras/driver_passenger/results/
 analysis/grenenet_selection/archive/gea_newpanel_snp_nonsnp_fork_retired/results/
 analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/
-analysis/grenenet_selection/r2_gea_nonsnp/wza_investigation/results/
+analysis/grenenet_selection/wza/investigation/results/
 # rerun_kfw_hb: production AF store, per-sample TSVs (mirrors old results/**/*.tsv rule)
 analysis/grenenet_selection/common/rerun_kfw_hb/**/*.tsv
 # sv_adaptive/: LIVE output dir for the s_*/parallelism/picmin/temporal_* SV-selection

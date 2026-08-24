@@ -145,7 +145,7 @@ A = A.set_index("gene")
 rep = rep.join(A[["symbol", "protein_name", "categories"]])
 rep["categories"] = rep["categories"].fillna("")
 rep["symbol"] = rep["symbol"].fillna("")
-_outp = f"{lib.GEA}/phase1_replication/results/multiaxis/newpeak_dotgrid_genes_{CLS}_tile.csv"
+_outp = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/newpeak_dotgrid_genes_{CLS}_tile.csv"
 rep.reset_index().to_csv(_outp, index=False)
 print(f"wrote {_outp}")
 print("category counts (a gene can carry several):")

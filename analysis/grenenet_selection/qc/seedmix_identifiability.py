@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
 CH=[f"Chr{i}" for i in range(1,6)]; N=231
-OUT="analysis/grenenet_selection/seedmix_validation"; os.makedirs(OUT,exist_ok=True)
+OUT="analysis/grenenet_selection/qc/seedmix_validation"; os.makedirs(OUT,exist_ok=True)
 
 # ---- kMate seed-mix h: reps x chroms x founders ----
 reps=sorted({os.path.basename(p).split("_Chr")[0] for p in glob.glob(f"{lib.SEEDMIX}/*_Chr1.h_per_chrom.npz")})

@@ -16,7 +16,7 @@ GEN=${2:-9}
 CLIM=${3:-bio1}
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
-PR=analysis/grenenet_selection/phase1_replication
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 echo "== host $(hostname) | WZA binomial $CLS gen$GEN $CLIM =="
 $PY -u $PR/run_wza.py --model binomial --class "$CLS" --gen "$GEN" --climate "$CLIM"
 echo "== ALLDONE_WZA_BINOM $CLS gen$GEN $CLIM =="

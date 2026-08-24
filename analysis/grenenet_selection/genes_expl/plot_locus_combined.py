@@ -31,7 +31,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..")))
 import lib
 
-WZAIN = f"{lib.GEA}/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 GROUP_MEANS = f"{lib.GEA}/common/results/group_means.npz"
 BIO_CSV = ("/global/scratch/users/tbellg/gea_grene-net/key_files/"
            "1001g_regmap_grenet_ecotype_info_corrected_bioclim_2024May16.csv")

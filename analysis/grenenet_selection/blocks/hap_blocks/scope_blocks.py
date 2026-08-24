@@ -11,7 +11,7 @@ import numpy as np, scipy.sparse as sp, os, json, time
 
 ROOT="/global/scratch/users/tbellg/kmate"
 PAN=f"{ROOT}/data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1"
-OUT=f"{ROOT}/analysis/grenenet_selection/hap_blocks"; os.makedirs(OUT,exist_ok=True)
+OUT=f"{ROOT}/analysis/grenenet_selection/blocks/hap_blocks"; os.makedirs(OUT,exist_ok=True)
 
 t0=time.time()
 meta=np.load(f"{PAN}.meta.npz",allow_pickle=True)

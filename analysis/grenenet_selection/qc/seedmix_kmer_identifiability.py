@@ -21,7 +21,7 @@ import lib
 
 PANEL="data/kmer_pa_231_arch3_filt2inv/kmer_pa"
 CH=[f"Chr{i}" for i in range(1,6)]; N=231
-OUT="analysis/grenenet_selection/seedmix_validation"; os.makedirs(OUT,exist_ok=True)
+OUT="analysis/grenenet_selection/qc/seedmix_validation"; os.makedirs(OUT,exist_ok=True)
 t0=time.time()
 
 # founder order of the k-mer panel (cheap: npz loads one key lazily)

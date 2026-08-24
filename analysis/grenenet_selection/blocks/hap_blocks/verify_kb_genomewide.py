@@ -13,7 +13,7 @@ import numpy as np, scipy.sparse as sp
 from sklearn import preprocessing
 
 ROOT = "/global/scratch/users/tbellg/kmate"
-OUT = f"{ROOT}/analysis/grenenet_selection/hap_blocks"
+OUT = f"{ROOT}/analysis/grenenet_selection/blocks/hap_blocks"
 KMDIR = f"{ROOT}/data/kmer_pa_231_arch3_filt2inv"
 CUTOFF = 0.1; WINDOW = 100; MAF = 0.05; CALLRATE_MIN = 0.9; F = 231
 KMER_FLOOR = 10_000

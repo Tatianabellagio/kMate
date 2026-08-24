@@ -16,8 +16,8 @@ from scipy import stats
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
-CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
-KEN = f"{lib.GEA}/phase1_replication/results/kendall/kendall_hap_gen9_bio1.csv"
+CM = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices"
+KEN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/kendall/kendall_hap_gen9_bio1.csv"
 rng = np.random.default_rng(0)
 
 

@@ -15,7 +15,7 @@ K_b-vs-n_kmers diagnostic that separates real collapse from starvation.
 import nbformat as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
 
-HB = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/hap_blocks"
+HB = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/blocks/hap_blocks"
 OUT = f"{HB}/haploblock_r2020_eps0_validation.ipynb"
 
 md_intro = r"""# r2=0.20, eps=0 haploblock validation

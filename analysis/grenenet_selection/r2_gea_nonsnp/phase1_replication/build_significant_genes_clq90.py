@@ -30,8 +30,8 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
-WDIR = f"{lib.GEA}/phase1_replication/results/clq90/wza"
-OUTDIR = f"{lib.GEA}/phase1_replication/results/clq90"
+WDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/clq90/wza"
+OUTDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/clq90"
 MODELS = ["kendall", "lfmm", "binomial"]
 CLASSES = ["snp", "nonsnp"]
 ENSEMBL = "https://rest.ensembl.org/lookup/id"

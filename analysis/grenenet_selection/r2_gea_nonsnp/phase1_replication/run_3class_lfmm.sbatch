@@ -16,7 +16,7 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
-PR=analysis/grenenet_selection/phase1_replication
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 LDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/lfmm
 CMDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices
 mkdir -p "$LDIR"

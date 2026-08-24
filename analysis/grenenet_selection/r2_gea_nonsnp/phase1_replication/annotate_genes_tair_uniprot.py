@@ -54,7 +54,7 @@ sys.path.insert(0, os.path.dirname(HERE))
 import lib  # noqa: E402
 
 GAF_URL = "http://current.geneontology.org/annotations/tair.gaf.gz"
-GAF_CACHE = f"{lib.GEA}/phase1_replication/results/cache/tair.gaf.gz"
+GAF_CACHE = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/cache/tair.gaf.gz"
 UNIPROT = "https://rest.uniprot.org/uniprotkb/search"
 
 # reuse the curated keyword sets + classifier so the `categories` column stays comparable

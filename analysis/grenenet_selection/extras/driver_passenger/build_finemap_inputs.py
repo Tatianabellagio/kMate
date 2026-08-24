@@ -37,9 +37,9 @@ sys.path.insert(0, GEA_DIR)
 import lib
 
 CLASSES = ("snp", "smallindel", "sv")
-CM = f"{lib.GEA}/phase1_replication/results/class_matrices"
+CM = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices"
 PANEL = "/global/scratch/users/tbellg/kmate/panel/arch3"
-DP = f"{lib.GEA}/driver_passenger/results"
+DP = f"{lib.GEA}/extras/driver_passenger/results"
 
 
 def site_weights(pools: pd.DataFrame):

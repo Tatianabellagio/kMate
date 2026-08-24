@@ -13,10 +13,10 @@
 # Output -> multiaxis/quasibinom/quasibinom_lf16_nonsnp_gen9_{axis}.csv (pval_quasi)
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
-source analysis/grenenet_gea/phase1_replication/multiaxis/axes.sh
+source analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/multiaxis/axes.sh
 PY=/global/home/users/tbellg/miniforge3/envs/basic/bin/python   # statsmodels in basic
-PR=analysis/grenenet_gea/phase1_replication
-OUT=analysis/grenenet_gea/phase1_replication/results/multiaxis/quasibinom
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
+OUT=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/quasibinom
 AXIS=${AXES[$SLURM_ARRAY_TASK_ID]}
 echo "== host $(hostname) | quasibinom nonsnp K16 gen9 $AXIS =="
 $PY -u $PR/run_quasibinom.py --class nonsnp --gen 9 --climate "$AXIS" \

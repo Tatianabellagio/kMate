@@ -15,7 +15,7 @@ from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 from nbconvert.preprocessors import ExecutePreprocessor
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
-OUT = f"{ROOT}/analysis/grenenet_gea/phase1_replication/notebooks/nonsnp_bonf_overlap.ipynb"
+OUT = f"{ROOT}/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/notebooks/nonsnp_bonf_overlap.ipynb"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 md_title = r"""# non-SNP Bonferroni hits — overlap across models and across climate axes
@@ -31,9 +31,9 @@ import os, sys
 import numpy as np, pandas as pd
 import matplotlib.pyplot as plt
 os.chdir("__ROOT__")
-sys.path.insert(0, "analysis/grenenet_gea")
+sys.path.insert(0, "analysis/grenenet_selection")
 import lib
-DIR = "analysis/grenenet_gea/phase1_replication/results/multiaxis"
+DIR = "analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 MODELS = ["kendall", "lfmm", "binomial"]
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 MCOL = {"kendall": "#3A5A98", "lfmm": "#E07A5F", "binomial": "#588157"}

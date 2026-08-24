@@ -122,7 +122,7 @@ def main():
     ap.add_argument("--climate", default="bio1")
     ap.add_argument("--gen", type=int, default=9)
     args = ap.parse_args()
-    base = f"{lib.GEA}/phase1_replication/results"
+    base = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results"
     sig = pd.read_csv(f"{base}/significant_genes_gen{args.gen}_{args.climate}_{args.regime}.csv")
     genes = sorted(sig.loc[sig.gene.notna() & (sig.gene.astype(str) != ""), "gene"].unique())
     print(f"annotating {len(genes)} genes via mygene.info…", flush=True)

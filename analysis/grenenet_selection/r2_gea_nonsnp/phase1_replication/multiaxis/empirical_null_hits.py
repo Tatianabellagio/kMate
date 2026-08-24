@@ -56,9 +56,9 @@ import lib
 
 warnings.filterwarnings("ignore")
 GEA = lib.GEA
-WZA = f"{GEA}/phase1_replication/results/multiaxis/wza"
-OUTDIR = f"{GEA}/phase1_replication/results/multiaxis/empirical_null"
-NULL_TAIL = f"{GEA}/wza_investigation/null_tail_shape.csv"
+WZA = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza"
+OUTDIR = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/empirical_null"
+NULL_TAIL = f"{GEA}/wza/investigation/null_tail_shape.csv"
 
 MODELS = ["kendall", "lfmm", "binomial"]
 CLASSES = ["snp", "sv", "smallindel", "nonsnp"]

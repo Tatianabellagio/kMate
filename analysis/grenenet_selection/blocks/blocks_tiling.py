@@ -113,7 +113,7 @@ def merge_small_blocks(block_ids: np.ndarray, min_variants: int = HAPFM_MIN_VARI
 
 
 def _report(r2):
-    MA = f"{lib.GEA}/phase1_replication/results/multiaxis"
+    MA = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
     print(f"\n===== clq{r2} =====")
     print(f"{'class':11s} {'records':>10s} | {'STRICT kept':>12s} {'%drop':>7s} | "
           f"{'TILING kept':>12s} {'%drop':>7s} | {'blocks':>8s} {'med/blk':>8s}")

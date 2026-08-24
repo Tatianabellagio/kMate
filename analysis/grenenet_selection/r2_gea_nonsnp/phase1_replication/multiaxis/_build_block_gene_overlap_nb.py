@@ -47,8 +47,8 @@ co(r"""import os, sys, numpy as np, pandas as pd, matplotlib.pyplot as plt
 from matplotlib_venn import venn3, venn3_circles
 sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
 import lib
-WZAIN = f"{lib.GEA}/phase1_replication/results/multiaxis/wza_in_clq09_tile"
-OUTDIR = f"{lib.GEA}/phase1_replication/results/multiaxis"
+WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+OUTDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 plt.rcParams.update({"figure.dpi": 120, "axes.spines.top": False, "axes.spines.right": False})
 

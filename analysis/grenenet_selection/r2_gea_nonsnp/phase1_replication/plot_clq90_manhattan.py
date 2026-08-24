@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
-W = f"{lib.GEA}/phase1_replication/results/clq90/wza"
+W = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/clq90/wza"
 CHROM_LEN = {"Chr1": 30427671, "Chr2": 19698289, "Chr3": 23459830,
              "Chr4": 18585056, "Chr5": 26975502}
 MODELS = ["kendall", "lfmm", "binomial"]
@@ -88,7 +88,7 @@ def main():
         axes[-1, j].set_xticks([off[c] + CHROM_LEN[c] / 2 for c in off])
         axes[-1, j].set_xticklabels(list(off), fontsize=8)
     fig.tight_layout()
-    out = args.out or f"{lib.GEA}/phase1_replication/results/clq90/manhattan_clq90_{args.regime}.png"
+    out = args.out or f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/clq90/manhattan_clq90_{args.regime}.png"
     fig.savefig(out, dpi=140)
     print("wrote", out)
 

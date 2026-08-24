@@ -12,7 +12,7 @@ import seaborn as sns
 
 PROJ = "/global/scratch/projects/fc_moilab/tbellg/kmate"
 CHROMS = [1, 2, 3, 4, 5]
-PLOTDIR = f"{PROJ}/analysis/grenenet_gea/notebooks/plots"
+PLOTDIR = f"{PROJ}/analysis/grenenet_selection/notebooks/plots"
 
 sns.set_theme(style="whitegrid")
 plt.rcParams.update({"figure.dpi": 110})

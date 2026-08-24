@@ -6,7 +6,7 @@ main breakpoint position(s), not exact identity (different panels).
 """
 import numpy as np
 ROOT="/global/scratch/users/tbellg/kmate"
-OUT=f"{ROOT}/analysis/grenenet_selection/hap_blocks"
+OUT=f"{ROOT}/analysis/grenenet_selection/blocks/hap_blocks"
 HAPF="/global/scratch/projects/fc_moilab/projects/grenenet-phase1/frequency/hapFIRE_frequencies/seed_mix/s1_independent_genomewide_partition.txt"
 
 def load_ours(r2, chrom="1"):

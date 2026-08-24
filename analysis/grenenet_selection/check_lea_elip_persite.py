@@ -20,7 +20,7 @@ import lib  # noqa: E402
 DIR = f"{lib.GEA}/r3_persite_gwas/results/varexp"
 
 _sp = ilu.spec_from_file_location(
-    "ann_tu", f"{lib.GEA}/phase1_replication/annotate_genes_tair_uniprot.py")
+    "ann_tu", f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/annotate_genes_tair_uniprot.py")
 ann_tu = ilu.module_from_spec(_sp); _sp.loader.exec_module(ann_tu)
 
 LEA_CURATED = {

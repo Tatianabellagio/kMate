@@ -22,7 +22,7 @@ import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 import lib
 
-MA = f"{lib.GEA}/phase1_replication/results/multiaxis"
+MA = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 WD = f"{MA}/wza"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 MODELS = ["kendall", "lfmm", "binomial"]

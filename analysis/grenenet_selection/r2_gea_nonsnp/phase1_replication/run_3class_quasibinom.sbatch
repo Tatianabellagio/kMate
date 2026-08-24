@@ -16,7 +16,7 @@
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/basic/bin/python
-PR=analysis/grenenet_selection/phase1_replication
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 QDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/clq90/quasibinom
 BDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/clq90/binomial
 mkdir -p "$QDIR" "$BDIR"

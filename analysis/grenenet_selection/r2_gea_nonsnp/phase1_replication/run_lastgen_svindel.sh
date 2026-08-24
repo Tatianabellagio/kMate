@@ -11,8 +11,8 @@
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
-PR=analysis/grenenet_selection/phase1_replication
-WZA=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/wza_script.py
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
+WZA=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/wza/wza_script.py
 KDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/kendall
 WDIR=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/wza
 mkdir -p "$WDIR"

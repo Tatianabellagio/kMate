@@ -3,7 +3,7 @@ Run in `basic` env, then execute with nbconvert (kernel python3)."""
 import nbformat as nbf
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 
-SV = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/seedmix_validation"
+SV = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/qc/seedmix_validation"
 nb = new_notebook()
 C = []
 
@@ -25,7 +25,7 @@ import json, numpy as np, pandas as pd, matplotlib.pyplot as plt
 import scipy.sparse as sp
 plt.rcParams.update({'figure.dpi':110,'font.size':10})
 ROOT="/global/scratch/users/tbellg/kmate"
-SV=f"{ROOT}/analysis/grenenet_selection/seedmix_validation"
+SV=f"{ROOT}/analysis/grenenet_selection/qc/seedmix_validation"
 U=1/231
 PROD_KEY="h__FILT2INV|multinomial|1/mb"
 FIX_KEY ="h__FILT2INV|poisson|none"

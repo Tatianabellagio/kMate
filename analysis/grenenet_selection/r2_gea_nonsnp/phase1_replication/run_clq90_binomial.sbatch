@@ -15,7 +15,7 @@
 set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/basic/bin/python   # statsmodels in basic
-PR=analysis/grenenet_selection/phase1_replication
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 OUT=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/clq90/binomial
 
 echo "== host $(hostname) | cpus=${SLURM_CPUS_PER_TASK:-16} =="

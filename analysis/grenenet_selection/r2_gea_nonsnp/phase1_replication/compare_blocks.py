@@ -94,7 +94,7 @@ def load_one(path: str, fdr: float) -> dict | None:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--wza", default=f"{lib.GEA}/phase1_replication/results/wza")
+    ap.add_argument("--wza", default=f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/wza")
     ap.add_argument("--fdr", type=float, default=0.05)
     ap.add_argument("--gene", default="AT2G27030", help="target gene (default CAM5)")
     ap.add_argument("--deg", default="deg2", choices=["deg2", "deg7", "both"],

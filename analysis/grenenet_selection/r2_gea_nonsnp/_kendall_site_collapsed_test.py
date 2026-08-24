@@ -36,9 +36,9 @@ from scipy.stats import kendalltau, chi2
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 
-CMDIR = f"{lib.GEA}/phase1_replication/results/class_matrices"
-PRODDIR = f"{lib.GEA}/phase1_replication/results/clq90/wza_in"       # frozen production, READ-ONLY
-OUT = f"{lib.GEA}/phase1_replication/results/clq90/kendall_fix_test/site_collapsed"
+CMDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices"
+PRODDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/clq90/wza_in"       # frozen production, READ-ONLY
+OUT = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/clq90/kendall_fix_test/site_collapsed"
 GEN = 9
 CLIM = "bio1"
 CLASSES = ["snp", "nonsnp"]

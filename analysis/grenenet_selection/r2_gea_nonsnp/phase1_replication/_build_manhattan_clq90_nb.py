@@ -16,7 +16,7 @@ import os
 import nbformat as nbf
 from nbconvert.preprocessors import ExecutePreprocessor
 
-HERE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/phase1_replication"
+HERE = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication"
 OUTDIR = f"{HERE}/notebooks"
 OUT = f"{OUTDIR}/manhattan_clq90_deg2.ipynb"
 os.makedirs(OUTDIR, exist_ok=True)

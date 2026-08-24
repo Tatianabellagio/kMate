@@ -1,0 +1,15 @@
+#!/bin/bash
+#SBATCH --job-name=wza_permnull
+#SBATCH --account=co_moilab
+#SBATCH --partition=savio4_htc
+#SBATCH --qos=savio_lowprio
+#SBATCH --cpus-per-task=8
+#SBATCH --mem=128G
+#SBATCH --time=2:00:00
+#SBATCH --output=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/wza/investigation/logs/permnull_%j.out
+#SBATCH --error=/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/wza/investigation/logs/permnull_%j.out
+set -euo pipefail
+cd /global/scratch/users/tbellg/kmate
+/global/home/users/tbellg/miniforge3/envs/kmate/bin/python -u \
+  analysis/grenenet_selection/wza/investigation/perm_null_sd.py
+echo "== ALLDONE_PERMNULL =="

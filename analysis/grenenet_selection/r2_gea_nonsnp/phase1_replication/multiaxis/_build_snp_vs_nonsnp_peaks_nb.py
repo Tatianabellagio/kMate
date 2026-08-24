@@ -25,11 +25,11 @@ Built on **isotonic** WZA. Every axis figure shows all 3 models.""")
 
 co("""import os, sys
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
-sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea")
+sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection")
 import lib
-GEA = "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea"
-WD = f"{GEA}/phase1_replication/results/multiaxis/wza"
-OUTDIR = f"{GEA}/phase1_replication/results/multiaxis"
+GEA = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection"
+WD = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza"
+OUTDIR = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 MODELS = ["kendall", "lfmm", "binomial"]
 CHROM_LEN = {"Chr1":30427671,"Chr2":19698289,"Chr3":23459830,"Chr4":18585056,"Chr5":26975502}

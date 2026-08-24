@@ -16,7 +16,7 @@ set -euo pipefail
 cd /global/scratch/users/tbellg/kmate
 source analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/multiaxis/axes.sh
 PY=/global/home/users/tbellg/miniforge3/envs/basic/bin/python   # statsmodels in basic
-PR=analysis/grenenet_selection/phase1_replication   # production quasibinom now lives here
+PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication   # production quasibinom now lives here
 OUT=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/quasibinom
 i=${SLURM_ARRAY_TASK_ID}; AXIS=$(axis_for $i); C=$(cls_for $i)
 echo "== host $(hostname) | quasibinom $C K16 gen9 $AXIS =="
