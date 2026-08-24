@@ -1,5 +1,14 @@
 #!/usr/bin/env python
-"""Genes on nonSNP-specific hit blocks (BH-sig in non-SNP but NOT in SNP), all axes.
+"""SUPERSEDED (2026-07-27) — reads deg-2 WZA output + the retired pooled 2-class
+(snp/nonsnp) split. deg-2 fabricates significance on sparse large blocks (see
+`../STATUS_clq90.md`'s 2026-07-21/07-27 banners); the pipeline moved to isotonic
++ the 3-class (snp/sv/smallindel) split. Current equivalent: the `class_specific()`
+helper in `_build_snp_vs_nonsnp_peaks_nb.py` -> `{cls}_specific_peaks_{bonf,fdr}.csv`
++ `snp_vs_nonsnp_new_peaks.ipynb`. Kept for provenance/archaeology; do not cite its
+output (`nonsnp_specific_genes.csv`, the "437 blocks -> 548 genes, heat-stress
+dominates" list) as current.
+
+Genes on nonSNP-specific hit blocks (BH-sig in non-SNP but NOT in SNP), all axes.
 
 A block is "nonSNP-specific" for a given (axis, model) if it is WZA BH-FDR q<0.05 in
 the NON-SNP class but NOT in the SNP class for that same axis+model. We collect the

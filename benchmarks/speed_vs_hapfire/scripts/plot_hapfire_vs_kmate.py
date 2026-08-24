@@ -9,10 +9,15 @@ benchmarks/poolsize_depth/scripts/score_and_plot.py (transparent boxes, jittered
 colored points, shared y per row) but hue = tool (kMate vs hapFIRE) instead of
 depth, faceted by depth instead of by panel.
 
+Depth columns: 1x / 5x / 10x -- the 5x column is the intermediate depth added to
+show the N=150 low-coverage weakness closing; both tools run there (full fair
+grid), same as 1x/10x.
+
 Run with the `basic` env:
     /global/home/users/tbellg/miniforge3/envs/basic/bin/python \
         benchmarks/speed_vs_hapfire/scripts/plot_hapfire_vs_kmate.py
 """
+import os
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -21,10 +26,11 @@ import matplotlib.pyplot as plt
 
 ROOT = "/global/scratch/users/tbellg/kmate"
 OUT = f"{ROOT}/benchmarks/speed_vs_hapfire/results"
+os.makedirs(f"{OUT}/plots", exist_ok=True)
 df = pd.read_csv(f"{OUT}/hapfire_vs_kmate_table.tsv", sep="\t")
 
 POOL_SIZES = [2, 5, 20, 50, 150, 231]
-DEPTHS = [1, 10]
+DEPTHS = [1, 5, 10]
 TOOL_COLOR = {"kmate": "#54a24b", "hapfire": "#e45756"}
 TOOL_LABEL = {"kmate": "kMate", "hapfire": "hapFIRE"}
 
@@ -68,20 +74,20 @@ def legend_handles():
             for t in ("kmate", "hapfire")]
 
 
-def make_figure(row1_kmate, row1_hapfire, row1_label, row2_kmate, row2_hapfire, row2_label,
-               out_path, row1_log=False, row2_log=False):
-    fig, axes = plt.subplots(2, len(DEPTHS), figsize=(4.6 * len(DEPTHS), 6.6),
+def make_figure(rows, out_path):
+    n_rows = len(rows)
+    fig, axes = plt.subplots(n_rows, len(DEPTHS), figsize=(4.2 * len(DEPTHS), 3.3 * n_rows),
                              squeeze=False, sharex="col", sharey="row")
     for ci, depth in enumerate(DEPTHS):
         sub = df[df.depth == depth]
-        box_panel(axes[0][ci], sub, row1_kmate, row1_hapfire, log=row1_log)
-        axes[0][ci].text(0.5, 1.04, f"{depth}×", transform=axes[0][ci].transAxes,
-                         fontsize=10, fontweight="normal", color="#999999",
-                         ha="center", va="bottom")
-        if ci == 0: axes[0][ci].set_ylabel(row1_label, fontsize=10)
-        box_panel(axes[1][ci], sub, row2_kmate, row2_hapfire, log=row2_log)
-        axes[1][ci].set_xlabel("number of pooled founders")
-        if ci == 0: axes[1][ci].set_ylabel(row2_label, fontsize=10)
+        for ri, (kmate_col, hapfire_col, label, log) in enumerate(rows):
+            box_panel(axes[ri][ci], sub, kmate_col, hapfire_col, log=log)
+            if ri == 0:
+                axes[ri][ci].text(0.5, 1.04, f"{depth}×", transform=axes[ri][ci].transAxes,
+                                 fontsize=10, fontweight="normal", color="#999999",
+                                 ha="center", va="bottom")
+            if ci == 0: axes[ri][ci].set_ylabel(label, fontsize=10)
+        axes[n_rows - 1][ci].set_xlabel("number of pooled founders")
     fig.tight_layout()
     fig.legend(handles=legend_handles(), loc="lower center", ncol=2, fontsize=9,
                bbox_to_anchor=(0.5, -0.03), frameon=False)
@@ -90,6 +96,8 @@ def make_figure(row1_kmate, row1_hapfire, row1_label, row2_kmate, row2_hapfire, 
     print("saved", out_path)
 
 
-make_figure("kmate_h_R2", "hapfire_h_R2", "R² (h)",
-            "kmate_h_RMSE_norm", "hapfire_h_RMSE_norm", "RMSE / sd(truth) (h)",
-            f"{OUT}/hapfire_vs_kmate_h_accuracy.png")
+make_figure([
+    ("kmate_h_R2", "hapfire_h_R2", "R² (h)", False),
+    ("kmate_h_RMSE_norm", "hapfire_h_RMSE_norm", "RMSE / sd(truth) (h)", False),
+    ("kmate_h_RMSE", "hapfire_h_RMSE", "RMSE (h)", False),
+], f"{OUT}/plots/hapfire_vs_kmate_h_accuracy.png")

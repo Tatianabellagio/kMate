@@ -38,7 +38,7 @@ os.makedirs(OUT, exist_ok=True)
 POOL_SIZES = [2, 5, 20, 50, 150, 231]
 # 30x/50x only exist at N=50 (coverage-gradient diagnostic); other N x {30,50}
 # combos will just [skip] as missing output, which is fine.
-DEPTHS = [1, 10, 30, 50]
+DEPTHS = [1, 5, 10, 30, 50]
 SEEDS = [42, 43, 44, 45, 46]
 REL_EPS = 1e-6
 
@@ -150,10 +150,11 @@ for n in POOL_SIZES:
                 hapfire_total_elapsed_s=hf_total_elapsed, hapfire_total_cpu_s=hf_total_cpu,
                 hapfire_max_rss_mb=hf_peak_rss,
             ))
+            km_wall = f"{km_elapsed:.0f}s" if km_elapsed is not None else "NA"
             print(f"n={n:>3} cov={cov:>2}x s={seed}: "
                   f"h R2 kmate={km_h_r2:.3f} hapfire={hf_h_r2:.3f} | "
                   f"found kmate={km_n_found}/{n_truth_founders} hapfire={hf_n_found}/{n_truth_founders} | "
-                  f"wall kmate={km_elapsed:.0f}s hapfire={hf_total_elapsed:.0f}s "
+                  f"wall kmate={km_wall} hapfire={hf_total_elapsed:.0f}s "
                   f"(align={align_t['elapsed_s']:.0f}+hf={hapfire_t['elapsed_s']:.0f})")
 
 df = pd.DataFrame(rows)

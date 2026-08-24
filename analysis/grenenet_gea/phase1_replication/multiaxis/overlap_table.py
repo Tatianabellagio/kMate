@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-"""Cross-axis SNP vs non-SNP BH-hit-block OVERLAP table (all 20 axes).
+"""SUPERSEDED (2026-07-27) — reads deg-2 WZA output + the retired pooled 2-class
+(snp/nonsnp) split (see `../STATUS_clq90.md`'s 2026-07-21/07-27 banners on why deg-2
+is unreliable on sparse large blocks). Current equivalent: `class_peaks_overlap_table.py`
+(isotonic, 4-class incl. the snp/sv/smallindel split) -> `class_peaks_overlap_bonf.csv`.
+Kept for provenance/archaeology; do not cite `overlap_snp_nonsnp_by_axis*.csv` as current.
+
+Cross-axis SNP vs non-SNP BH-hit-block OVERLAP table (all 20 axes).
 
 For every axis (bio1..bio19 + pc1) and model (kendall/lfmm/binomial), take the
 clq0.9 blocks with WZA BH-FDR q<0.05 in SNP and in non-SNP, and report the overlap:

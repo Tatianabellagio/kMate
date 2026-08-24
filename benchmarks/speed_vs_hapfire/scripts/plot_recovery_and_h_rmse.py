@@ -8,6 +8,7 @@ Run with the `basic` env:
     /global/home/users/tbellg/miniforge3/envs/basic/bin/python \
         benchmarks/speed_vs_hapfire/scripts/plot_recovery_and_h_rmse.py
 """
+import os
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -16,10 +17,11 @@ import matplotlib.pyplot as plt
 
 ROOT = "/global/scratch/users/tbellg/kmate"
 OUT = f"{ROOT}/benchmarks/speed_vs_hapfire/results"
+os.makedirs(f"{OUT}/plots", exist_ok=True)
 df = pd.read_csv(f"{OUT}/hapfire_vs_kmate_table.tsv", sep="\t")
 
 POOL_SIZES = [2, 5, 20, 50, 150, 231]
-DEPTHS = [1, 10]
+DEPTHS = [1, 5, 10]
 TOOL_COLOR = {"kmate": "#54a24b", "hapfire": "#e45756"}
 TOOL_LABEL = {"kmate": "kMate", "hapfire": "hapFIRE"}
 
@@ -81,7 +83,7 @@ for ci, depth in enumerate(DEPTHS):
 fig.tight_layout()
 fig.legend(handles=legend_handles(), loc="lower center", ncol=2, fontsize=9,
            bbox_to_anchor=(0.5, -0.03), frameon=False)
-out_path = f"{OUT}/hapfire_vs_kmate_recovery_and_h_rmse.png"
+out_path = f"{OUT}/plots/hapfire_vs_kmate_recovery_and_h_rmse.png"
 fig.savefig(out_path, dpi=140, bbox_inches="tight")
 plt.close(fig)
 print("saved", out_path)

@@ -385,6 +385,7 @@ benchmarks/accuracy_vs_competitors/work/
 benchmarks/accuracy_vs_competitors/results/*.tsv
 benchmarks/accuracy_vs_competitors/results/*.txt
 benchmarks/accuracy_vs_competitors/results/*.png
+benchmarks/accuracy_vs_competitors/results/plots/
 benchmarks/accuracy_vs_competitors/logs/
 # old pre-unification pool-benchmark harness raw outputs (superseded, ~11 GB)
 benchmarks/benchmark_runs/

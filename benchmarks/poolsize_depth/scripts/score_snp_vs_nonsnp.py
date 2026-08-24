@@ -26,9 +26,10 @@ ROOT = "/global/scratch/users/tbellg/kmate"
 P231 = f"{ROOT}/benchmarks/p231"
 OUT = f"{ROOT}/benchmarks/speed_vs_hapfire/results"
 os.makedirs(OUT, exist_ok=True)
+os.makedirs(f"{OUT}/plots", exist_ok=True)
 
 POOL_SIZES = [2, 5, 20, 50, 150, 231]
-DEPTHS = [1, 10]
+DEPTHS = [1, 5, 10]
 SEEDS = [42, 43, 44, 45, 46]
 REL_EPS = 1e-6
 # Missingness filter: keep kMate records called in >=90% of the 231-founder panel
@@ -152,7 +153,7 @@ handles = [Line2D([0], [0], marker="o", color="none", markerfacecolor=TYPE_COLOR
 fig.tight_layout()
 fig.legend(handles=handles, loc="lower center", ncol=2, fontsize=9,
            bbox_to_anchor=(0.5, -0.03), frameon=False)
-out_path = f"{OUT}/kmate_snp_vs_nonsnp_af_accuracy.png"
+out_path = f"{OUT}/plots/kmate_snp_vs_nonsnp_af_accuracy.png"
 fig.savefig(out_path, dpi=140, bbox_inches="tight")
 plt.close(fig)
 print("saved", out_path)

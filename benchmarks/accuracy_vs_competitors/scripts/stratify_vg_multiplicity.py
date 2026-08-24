@@ -32,6 +32,8 @@ META     = ROOT / "benchmarks/p80/data/var_pa_p80.meta.npz"
 CALLED   = ROOT / "benchmarks/p80/data/var_pa_p80.var_called.npz"
 KMATE    = ROOT / f"benchmarks/benchmark_runs/tsv/{POOL}_global.tsv"
 OUTPFX   = ROOT / f"benchmarks/accuracy_vs_competitors/results/vg_multiplicity_{POOL}"
+PLOTPFX  = ROOT / f"benchmarks/accuracy_vs_competitors/results/plots/vg_multiplicity_{POOL}"
+PLOTPFX.parent.mkdir(parents=True, exist_ok=True)
 
 
 def seq_key(chrom, pos, ref, alt):
@@ -188,8 +190,8 @@ ax[2].set_title("accuracy vs locus allele-multiplicity")
 ax[2].legend(); ax[2].grid(alpha=0.3)
 fig.suptitle(f"vg-SV underperformance is driven by multiallelic cactus snarls  —  {POOL}", y=1.02)
 fig.tight_layout()
-fig.savefig(str(OUTPFX) + ".png", dpi=130, bbox_inches="tight")
-print(f"\n[fig] {OUTPFX}.png")
+fig.savefig(str(PLOTPFX) + ".png", dpi=130, bbox_inches="tight")
+print(f"\n[fig] {PLOTPFX}.png")
 print(f"[tsv] {OUTPFX}_metrics.tsv")
 
 # readable single-panel truth-vs-est scatters (kMate, vg) ---------------------
@@ -207,5 +209,5 @@ for tag, col, title in [("kmate", "kmate", "kMate"), ("vg", "vg", "vg (construct
     a1.set_xlim(0, 1); a1.set_ylim(0, 1)
     f1.colorbar(hb, ax=a1, label="log10(count)")
     f1.tight_layout()
-    f1.savefig(f"{OUTPFX}__{tag}_scatter.png", dpi=140, bbox_inches="tight")
-    print(f"[fig] {OUTPFX}__{tag}_scatter.png")
+    f1.savefig(f"{PLOTPFX}__{tag}_scatter.png", dpi=140, bbox_inches="tight")
+    print(f"[fig] {PLOTPFX}__{tag}_scatter.png")

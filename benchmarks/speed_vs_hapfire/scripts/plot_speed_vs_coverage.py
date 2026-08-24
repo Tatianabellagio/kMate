@@ -11,6 +11,7 @@ Run with the `basic` env:
     /global/home/users/tbellg/miniforge3/envs/basic/bin/python \
         benchmarks/speed_vs_hapfire/scripts/plot_speed_vs_coverage.py
 """
+import os
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -20,6 +21,7 @@ from matplotlib.ticker import LogLocator, ScalarFormatter, FuncFormatter
 
 ROOT = "/global/scratch/users/tbellg/kmate"
 OUT = f"{ROOT}/benchmarks/speed_vs_hapfire/results"
+os.makedirs(f"{OUT}/plots", exist_ok=True)
 df = pd.read_csv(f"{OUT}/hapfire_vs_kmate_table.tsv", sep="\t")
 df = df[df.N == 50]
 
@@ -83,7 +85,7 @@ handles = [Line2D([0], [0], marker="o", color="none", markerfacecolor=TOOL_COLOR
 fig.tight_layout()
 fig.legend(handles=handles, loc="lower center", ncol=2, fontsize=9,
            bbox_to_anchor=(0.5, -0.06), frameon=False)
-out_path = f"{OUT}/hapfire_vs_kmate_speed_vs_coverage.png"
+out_path = f"{OUT}/plots/hapfire_vs_kmate_speed_vs_coverage.png"
 fig.savefig(out_path, dpi=140, bbox_inches="tight")
 plt.close(fig)
 print("saved", out_path)

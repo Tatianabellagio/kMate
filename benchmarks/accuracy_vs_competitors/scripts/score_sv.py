@@ -225,5 +225,8 @@ if __name__ == "__main__":
     res = pd.DataFrame(rows)[["tool", "n", "MAE", "RMSE", "R2", "pearson_r"]]
     res.to_csv(a.out_prefix + "_metrics.tsv", sep="\t", index=False)
     if cells:
-        grid_panel(cells, "", a.out_prefix + "_scatter.png", ncols=len(cells), cell=4.0)
+        prefix = Path(a.out_prefix)
+        plot_path = prefix.parent / "plots" / (prefix.name + "_scatter.png")
+        plot_path.parent.mkdir(parents=True, exist_ok=True)
+        grid_panel(cells, "", str(plot_path), ncols=len(cells), cell=4.0)
     print(res.to_string(index=False))

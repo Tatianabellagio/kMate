@@ -1,5 +1,14 @@
 #!/usr/bin/env python
-"""Build + execute notebooks/nonsnp_specific_genes.ipynb (run in `basic` env).
+"""SUPERSEDED (2026-07-27) — builds a notebook off `nonsnp_specific_genes.csv`, itself
+deg-2/2-class-stale (see that script's header + `../STATUS_clq90.md`'s 2026-07-27
+banner: only 133/547 of its genes survive the isotonic + 3-class recompute, and the
+heat-stress theme it reports does not hold up). The rendered notebook
+(`notebooks/nonsnp_specific_genes.ipynb`, committed) is stale too — its "heat-stress
+dominates" read should not be cited. No current replacement notebook exists yet for
+the gene-symbol/description/functional-tagging step; `snp_vs_nonsnp_new_peaks.ipynb`
+has the corrected block/gene lists but not yet the symbol+theme annotation layer.
+
+Build + execute notebooks/nonsnp_specific_genes.ipynb (run in `basic` env).
 
 Presents the nonSNP-specific climate-hit gene list (multiaxis/nonsnp_specific_genes.csv):
 blocks BH-sig in non-SNP but NOT SNP across the 20 axes (bio1..bio19 + pc1) x 3 models,

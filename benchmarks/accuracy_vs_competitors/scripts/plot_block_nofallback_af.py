@@ -16,7 +16,8 @@ POOL = "cov10_n80_g0_s42_hotspots_p80_chr1"
 W = ROOT / "benchmarks/accuracy_vs_competitors/work"
 TRUTH = ROOT / f"benchmarks/p80/sims/{POOL}/recomb_truth.tsv.gz"
 GLOBAL = ROOT / f"benchmarks/benchmark_runs/tsv/{POOL}_global.tsv"
-OUT = ROOT / f"benchmarks/accuracy_vs_competitors/results/block_nofallback_af_{POOL}"
+OUT = ROOT / f"benchmarks/accuracy_vs_competitors/results/plots/block_nofallback_af_{POOL}"
+OUT.parent.mkdir(parents=True, exist_ok=True)
 
 PANELS = [
     ("global (production)", GLOBAL),

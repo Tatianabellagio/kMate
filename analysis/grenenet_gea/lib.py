@@ -18,7 +18,11 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 
-PROJ = "/global/scratch/users/tbellg/kmate"
+# PROJ derived from this file's own location (analysis/grenenet_gea/lib.py), not
+# hardcoded, so the repo tolerates future scratch moves without a repeat of the
+# 2026-07-22 break (user-scratch kmate tree migrated to project/fc_moilab scratch;
+# the old hardcoded /global/scratch/users/tbellg/kmate silently stopped existing).
+PROJ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Repointed 2026-07-07 to the full-panel-Kf_w + haploblock (--unit chrom) rerun.
 # Prev: rerun_perfounder (pre-Kf_w-fullpanel, 2026-07-06 — STALE). See
 # analysis/grenenet_gea/rerun_kfw_hb/README.md.
