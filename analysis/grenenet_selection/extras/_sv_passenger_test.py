@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 import scipy.sparse as sp
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "r3_persite_gwas"))
 import lib
 from founder_genotype import build_genotype
 

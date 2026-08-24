@@ -36,7 +36,9 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 import lib
-sys.path.insert(0, os.path.join(os.path.dirname(HERE), "phase1_replication", "multiaxis"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)),
+                                "r2_gea_nonsnp", "phase1_replication", "multiaxis"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "blocks"))
 
 WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]

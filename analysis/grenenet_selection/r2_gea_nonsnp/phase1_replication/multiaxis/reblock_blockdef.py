@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse, os, sys
 import numpy as np, pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))), "blocks"))
 import lib
 
 MA = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"

@@ -57,6 +57,7 @@ from sklearn.isotonic import IsotonicRegression
 HERE = os.path.dirname(os.path.abspath(__file__))
 GEA = os.path.dirname(HERE)
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "blocks"))
 import lib                      # noqa: E402
 import blocks_tiling as bt      # noqa: E402
 

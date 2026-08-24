@@ -35,6 +35,7 @@ warnings.filterwarnings("ignore")
 HERE = os.path.dirname(os.path.abspath(__file__))
 GEA = os.path.dirname(HERE)
 sys.path.insert(0, GEA)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "blocks"))
 import blocks_tiling as bt   # noqa: E402
 
 CM = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices"
