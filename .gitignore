@@ -462,3 +462,26 @@ benchmarks/speed_vs_hapfire/sims_*/*/ancestry.tsv
 benchmarks/speed_vs_hapfire/sims_*/*/pool_weights.tsv
 benchmarks/speed_vs_hapfire/sims_*/*/source_weights.tsv
 benchmarks/speed_vs_hapfire/sims_*/*/region.bed
+
+# =============================================================================
+# 2026-08-24: close the extension gaps that let ~1.1 GB of bulk data into git
+# and get the push rejected by GitHub's 100 MB limit. Policy unchanged: track
+# code/docs/notebooks/small-config, never bulk data. These files slipped past
+# the existing rules on technicalities:
+#   - `gwas_z.npz.preRerun0721` does NOT match `*.npz` — the final extension is
+#     `.preRerun0721`. Same for every `*.npz.preKfw` / `.preFix_multinomial`
+#     snapshot sidecar and `*.csv.bak`.
+#   - `.f64` (raw float64 LFMM Y matrices) had no rule at all; the largest was
+#     477 MB.
+# =============================================================================
+# raw float64 model-input dumps (LFMM Y matrices etc.)
+*.f64
+# snapshot sidecars: matrix file with a provenance suffix appended AFTER the
+# real extension (foo.npz.preKfw, foo.npy.preRerun0721, foo.csv.bak, ...)
+*.np[yz].*
+*.csv.bak
+*.csv.pre*
+*.tsv.bak
+# deinflate arm: model inputs + per-record score tables (regeneratable, 100s of MB)
+analysis/grenenet_selection/wza/investigation/deinflate/inputs/
+analysis/grenenet_selection/wza/investigation/deinflate/*_scores.csv
