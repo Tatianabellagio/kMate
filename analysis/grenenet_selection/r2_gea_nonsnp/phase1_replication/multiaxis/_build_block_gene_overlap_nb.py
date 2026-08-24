@@ -45,7 +45,7 @@ Raw, uncalibrated p (inflation acknowledged, kept deliberately).""")
 
 co(r"""import os, sys, numpy as np, pandas as pd, matplotlib.pyplot as plt
 from matplotlib_venn import venn3, venn3_circles
-sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 import lib
 WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 OUTDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"

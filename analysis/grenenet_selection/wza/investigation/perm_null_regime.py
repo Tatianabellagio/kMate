@@ -56,7 +56,7 @@ from sklearn.isotonic import IsotonicRegression
 # self-locating: do NOT hardcode an absolute kmate path (the repo has moved once already)
 HERE = os.path.dirname(os.path.abspath(__file__))
 GEA = os.path.dirname(HERE)
-sys.path.insert(0, GEA)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib                      # noqa: E402
 import blocks_tiling as bt      # noqa: E402
 

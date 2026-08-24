@@ -19,7 +19,7 @@ import os, sys
 import numpy as np, pandas as pd
 from scipy import stats
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
 OUT = f"{lib.GEA}/r3_persite_gwas/results/varexp"

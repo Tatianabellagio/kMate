@@ -7,6 +7,8 @@
                  (after polarizing) -- the most literal 'all went the same way'
 Run from repo root, kmate env, PYTHONPATH=analysis/grenenet_selection."""
 import numpy as np, pandas as pd
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 from eval_block_coherence import CM, CLASSES
 

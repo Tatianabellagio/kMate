@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from scipy import stats
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 import lib
 
 HERE = os.path.dirname(os.path.abspath(__file__))

@@ -26,7 +26,7 @@ import numpy as np, pandas as pd
 import requests
 from scipy import stats
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 import nonsnp_only_genes as N   # reuse load_class/sig_blocks/climate_p/block_interval_map/FLANK
 

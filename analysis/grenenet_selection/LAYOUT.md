@@ -5,7 +5,7 @@ Rules for adding work to this tree, so it stops sprawling. This file is about
 analyses found, see the per-section docs and `README.md`.
 
 Set 2026-08-24, when the tree was reorganised: 198 loose files and 40
-undocumented directories at this top level became the eight sections below.
+undocumented directories at this top level became the nine sections below.
 
 ---
 
@@ -36,6 +36,7 @@ analysis/
 | `common/` | inputs shared by more than one section (AF store, per-gen and pool matrices, p0, founder h) | 10 | `rerun_kfw_hb/` |
 | `blocks/` | LD-block / analysis-unit definition (what a test unit *is*) | 39 | `hap_blocks/`, `bigld_env/` |
 | `wza/` | the WZA block-aggregation method: shared `wza_script.py` + the investigation that settled the regime | 1 | `investigation/` |
+| `genes/` | which genes, and are they real: `attribution/` (block→gene from the GWAS) and `dissection/` (per-locus validation from the GEA) | — | `attribution/`, `dissection/` |
 | `qc/` | QC of *this* analysis (coverage, panel overlap, seed-mix identifiability) | 10 | `seedmix_validation/` |
 
 `blocks/` and `wza/` are **method** sections, not results: `blocks/` defines the
@@ -116,10 +117,21 @@ for a script in `<section>/`, three in `<section>/<subproject>/`. Moving a
 script to a different depth without fixing this breaks `import lib` at runtime,
 not at move time, so it fails silently later.
 
-Two related traps:
+Traps, all of which have bitten this tree:
 - Many scripts carry a **second** `sys.path.insert` for their *own* directory,
   so they can import sibling modules. Only the chain that resolves to `lib.py`
   should ever be re-levelled; deepening the other one breaks sibling imports.
+- The chain is **not always a literal `dirname` stack**. Variants in use:
+  `os.path.dirname(HERE)`, a bare `GEA`/`GEA_DIR` variable,
+  `os.path.join(HERE, "..")`, and `os.path.abspath(os.path.join(os.getcwd(), "..", ".."))`
+  — the last is **cwd-based, not `__file__`-based**, so it silently depends on
+  where you launch from. Prefer the `__file__` form.
+- A script with **no `sys.path.insert` at all** can still `import lib`, because
+  Python puts the script's own directory on `sys.path`. That works only while
+  the script sits next to `lib.py`; moving it breaks the import with no visible
+  cause. Add an explicit insert when moving such a file.
+- After any move, verify by **evaluating the chains for real** and checking they
+  land on `lib.py`. A regex is not enough — the idioms above defeat it.
 - Scripts that hardcode `/global/scratch/users/tbellg/kmate/...` still work —
   that path is a symlink to the real repo root — but prefer the `__file__`-
   relative form.

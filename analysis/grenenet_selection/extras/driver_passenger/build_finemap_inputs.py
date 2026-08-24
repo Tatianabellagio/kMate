@@ -33,7 +33,7 @@ from scipy import sparse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GEA_DIR = os.path.dirname(HERE)
-sys.path.insert(0, GEA_DIR)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
 CLASSES = ("snp", "smallindel", "sv")

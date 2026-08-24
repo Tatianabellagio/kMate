@@ -34,7 +34,7 @@ import pandas as pd
 from scipy import stats
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(HERE))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
 WZA_DIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/clq90/wza"

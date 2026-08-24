@@ -51,7 +51,7 @@ pc1 — no coherent stress/flowering theme (checked against genome background ra
     co(f"""import os, sys
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
 from scipy import stats
-sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 import lib
 GEA = lib.GEA
 WZAIN = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"

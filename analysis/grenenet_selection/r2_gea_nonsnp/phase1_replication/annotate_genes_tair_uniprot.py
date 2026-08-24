@@ -50,7 +50,7 @@ import argparse, gzip, importlib.util, os, sys, time, urllib.parse, urllib.reque
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(HERE))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib  # noqa: E402
 
 GAF_URL = "http://current.geneontology.org/annotations/tair.gaf.gz"

@@ -34,7 +34,7 @@ import numpy as np
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 import lib
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "phase1_replication", "multiaxis"))
 

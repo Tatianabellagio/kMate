@@ -48,7 +48,7 @@ regime — but that doesn't affect anything in this notebook).""")
 co('''
 import os, sys
 import numpy as np, pandas as pd, matplotlib as mpl, matplotlib.pyplot as plt
-sys.path.insert(0, os.path.abspath(os.path.join(os.getcwd(), "..", "..")))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 import lib
 GEA = lib.GEA
 MA = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"

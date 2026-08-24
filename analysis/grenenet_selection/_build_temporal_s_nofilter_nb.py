@@ -81,7 +81,7 @@ plt.rcParams.update({'figure.dpi': 110, 'font.size': 8, 'axes.linewidth': 0.6})
 
 # self-locating: ExecutePreprocessor pins cwd to this notebook's own directory
 GEA = os.path.dirname(os.getcwd())          # .../analysis/grenenet_selection
-sys.path.insert(0, GEA)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lib
 G = f"{GEA}/r1_sv_negative_selection/results/sv_adaptive"
 PLOTS = f"{GEA}/notebooks/plots"; os.makedirs(PLOTS, exist_ok=True)

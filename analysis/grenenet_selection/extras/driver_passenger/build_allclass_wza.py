@@ -34,7 +34,7 @@ import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 GEA_DIR = os.path.dirname(HERE)
-sys.path.insert(0, GEA_DIR)
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
 WZA = os.path.join(GEA_DIR, "wza_script.py")
