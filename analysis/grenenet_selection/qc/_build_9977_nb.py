@@ -1,3 +1,13 @@
+"""Build notebooks/founder_9977_kmer_space.ipynb.
+
+Founder 9977 is kMate's worst EM-absorbed founder. The notebook asks whether it
+has a single k-mer "twin" that makes it non-identifiable, or whether it is
+diffusely non-identifiable. Answer: diffuse -- it has the fewest k-mers of any
+founder, the lowest private/discriminative k-mer fraction, and is near-collinear
+with a broad combination of others rather than with any one founder.
+
+Emits the notebook only; run in the `basic` env.
+"""
 import nbformat as nbf
 from nbformat.v4 import new_notebook, new_markdown_cell, new_code_cell
 

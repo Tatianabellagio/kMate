@@ -1,3 +1,16 @@
+"""Sanity-check the clq0.9 BigLD block map, and measure the inter-block gap.
+
+Reports, from results/blocks_mcf90/chr*_clq0.9_blocks_clq0.9.tsv:
+  - total block count and chromosomes covered
+  - whether blocks are DISJOINT within a chromosome (overlapping adjacent pairs)
+  - span bp / n_variants per block, total covered Mb
+  - what fraction of site-4 variants actually land in a block, and how many fall
+    into inter-block GAPS -- the loss that motivated the gap-free tiling
+    partition (`blocks_tiling.py`)
+  - per-block class composition: share of blocks with >=1 SNP, >=1 SV, SV-only
+
+Stdout only -- writes nothing.
+"""
 import numpy as np, pandas as pd, glob, os
 BD = "/global/scratch/users/tbellg/kmate/analysis/grenenet_selection/blocks/results/blocks_mcf90"
 blocks = pd.concat([pd.read_csv(f, sep="\t") for f in sorted(glob.glob(f"{BD}/chr*_clq0.9_blocks_clq0.9.tsv"))])
