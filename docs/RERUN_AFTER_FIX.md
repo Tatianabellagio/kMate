@@ -2,7 +2,7 @@
 
 > **STATUS (2026-07-08):** This rerun is **COMPLETE** and has been superseded by the
 > full-panel Kf_w rerun. Production outputs now live in
-> `analysis/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`; the earlier pre-Kf_w
+> `analysis/grenenet_gea/common/rerun_kfw_hb/{evolved,seedmix}`; the earlier pre-Kf_w
 > `rerun_perfounder` directory has been **deleted**. Paths below are updated to
 > `rerun_kfw_hb`; keep this doc as the checklist of what depends on what.
 
@@ -13,7 +13,7 @@
 `p0`-anchored selection). Everything downstream that consumes those is stale.
 
 **New per-sample outputs (the new inputs):**
-`analysis/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/<SAMPLE>.tsv`
+`analysis/grenenet_gea/common/rerun_kfw_hb/{seedmix,evolved}/<SAMPLE>.tsv`
 (+ per-chrom `<SAMPLE>_Chr{N}.tsv` and `<SAMPLE>_Chr{N}.h_per_chrom.npz`). Global mode → each
 run emits BOTH the founder `h` and the per-record AF.
 
@@ -42,7 +42,7 @@ Cohort launch: seed-mix `35549607` (8) + evolved `35549608/609/647` (2168), glob
 
 ## Step 0 — repoint + clear caches  ✅ DONE (2026-07-06)
 - Repointed `analysis/grenenet_gea/lib.py` `OUT`/`SEEDMIX`, `build_af_store.py` `OUT`, and
-  `_build_support_nb.py` `OUTBASE` → `analysis/grenenet_gea/rerun_kfw_hb/{evolved,seedmix}`.
+  `_build_support_nb.py` `OUTBASE` → `analysis/grenenet_gea/common/rerun_kfw_hb/{evolved,seedmix}`.
   (Old multinomial outputs `results/grenenet_kmate_arch3` / `seedmix_kmate_arch3` were
   DELETED 2026-07-08 (~1.6 TB) so they can't be used by mistake; the old-panel scripts that
   read them are archived under `analysis/grenenet_gea/archive/oldpanel_arch3_retired/`.)

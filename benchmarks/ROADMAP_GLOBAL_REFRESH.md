@@ -95,7 +95,7 @@ benchmark family below.
   compute+cache+reload. Docs updated (ALGORITHM §7, README, PIPELINE_STATE).
 
 **0b. Generate the r²=0.1 LD blocks per chromosome** (already done for Chr1–5):
-`analysis/grenenet_gea/hap_blocks/ld_blocks_r2_0.10_<Chr>.tsv` (+ `_genome.tsv`),
+`analysis/grenenet_gea/blocks/hap_blocks/ld_blocks_r2_0.10_<Chr>.tsv` (+ `_genome.tsv`),
 from `gen_ld_partitions.py` (CompleteLDPartition on `var_pa_231_arch3`, MAF≥0.05,
 callrate≥0.9). Benchmarks are Chr1-only → use `ld_blocks_r2_0.10_Chr1.tsv`
 (18 blocks). Copy/symlink into each benchmark's `data/` for provenance.

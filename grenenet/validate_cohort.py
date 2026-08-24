@@ -11,7 +11,7 @@ TSVs (so a rerun regenerates them) and writes a redo-manifest.
 
 Usage:
   python grenenet/validate_cohort.py --manifest data/sample_manifest_usesample.tsv \
-      --out-dir analysis/grenenet_gea/rerun_kfw_hb/evolved [--fix]
+      --out-dir analysis/grenenet_gea/common/rerun_kfw_hb/evolved [--fix]
 """
 import argparse, os, subprocess
 import numpy as np

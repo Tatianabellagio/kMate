@@ -1,13 +1,13 @@
 import numpy as np, scipy.sparse as sp, json, pandas as pd, sys, time
 sys.path.insert(0, "/global/scratch/users/tbellg/kmate/src")
-sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/seedmix_validation/fix_norm")
+sys.path.insert(0, "/global/scratch/users/tbellg/kmate/analysis/grenenet_gea/qc/seedmix_validation/fix_norm")
 from kmate.em_solver import solve_em as prod_solve_em
 from em_variants import solve_em as proto_solve_em
 
 ROOT = "/global/scratch/users/tbellg/kmate"
 RAW = f"{ROOT}/benchmarks/p231/data/kmer_pa_p231/kmer_pa_Chr1"
 SIM = f"{ROOT}/benchmarks/p231/sims/cov10_n231_g0_s42_hotspots_p231_chr1"
-COUNTS_CACHE = f"{ROOT}/analysis/grenenet_gea/seedmix_validation/fix_ablation/raw_cov10_n231_g0_counts.npy"
+COUNTS_CACHE = f"{ROOT}/analysis/grenenet_gea/qc/seedmix_validation/fix_ablation/raw_cov10_n231_g0_counts.npy"
 
 t0 = time.time()
 meta = np.load(f"{RAW}.meta.npz", allow_pickle=True)

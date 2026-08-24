@@ -6,7 +6,7 @@ dependent directional selection — and ask whether SVs add adaptive signal SNPs
 miss. See README.md.
 
 Data:
-  - kMate per-sample AF TSVs: analysis/grenenet_gea/rerun_kfw_hb/evolved/<MLFH...>.tsv
+  - kMate per-sample AF TSVs: analysis/grenenet_gea/common/rerun_kfw_hb/evolved/<MLFH...>.tsv
       (--unit chrom + full-panel Kf_w; old-panel grenenet_kmate_arch3 deleted 2026-07-08)
       cols: chrom pos ref_len alt_len alt_freq info n_called se
   - founding p0 (gen 0): the SEEDMIX kMate outputs (mean over 8 reps).
@@ -25,9 +25,9 @@ from scipy import stats
 PROJ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Repointed 2026-07-07 to the full-panel-Kf_w + haploblock (--unit chrom) rerun.
 # Prev: rerun_perfounder (pre-Kf_w-fullpanel, 2026-07-06 — STALE). See
-# analysis/grenenet_gea/rerun_kfw_hb/README.md.
-OUT = f"{PROJ}/analysis/grenenet_gea/rerun_kfw_hb/evolved"
-SEEDMIX = f"{PROJ}/analysis/grenenet_gea/rerun_kfw_hb/seedmix"
+# analysis/grenenet_gea/common/rerun_kfw_hb/README.md.
+OUT = f"{PROJ}/analysis/grenenet_gea/common/rerun_kfw_hb/evolved"
+SEEDMIX = f"{PROJ}/analysis/grenenet_gea/common/rerun_kfw_hb/seedmix"
 GEA = f"{PROJ}/analysis/grenenet_gea"
 T5 = ("/global/scratch/users/tbellg/pang/grenenet_reads/"
       "Table_S5_sample_collection_sequencing_library.csv")

@@ -105,7 +105,7 @@ which we mirror for SVs:
 
 ## Data
 
-- kMate per-sample AF: `analysis/grenenet_gea/rerun_kfw_hb/{seedmix,evolved}/`
+- kMate per-sample AF: `analysis/grenenet_gea/common/rerun_kfw_hb/{seedmix,evolved}/`
   (production AF dir, regenerated under `--unit chrom` + full-panel Kf_w; the old-panel
   `grenenet_kmate_arch3` was deleted 2026-07-08). Columns `chrom pos ref_len alt_len alt_freq info n_called se`. SVs = `ref_len!=1 | alt_len!=1`.
 - Founding p0 (gen 0): mean alt_freq over the 8 SEEDMIX kMate reps (`lib.build_p0`).
