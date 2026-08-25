@@ -31,7 +31,7 @@ KP=data/kmer_pa_231_arch3_filt2inv/kmer_pa
 VP=panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz
 VM=panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz
 VC=panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz
-BLOCKS=analysis/grenenet_gea/blocks_mcf90/chr1_units_dynld_K500.tsv
+BLOCKS=analysis/grenenet_selection/blocks/results/blocks_mcf90/chr1_units_dynld_K500.tsv
 SIMD=benchmarks/p231/sims/$POOL
 R1=$SIMD/reads/r1.fq ; R2=$SIMD/reads/r2.fq
 OUT=benchmarks/localonly_p231/floor_diag

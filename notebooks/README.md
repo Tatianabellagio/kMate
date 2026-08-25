@@ -7,7 +7,7 @@ with it (`analysis/<topic>/notebooks/`, `benchmarks/<topic>/`, `preprocess_qc/no
 
 | Notebook | What it shows |
 |---|---|
-| `blocks_snp_sv_density.ipynb` | SNP and SV density across the LD-block partition. Feeds the block/unit definition work in `analysis/grenenet_gea/blocks/`. |
+| `blocks_snp_sv_density.ipynb` | SNP and SV density across the LD-block partition. Feeds the block/unit definition work in `analysis/grenenet_selection/blocks/`. |
 
 ## What used to be here
 

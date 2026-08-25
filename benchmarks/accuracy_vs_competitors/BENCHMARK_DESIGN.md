@@ -273,7 +273,7 @@ normal giraffe, not the rescue pathology.)
   fit (≥50 observed k-mers); ~30% coverage-limited, ~28% zero-panel-k-mer. p80≈p231 → block
   thinness, NOT panel imbalance.
 
-  *Fix = dynld_K500 map* (`analysis/grenenet_gea/blocks_mcf90/chr{N}_units_dynld_K500.tsv`):
+  *Fix = dynld_K500 map* (`analysis/grenenet_selection/blocks/results/blocks_mcf90/chr{N}_units_dynld_K500.tsv`):
   grow each CLQ0.9 block along LD until ≥500 panel k-mers. **Corrected/audited map (2026-06-19):
   22,939 units genome-wide / 6,123 Chr1, 72% k-mer-covered, median 32 var / 2.1 kb.** Local-fit
   rate → **~80.5%** (p231 80.7%, p80 80.3%; ~10% fallback, ~9% empty). Panel-independent.
@@ -307,4 +307,4 @@ normal giraffe, not the rescue pathology.)
   window mode helps on recombinant data.
 
   *(SV value-add of window mode — direct k-mer evidence on SVs not in LD with SNPs — is the
-  next sub-test; see §3.3.)* Handoff: `analysis/grenenet_gea/BLOCKS_HANDOFF.md`.
+  next sub-test; see §3.3.)* Handoff: `analysis/grenenet_selection/BLOCKS_HANDOFF.md`.

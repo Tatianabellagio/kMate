@@ -2,7 +2,7 @@
 
 > **STATUS (2026-07-08):** This rerun is **COMPLETE** and has been superseded by the
 > full-panel Kf_w rerun. Production outputs now live in
-> `analysis/grenenet_gea/common/rerun_kfw_hb/{evolved,seedmix}`; the earlier pre-Kf_w
+> `analysis/grenenet_selection/common/rerun_kfw_hb/{evolved,seedmix}`; the earlier pre-Kf_w
 > `rerun_perfounder` directory has been **deleted**. Paths below are updated to
 > `rerun_kfw_hb`; keep this doc as the checklist of what depends on what.
 
@@ -13,7 +13,7 @@
 `p0`-anchored selection). Everything downstream that consumes those is stale.
 
 **New per-sample outputs (the new inputs):**
-`analysis/grenenet_gea/common/rerun_kfw_hb/{seedmix,evolved}/<SAMPLE>.tsv`
+`analysis/grenenet_selection/common/rerun_kfw_hb/{seedmix,evolved}/<SAMPLE>.tsv`
 (+ per-chrom `<SAMPLE>_Chr{N}.tsv` and `<SAMPLE>_Chr{N}.h_per_chrom.npz`). Global mode → each
 run emits BOTH the founder `h` and the per-record AF.
 
@@ -27,7 +27,7 @@ Cohort launch: seed-mix `35549607` (8) + evolved `35549608/609/647` (2168), glob
   globally (`lib.qc_excluded()`, list in `data/qc_lowcov_exclude.txt`). 5 of them are dead/
   contaminated libraries (nzfrac<0.01 — normal sequencing depth but ~0% panel k-mers ⇒ off-panel
   DNA, NOT low depth; depth is a poor QC signal here, corr(depth,nzfrac)≈0.57). Full audit +
-  plots: `analysis/grenenet_gea/results/qc_coverage_audit.csv + analysis/grenenet_gea/notebooks/qc_coverage_audit.ipynb`.
+  plots: `analysis/grenenet_selection/qc/results/qc_coverage_audit.csv + analysis/grenenet_selection/notebooks/qc_coverage_audit.ipynb`.
 - **Site 33 dropped (selection trait: 31 → 30 sites).** Site 33 has 7 usable-cohort samples but
   only ONE at gen1 (plot 1, `MLFH330120180607`, nzfrac 0.088); its other 6 are gen2-only in plots
   with no gen1 anchor. The selection slope needs a gen1 anchor within a plot, so site 33's whole
@@ -41,11 +41,11 @@ Cohort launch: seed-mix `35549607` (8) + evolved `35549608/609/647` (2168), glob
   Jaccard 0.68 ≈ panel median — so it carries ~no signal and reads s≈0).
 
 ## Step 0 — repoint + clear caches  ✅ DONE (2026-07-06)
-- Repointed `analysis/grenenet_gea/lib.py` `OUT`/`SEEDMIX`, `build_af_store.py` `OUT`, and
-  `_build_support_nb.py` `OUTBASE` → `analysis/grenenet_gea/common/rerun_kfw_hb/{evolved,seedmix}`.
+- Repointed `analysis/grenenet_selection/lib.py` `OUT`/`SEEDMIX`, `build_af_store.py` `OUT`, and
+  `_build_support_nb.py` `OUTBASE` → `analysis/grenenet_selection/common/rerun_kfw_hb/{evolved,seedmix}`.
   (Old multinomial outputs `results/grenenet_kmate_arch3` / `seedmix_kmate_arch3` were
   DELETED 2026-07-08 (~1.6 TB) so they can't be used by mistake; the old-panel scripts that
-  read them are archived under `analysis/grenenet_gea/archive/oldpanel_arch3_retired/`.)
+  read them are archived under `analysis/grenenet_selection/archive/oldpanel_arch3_retired/`.)
 - Moved stale on-existence caches aside (suffix `preFix_multinomial`, reversible — they would
   otherwise silently return old data): `af_store/`, `group_means.npz`, `p0_seedmix_all.pkl`,
   `pilot_qc.csv`, `ecotype_fitness/sample_global_h.npz`, `varexp/selection_s_matrix.npz`.
@@ -101,8 +101,8 @@ refresh the `EXPORT_MANIFEST.md` / `push_gea_to_drive.sh` export set.
 
 > **RESOLVED (2026-07-10):** the "is this still a live analysis?" question below is answered:
 > **no, retired.** `hapfreq/`, `gen9_window/`, `window_vs_global/`, and `sv_adaptive/` (code + data)
-> are consolidated into `analysis/grenenet_gea/archive/window_hapfreq_retired/`. The ~60 consumer
-> scripts across `analysis/grenenet_gea/` (`founder_gwas_multisite.py`, `cross_site_winners*`,
+> are consolidated into `analysis/grenenet_selection/archive/window_hapfreq_retired/`. The ~60 consumer
+> scripts across `analysis/grenenet_selection/` (`founder_gwas_multisite.py`, `cross_site_winners*`,
 > `derive_climate_axis.py`, `multisite_climate_perm.py`, `founder_gwas_231.py`,
 > `ecotype_selection_site.py`, `build_fitness_table.py`, the `_temporal_*`/`_sv_*`/`_build_*_nb.py`
 > family, etc.) were left in place but had their `results/grenenet_gea/{hapfreq,gen9_window,

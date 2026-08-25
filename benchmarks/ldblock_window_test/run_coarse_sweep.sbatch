@@ -25,9 +25,9 @@ KP=data/kmer_pa_231_arch3_filt2inv/kmer_pa
 VP=panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz
 VM=panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz
 if [ "$LEVEL" = "base" ]; then
-  BLOCKS=analysis/grenenet_gea/blocks_mcf90/chr1_clq0.9_blocks_clq0.9.tsv
+  BLOCKS=analysis/grenenet_selection/blocks/results/blocks_mcf90/chr1_clq0.9_blocks_clq0.9.tsv
 else
-  BLOCKS=analysis/grenenet_gea/blocks_mcf90/coarse/chr1_floor${LEVEL}.tsv
+  BLOCKS=analysis/grenenet_selection/blocks/results/blocks_mcf90/coarse/chr1_floor${LEVEL}.tsv
 fi
 OUT=benchmarks/ldblock_window_test/sweep_s${SEED}_${LEVEL}.tsv
 if [ ! -d "benchmarks/p231/sims/$POOL/reads" ]; then echo "MISSING pool $POOL"; exit 0; fi

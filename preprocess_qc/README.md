@@ -14,7 +14,7 @@ composition descriptive stats; both ran on the old merged panel
 
 | Archived analysis | Current replacement |
 |---|---|
-| SNP/SV LD-decay + SV-SNP tagging (`notebooks/ld_*.ipynb`, `scripts/{compute_ld,aggregate_ld,compute_per_sv_max_r2}.py`, `output/ld/`) | `analysis/grenenet_gea/` SV-SNP tagging work → `analysis/grenenet_gea/sv_snp_ld/` |
+| SNP/SV LD-decay + SV-SNP tagging (`notebooks/ld_*.ipynb`, `scripts/{compute_ld,aggregate_ld,compute_per_sv_max_r2}.py`, `output/ld/`) | `analysis/grenenet_selection/` SV-SNP tagging work → `analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld/` |
 | Panel composition stats (`notebooks/production_vcf_stats.ipynb`, `scripts/merged_vcf_stats*`) | `analysis/panel_qc/panel_stats/PANEL_STATS.md` + `scripts/panel_stats_for_paper.py` |
 
 **What remains here is the non-LD, non-composition part** — duplicate rates, trim survival,
