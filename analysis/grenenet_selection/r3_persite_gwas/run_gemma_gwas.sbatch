@@ -15,7 +15,7 @@
 # Markers are chunked below 20,000 per run: GEMMA 0.98.5 crashes with
 #   "Enforce failed for N>0 in src/fastblas.cpp ... fast_cblas_dgemm"
 # on any run at or above 20k markers -- after finishing the scan, before writing output.
-# After the array completes, run the meta stage:  sbatch run_gemma_meta.sbatch
+# After the array completes, run the assemble stage: sbatch run_gemma_assemble.sbatch
 set -euo pipefail
 cd /global/scratch/projects/fc_moilab/tbellg/kmate
 mkdir -p logs analysis/grenenet_selection/r3_persite_gwas/results/gemma_gwas
