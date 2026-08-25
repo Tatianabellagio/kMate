@@ -52,7 +52,17 @@ it** (the 20 original axes run λ ≈ 1.72 median, up to 2.67).""")
 
     co(f"""import os, sys
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+# NB: `__file__` is NOT defined in a Jupyter kernel, so the dirname-stack idiom used by
+# the .py scripts raises NameError here. Walk up from cwd to the tree root instead, so
+# the notebook works whether it is opened from notebooks/ or executed from multiaxis/.
+def _tree_root(start=None):
+    d = os.path.abspath(start or os.getcwd())
+    while d != os.path.dirname(d):
+        if os.path.basename(d) == "grenenet_selection" and os.path.exists(os.path.join(d, "lib.py")):
+            return d
+        d = os.path.dirname(d)
+    raise RuntimeError("could not locate the grenenet_selection tree root from " + os.getcwd())
+sys.path.insert(0, _tree_root())
 import lib
 GEA = lib.GEA
 WZAIN = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
@@ -185,11 +195,11 @@ for axis in AXES:
         display(newpk[["block", "chrom", "pos", "genes", "nlp", "nlp_snp"]].rename(
             columns={"nlp": f"{CLS}_nlp", "nlp_snp": "snp_nlp_here"}))""")
 
-    md(f"""## Candidate genes — {title_word}-only new peaks, consolidated across all 20 axes
+    md(f"""## Candidate genes — {title_word}-only new peaks, consolidated across all 22 axes
 
 Union of every gene-bearing new peak found above, deduplicated per gene (kept: the
 axis with the strongest {cls} signal), with Ensembl Plants symbol/description and a
-recurrence count (how many of the 20 axes flag that gene's block). **Raw, uncalibrated
+recurrence count (how many of the 22 axes flag that gene's block). **Raw, uncalibrated
 p — no GIF correction here** (see the `gif_manhattan_snp_vs_{cls}_lfmm_tile.ipynb` twin
 for the inflation-corrected version; the session finding there is that this raw list
 collapses almost entirely once genomic inflation is accounted for).""")
@@ -230,7 +240,7 @@ if len(G):
     cand["symbol"] = cand.gene.map(lambda x: sym.get(x, ("", ""))[0])
     cand["description"] = cand.gene.map(lambda x: sym.get(x, ("", ""))[1])
     cand.to_csv(f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/raw_manhattan_newpeak_genes_{CLS}_tile.csv", index=False)
-    print(f"{len(cand)} unique {CLS}-only new-peak genes across 20 axes")
+    print(f"{len(cand)} unique {CLS}-only new-peak genes across 22 axes")
     display(cand[["gene", "symbol", "description", "block", "chrom", "pos", "n_axes", "nlp"]].head(50))
 else:
     print("no gene-bearing new peaks found on any axis")''')
@@ -286,7 +296,7 @@ of the 20 climate variables independently flag that gene's block.""")
 
     co('''import matplotlib.lines as mlines
 
-AXES_ORD = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
+AXES_ORD = [f"bio{i}" for i in range(1, 20)] + ["pc1", "pc2", "pc3"]
 _rows = []
 if all_newpk:
     for r in pd.concat(all_newpk, ignore_index=True).itertuples():
@@ -334,15 +344,18 @@ if len(GX):
               frameon=False, fontsize=7, title_fontsize=8)
     fig.tight_layout(); plt.show()
     _tot = GX["gene"].nunique()
-    print(f"dot plot: {len(gord)} genes recurring on >={thr} of 20 axes "
+    print(f"dot plot: {len(gord)} genes recurring on >={thr} of 22 axes "
           f"(auto-threshold for legibility); {_tot - len(gord)} of {_tot} lower-recurrence "
           f"genes omitted from the plot but present in the annotated table/CSV.")
 else:
     print("no gene-bearing new peaks to plot")''')
 
     nb = new_notebook(); nb["cells"] = C
-    out = os.path.join(HERE, f"raw_manhattan_snp_vs_{cls}_lfmm_tile.ipynb")
-    ep = ExecutePreprocessor(timeout=3600, kernel_name="basic", startup_timeout=180)
+    # LAYOUT rule 4: rendered notebooks live in the tree-level notebooks/, not
+    # beside their builder. HERE is <tree>/r2_gea_nonsnp/phase1_replication/multiaxis.
+    NBDIR = os.path.join(HERE, "..", "..", "..", "notebooks")
+    out = os.path.normpath(os.path.join(NBDIR, f"raw_manhattan_snp_vs_{cls}_lfmm_tile.ipynb"))
+    ep = ExecutePreprocessor(timeout=14400, kernel_name="basic", startup_timeout=180)
     ep.preprocess(nb, {"metadata": {"path": HERE}})
     with open(out, "w") as f:
         nbf.write(nb, f)
