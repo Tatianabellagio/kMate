@@ -53,7 +53,7 @@ NO anchor prior, NO cross-window smoothing, NO fallback
 - **Simulated reads + truth tables** — estimator-independent. Reuse every existing
   sim regime under `benchmarks/{p231,p80}/sims/`. Truth stays fixed so old↔new
   numbers are directly comparable.
-- **Competitor outputs (hapFIRE, vg giraffe)** in `accuracy_vs_competitors/` — these
+- **Competitor outputs (hapFIRE, vg giraffe)** in `vs_vg_giraffe/` — these
   are competitor-side and independent of kMate's changes. **Do NOT re-run hapFIRE
   or vg.** Only re-run the kMate arm and re-score.
 - **var_pa / var_called** (arch3) — unchanged, already production.
@@ -158,7 +158,7 @@ balanced-panel control (checks the cactus-vs-PG asymmetry is absent).
 
 ## Phase 3 — Founder-h recovery accuracy (most affected)
 
-Files: `benchmarks/h_accuracy/`. The per_founder + haploblock changes affect the
+Files: `benchmarks/founder_h_accuracy/`. The per_founder + haploblock changes affect the
 founder **decomposition** more than AF, so this is the highest-signal refresh.
 1. Run the new global estimator **h-only** (`--h-only`, writes `h_per_chrom.npz`)
    on `n231_g0` (and `n50_g0`, the skew/selection regime) — reuse sims.
@@ -172,7 +172,7 @@ founder **decomposition** more than AF, so this is the highest-signal refresh.
 
 ## Phase 4 — Ecotype-count / resolution
 
-Files: `benchmarks/ecotype_count/`. Uses `run_h_only.sbatch` + `score_ecotype.py`
+Files: `benchmarks/vs_hapfire_ecotype_resolution/`. Uses `run_h_only.sbatch` + `score_ecotype.py`
 (and the block-kmer-floor sweep). Re-run the kMate h-only arm under the new global
 config; re-score resolvable-founder / ecotype counts. Ties directly to the
 haploblock reframe (how many haplotypes the r²=0.1 blocks resolve). Reuse the
@@ -188,13 +188,13 @@ re-run hapFIRE.
 > hapFIRE errors on missing GTs and so is fed imputed false-REF homozygotes at 7.1% of
 > records while kMate's `var_called` mask excludes them. The whole shared-panel
 > apparatus is archived to `archive/shared_panel_hapfire_comparison_invalid/`; the live
-> comparison is `speed_vs_hapfire/` (matched pools, tool-native panels, 5 seeds).
+> comparison is `vs_hapfire/` (matched pools, tool-native panels, 5 seeds).
 > **Do not cite the kMate-vs-hapFIRE numbers below.** Kept as the record of what was run.
 
 What was stale, and why (the check worth keeping): `benchmark_table_4tool.tsv` and
 `benchmark_4tool_RMSE_*.png` were last written **2026-06-22**, predating all three
 estimator changes. The kMate est files they cite
-(`benchmark_runs/tsv/*_global.tsv`) were rewritten **2026-07-07 08:44** — after
+(`kmate_output_store/tsv/*_global.tsv`) were rewritten **2026-07-07 08:44** — after
 per_founder (`a8ba02d`, 07-06 22:06) but **before** the full-panel `Kf_w` fix
 (`9669be7`, 07-07 10:22), haploblock collapse (`b4d6ce0`, 16:15) and the `--unit`
 unification (`a9bf1c0`, 18:12). So both the table and its inputs were pre-refresh.
@@ -207,7 +207,7 @@ Executed:
    hapFIRE and vg outputs untouched.
 2. **Re-scored** into NEW artifacts (old ones retained for the delta):
    `benchmark_table_4tool_chrom.tsv`, `benchmark_4tool_chrom_RMSE_{fullcalled,allrec}.png`,
-   `accuracy_vs_competitors/results/snp_fair_chrom_refresh.tsv`, via the new
+   `vs_vg_giraffe/results/snp_fair_chrom_refresh.tsv`, via the new
    `scripts/score_all_competitors_chrom.sh`.
 3. **Validity control:** every hapFIRE and vg row is byte-identical old-vs-new;
    only kMate rows moved. Confirms the refresh touched exactly one arm.

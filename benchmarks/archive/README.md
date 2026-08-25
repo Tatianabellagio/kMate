@@ -11,7 +11,7 @@ Superseded benchmark artifacts, kept for provenance (do not treat as current).
 - `speed_benchmark_abandoned/` (2026-07-10) — an earlier, incomplete multi-tool
   (kMate/hapFIRE/vg) runtime harness. Only kMate+hapFIRE were ever run (p80,
   2 coverage points); vg was never executed and no results table was produced.
-  Superseded by `../speed_vs_hapfire/`, the maintained, documented speed
+  Superseded by `../vs_hapfire/`, the maintained, documented speed
   comparison. Unreferenced elsewhere in the repo — safe to have moved.
 
 - `run_benchmark_pool.sbatch`, `submit_benchmark_matrix.sh` (2026-07-10) — the
@@ -21,11 +21,11 @@ Superseded benchmark artifacts, kept for provenance (do not treat as current).
 
 **Not archived despite looking stale — still load-bearing, needs a follow-up
 decision before moving:**
-- `../benchmark_runs/` (~11 GB, pre-unification per-pool AF tables) — still read
+- `../kmate_output_store/` (~11 GB, pre-unification per-pool AF tables) — still read
   by `accuracy_vs_competitors/scripts/{run_hapfire_pool.sbatch,
   plot_block_nofallback_af.py, stratify_vg_multiplicity.py,
   score_all_competitors.sh}`.
-- `../ldblock_window_test/` (~4 GB, pre-unification LD-clique coarseness sweep)
+- `../unit_ldblock_window/` (~4 GB, pre-unification LD-clique coarseness sweep)
   — still read by `analysis/grenenet_gea/{block_kmer_coverage.py,
   _build_blocks_units_nb.py}` and `accuracy_vs_competitors/scripts/
   {run_ldblock_window.sbatch, plot_blockpanel.py}`.
@@ -34,10 +34,10 @@ decision before moving:**
   `ROADMAP_GLOBAL_REFRESH.md` ("keep old dirs for the old↔new delta column")
   and actively read by `plot_scenario_grids.py` and
   `p80/results/{FINAL_RESULTS_cov10_p80.ipynb,FILT2_MB_VS_UNIFORM_p80.ipynb}`.
-- `../localonly_p231/` — cited as evidence in
+- `../unit_localonly_p231/` — cited as evidence in
   `analysis/grenenet_gea/GLOBAL_MODE_DECISION.md` and
   `_build_floor_derivation_nb.py`.
-- `../h_uncertainty/` — closed-out investigation, but not yet confirmed fully
+- `../founder_h_uncertainty/` — closed-out investigation, but not yet confirmed fully
   orphaned; its module concept is referenced from core docs (`ALGORITHM.md`,
   `src/README.md`), so double-check before moving the benchmark dir itself.
 
@@ -48,6 +48,6 @@ decision before moving:**
   **Archived as invalid by design, not as stale.** hapFIRE errors on missing GTs, so the
   shared panel imputes `MISSING -> 0|0` and feeds it false REF homozygotes at 7.1% of
   records, while kMate's `var_called` mask excludes exactly those — a shared panel is not
-  a shared *input*. Live comparison: `../speed_vs_hapfire/` (matched pools, tool-native
+  a shared *input*. Live comparison: `../vs_hapfire/` (matched pools, tool-native
   panels, 5 seeds). See that dir's README for what remains valid (§3.1 SV argument, §4
   speed, and the vg arm in principle).

@@ -91,7 +91,7 @@ def fisher_cov_h(h, kmer_pa, counts, omega=None, support_eps=1e-3, rcond=1e-2,
     10-20×, because the unconstrained Gaussian asymptotics break where the
     multiplicative EM actually pins those founders. rcond drops those
     unresolvable directions, matching the bootstrap. The right rcond is mildly
-    data-dependent — see benchmarks/h_uncertainty.
+    data-dependent — see benchmarks/founder_h_uncertainty.
     """
     J = fisher_information_h(h, kmer_pa, counts, omega=omega, chunk=chunk)
     support = np.flatnonzero(np.asarray(h) > support_eps)

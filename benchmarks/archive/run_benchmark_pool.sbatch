@@ -13,7 +13,7 @@ set -eo pipefail
 # score both into a per-pool rows file (merged into benchmark_table.tsv afterward).
 # Usage: sbatch run_benchmark_pool.sbatch <POOL> <PANEL>
 cd /global/scratch/users/tbellg/kmate
-mkdir -p benchmarks/scripts/logs benchmarks/benchmark_runs/tsv benchmarks/benchmark_runs/rows
+mkdir -p benchmarks/scripts/logs benchmarks/kmate_output_store/tsv benchmarks/kmate_output_store/rows
 POOL=${1:?pool}; PANEL=${2:?p80|p231}
 T=${SLURM_CPUS_PER_TASK:-8}
 source ~/miniforge3/etc/profile.d/conda.sh && conda activate kmate
@@ -44,8 +44,8 @@ R1=benchmarks/$PANEL/sims/$POOL/reads/r1.fq
 R2=benchmarks/$PANEL/sims/$POOL/reads/r2.fq
 test -f "$TRUTH" || { echo "missing truth: $TRUTH"; exit 1; }
 
-OUTD=benchmarks/benchmark_runs/tsv
-ROWS=benchmarks/benchmark_runs/rows/${POOL}.tsv
+OUTD=benchmarks/kmate_output_store/tsv
+ROWS=benchmarks/kmate_output_store/rows/${POOL}.tsv
 GLOBAL=$OUTD/${POOL}_global.tsv
 BLOCK=$OUTD/${POOL}_block_dynldK500.tsv
 JF=${TMPDIR:-/tmp}/${POOL}.jf          # node-local k-mer DB (count once)

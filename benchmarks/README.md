@@ -62,26 +62,26 @@ Every dir below has its own `README.md` with the question it answers.
 | `p231/` | headline accuracy on the production 231-founder panel |
 | `p80/` | homogeneous-panel control (no cactus-vs-PG asymmetry) |
 | `poolsize_depth/` | accuracy + compute vs pool size N and depth |
-| `h_accuracy/` | founder-mixture `h` recovery (most sensitive to estimator internals) |
-| `h_imbalance/` | is the private-k-mer filter still needed post-normalization? |
-| `h_uncertainty/` | closed-out: `h` error is identifiability bias, not sampling variance |
-| `localonly_p231/` | local-only window fitting + the block floor derivation |
-| `ldblock_window_test/` | ⚠️ window-mode block-size sweep — pre-refresh, see its README |
-| `ruth_outcross/` | outcrossed real-data application |
+| `founder_h_accuracy/` | founder-mixture `h` recovery (most sensitive to estimator internals) |
+| `founder_h_imbalance/` | is the private-k-mer filter still needed post-normalization? |
+| `founder_h_uncertainty/` | closed-out: `h` error is identifiability bias, not sampling variance |
+| `unit_localonly_p231/` | local-only window fitting + the block floor derivation |
+| `unit_ldblock_window/` | ⚠️ window-mode block-size sweep — pre-refresh, see its README |
+| `realdata_outcross/` | outcrossed real-data application |
 
 **Tool comparisons** — ⚠️ read `SCORING_RULES.md` first
 
 | dir | comparator | status |
 |---|---|---|
-| `speed_vs_hapfire/` | hapFIRE | ✅ the live hapFIRE comparison — matched pools, **tool-native panels**, 5 seeds |
-| `ecotype_count/` | hapFIRE | ✅ ecotype **resolution** metrics, native panels (complements the above; no overlap) |
-| `accuracy_vs_competitors/` | vg giraffe | ✅ vg arm live; its hapFIRE arm is retired to `archive/` |
+| `vs_hapfire/` | hapFIRE | ✅ the live hapFIRE comparison — matched pools, **tool-native panels**, 5 seeds |
+| `vs_hapfire_ecotype_resolution/` | hapFIRE | ✅ ecotype **resolution** metrics, native panels (complements the above; no overlap) |
+| `vs_vg_giraffe/` | vg giraffe | ✅ vg arm live; its hapFIRE arm is retired to `archive/` |
 
 **Infrastructure**
 
 | dir | what it is |
 |---|---|
-| `benchmark_runs/` | shared per-pool kMate output store (~11 GB) — ⚠️ pre-refresh, see its README |
+| `kmate_output_store/` | shared per-pool kMate output store (~11 GB) — ⚠️ pre-refresh, see its README |
 | `results/` | cross-panel summary table + `results/plots/` figures |
 | `archive/` | superseded and invalidated work, each with a README saying why |
 

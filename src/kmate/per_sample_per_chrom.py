@@ -49,7 +49,7 @@ from .h_uncertainty import (fisher_information_h, _tangent_pinv_on_support,
 # bias (collinear founders) that no variance term sees, so the Fisher delta-method
 # SE alone under-covers (a bare 95% Fisher interval covers truth only ~12-19%); c
 # restores ~95% interval coverage. Panel-specific — recompute with
-# benchmarks/h_uncertainty/af_calibrate_floor.py; override with --af-id-floor.
+# benchmarks/founder_h_uncertainty/af_calibrate_floor.py; override with --af-id-floor.
 # Calibrated on the 231 arch3 panel (closed-loop g0, cov 10/30) to cover ALL
 # defined records at 95% (c=0.0186). Note only ~33% of 231 records are well-called;
 # the well-called subset alone calibrates to a smaller c≈0.0102, but using that would
@@ -57,7 +57,7 @@ from .h_uncertainty import (fisher_information_h, _tangent_pinv_on_support,
 # all-defined value (also matches p80's 0.018 — the floor is a stable panel property).
 # NOTE (2026-07-07): this c was calibrated under the legacy "global" normalization.
 # After the per_founder (Kf_w) fix it should be RE-calibrated on per_founder outputs
-# (benchmarks/h_uncertainty/af_calibrate_floor.py) as part of the post-rerun refresh;
+# (benchmarks/founder_h_uncertainty/af_calibrate_floor.py) as part of the post-rerun refresh;
 # left at 0.0186 until that calibration is actually run. Override with --af-id-floor.
 AF_ID_FLOOR_DEFAULT = 0.0186
 

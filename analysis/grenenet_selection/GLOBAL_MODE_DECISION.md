@@ -111,7 +111,7 @@ breakage script subtree — has been **archived** to `archive/window_hapfreq_ret
 "framing only." (The `gen9_window/` DATA directory under `results/` is kept.)
 
 ## Related
-- `FLOOR_DERIVATION.md` / `benchmarks/localonly_p231/` — the k-mer floor (AF error ∝ nnz;
+- `FLOOR_DERIVATION.md` / `benchmarks/unit_localonly_p231/` — the k-mer floor (AF error ∝ nnz;
   ~1–2k k-mers to plateau; 5–10 kb windows sit below it).
 - `WINDOW_UNIT_VALIDATION.md`, `gen9_window/` — the window-unit machinery (kept for GEA
   *test units*, not for AF estimation).

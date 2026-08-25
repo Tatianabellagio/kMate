@@ -2,7 +2,7 @@
 # Extend the p231 kMate poolsize x depth grid (07h_run_kmate_poolsize_depth_p231.sh)
 # to N=231 (whole-panel pool) -- same design as N in {2,5,20,50,150}: depth in
 # {1,10} x seed in {42-46}. Idempotent -- skips (cov,seed) combos whose kMate
-# output already exists. Mirrors speed_vs_hapfire/scripts/submit_greneNet_fair_grid.sh.
+# output already exists. Mirrors vs_hapfire/scripts/submit_greneNet_fair_grid.sh.
 set -euo pipefail
 cd "$(dirname "$0")"
 mkdir -p logs

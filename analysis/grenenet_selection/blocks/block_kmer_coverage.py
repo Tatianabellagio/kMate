@@ -12,7 +12,7 @@ import numpy as np, pandas as pd
 
 META = "data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1.meta.npz"
 BLOCKS = "analysis/grenenet_selection/blocks/results/blocks_mcf90/chr1_clq0.9_blocks_clq0.9.tsv"
-STATUS = "benchmarks/ldblock_window_test/sweep_s42_base.h_blocks_per_chrom.npz"
+STATUS = "benchmarks/unit_ldblock_window/sweep_s42_base.h_blocks_per_chrom.npz"
 
 
 def main():

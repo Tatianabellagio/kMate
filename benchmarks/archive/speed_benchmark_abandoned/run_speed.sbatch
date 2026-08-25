@@ -18,8 +18,8 @@ T=8                                   # matched thread count for all tools
 export OMP_NUM_THREADS=$T OPENBLAS_NUM_THREADS=$T MKL_NUM_THREADS=$T
 mkdir -p benchmarks/speed_benchmark/logs benchmarks/speed_benchmark/results
 source ~/miniforge3/etc/profile.d/conda.sh
-SC=benchmarks/accuracy_vs_competitors/scripts
-W=benchmarks/accuracy_vs_competitors/work
+SC=benchmarks/vs_vg_giraffe/scripts
+W=benchmarks/vs_vg_giraffe/work
 RES=benchmarks/speed_benchmark/results
 D=benchmarks/$PANEL/sims/$POOL
 REF=/global/scratch/users/tbellg/pang/pang_1001gplus/20260209_Exposito-Alonso/chr_only/TAIR10.chr.iupacN.fa

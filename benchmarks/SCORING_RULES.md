@@ -10,11 +10,13 @@
 > kMate's `var_called` mask excludes exactly those. A shared panel is therefore **not a
 > shared input**, and no scoring rule downstream can repair that.
 >
-> The live kMate-vs-hapFIRE comparison is **`speed_vs_hapfire/`** — matched pools,
+> The live kMate-vs-hapFIRE comparison is **`vs_hapfire/`** — matched pools,
 > **tool-native panels**, 5 seeds.
 >
-> `score_snp_fair.py` has moved into that archive along with the rest of the apparatus, so
-> the "use score_snp_fair.py" instruction below no longer resolves to a live path.
+> `score_snp_fair.py` itself is **still live** at `vs_vg_giraffe/scripts/` — the live
+> kMate-vs-vg pipeline calls it, and the scorer was never the defect. Its shared-panel
+> restriction exists to make `(chrom,pos)` a unique, allele-safe join key, which is RULE 1
+> below and is correct. The defect was feeding that panel to **hapFIRE as model input**.
 >
 > **RULE 1 below is still correct and still binding** for any AF comparison you do build —
 > it is about join keys and multiallelic positions, which has nothing to do with panel
@@ -38,7 +40,7 @@ allele** between a tool's estimate and the truth → garbage R².
 (`work/shared_snps_<panel>_Chr1.vcf.gz`). Multiallelic positions were already dropped when
 that panel was built, so within it `(chrom,pos)` IS unique and unambiguous — which is the
 only reason hapFIRE/vg (which output `chrom,pos,freq` with no allele) can be joined safely.
-Use **`accuracy_vs_competitors/scripts/score_snp_fair.py`** — it does this. The old
+Use **`vs_vg_giraffe/scripts/score_snp_fair.py`** — it does this. The old
 `score_competitor_snp.py` and `score_competitors.py` are **WRONG** (position-only join).
 
 ## RULE 2 — `recomb_truth.truth_af` is MAR; it is a closed loop that flatters kMate

@@ -27,8 +27,8 @@ set -eo pipefail
 cd /global/scratch/users/tbellg/kmate
 source ~/miniforge3/etc/profile.d/conda.sh && conda activate kmate
 
-RES=benchmarks/accuracy_vs_competitors/results
-W=benchmarks/accuracy_vs_competitors/work
+RES=benchmarks/vs_vg_giraffe/results
+W=benchmarks/vs_vg_giraffe/work
 KM=benchmarks/p80/results/kmate_chrom_p80_filt2inv
 TABLE=benchmarks/benchmark_table_4tool_chrom.tsv
 SNP_PANEL=$W/shared_snps_p80_Chr1.vcf.gz
@@ -53,7 +53,7 @@ for entry in $POOLS; do
   for f in "$KG" "$HF" "$VS" "$VSV"; do [ -s "$f" ] || miss="$miss $(basename $f)"; done
   if [ -n "$miss" ]; then echo "SKIP $p (missing:$miss)"; skip=$((skip+1)); continue; fi
   echo "== $p"
-  python benchmarks/accuracy_vs_competitors/scripts/build_4tool_table.py \
+  python benchmarks/vs_vg_giraffe/scripts/build_4tool_table.py \
     --pool "$p" --truth benchmarks/p80/sims/$p/recomb_truth.tsv.gz \
     --snp-panel "$SNP_PANEL" --var-meta "$META" --var-called "$CALLED" \
     --kmate-global "$KG" --kmate-mode chrom \

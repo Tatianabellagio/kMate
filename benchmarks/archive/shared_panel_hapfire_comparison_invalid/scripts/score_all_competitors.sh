@@ -5,9 +5,9 @@
 set -eo pipefail
 cd /global/scratch/users/tbellg/kmate
 source ~/miniforge3/etc/profile.d/conda.sh && conda activate kmate
-RES=benchmarks/accuracy_vs_competitors/results
-W=benchmarks/accuracy_vs_competitors/work
-TSV=benchmarks/benchmark_runs/tsv
+RES=benchmarks/vs_vg_giraffe/results
+W=benchmarks/vs_vg_giraffe/work
+TSV=benchmarks/kmate_output_store/tsv
 TABLE=benchmarks/benchmark_table_4tool.tsv
 SNP_PANEL=$W/shared_snps_p80_Chr1.vcf.gz
 META=benchmarks/p80/data/var_pa_p80.meta.npz
@@ -24,7 +24,7 @@ for p in $POOLS; do
   miss=""
   for f in "$KG" "$KB" "$HF" "$VS" "$VSV"; do [ -s "$f" ] || miss="$miss $(basename $f)"; done
   if [ -n "$miss" ]; then echo "SKIP $p (missing:$miss)"; skip=$((skip+1)); continue; fi
-  python benchmarks/accuracy_vs_competitors/scripts/build_4tool_table.py \
+  python benchmarks/vs_vg_giraffe/scripts/build_4tool_table.py \
     --pool "$p" --truth benchmarks/p80/sims/$p/recomb_truth.tsv.gz \
     --snp-panel "$SNP_PANEL" --var-meta "$META" --var-called "$CALLED" \
     --kmate-global "$KG" --kmate-block "$KB" --hapfire "$HF" --vg-snp "$VS" --vg-sv "$VSV" \

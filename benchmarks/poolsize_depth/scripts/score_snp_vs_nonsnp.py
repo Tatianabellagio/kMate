@@ -24,7 +24,7 @@ import matplotlib.pyplot as plt
 
 ROOT = "/global/scratch/users/tbellg/kmate"
 P231 = f"{ROOT}/benchmarks/p231"
-OUT = f"{ROOT}/benchmarks/speed_vs_hapfire/results"
+OUT = f"{ROOT}/benchmarks/vs_hapfire/results"
 os.makedirs(OUT, exist_ok=True)
 os.makedirs(f"{OUT}/plots", exist_ok=True)
 

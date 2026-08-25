@@ -34,7 +34,7 @@ cause is that the shared panel is not a shared input in the first place.
 
 ## What replaces it
 
-**`benchmarks/speed_vs_hapfire/`** — matched pools, tool-native panels. Both tools get
+**`benchmarks/vs_hapfire/`** — matched pools, tool-native panels. Both tools get
 the same founder draw and seed, and each is scored against its own natural truth
 (kMate on arch3 SNPs, hapFIRE on greneNet SNPs projected through the same
 `pool_weights.tsv`). Its scorer says so explicitly: *"This is NOT a shared per-site

@@ -6,7 +6,7 @@ at multiallelic positions (truth/kMate carry no REF/ALT, only ref_len/alt_len) a
 corrupts R² (e.g. kMate n1_g0 AF 0.937 here vs the correct 1.0000). It also scores the
 MAR truth, a closed loop that flatters kMate (RULE 2).
 
-USE INSTEAD: accuracy_vs_competitors/scripts/score_snp_fair.py (shared-panel,
+USE INSTEAD: vs_vg_giraffe/scripts/score_snp_fair.py (shared-panel,
 allele-safe, info>=0.9 / fully-called basis). Left in place only for provenance.
 """
 import argparse, sys

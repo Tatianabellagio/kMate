@@ -41,7 +41,7 @@ window-mode kMate on block maps of increasing coarseness (base + variant-floor 8
 local h adds no accuracy over global fallback here, because recombination is rare. (So merging
 is for *coverage/insurance*, not accuracy.)"""))
 cells.append(new_code_cell(
-"""S = pd.read_csv("/global/scratch/users/tbellg/kmate/benchmarks/ldblock_window_test/coarse_sweep_scores.csv")
+"""S = pd.read_csv("/global/scratch/users/tbellg/kmate/benchmarks/unit_ldblock_window/coarse_sweep_scores.csv")
 order=["base","8","15","25","40"]
 g=S.groupby("level")
 fig,ax=plt.subplots(1,2,figsize=(13,4.6))
