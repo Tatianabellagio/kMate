@@ -453,6 +453,8 @@ analysis/grenenet_selection/r1_sv_negative_selection/results/site_temporal/
 analysis/grenenet_selection/structure/
 analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld/
 analysis/grenenet_selection/r3_persite_gwas/results/varexp/
+analysis/grenenet_selection/r3_persite_gwas/results/gemma_gwas/
+analysis/grenenet_selection/r3_persite_gwas/results/gemma_validation/
 analysis/grenenet_selection/blocks/results/blocks_mcf90/
 analysis/grenenet_selection/blocks_mcf90_p80/
 analysis/grenenet_selection/blocks/results/blocks_recompute/
