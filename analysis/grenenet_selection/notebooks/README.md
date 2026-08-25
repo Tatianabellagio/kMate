@@ -53,8 +53,9 @@ Section: `r3_persite_gwas/`
 
 | notebook | what it shows |
 |---|---|
-| `class_gwas_persite.ipynb` | the 31 individual per-garden LOCO-EMMAX scans, SNP vs non-SNP block overlap |
-| `class_gwas_multitrait.ipynb` | Bolormaa multi-trait meta across sites (JOINT / GLOBAL / CLIMATE) |
+| **`persite_gwas.ipynb`** | **the results view** — 30 per-garden GEMMA scans: λ + hit counts, QQ grids, the MAC-stratified QQ, Manhattan grids, and the hit list with MAC attached. Builder: `r3_persite_gwas/_build_persite_gwas_gemma_nb.py` |
+| ~~`class_gwas_persite.ipynb`~~ | ⚠ **retired 2026-08-25** → `archive/retired_2026-08-25/notebooks/`. Built on the in-house EMMAX/P3D arm; superseded by `persite_gwas.ipynb` |
+| ~~`class_gwas_multitrait.ipynb`~~ | ⚠ **retired 2026-08-25** → same place. It was entirely the Bolormaa JOINT/GLOBAL/CLIMATE meta, which is no longer computed (per-garden-only scope; the all-sites question is the GEA track's) |
 | `sv_indel_tagging_masked.ipynb` | SV/indel→SNP tagging r² (masked, MAC-floored) — the "is the non-SNP layer redundant" control |
 | `nonsnp_only_genes.ipynb` | annotated genes under blocks the non-SNP scan flags and the SNP scan misses |
 
