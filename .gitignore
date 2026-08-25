@@ -331,6 +331,14 @@ analysis/grenenet_selection/wza/investigation/results/
 analysis/grenenet_selection/archive_gea/r2_gea_nonsnp/phase1_replication/results/
 analysis/grenenet_selection/archive_gea/wza/investigation/results/
 analysis/grenenet_selection/archive_gea/extras/driver_passenger/results/
+# wza/investigation/deinflate/ writes per-record LFMM score dumps NEXT TO its scripts
+# rather than into results/, so the rule above never covered them -- one is 105 MB
+# (2,016,072 rows, one per SNP). They were untracked-but-not-ignored in the original
+# location too, so a `git add` on the parent would have swept them in at any point.
+# Keep the scripts and the tiny ksweep_* tables; drop the score dumps.
+analysis/grenenet_selection/archive_gea/wza/investigation/deinflate/*_scores.csv
+analysis/grenenet_selection/archive_gea/wza/investigation/deinflate/functional_themes_site.csv
+analysis/grenenet_selection/archive_gea/wza/investigation/deinflate/inputs/
 # rerun_kfw_hb: production AF store, per-sample TSVs (mirrors old results/**/*.tsv rule)
 analysis/grenenet_selection/common/rerun_kfw_hb/**/*.tsv
 # sv_adaptive/: LIVE output dir for the s_*/parallelism/picmin/temporal_* SV-selection
