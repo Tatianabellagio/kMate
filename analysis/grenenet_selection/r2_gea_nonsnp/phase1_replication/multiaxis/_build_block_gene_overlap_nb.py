@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """Summary tables + 3-way Venn diagrams (SNP / small-indel / SV) of which clq0.9 tiling
 BLOCKS and GENES are climate-significant — raw LFMM, gen9, MAF>0.05, Bonferroni per
-class/axis on >=1 of the 20 axes (bio1-19 + pc1).
+class/axis on >=1 of the 22 axes (bio1-19 + pc1-3).
 
 Two questions:
   (1) how many blocks/genes are significant per class, out of the total tested;
@@ -22,7 +22,8 @@ from nbconvert.preprocessors import ExecutePreprocessor
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "block_gene_significance_overlap.ipynb")
+NBDIR = os.path.normpath(os.path.join(HERE, "..", "..", "..", "notebooks"))
+OUT = os.path.join(NBDIR, "block_gene_significance_overlap.ipynb")
 
 C = []
 md = lambda s: C.append(new_markdown_cell(s))
@@ -32,7 +33,7 @@ md(r"""# Significant blocks & genes per variant class + SNP / indel / SV overlap
 
 clq0.9 **tiling** blocks, **raw LFMM** p (gen9, MAF>0.05). A block is *significant* for a
 class if its lead (min-p) record of that class clears the per-class Bonferroni bar
-(0.05 / n_records) on **>=1** of the 20 climate axes (bio1-19 + pc1). Genes = protein-coding
+(0.05 / n_records) on **>=1** of the 20 climate axes (bio1-19 + pc1-3). Genes = protein-coding
 genes overlapping a significant block (TAIR10).
 
 - **Table:** significant / tested blocks and gene counts per class (snp · smallindel · sv ·
@@ -45,11 +46,20 @@ Raw, uncalibrated p (inflation acknowledged, kept deliberately).""")
 
 co(r"""import os, sys, numpy as np, pandas as pd, matplotlib.pyplot as plt
 from matplotlib_venn import venn3, venn3_circles
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+# `__file__` is NOT defined in a Jupyter kernel, so the dirname-stack idiom the .py
+# scripts use raises NameError here. Walk up from cwd to the tree root instead.
+def _tree_root(start=None):
+    d = os.path.abspath(start or os.getcwd())
+    while d != os.path.dirname(d):
+        if os.path.basename(d) == "grenenet_selection" and os.path.exists(os.path.join(d, "lib.py")):
+            return d
+        d = os.path.dirname(d)
+    raise RuntimeError("could not locate the grenenet_selection tree root from " + os.getcwd())
+sys.path.insert(0, _tree_root())
 import lib
 WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 OUTDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
-AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
+AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1", "pc2", "pc3"]
 plt.rcParams.update({"figure.dpi": 120, "axes.spines.top": False, "axes.spines.right": False})
 
 # block spans (tiling) -> genes overlapping each block
@@ -159,7 +169,7 @@ print(f"  SNP&indel {len((Ag&Bg)-Cg)} | SNP&SV {len((Ag&Cg)-Bg)} | indel&SV {len
 
 nb = new_notebook(); nb["cells"] = C
 ep = ExecutePreprocessor(timeout=5400, kernel_name="basic", startup_timeout=180)
-ep.preprocess(nb, {"metadata": {"path": HERE}})
+ep.preprocess(nb, {"metadata": {"path": NBDIR}})
 with open(OUT, "w") as f:
     nbf.write(nb, f)
 print(f"[built+executed] {OUT}")
