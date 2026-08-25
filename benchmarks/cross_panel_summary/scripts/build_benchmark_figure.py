@@ -30,8 +30,8 @@ def scen_label(r):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--table", default=str(Path(__file__).resolve().parent / "results" / "benchmark_table.tsv"))
-    ap.add_argument("--out", default=str(Path(__file__).resolve().parent / "results" / "plots" / "benchmark_panel_rmse.png"))
+    ap.add_argument("--table", default=str(Path(__file__).resolve().parent.parent / "benchmark_table.tsv"))
+    ap.add_argument("--out", default=str(Path(__file__).resolve().parent.parent / "plots" / "benchmark_panel_rmse.png"))
     ap.add_argument("--metric", default="RMSE", choices=["RMSE", "MAE", "R2"])
     ap.add_argument("--gens", default="0,1,3", help="generations to include (comma list)")
     ap.add_argument("--n-founders", type=int, default=50,

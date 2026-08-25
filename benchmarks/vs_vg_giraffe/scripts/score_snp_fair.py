@@ -3,7 +3,7 @@
 
 WHY THIS EXISTS
 ---------------
-The earlier scorers (benchmarks/score_competitor_snp.py and
+The earlier scorers (benchmarks/vs_vg_giraffe/scripts/score_competitor_snp.py and
 benchmarks/vs_vg_giraffe/scripts/score_competitors.py) join every tool
 to the truth on (chrom,pos) ONLY. The sim `recomb_truth.tsv.gz` and the kMate
 `_global.tsv` carry NO ref/alt bases -- only ref_len/alt_len -- and the truth

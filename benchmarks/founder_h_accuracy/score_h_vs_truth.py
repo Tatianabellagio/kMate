@@ -2,7 +2,7 @@
 """
 score_h_vs_truth.py  --  reusable PER-FOUNDER h benchmark for kMate.
 
-The production AF benchmark (benchmarks/build_benchmark_table.py) scores allele
+The production AF benchmark (benchmarks/cross_panel_summary/scripts/build_benchmark_table.py) scores allele
 frequency only (R2 ~ 0.99). kMate's *per-founder h* is a separate, weaker
 estimand: on the seed mix / n231_g0 it absorbs many founders to ~0 and, in the
 raw arm, over-credits long-read (cactus) founders.  This scorer scores h the

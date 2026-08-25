@@ -41,6 +41,6 @@ echo "[$(date)] hapFIRE on $(hostname): $POOL"
 # 3. score vs recomb_truth -> competitor rows
 conda activate kmate
 echo "[$(date)] score hapFIRE vs recomb_truth"
-python3 benchmarks/score_competitor_snp.py --tool hapFIRE --pool "$POOL" \
+python3 benchmarks/vs_vg_giraffe/scripts/score_competitor_snp.py --tool hapFIRE --pool "$POOL" \
   --truth "$TRUTH" --est $RES/hapfire_${POOL}_snp_frequency.txt --table "$ROWS"
 echo "[$(date)] DONE $POOL"
