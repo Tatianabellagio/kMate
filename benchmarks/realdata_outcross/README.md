@@ -60,3 +60,16 @@ python benchmarks/realdata_outcross/scripts/analyze_moi.py
 - `moi_summary.csv` — per-sample `eff_n_founders`, `max_h`, top-3 founders, hapFIRE label.
 - `moi_summary.png` — eff_n_founders by label (left) + genome-wide founder composition (right).
 - Console prints whether the two classes separate cleanly and the threshold.
+
+## Sub-scopes
+
+Two further analyses on the same individuals, each self-contained with its own README:
+
+| dir | question |
+|---|---|
+| [`hapfire/`](hapfire/README.md) | do kMate and hapFIRE **agree** about founder composition? A concordance measurement (TVD / Hellinger) — real data has no ground truth, so no accuracy claim is possible. Each tool on its **native** panel: kMate arch3, hapFIRE greneNet. |
+| [`painting/`](painting/README.md) | **where** does recombination happen along the chromosome? kMate window mode as local ancestry; two window definitions (fixed 10 kb + HMM, and dynld_K500) run side by side. |
+
+Layout note: this dir's own outputs moved 2026-08-25 — `out/` → `results/h_per_chrom/`,
+figures → `results/plots/`, scripts → `scripts/`, manifests → `data/`. Both sub-scopes
+follow the same shape.

@@ -11,15 +11,19 @@
 
 # ============================================================================
 # Run hapFIRE on a few of Ruth's individually-sequenced plants, so we can compare
-# hapFIRE's per-founder _ecotype_frequency vector to kMate's h on the SAME panel.
+# hapFIRE's per-founder _ecotype_frequency vector to kMate's h over the same 231
+# FOUNDER IDs. The panels are deliberately NOT shared -- see README.md.
 #
 # hapFIRE estimates ECOTYPE (founder) frequencies from SNP base-matches; for a
 # single individual that vector is hapFIRE's analog of kMate's h:
 #   inbred   -> one ecotype ~ 1.0
 #   outcross -> spread over >=2 ecotypes
 #
-# Shared panel: the 231-founder Chr1 VCF kMate's panel was built from
-# (greneNet_chr1.vcf.gz, chrom "1"); Ruth's dedup BAMs are aligned to the Ensembl
+# Panel (hapFIRE's NATIVE one, not a shared panel): greneNet_chr1.vcf.gz, chrom "1".
+# kMate runs on arch3. Each tool on its own panel is the required basis here -- a
+# panel built to be shared with hapFIRE has to impute MISSING -> 0|0, which is the
+# defect retired in ../../archive/shared_panel_hapfire_comparison_invalid/.
+# Ruth's dedup BAMs are aligned to the Ensembl
 # TAIR10 ref with chrom names "1".."5" -> they match the VCF + ref with NO
 # renaming (verified). Chr1 only (the hapFIRE-ready VCF is Chr1).
 #
