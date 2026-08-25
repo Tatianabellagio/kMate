@@ -37,13 +37,15 @@ partition (production baseline, interval containment) — that partition **disca
 40.7% of non-SNP records** (and 39.7% of SNP, 49.3% of SV) that fall in inter-block
 gaps, since clq blocks are LD islands that don't tile the genome. This version uses
 the **tiling** reblocking (`reblock_blockdef.py --how tiling`, HapFM's gap-free rule):
-every record keeps a block, same LD boundaries. Still **raw, before-WZA** per-record
-LFMM K=16 p-values (gen9, MAF>0.05) — block assignment and per-record significance
-don't depend on the WZA correction regime (cap / SD-fit / mean-fit), so this view is
-valid independent of the ongoing a09t post-WZA rebuild (see repo memory / session
-notes: the post-WZA `wza_arms/*_a09t.csv` outputs are currently mid-rebuild for
-snp/smallindel/nonsnp — only `sv` is on the settled isotonic/const-mean/no-cap
-regime — but that doesn't affect anything in this notebook).""")
+every record keeps a block, same LD boundaries. **Raw** per-record LFMM K=16 p-values
+(gen9, MAF>0.05) — which is now the production track: WZA block aggregation was retired
+on 2026-08-25 (see `archive_gea/README.md`; it is ~170x anti-conservative on this data
+and honest recalibration collapses ~7,200 block-hits to 6). Nothing in this notebook
+ever depended on the WZA correction regime, so it is unaffected by that retirement.
+
+**Raw p is uncalibrated.** Genomic inflation is lambda ~1.72 median across classes and
+up to 2.67 (bio15); 19/20 of the original axes exceed 1. Read every count here next to
+lambda, and prefer Bonferroni — BH on raw p calls 40-60% of the genome per axis.""")
 
 co('''
 import os, sys

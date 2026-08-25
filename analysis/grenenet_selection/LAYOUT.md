@@ -38,6 +38,18 @@ analysis/
 | `wza/` | the WZA block-aggregation method: shared `wza_script.py` + the investigation that settled the regime | 1 | `investigation/` |
 | `genes/` | which genes, and are they real: `attribution/` (block→gene from the GWAS) and `dissection/` (per-locus validation from the GEA) | — | `attribution/`, `dissection/` |
 | `qc/` | QC of *this* analysis (coverage, panel overlap, seed-mix identifiability) | 10 | `seedmix_validation/` |
+| `archive_gea/` | ⚠ **retired GEA tracks** (2026-08-25): WZA block aggregation, quasi-binomial, kendall. Nothing here is live — see its `README.md` | — | mirrors the old tree |
+
+**`archive_gea/` is a deliberate exception to rule 1 below.** It is a second top-level
+archive alongside `archive/`, created 2026-08-25 when the GEA line narrowed to raw
+per-record LFMM. It is separate from `archive/` (and named prominently) specifically so
+that an agent scanning this tree cannot miss that the WZA / multi-model machinery is
+dead. Do not add new work to it, and do not create a third archive: anything else that
+retires goes in `archive/`.
+
+⚠ **`results/multiaxis/wza_in_clq09_tile/` is NOT WZA output** despite the name — it is
+the *raw per-record* LFMM table and the live track's primary input (88 files = 4 classes
+× 22 axes). Never move it on a `wza*` name match.
 
 `blocks/` and `wza/` are **method** sections, not results: `blocks/` defines the
 unit, `wza/` aggregates per-variant p-values over it. `wza_script.py` lives there

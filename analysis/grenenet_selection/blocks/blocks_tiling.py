@@ -119,7 +119,9 @@ def _report(r2):
           f"{'TILING kept':>12s} {'%drop':>7s} | {'blocks':>8s} {'med/blk':>8s}")
     print("-" * 92)
     for cls in ["snp", "sv", "smallindel", "nonsnp"]:
-        f = f"{MA}/kendall/kendall_{cls}_gen9_bio1.csv"
+        # was kendall/ until 2026-08-25; that model retired to archive_gea/, and this
+        # diagnostic only needs record positions, which are identical across models.
+        f = f"{MA}/lfmm/lfmm_{cls}_gen9_bio1.csv"
         if not os.path.exists(f):
             continue
         d = pd.read_csv(f, usecols=["chrom", "pos"])

@@ -31,10 +31,16 @@ import lib
 
 MA = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 
+# NOTE (2026-08-25): only `lfmm` is live. The kendall and quasi-binomial source dirs
+# were retired to archive_gea/ along with the rest of the multi-model track, so
+# `--models kendall` / `--models binomial` will raise FileNotFoundError unless you
+# point --outdir at the archive. The entries are kept so the archived outputs remain
+# re-derivable, not because those models are still run. Default is all three for
+# backwards compatibility; pass `--models lfmm` for anything current.
 SRC = {
-    "kendall":  ("kendall/kendall_{cls}_gen9_{axis}.csv", "pval"),
-    "lfmm":     ("lfmm/lfmm_{cls}_gen9_{axis}.csv", "pval"),
-    "binomial": ("quasibinom/quasibinom_lf16_{cls}_gen9_{axis}.csv", "pval_quasi"),
+    "kendall":  ("kendall/kendall_{cls}_gen9_{axis}.csv", "pval"),          # RETIRED
+    "lfmm":     ("lfmm/lfmm_{cls}_gen9_{axis}.csv", "pval"),                # live
+    "binomial": ("quasibinom/quasibinom_lf16_{cls}_gen9_{axis}.csv", "pval_quasi"),  # RETIRED
 }
 
 

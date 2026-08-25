@@ -30,21 +30,24 @@ Section: `r2_gea_nonsnp/` (production pipeline in `phase1_replication/`)
 
 | notebook | what it shows |
 |---|---|
-| `newpeak_dotgrid_lfmm_{sv,nonsnp,smallindel}.ipynb` | the new-peak dot-grids — significant blocks per class across climate axes |
-| `wza_manhattan_snp_vs_{sv,nonsnp}_lfmm_final.ipynb` | block-level WZA Manhattans on the settled regime (clq0.9 tiling · isotonic SD · deg-5 clamped mean · no cap) |
-| `raw_manhattan_snp_vs_{sv,nonsnp}_lfmm_tile.ipynb` (+ `_site_tile`) | per-variant Manhattans on the gap-free tiling partition |
-| `gif_manhattan_snp_vs_{sv,nonsnp}_lfmm_tile.ipynb` | the same, GIF-corrected |
-| `nonsnp_peak_dotgrid_lfmm_tile.ipynb` | non-SNP peak dot-grid, tiling partition |
-| `snp_vs_nonsnp_new_peaks.ipynb`, `snp_vs_nonsnp_peaks_viz.ipynb` | which peaks the non-SNP scan finds that the SNP scan misses |
+> **2026-08-25 — the live track is raw per-record LFMM.** WZA block aggregation and the
+> quasi-binomial / kendall models were retired to `../archive_gea/` (see its README for
+> why: WZA is ~170× anti-conservative here, and honest recalibration collapses ~7,200
+> block-hits to 6). 21 notebooks moved with them and are **no longer in this directory**.
+> Everything listed below is live and reads the raw per-record tables.
+
+| notebook | what it shows |
+|---|---|
+| `raw_manhattan_snp_vs_{sv,nonsnp}_lfmm_tile.ipynb` (+ `_site_tile`) | **the headline figures** — per-variant mirror Manhattans on the gap-free tiling partition, 22 climate axes (bio1-19 + pc1-3), each with a QQ panel reporting λ |
+| `gif_manhattan_snp_vs_{sv,nonsnp}_lfmm_tile.ipynb` | the same, GIF-corrected (λ divided out where λ>1) |
+| `newpeak_dotgrid_lfmm_{sv,nonsnp,smallindel}.ipynb` | new-peak dot-grids — significant blocks per class across climate axes (raw, block-lead) |
+| `nonsnp_peak_dotgrid_lfmm_tile.ipynb` | non-SNP peak dot-grid + the raw per-record Bonferroni/FDR count table, tiling partition |
+| `snp_vs_nonsnp_peaks_viz.ipynb` | which peaks the non-SNP scan finds that the SNP scan misses (GWAS-side) |
 | `persite_new_peaks_{nonsnp,sv}.ipynb` | the same question per garden, on the production tiling blocks |
 | `persite_new_peaks.ipynb` | ⚠ **superseded** — the pre-tiling version; its partition silently dropped ~28% of variants to inter-block gaps. Kept only as the predecessor |
-| `block_gene_significance_overlap.ipynb`, `nonsnp_block_characterization.ipynb`, `nonsnp_bonf_overlap.ipynb` | block→gene attribution and characterization of the non-SNP blocks |
-| `cap_poly_decision.ipynb`, `wza_sd_fit_audit.ipynb` | how the WZA correction regime was chosen |
-| `manhattan_3models_deg7cap2000.ipynb`, `manhattan_clq90_deg2.ipynb`, `manhattan_lastgen_wza.ipynb` | earlier-regime Manhattans (deg-7/deg-2); superseded by the `_final` set above for citation |
-| `kendall_fix_compare.ipynb`, `binomial_fix_compare.ipynb` | before/after checks on the kendall and binomial fixes |
-| `sv_polarity_enrichment_clq90.ipynb` | SV enrichment / insertion-deletion polarity across the three models |
-| `lfmm_k_calibration.ipynb`, `manhattan_{byclass,combined}_wza.ipynb` | the CAM5 replication (`cam5_replication/`) |
-| `10_lfmm_k_selection.ipynb` | why K=16 latent factors — the standing K decision |
+| `block_gene_significance_overlap.ipynb`, `nonsnp_block_characterization.ipynb` | block→gene attribution and characterization of the non-SNP blocks |
+| `lfmm_k_calibration.ipynb` | the CAM5 replication (`cam5_replication/`) |
+| `10_lfmm_k_selection.ipynb` | why K=16 latent factors — the standing K decision, and still load-bearing for the live LFMM |
 
 ## Result 3 — per-site GWAS on the ecotype-selection trait
 Section: `r3_persite_gwas/`
@@ -58,10 +61,15 @@ Section: `r3_persite_gwas/`
 
 ## Method sections
 
-**`wza/`** — was WZA the right block-aggregation choice?
-`wza_investigation.ipynb` (the main writeup), `wza_manhattan_cap_vs_nocap.ipynb`,
-`wza_sd_fix_test.ipynb`, `fit_inspection_{kendall,lfmm,binomial}.ipynb`,
-`pc1_manhattan.ipynb`, `manhattan_pc1.ipynb`.
+**`wza/`** — ⚠ **RETIRED 2026-08-25, moved to `../archive_gea/`.** The whole section
+(`wza_script.py` + `investigation/`) and its notebooks — `wza_investigation.ipynb`,
+`wza_manhattan_cap_vs_nocap.ipynb`, `wza_sd_fix_test.ipynb`, `wza_sd_fit_audit.ipynb`,
+`cap_poly_decision.ipynb`, `fit_inspection_{kendall,lfmm,binomial}.ipynb`,
+`pc1_manhattan.ipynb` — now live under `archive_gea/`. `manhattan_pc1.ipynb` stayed
+(it reads no WZA output). Also retired there: the kendall / quasi-binomial model
+notebooks (`kendall_fix_compare`, `binomial_fix_compare`, `manhattan_*_wza`,
+`manhattan_{3models_deg7cap2000,clq90_deg2}`, `nonsnp_bonf_overlap`,
+`snp_vs_nonsnp_new_peaks`, `sv_polarity_enrichment_clq90`).
 
 **`blocks/`** — what is a test unit?
 `block_coherence_clqcut.ipynb`, `blocks_units_decision.ipynb`,

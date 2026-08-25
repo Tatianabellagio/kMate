@@ -320,6 +320,17 @@ analysis/grenenet_selection/extras/driver_passenger/results/
 analysis/grenenet_selection/archive/gea_newpanel_snp_nonsnp_fork_retired/results/
 analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/
 analysis/grenenet_selection/wza/investigation/results/
+
+# --- 2026-08-25: the retired GEA tracks (WZA block-aggregation, quasi-binomial,
+# kendall) moved to analysis/grenenet_selection/archive_gea/, mirroring their old
+# layout. The rules above are LITERAL paths, so they silently stopped matching the
+# moment the parent moved -- which would expose ~66 GB of archived result data to
+# git. Re-assert the same "data never stageable" policy at the archived location.
+# The live raw-LFMM track (results/multiaxis/{lfmm,wza_in_clq09_tile,
+# wza_in_clq09_tile_site}/) stays put and is still covered by the rule above. ---
+analysis/grenenet_selection/archive_gea/r2_gea_nonsnp/phase1_replication/results/
+analysis/grenenet_selection/archive_gea/wza/investigation/results/
+analysis/grenenet_selection/archive_gea/extras/driver_passenger/results/
 # rerun_kfw_hb: production AF store, per-sample TSVs (mirrors old results/**/*.tsv rule)
 analysis/grenenet_selection/common/rerun_kfw_hb/**/*.tsv
 # sv_adaptive/: LIVE output dir for the s_*/parallelism/picmin/temporal_* SV-selection
@@ -411,11 +422,11 @@ benchmarks/p80/logs/
 benchmarks/scripts/logs/
 # realdata_outcross: keep README/notebook/figures, drop bulk per-sample painting
 # intermediates and a stray nested logs/ dir from a wrong-CWD sbatch run
-benchmarks/realdata_outcross/painting/out/*.tsv
-benchmarks/realdata_outcross/painting/out/*.npz
+benchmarks/realdata_outcross/painting/results/painted/*.tsv
+benchmarks/realdata_outcross/painting/results/painted/*.npz
 benchmarks/realdata_outcross/benchmarks/
 benchmarks/realdata_outcross/logs/
-benchmarks/realdata_outcross/out/
+benchmarks/realdata_outcross/results/h_per_chrom/
 benchmarks/realdata_outcross/hapfire/
 
 # --- 2026-07-10 cleanup: remaining results/grenenet_gea/<topic> data (foundational
