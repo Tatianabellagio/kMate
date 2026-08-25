@@ -27,7 +27,8 @@ import matplotlib.pyplot as plt
 
 ROOT = "/global/scratch/users/tbellg/kmate"
 OUT = f"{ROOT}/benchmarks/poolsize_depth/results"
-os.makedirs(OUT, exist_ok=True)
+PLOTS = f"{OUT}/plots"   # figures under results/plots/, never loose (project convention)
+os.makedirs(PLOTS, exist_ok=True)
 
 DEPTHS = [1, 10]
 SEEDS = [42, 43, 44, 45, 46]
@@ -194,6 +195,6 @@ def make_figure(metric_r2, metric_rmse, rmse_label, out_path):
 
 
 make_figure("h_R2", "h_RMSE_norm", "RMSE / sd(truth)",
-            f"{OUT}/poolsize_depth_h_accuracy.png")
+            f"{PLOTS}/poolsize_depth_h_accuracy.png")
 make_figure("af_R2", "af_RMSE", "RMSE",
-            f"{OUT}/poolsize_depth_af_accuracy.png")
+            f"{PLOTS}/poolsize_depth_af_accuracy.png")

@@ -27,7 +27,7 @@ def build(cls, title_word):
     md = lambda s: C.append(new_markdown_cell(s))
     co = lambda s: C.append(new_code_cell(s))
 
-    md(f"""# Raw (before-WZA) mirror Manhattans — SNP vs {title_word}, LFMM, clq0.9 TILING, all 20 axes
+    md(f"""# Raw (before-WZA) mirror Manhattans — SNP vs {title_word}, LFMM, clq0.9 TILING, all 22 axes
 
 Successor to `raw_manhattan_snp_vs_{cls}_lfmm.ipynb`, which used the **strict** clq0.9
 partition (interval containment) — that partition drops 39.7% of SNP / 49.3% of SV /
@@ -36,10 +36,19 @@ partition (interval containment) — that partition drops 39.7% of SNP / 49.3% o
 record keeps a block, same LD boundaries, **0% dropped**.
 
 Per-record `wza_in_clq09_tile` p-values (the input WZA aggregates, not the block-level
-output) — one figure per climate axis (bio1-19 + pc1), LFMM only. SNP up, {cls} down.
+output) — one figure per climate axis (bio1-19 + pc1-3), LFMM only. SNP up, {cls} down.
 Dashed = per-class Bonferroni (0.05/n records). Vertical dotted line + gene label = a
 tiling block whose lead {cls} record is Bonferroni-sig while its lead SNP record in the
-same block is not ("new" peak, first-pass — not yet checked for SNP-tagging).""")
+same block is not ("new" peak, first-pass — not yet checked for SNP-tagging).
+
+**pc2/pc3 added 2026-08-25.** The original 20-axis set spent only one axis on the
+climate PCA (pc1, 46.8% of bioclim variance). pc2 (23.4%) and pc3 (11.7%) take the
+cumulative total to 82.0% and are orthogonal to pc1 by construction, so they probe
+climate structure no bio* axis or pc1 expresses. Orientation: pc1 → +bio1,
+pc2 → +bio7 (continentality / temperature range), pc3 → +bio10 (warmest-quarter
+temperature); sign does not affect the two-sided p, only the direction an effect
+reads in. **λ is printed per axis in the QQ legend — read every raw count next to
+it** (the 20 original axes run λ ≈ 1.72 median, up to 2.67).""")
 
     co(f"""import os, sys
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
@@ -47,7 +56,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 import lib
 GEA = lib.GEA
 WZAIN = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
-AXES = [f"bio{{i}}" for i in range(1, 20)] + ["pc1"]
+AXES = [f"bio{{i}}" for i in range(1, 20)] + ["pc1", "pc2", "pc3"]
 MODEL = "{MODEL}"
 CLS = "{cls}"
 CHROM_LEN = {{"Chr1":30427671,"Chr2":19698289,"Chr3":23459830,"Chr4":18585056,"Chr5":26975502}}

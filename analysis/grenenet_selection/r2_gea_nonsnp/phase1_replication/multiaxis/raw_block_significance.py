@@ -104,18 +104,23 @@ def main():
     ap.add_argument("--model", default="lfmm", choices=["lfmm", "kendall", "binomial"])
     ap.add_argument("--maf", type=float, default=0.05)
     ap.add_argument("--alpha", type=float, default=0.05)
+    ap.add_argument("--axes", nargs="+", default=None,
+                    help=f"climate axes to score (default: the {len(AXES)} production axes)")
+    ap.add_argument("--classes", nargs="+", default=None, choices=CLASSES)
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
+    axes = args.axes or AXES
+    classes = args.classes or CLASSES
     out = args.out or f"{MA}/raw_block_significance_{args.model}.csv"
 
     SPAN = block_spans()
     print(f"clq0.9 partition: {len(SPAN):,} blocks tiling {GENOME:,} bp", flush=True)
 
     rows, union = [], {}
-    for cls in CLASSES:
+    for cls in classes:
         # cols 1-6 are byte-identical across axes for a class, so read the record
         # metadata once and pull only `pval` per axis.
-        d0 = pd.read_csv(f"{IND}/{args.model}_{cls}_gen9_bio1.csv", usecols=["MAF", "block"])
+        d0 = pd.read_csv(f"{IND}/{args.model}_{cls}_gen9_{axes[0]}.csv", usecols=["MAF", "block"])
         keep = (d0.MAF > args.maf).to_numpy()
         blk = d0.block.astype(str).to_numpy()[keep]
         n = int(keep.sum())
@@ -124,7 +129,7 @@ def main():
         print(f"\n{cls}: {n:,} records (MAF>{args.maf}) in {len(tested):,}/{len(SPAN):,} blocks, "
               f"{test_bp/1e6:.1f} Mb testable ({100*test_bp/GENOME:.1f}% of genome)", flush=True)
 
-        for axis in AXES:
+        for axis in axes:
             f = f"{IND}/{args.model}_{cls}_gen9_{axis}.csv"
             if not os.path.exists(f):
                 print(f"  {axis:5s} MISSING"); continue
@@ -167,14 +172,14 @@ def main():
                      ("GIF BH q<0.05 : blocks hit", "gif_bh_blk")]:
         print(f"\n===== {lab} =====")
         print(R.pivot(index="axis", columns="cls", values=col)
-               .reindex(index=AXES, columns=CLASSES).to_string())
+               .reindex(index=axes, columns=classes).to_string())
 
     # union across axes: a block counts once if ANY of the 20 axes hits it. This is
     # the "how much of the genome does the whole scan implicate" number -- the
     # per-axis rows cannot be summed, since the same block recurs across the
     # correlated bioclim axes.
     u = []
-    for cls in CLASSES:
+    for cls in classes:
         tb = int(R.loc[R.cls == cls, "n_blocks_tested"].iloc[0])
         row = dict(cls=cls, blocks_tested=tb)
         for tag in ("raw", "gif"):
@@ -195,7 +200,7 @@ def main():
 
     print("\n===== totals summed over 20 axes (record level) =====")
     print(R.groupby("cls")[["raw_bonf_rec", "raw_bh_rec", "gif_bonf_rec", "gif_bh_rec"]]
-           .sum().reindex(CLASSES).to_string())
+           .sum().reindex(classes).to_string())
     print(f"\nwrote {out}")
     print(f"wrote {out.replace('.csv', '_union.csv')}")
 

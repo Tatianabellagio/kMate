@@ -9,7 +9,7 @@ than they change AF, which is why ROADMAP_GLOBAL_REFRESH Phase 3 designates it t
 highest-signal refresh target.
 
 kMate-only: no competitor arm. For the kMate-vs-hapFIRE founder comparison see
-`../vs_hapfire/` (h R²/RMSE, native panels) and `../vs_hapfire_ecotype_resolution/`
+`../vs_hapfire/` (h R²/RMSE, native panels) and `../vs_hapfire/ecotype_resolution/`
 (set-resolution metrics).
 
 ## Scoring

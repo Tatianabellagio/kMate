@@ -402,10 +402,10 @@ benchmarks/archive/speed_benchmark_abandoned/results/*.bam
 benchmarks/archive/speed_benchmark_abandoned/results/*.bai
 benchmarks/archive/speed_benchmark_abandoned/results/*.tsv
 benchmarks/archive/speed_benchmark_abandoned/results/*_frequency.txt
-# founder-h investigation logs (h_uncertainty/, h_accuracy/, vs_hapfire_ecotype_resolution/)
+# founder-h investigation logs (h_uncertainty/, h_accuracy/, vs_hapfire/ecotype_resolution/)
 benchmarks/founder_h_uncertainty/logs/
 benchmarks/founder_h_accuracy/logs/
-benchmarks/vs_hapfire_ecotype_resolution/logs/
+benchmarks/vs_hapfire/ecotype_resolution/logs/
 benchmarks/p231/logs/
 benchmarks/p80/logs/
 benchmarks/scripts/logs/

@@ -11,7 +11,7 @@ goes in an in-panel corner annotation; depth goes in the column annotation.
 
 Run with the `basic` env:
     /global/home/users/tbellg/miniforge3/envs/basic/bin/python \
-        benchmarks/vs_hapfire_ecotype_resolution/scripts/plot_ecotype_nativepanel.py
+        benchmarks/vs_hapfire/ecotype_resolution/scripts/plot_ecotype_nativepanel.py
 """
 import os
 import numpy as np
@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 
 ROOT = "/global/scratch/users/tbellg/kmate"
-RES = f"{ROOT}/benchmarks/vs_hapfire_ecotype_resolution/results"
+RES = f"{ROOT}/benchmarks/vs_hapfire/ecotype_resolution/results"
 PLOTS = f"{RES}/plots"
 
 # Same palette/role mapping as the sibling native-panel figures.

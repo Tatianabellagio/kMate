@@ -346,7 +346,7 @@ normal giraffe, not the rescue pathology.)
   window on the low-recomb selfing arm** (no recombination to recover → windowing adds noise).
   ⟹ use **window for recombinant/outcross pools, global for selfing/inbred** (why the evolved
   GrENE-net cohort runs global). The dynld map makes window mode viable + better-where-it-should-be.
-  Figure: `benchmarks/unit_ldblock_window/blockpanel_dynld_outcross_g3.png`.
+  Figure: `benchmarks/unit_ldblock_window/results/plots/blockpanel_dynld_outcross_g3.png`.
 
   *Block-mode head-to-head vs hapFIRE* (hapFIRE is natively LD-block-based — the proper
   comparator). p80 outcross g3, **fair convention-free basis** (info>0.9 well-informed SNPs;

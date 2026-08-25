@@ -7,8 +7,8 @@
 #SBATCH --mem=48G
 #SBATCH --time=1:30:00
 #SBATCH --array=0-5
-#SBATCH --output=benchmarks/vs_hapfire_ecotype_resolution/logs/%x_%A_%a.out
-#SBATCH --error=benchmarks/vs_hapfire_ecotype_resolution/logs/%x_%A_%a.out
+#SBATCH --output=benchmarks/vs_hapfire/ecotype_resolution/logs/%x_%A_%a.out
+#SBATCH --error=benchmarks/vs_hapfire/ecotype_resolution/logs/%x_%A_%a.out
 set -eo pipefail
 cd /global/scratch/users/tbellg/kmate
 source ~/miniforge3/etc/profile.d/conda.sh && conda activate kmate  # needs jellyfish (basic lacks it)
@@ -25,10 +25,10 @@ POOLS=(
   cov50_n80_g0_s42_hotspots_p80_chr1
 )
 POOL=${POOLS[$SLURM_ARRAY_TASK_ID]}
-OUT=benchmarks/vs_hapfire_ecotype_resolution/results/kmer_floor/${POOL}.tsv
+OUT=benchmarks/vs_hapfire/ecotype_resolution/results/kmer_floor/${POOL}.tsv
 echo "[$(date)] host=$(hostname) task=$SLURM_ARRAY_TASK_ID pool=$POOL"
 
-python benchmarks/vs_hapfire_ecotype_resolution/scripts/bench_block_kmer_floor.py \
+python benchmarks/vs_hapfire/ecotype_resolution/scripts/bench_block_kmer_floor.py \
   --pool "$POOL" --panel p80 --chrom Chr1 \
   --window-bp 5000 --threads "${SLURM_CPUS_PER_TASK:-8}" \
   --kmer-weight inv_mb --out "$OUT"

@@ -34,7 +34,7 @@ WHAT THIS ADDS OVER vs_hapfire
 `vs_hapfire/scripts/score_hapfire_vs_kmate.py` already covers h_R2 / h_RMSE /
 n_found on this same native-panel basis. It does NOT compute the ecotype-RESOLUTION
 metrics below (eff_n, recall, precision, mass_on_true, top_n_jaccard), which are the
-reason `vs_hapfire_ecotype_resolution/` exists as a separate benchmark. Those are what this script
+reason `vs_hapfire/ecotype_resolution/` exists as a separate benchmark. Those are what this script
 adds -- it deliberately does not duplicate the h_R2/speed columns.
 
 Metrics per (tool, N, depth, seed):
@@ -49,7 +49,7 @@ Metrics per (tool, N, depth, seed):
 
 Run with the `basic` env (matplotlib/statsmodels hang in `plotting`):
     /global/home/users/tbellg/miniforge3/envs/basic/bin/python \
-        benchmarks/vs_hapfire_ecotype_resolution/scripts/score_ecotype_nativepanel.py
+        benchmarks/vs_hapfire/ecotype_resolution/scripts/score_ecotype_nativepanel.py
 """
 import os
 import numpy as np
@@ -59,7 +59,7 @@ ROOT = "/global/scratch/users/tbellg/kmate"
 HF_RES = f"{ROOT}/benchmarks/vs_hapfire/results/greneNet_fair"
 HF_SIMS = f"{ROOT}/benchmarks/vs_hapfire/sims_greneNet"
 P231 = f"{ROOT}/benchmarks/p231"
-OUT = f"{ROOT}/benchmarks/vs_hapfire_ecotype_resolution/results"
+OUT = f"{ROOT}/benchmarks/vs_hapfire/ecotype_resolution/results"
 
 # Same grid as the corrected vs_hapfire comparison: every N at depth {1,10},
 # plus a depth extension {30,50} at N=50 only. Encoded exactly (rather than as a

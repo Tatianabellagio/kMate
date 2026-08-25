@@ -61,17 +61,30 @@ def build(gen: int, cls: str, pooldir: str, store: str, out: str,
         print(f"  SKIP gen{gen} {cls}: missing {mat_path}", flush=True)
         return
     pmeta = pd.read_csv(meta_path)                      # pools x (pool,site,plot,bio1..)
-    # climate PC1 = first PC of the 19 standardized bioclim vars, +bio1-oriented
-    # (matches axis_scan/build_power_inputs.pc1). Multiaxis uses --climate pc1, so
-    # the pools table must carry it or those tasks KeyError on 'pc1'.
-    if "pc1" not in pmeta.columns:
+    # Climate PCs = PCs of the 19 standardized bioclim vars, each z-scored.
+    # PC1 is +bio1-oriented (matches axis_scan/build_power_inputs.pc1); PC2/PC3 have
+    # no analogous natural anchor, so they are oriented such that the bioclim variable
+    # with the LARGEST ABSOLUTE LOADING gets a positive loading -- deterministic and
+    # reproducible, rather than hand-picked per component. Sign does not affect LFMM
+    # p-values (two-sided test on a single predictor); it only fixes the direction in
+    # which an effect is read. On gen9 (352 pools, 31 sites) the variance explained is
+    # PC1 46.8% / PC2 23.4% / PC3 11.7% (82.0% cumulative), and the resulting
+    # orientation is PC2 -> +bio7 (continentality / temperature range), PC3 -> +bio10
+    # (warmest-quarter temperature). Multiaxis uses --climate pcN, so the pools table
+    # must carry these or those tasks KeyError.
+    if not {"pc1", "pc2", "pc3"} <= set(pmeta.columns):
         _m = pmeta[[f"bio{i}" for i in range(1, 20)]].to_numpy(float)
         _Z = (_m - _m.mean(0)) / _m.std(0, ddof=0)
-        _U, _S, _ = np.linalg.svd(_Z - _Z.mean(0), full_matrices=False)
-        _sc = _U[:, 0] * _S[0]
-        if np.corrcoef(_sc, _m[:, 0])[0, 1] < 0:        # orient to +bio1
-            _sc = -_sc
-        pmeta["pc1"] = (_sc - _sc.mean()) / _sc.std(ddof=0)
+        _U, _S, _Vt = np.linalg.svd(_Z - _Z.mean(0), full_matrices=False)
+        for _k in range(3):
+            _sc = _U[:, _k] * _S[_k]
+            if _k == 0:
+                _flip = np.corrcoef(_sc, _m[:, 0])[0, 1] < 0        # PC1: orient to +bio1
+            else:
+                _flip = _Vt[_k][np.argmax(np.abs(_Vt[_k]))] < 0     # PC2+: dominant loading +ve
+            if _flip:
+                _sc = -_sc
+            pmeta[f"pc{_k + 1}"] = (_sc - _sc.mean()) / _sc.std(ddof=0)
     idx = dict(np.load(f"{store}/index_{src}.npz", allow_pickle=True))
     cmask = class_mask(idx, cls)                        # columns of source belonging to cls
 

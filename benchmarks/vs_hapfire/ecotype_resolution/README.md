@@ -1,4 +1,4 @@
-# benchmarks/vs_hapfire_ecotype_resolution/
+# benchmarks/vs_hapfire/ecotype_resolution/
 
 **Question:** how many of the founders actually in a pool can be *resolved* — named,
 not just counted — and how cleanly does the estimated mixture concentrate on them?
@@ -24,7 +24,7 @@ runtime on the same native-panel basis. The metrics here — `eff_n`, `recall`,
 | | script | output |
 |---|---|---|
 | ✅ **current** | `scripts/score_ecotype_nativepanel.py` → `scripts/plot_ecotype_nativepanel.py` | `results/ecotype_nativepanel_table.tsv`, `results/plots/ecotype_nativepanel_resolution.png` |
-| ⛔ **retired** | shared-panel arm | `../archive/shared_panel_hapfire_comparison_invalid/vs_hapfire_ecotype_resolution_sharedpanel/` |
+| ⛔ **retired** | shared-panel arm | `../archive/shared_panel_hapfire_comparison_invalid/vs_hapfire/ecotype_resolution_sharedpanel/` |
 
 The retired arm fed hapFIRE the shared panel
 `vs_vg_giraffe/work/shared_snps_<panel>_Chr1.vcf.gz`. hapFIRE errors on

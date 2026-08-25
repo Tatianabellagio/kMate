@@ -73,8 +73,7 @@ Every dir below has its own `README.md` with the question it answers.
 
 | dir | comparator | status |
 |---|---|---|
-| `vs_hapfire/` | hapFIRE | ✅ the live hapFIRE comparison — matched pools, **tool-native panels**, 5 seeds |
-| `vs_hapfire_ecotype_resolution/` | hapFIRE | ✅ ecotype **resolution** metrics, native panels (complements the above; no overlap) |
+| `vs_hapfire/` | hapFIRE | ✅ the single home for all hapFIRE comparison — speed, founder-`h` accuracy, and `ecotype_resolution/`. Matched pools, **tool-native panels**, 5 seeds |
 | `vs_vg_giraffe/` | vg giraffe | ✅ vg arm live; its hapFIRE arm is retired to `archive/` |
 
 **Infrastructure**

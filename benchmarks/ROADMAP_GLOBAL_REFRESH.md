@@ -172,7 +172,7 @@ founder **decomposition** more than AF, so this is the highest-signal refresh.
 
 ## Phase 4 — Ecotype-count / resolution
 
-Files: `benchmarks/vs_hapfire_ecotype_resolution/`. Uses `run_h_only.sbatch` + `score_ecotype.py`
+Files: `benchmarks/vs_hapfire/ecotype_resolution/`. Uses `run_h_only.sbatch` + `score_ecotype.py`
 (and the block-kmer-floor sweep). Re-run the kMate h-only arm under the new global
 config; re-score resolvable-founder / ecotype counts. Ties directly to the
 haploblock reframe (how many haplotypes the r²=0.1 blocks resolve). Reuse the

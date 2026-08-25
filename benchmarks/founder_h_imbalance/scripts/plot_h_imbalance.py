@@ -28,7 +28,8 @@ ROOT  = "/global/scratch/users/tbellg/kmate"
 P231  = f"{ROOT}/benchmarks/p231/results"
 SIMS  = f"{ROOT}/benchmarks/p231/sims"
 OUT   = f"{ROOT}/benchmarks/founder_h_imbalance/results"
-os.makedirs(OUT, exist_ok=True)
+PLOTS = f"{OUT}/plots"   # figures live under results/plots/, never loose (project convention)
+os.makedirs(PLOTS, exist_ok=True)
 
 _split   = json.load(open(f"{ROOT}/data/founder_split_cactus_pg.json"))
 LONGREAD = set(map(str, _split["cactus"]))          # 80 long-read founders
@@ -115,7 +116,7 @@ def plot_scatter_grid():
     fig.tight_layout()
     fig.legend(handles=handles, loc="lower center", ncol=3, fontsize=9,
                bbox_to_anchor=(0.5, -0.02), frameon=False)
-    out = f"{OUT}/h_imbalance_grid_p231_chrom.png"
+    out = f"{PLOTS}/h_imbalance_grid_p231_chrom.png"
     fig.savefig(out, dpi=130, bbox_inches="tight")
     plt.close(fig)
     print("saved", out)
@@ -165,7 +166,7 @@ def plot_error_boxplot():
     fig.tight_layout()
     fig.legend(handles=handles, loc="lower center", ncol=2, fontsize=9,
                bbox_to_anchor=(0.5, -0.06), frameon=False)
-    out = f"{OUT}/h_imbalance_error_boxplot_p231_chrom.png"
+    out = f"{PLOTS}/h_imbalance_error_boxplot_p231_chrom.png"
     fig.savefig(out, dpi=130, bbox_inches="tight")
     plt.close(fig)
     print("saved", out)

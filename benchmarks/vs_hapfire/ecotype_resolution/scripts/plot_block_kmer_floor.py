@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Aggregate per-block k-mer-floor rows -> accuracy-vs-(k-mers-in-block) curves.
 
-Reads benchmarks/vs_hapfire_ecotype_resolution/results/kmer_floor/*.tsv, bins blocks by the
+Reads benchmarks/vs_hapfire/ecotype_resolution/results/kmer_floor/*.tsv, bins blocks by the
 number of nonzero-count k-mers in the block, and plots per-block ecotype-mixture
 recovery (cosine to truth, top-N Jaccard, mass-on-true) as a function of that
 k-mer count, stratified by mixture size (true_n) and coverage. Also reports the
@@ -18,8 +18,8 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 ROOT = Path("/global/scratch/users/tbellg/kmate")
-DDIR = ROOT / "benchmarks/vs_hapfire_ecotype_resolution/results/kmer_floor"
-OUT = ROOT / "benchmarks/vs_hapfire_ecotype_resolution/results/kmer_floor_summary"
+DDIR = ROOT / "benchmarks/vs_hapfire/ecotype_resolution/results/kmer_floor"
+OUT = ROOT / "benchmarks/vs_hapfire/ecotype_resolution/results/kmer_floor_summary"
 
 # log-spaced k-mer bins (extended to 100k for the window-size sweep)
 EDGES = np.array([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000,

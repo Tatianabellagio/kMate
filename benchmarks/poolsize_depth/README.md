@@ -13,7 +13,7 @@ elsewhere, which is why it looks small — most of its value is consumed downstr
 | consumer | what it takes from here |
 |---|---|
 | `../vs_hapfire/` | `results/kmate_speed_table.tsv` (kMate's speed/compute column) and the same N × depth grid definition |
-| `../vs_hapfire_ecotype_resolution/` | the matching kMate `h_per_chrom.npz` runs under `../p231/results/kmate_chrom_poolsize_depth/` |
+| `../vs_hapfire/ecotype_resolution/` | the matching kMate `h_per_chrom.npz` runs under `../p231/results/kmate_chrom_poolsize_depth/` |
 
 ## Scripts
 

@@ -8,7 +8,28 @@
 > same founders-meta + seed so pool composition is identical across tools. See
 > "Poolsize × depth (fair...)" below for current numbers.
 
-# kMate vs hapFIRE — running-time benchmark
+# kMate vs hapFIRE
+
+**The single home for all kMate-vs-hapFIRE comparison.** Everything here runs on
+**tool-native panels** — kMate on arch3, hapFIRE on greneNet, matched founder draw and
+seed. That is the only valid basis; see the rule at the bottom.
+
+| sub-benchmark | question | lives in |
+|---|---|---|
+| **speed / compute** | how much faster is kMate than hapFIRE end-to-end? | this dir (below) |
+| **founder-`h` accuracy** | how accurate is the recovered founder mixture? | `scripts/score_hapfire_vs_kmate.py` → `results/` |
+| **ecotype resolution** | *which* founders are resolved — recall, precision, mass-on-true, Jaccard | [`ecotype_resolution/`](ecotype_resolution/README.md) |
+
+`ecotype_resolution/` was a separate top-level `ecotype_count/` until 2026-08-25. It was
+folded in here because it is the same comparison against the same tool on the same
+native-panel basis — it just asks about *set recovery* where the h-accuracy scorer asks
+about *frequency error*. The two do not overlap: `score_hapfire_vs_kmate.py` emits
+h_R²/h_RMSE/n_found, `ecotype_resolution/` emits eff_n/recall/precision/mass_on_true/
+top_n_jaccard.
+
+---
+
+## Speed benchmark
 
 **Date:** 2026-06-03. **Question:** how much faster is kMate than hapFIRE (= a
 wrapper around HARP) at estimating per-record allele frequencies from a pool-seq
@@ -133,3 +154,18 @@ sbatch benchmarks/vs_hapfire/run_kmate.sh     # kMate   (env: kmate)
   or R for BigLD, and is fast python post-processing relative to the HARP stage.
 - Accuracy was validated separately (both produce valid AF); this run measures
   runtime only.
+
+---
+
+## The rule: never compare kMate and hapFIRE on a shared panel
+
+hapFIRE errors on missing GTs, so any panel built for it must impute
+`MISSING -> 0|0`, handing it false REF homozygotes where kMate's `var_called` mask
+simply excludes the site. A shared panel is therefore **not a shared input**, and no
+downstream scoring rule repairs it. Two benchmarks were built that way; both are
+archived under `../archive/shared_panel_hapfire_comparison_invalid/`.
+
+A shared **truth** is still fine when the quantity is panel-independent — founder pool
+weights (`pool_weights.tsv`) are a property of the draw, which is exactly why
+`ecotype_resolution/` survives the native-panel split while a shared per-site *AF*
+truth does not.
