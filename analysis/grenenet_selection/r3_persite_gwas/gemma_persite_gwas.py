@@ -242,4 +242,4 @@ if __name__ == "__main__":
             sys.exit("scan needs --chrom and --class")
         scan(a.chrom, a.cls)
     else:
-        meta()
+        assemble()
