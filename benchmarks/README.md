@@ -48,3 +48,49 @@ See each subdir's `README.md` for the stage-by-stage walk-through. Results noteb
 
 > Historical note: `p80/` succeeds the earlier `control_p82/` control (dropped after the
 > 2026-05-16 panel-QC decisions removed 2 cactus assemblies).
+
+---
+
+## Directory index
+
+Every dir below has its own `README.md` with the question it answers.
+
+**Panel benchmarks (kMate vs simulation truth)**
+
+| dir | what it isolates |
+|---|---|
+| `p231/` | headline accuracy on the production 231-founder panel |
+| `p80/` | homogeneous-panel control (no cactus-vs-PG asymmetry) |
+| `poolsize_depth/` | accuracy + compute vs pool size N and depth |
+| `h_accuracy/` | founder-mixture `h` recovery (most sensitive to estimator internals) |
+| `h_imbalance/` | is the private-k-mer filter still needed post-normalization? |
+| `h_uncertainty/` | closed-out: `h` error is identifiability bias, not sampling variance |
+| `localonly_p231/` | local-only window fitting + the block floor derivation |
+| `ldblock_window_test/` | ⚠️ window-mode block-size sweep — pre-refresh, see its README |
+| `ruth_outcross/` | outcrossed real-data application |
+
+**Tool comparisons** — ⚠️ read `SCORING_RULES.md` first
+
+| dir | comparator | status |
+|---|---|---|
+| `speed_vs_hapfire/` | hapFIRE | ✅ the live hapFIRE comparison — matched pools, **tool-native panels**, 5 seeds |
+| `ecotype_count/` | hapFIRE | ✅ ecotype **resolution** metrics, native panels (complements the above; no overlap) |
+| `accuracy_vs_competitors/` | vg giraffe | ✅ vg arm live; its hapFIRE arm is retired to `archive/` |
+
+**Infrastructure**
+
+| dir | what it is |
+|---|---|
+| `benchmark_runs/` | shared per-pool kMate output store (~11 GB) — ⚠️ pre-refresh, see its README |
+| `results/` | cross-panel summary table + `results/plots/` figures |
+| `archive/` | superseded and invalidated work, each with a README saying why |
+
+### The one rule worth repeating
+
+**Never compare kMate and hapFIRE on a shared panel.** hapFIRE errors on missing GTs,
+so any panel built for it imputes `MISSING -> 0|0`, handing it false REF homozygotes
+where kMate's `var_called` mask simply excludes the site. A shared panel is not a
+shared *input*. Two benchmarks were built that way and both are archived — see
+`archive/shared_panel_hapfire_comparison_invalid/`. Give each tool its native panel;
+a shared *truth* is still fine when the quantity is panel-independent (e.g. founder
+pool weights).

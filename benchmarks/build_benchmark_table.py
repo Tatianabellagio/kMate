@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Append rows to the master kMate benchmark table (benchmarks/benchmark_table.tsv).
+"""Append rows to the master kMate benchmark table (benchmarks/results/benchmark_table.tsv).
 
 One row per (run, variant-class). Metadata (panel, coverage, founders, generation,
 mating, selection, seed) is parsed from the pool name; tool/mode are passed in.
@@ -15,7 +15,7 @@ Usage:
   build_benchmark_table.py --tool kMate --mode block \
       --pool cov10_n50_g3_s42_self97_hotspots_dom500_p80_chr1 \
       --truth benchmarks/p80/sims/<pool>/recomb_truth.tsv.gz \
-      --est   <kmate_af.tsv> [--truth-col truth_af] [--table benchmarks/benchmark_table.tsv]
+      --est   <kmate_af.tsv> [--truth-col truth_af] [--table benchmarks/results/benchmark_table.tsv]
 """
 import argparse, re, sys
 from pathlib import Path
@@ -82,7 +82,7 @@ def main():
     ap.add_argument("--truth", required=True)
     ap.add_argument("--est", required=True)
     ap.add_argument("--truth-col", default="truth_af")
-    ap.add_argument("--table", default=str(Path(__file__).resolve().parent / "benchmark_table.tsv"))
+    ap.add_argument("--table", default=str(Path(__file__).resolve().parent / "results" / "benchmark_table.tsv"))
     a = ap.parse_args()
 
     meta = parse_pool(a.pool)

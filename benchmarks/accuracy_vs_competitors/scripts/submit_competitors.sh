@@ -12,7 +12,7 @@ W=benchmarks/accuracy_vs_competitors/work
 SC=benchmarks/accuracy_vs_competitors/scripts
 
 # canonical p80 grid = pools kMate was scored on (benchmark_table.tsv)
-POOLS=$(tail -n +2 benchmarks/benchmark_table.tsv | awk -F'\t' '{print $NF}' \
+POOLS=$(tail -n +2 benchmarks/results/benchmark_table.tsv | awk -F'\t' '{print $NF}' \
         | sed -E 's/_(global|block_dynldK500|block)\.tsv$//' | sort -u | grep p80)
 
 sub() { [ "$DRY" = "--dry" ] && { echo "DRY $*"; echo "DRY"; } || sbatch --parsable "$@"; }
