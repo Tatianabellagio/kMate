@@ -181,15 +181,41 @@ re-run hapFIRE.
 
 ## Phase 5 — vs competitors (kMate arm only)
 
-**STATUS: still PENDING.** The `accuracy_vs_competitors/` quantitative tables
-(BENCHMARK_DESIGN §2.2, §3.2a, §5) still predate the corrected per_founder/uniform
-algorithm and have not yet been refreshed.
+**STATUS: DONE (2026-08-25).**
 
-Files: `benchmarks/accuracy_vs_competitors/`. **Reuse existing hapFIRE + vg
-outputs.** Re-run only the kMate arm under the new global config, then re-score
-with `scripts/score_snp_fair.py` (SNP parity vs hapFIRE) and the SV-vs-vg path.
-Read `SCORING_RULES.md` + `BENCHMARK_DESIGN.md` first (the join/MAR-loop pitfalls).
-Update `benchmark_table_4tool.tsv` / `benchmark_4tool_RMSE_*.png` kMate rows only.
+What was stale, and why (the check worth keeping): `benchmark_table_4tool.tsv` and
+`benchmark_4tool_RMSE_*.png` were last written **2026-06-22**, predating all three
+estimator changes. The kMate est files they cite
+(`benchmark_runs/tsv/*_global.tsv`) were rewritten **2026-07-07 08:44** — after
+per_founder (`a8ba02d`, 07-06 22:06) but **before** the full-panel `Kf_w` fix
+(`9669be7`, 07-07 10:22), haploblock collapse (`b4d6ce0`, 16:15) and the `--unit`
+unification (`a9bf1c0`, 18:12). So both the table and its inputs were pre-refresh.
+
+Executed:
+1. **Re-ran the kMate arm only** on the two pools that have complete competitor
+   output (`cov10_n80_g0_s42_hotspots_p80_chr1`, `cov50_...`) via
+   `p80/scripts/07i_run_kmate_unit_chrom_p80.sh` (extended with a `COV` env var).
+   Reused the already-refreshed `n231_g0` and `n50_g3` runs from Phase 2.
+   hapFIRE and vg outputs untouched.
+2. **Re-scored** into NEW artifacts (old ones retained for the delta):
+   `benchmark_table_4tool_chrom.tsv`, `benchmark_4tool_chrom_RMSE_{fullcalled,allrec}.png`,
+   `accuracy_vs_competitors/results/snp_fair_chrom_refresh.tsv`, via the new
+   `scripts/score_all_competitors_chrom.sh`.
+3. **Validity control:** every hapFIRE and vg row is byte-identical old-vs-new;
+   only kMate rows moved. Confirms the refresh touched exactly one arm.
+
+Result — kMate MAE improved ~2.6–2.9× and **the SNP ordering vs hapFIRE flipped at g0**
+(kMate 0.0036 / R² 0.9993 vs hapFIRE 0.0057 / 0.9979). This retires the doc's blanket
+"SNP accuracy is NOT kMate's win" claim, but the win is **regime-specific**: on the
+recombinant g3 arm hapFIRE still leads (0.9872 vs 0.9694), and the refresh barely moved
+kMate there — a normalization fix cannot repair a structural one-`h`-per-chrom limit.
+The previously-pending vg-SV cell is also now filled (vg recovers only 3,799/45,786
+fully-called SVs).
+
+**Not done (out of scope, flagged in-place):** the `kMate-block`/dynld **window** arm was
+not re-run, per this roadmap's window-mode exclusion. It is therefore omitted from the
+refreshed 4-tool table rather than carried over stale, and the Chapter-2 window-vs-global
+table in BENCHMARK_DESIGN §5 is marked pre-refresh on both columns.
 
 ---
 

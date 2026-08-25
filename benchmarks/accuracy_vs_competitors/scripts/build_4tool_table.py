@@ -60,7 +60,7 @@ def score_snp(rows, meta, args, panel_pos):
     tr = ssf.load_truth(args.truth, panel_pos)          # SNP truth rows on shared panel
     ests = {}   # (tool, mode) -> (est_df, est_path)
     if args.kmate_global:
-        ests[("kMate", "global")] = (ssf.load_kmate(args.kmate_global, panel_pos), args.kmate_global)
+        ests[("kMate", args.kmate_mode)] = (ssf.load_kmate(args.kmate_global, panel_pos), args.kmate_global)
     if args.kmate_block:
         ests[("kMate", "block")] = (ssf.load_kmate(args.kmate_block, panel_pos), args.kmate_block)
     if args.hapfire:
@@ -96,20 +96,22 @@ def score_sv(rows, meta, args):
         d["svidx"] = np.arange(len(d))
         return d[["svidx", "alt_freq"]].rename(columns={"alt_freq": "est"})
 
+    # (tool, mode) -> (est_df, source_path); carry the path so the est_file column
+    # doesn't have to be reverse-derived from the mode label (which is now settable
+    # via --kmate-mode, so "kmate_" + mode is not a valid attribute name in general).
     ests = {}
     if args.kmate_global:
-        ests[("kMate", "global")] = load_kmate_sv(args.kmate_global)
+        ests[("kMate", args.kmate_mode)] = (load_kmate_sv(args.kmate_global), args.kmate_global)
     if args.kmate_block:
-        ests[("kMate", "block")] = load_kmate_sv(args.kmate_block)
+        ests[("kMate", "block")] = (load_kmate_sv(args.kmate_block), args.kmate_block)
     if args.vg_sv:
-        ests[("vg", "default")] = pd.read_csv(args.vg_sv, sep="\t")[["svidx", "est"]]
+        ests[("vg", "default")] = (pd.read_csv(args.vg_sv, sep="\t")[["svidx", "est"]], args.vg_sv)
 
     for basis, sub in [("allrec", trV), ("fullcalled", trV[trV["n_called"] == F])]:
-        for (tool, mode), est in ests.items():
+        for (tool, mode), (est, path) in ests.items():
             j = sub.merge(est, on="svidx", how="inner")
             mt = ssf.metrics(j["truth_af"].values, j["est"].values)
-            ef = Path(args.vg_sv).name if tool == "vg" else Path(getattr(args, "kmate_" + mode)).name
-            emit(rows, meta, tool, mode, "SV", basis, mt, ef)
+            emit(rows, meta, tool, mode, "SV", basis, mt, Path(path).name)
         # hapFIRE: explicit blank SV row (no native SV estimation, design doc §3.1)
         emit(rows, meta, "hapFIRE", "default", "SV", basis,
              dict(n=0, MAE=np.nan, RMSE=np.nan, R2=np.nan, pearson_r=np.nan), "NA")
@@ -123,6 +125,12 @@ def main():
     ap.add_argument("--var-meta", required=True)
     ap.add_argument("--var-called", required=True)
     ap.add_argument("--kmate-global"); ap.add_argument("--kmate-block")
+    ap.add_argument("--kmate-mode", default="global",
+                    help="mode label written for the --kmate-global arm. Use 'chrom' for "
+                         "runs made with --unit chrom so the table records which estimator "
+                         "unit produced the row (chrom is byte-identical to the deprecated "
+                         "--block-mode global, but the refreshed and pre-2026-07-07 rows are "
+                         "NOT interchangeable). default: global")
     ap.add_argument("--hapfire"); ap.add_argument("--vg-snp"); ap.add_argument("--vg-sv")
     ap.add_argument("--svlen", type=int, default=50)
     ap.add_argument("--fullcalled-info", type=float, default=0.99)

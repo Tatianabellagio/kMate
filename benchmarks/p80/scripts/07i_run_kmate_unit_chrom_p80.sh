@@ -23,6 +23,10 @@
 #   REGIME = n50_g0 n200_g0 n231_g0 n50_g1 n200_g1 n231_g1 n50_g3 n50_g3_dom500 n80_g0
 #            (+ *_self97 selfing variants)
 #   ARM    = raw | filt2inv
+#   COV    = env var, default 10. The competitor benchmark's coverage panel
+#            (BENCHMARK_DESIGN §2.2) needs cov50 as well as cov10; the sim dirs
+#            differ only in the cov<N> prefix. Same COV=${COV:-10} convention as
+#            07c_run_kmate_filt2_mb_p80_covarg.sh.
 # =============================================================================
 mkdir -p logs
 set -euo pipefail
@@ -38,22 +42,24 @@ case "$ARM" in
     filt2inv) KMER=$CTRL/data/kmer_pa_p80_ours_filt2inv/kmer_pa ;;
     *) echo "ERROR: ARM must be raw|filt2inv" >&2; exit 1 ;;
 esac
+COV=${COV:-10}
 case "$REGIME" in
-    n50_g0)  SUB="cov10_n50_g0_s42_hotspots_p80_chr1" ;;
-    n200_g0) SUB="cov10_n200_g0_s42_hotspots_p80_chr1" ;;
-    n231_g0) SUB="cov10_n231_g0_s42_hotspots_p80_chr1" ;;
-    n80_g0)  SUB="cov10_n80_g0_s42_hotspots_p80_chr1" ;;
-    n50_g1)  SUB="cov10_n50_g1_s42_hotspots_p80_chr1" ;;
-    n200_g1) SUB="cov10_n200_g1_s42_hotspots_p80_chr1" ;;
-    n231_g1) SUB="cov10_n231_g1_s42_hotspots_p80_chr1" ;;
-    n50_g3)  SUB="cov10_n50_g3_s42_hotspots_p80_chr1" ;;
-    n50_g3_dom500) SUB="cov10_n50_g3_s42_hotspots_dom500_p80_chr1" ;;
-    n50_g1_self97)  SUB="cov10_n50_g1_s42_self97_hotspots_p80_chr1" ;;
-    n231_g1_self97) SUB="cov10_n231_g1_s42_self97_hotspots_p80_chr1" ;;
-    n50_g3_self97)  SUB="cov10_n50_g3_s42_self97_hotspots_p80_chr1" ;;
-    n50_g3_dom500_self97) SUB="cov10_n50_g3_s42_self97_hotspots_dom500_p80_chr1" ;;
+    n50_g0)  SUB="n50_g0_s42_hotspots_p80_chr1" ;;
+    n200_g0) SUB="n200_g0_s42_hotspots_p80_chr1" ;;
+    n231_g0) SUB="n231_g0_s42_hotspots_p80_chr1" ;;
+    n80_g0)  SUB="n80_g0_s42_hotspots_p80_chr1" ;;
+    n50_g1)  SUB="n50_g1_s42_hotspots_p80_chr1" ;;
+    n200_g1) SUB="n200_g1_s42_hotspots_p80_chr1" ;;
+    n231_g1) SUB="n231_g1_s42_hotspots_p80_chr1" ;;
+    n50_g3)  SUB="n50_g3_s42_hotspots_p80_chr1" ;;
+    n50_g3_dom500) SUB="n50_g3_s42_hotspots_dom500_p80_chr1" ;;
+    n50_g1_self97)  SUB="n50_g1_s42_self97_hotspots_p80_chr1" ;;
+    n231_g1_self97) SUB="n231_g1_s42_self97_hotspots_p80_chr1" ;;
+    n50_g3_self97)  SUB="n50_g3_s42_self97_hotspots_p80_chr1" ;;
+    n50_g3_dom500_self97) SUB="n50_g3_s42_self97_hotspots_dom500_p80_chr1" ;;
     *) echo "ERROR: unknown REGIME '$REGIME'" >&2; exit 1 ;;
 esac
+SUB="cov${COV}_${SUB}"
 
 READS=$CTRL/sims/$SUB/reads
 [ -s "$READS/r1.fq" ] || { echo "ERROR: missing $READS/r1.fq" >&2; exit 1; }
@@ -62,10 +68,10 @@ READS=$CTRL/sims/$SUB/reads
 VAR=$CTRL/data/var_pa_p80
 OUT_DIR=$CTRL/results/kmate_chrom_p80_${ARM}/${REGIME}
 mkdir -p $OUT_DIR
-SAMPLE=p80_chrom_${ARM}_${REGIME}_cov10_s42
+SAMPLE=p80_chrom_${ARM}_${REGIME}_cov${COV}_s42
 OUT_TSV=$OUT_DIR/${SAMPLE}.tsv
 
-echo "[$(date)] p80 --unit chrom  regime=$REGIME  arm=$ARM"
+echo "[$(date)] p80 --unit chrom  regime=$REGIME  arm=$ARM  cov=${COV}x"
 echo "  kmer_pa: $KMER"
 $PYTHON -u $DRIVER \
     --kmer-pa-prefix $KMER \
