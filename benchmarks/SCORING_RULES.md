@@ -1,5 +1,26 @@
 # ⛔ Benchmark AF-scoring rules — READ BEFORE comparing tools
 
+> ## ⚠️ SCOPE UPDATE (2026-08-25) — read this first
+>
+> **These rules describe how to score tools *on a shared panel*. For kMate vs hapFIRE,
+> that whole design is now RETIRED AS INVALID** — see
+> [`archive/shared_panel_hapfire_comparison_invalid/`](archive/shared_panel_hapfire_comparison_invalid/README.md).
+> Short version: hapFIRE errors on missing GTs, so building a panel it can consume means
+> imputing `MISSING -> 0|0`, which hands it false REF homozygotes at 7.1% of records while
+> kMate's `var_called` mask excludes exactly those. A shared panel is therefore **not a
+> shared input**, and no scoring rule downstream can repair that.
+>
+> The live kMate-vs-hapFIRE comparison is **`speed_vs_hapfire/`** — matched pools,
+> **tool-native panels**, 5 seeds.
+>
+> `score_snp_fair.py` has moved into that archive along with the rest of the apparatus, so
+> the "use score_snp_fair.py" instruction below no longer resolves to a live path.
+>
+> **RULE 1 below is still correct and still binding** for any AF comparison you do build —
+> it is about join keys and multiallelic positions, which has nothing to do with panel
+> sharing. RULE 2 (the MAR closed loop) also still stands on its own terms; note it was in
+> fact a *symptom* of the shared-input problem, not an independent issue.
+
 Two mistakes were made on 2026-06-20 that produced a fake "kMate is worse at allele
 frequency than hapFIRE" result. Both are easy to repeat. Don't.
 

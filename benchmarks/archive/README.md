@@ -40,3 +40,14 @@ decision before moving:**
 - `../h_uncertainty/` — closed-out investigation, but not yet confirmed fully
   orphaned; its module concept is referenced from core docs (`ALGORITHM.md`,
   `src/README.md`), so double-check before moving the benchmark dir itself.
+
+- `shared_panel_hapfire_comparison_invalid/` (2026-08-25) — the whole "one shared SNP
+  panel, one shared truth" kMate-vs-hapFIRE apparatus (`score_snp_fair.py`,
+  `score_all_competitors{,_chrom}.sh`, `build_4tool_{table,figure}.py`, the
+  `benchmark_table_4tool*` tables and `benchmark_4tool*_RMSE_*.png` figures).
+  **Archived as invalid by design, not as stale.** hapFIRE errors on missing GTs, so the
+  shared panel imputes `MISSING -> 0|0` and feeds it false REF homozygotes at 7.1% of
+  records, while kMate's `var_called` mask excludes exactly those — a shared panel is not
+  a shared *input*. Live comparison: `../speed_vs_hapfire/` (matched pools, tool-native
+  panels, 5 seeds). See that dir's README for what remains valid (§3.1 SV argument, §4
+  speed, and the vg arm in principle).

@@ -181,7 +181,15 @@ re-run hapFIRE.
 
 ## Phase 5 — vs competitors (kMate arm only)
 
-**STATUS: DONE (2026-08-25).**
+**STATUS: DONE (2026-08-25), then the hapFIRE half was RETIRED AS INVALID the same day.**
+
+> ⛔ The refresh below ran correctly, but the **design** it refreshed is not a fair
+> kMate-vs-hapFIRE comparison: one shared SNP panel is not a shared *input*, because
+> hapFIRE errors on missing GTs and so is fed imputed false-REF homozygotes at 7.1% of
+> records while kMate's `var_called` mask excludes them. The whole shared-panel
+> apparatus is archived to `archive/shared_panel_hapfire_comparison_invalid/`; the live
+> comparison is `speed_vs_hapfire/` (matched pools, tool-native panels, 5 seeds).
+> **Do not cite the kMate-vs-hapFIRE numbers below.** Kept as the record of what was run.
 
 What was stale, and why (the check worth keeping): `benchmark_table_4tool.tsv` and
 `benchmark_4tool_RMSE_*.png` were last written **2026-06-22**, predating all three
