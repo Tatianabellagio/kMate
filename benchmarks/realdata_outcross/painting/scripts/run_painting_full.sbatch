@@ -20,12 +20,12 @@
 set -uo pipefail
 cd /global/scratch/users/tbellg/kmate
 B=benchmarks/realdata_outcross/painting
-mkdir -p "$B/logs" "$B/out"
+mkdir -p "$B/logs" "$B/results/painted"
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 JELLYFISH=$(dirname "$PY")/jellyfish; SAMTOOLS=$(dirname "$PY")/samtools
 
-MANIFEST=$B/extremes_samples.tsv
-OUT=$B/out
+MANIFEST=$B/data/extremes_samples.tsv
+OUT=$B/results/painted
 KMER_PA_PREFIX=data/kmer_pa_231_arch3_filt2inv/kmer_pa
 VAR_PA_DIR=panel/arch3; VAR_PA_TAG=var_pa_231_arch3
 CHROMS="Chr1 Chr2 Chr3 Chr4 Chr5"

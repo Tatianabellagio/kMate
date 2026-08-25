@@ -19,9 +19,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent.parent  # scripts/ -> painting/
 ROOT = Path("/global/scratch/users/tbellg/kmate")
-OUT = HERE / "out"
+OUT = HERE / "results" / "painted"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 CHRLEN = {"Chr1": 30.43, "Chr2": 19.70, "Chr3": 23.46, "Chr4": 18.59, "Chr5": 26.98}
 
@@ -48,7 +48,7 @@ def main():
     ap.add_argument("--tag", default="full_win10k")
     ap.add_argument("--min-show", type=float, default=0.12)
     a = ap.parse_args()
-    man = pd.read_csv(HERE / "extremes_samples.tsv", sep="\t")
+    man = pd.read_csv(HERE / "data" / "extremes_samples.tsv", sep="\t")
 
     for _, r in man.iterrows():
         sample, cat = r["sample_id"], r["category"]

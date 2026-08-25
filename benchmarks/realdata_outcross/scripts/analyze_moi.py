@@ -27,6 +27,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 HERE = Path(__file__).resolve().parent
+BASE = HERE.parent   # scripts/ sits one level below the benchmark dir
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 
 
@@ -54,11 +55,11 @@ def genomewide_h(sample, out_dir):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--dir", default=str(HERE / "out"))
-    ap.add_argument("--manifest", default=str(HERE / "manifest.tsv"))
+    ap.add_argument("--dir", default=str(BASE / "results" / "h_per_chrom"))
+    ap.add_argument("--manifest", default=str(BASE / "data" / "manifest.tsv"))
     ap.add_argument("--kmer-pa-meta",
                     default="data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1.meta.npz")
-    ap.add_argument("--out", default=str(HERE / "moi_summary"))
+    ap.add_argument("--out", default=str(BASE / "results" / "moi_summary"))
     a = ap.parse_args()
 
     out_dir = Path(a.dir)

@@ -2,7 +2,7 @@
 # kMate per-record AF TSVs (~95 MB each) + per-chrom h .npz:
 out/
 # per-window h_blocks .npz + window-mode TSVs:
-painting/out/
+painting/results/painted/
 logs/
 painting/logs/
 hapfire/logs/

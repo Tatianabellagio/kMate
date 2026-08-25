@@ -19,9 +19,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent.parent  # scripts/ -> painting/
 ROOT = Path("/global/scratch/users/tbellg/kmate")
-OUT = HERE / "out"
+OUT = HERE / "results" / "painted"
 KMER_PA_META = ROOT / "data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1.meta.npz"
 
 FOUNDERS = np.asarray(np.load(KMER_PA_META, allow_pickle=True)["founders"]).astype(str)
@@ -52,7 +52,7 @@ def main():
     ap.add_argument("--min-show", type=float, default=0.12,
                     help="founders reaching this fraction in any window get their own "
                          "colour; the rest are lumped grey")
-    ap.add_argument("--manifest", default=str(HERE / "samples.tsv"))
+    ap.add_argument("--manifest", default=str(HERE / "data" / "samples.tsv"))
     a = ap.parse_args()
 
     man = pd.read_csv(a.manifest, sep="\t").sort_values("label")
@@ -98,7 +98,7 @@ def main():
                loc="upper center", ncol=min(len(big) + 1, 10), fontsize=7,
                frameon=False, bbox_to_anchor=(0.5, 1.0), title="founder (local ancestry)")
     fig.tight_layout(rect=[0, 0, 1, 0.94])
-    out = HERE / f"painting_{a.tag}_{a.chrom}.png"
+    out = HERE / "plots" / f"painting_{a.tag}_{a.chrom}.png"
     fig.savefig(out, dpi=150, bbox_inches="tight")
     print(f"saved -> {out}")
 

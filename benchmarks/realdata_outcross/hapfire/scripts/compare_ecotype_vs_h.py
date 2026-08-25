@@ -25,9 +25,10 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent.parent   # scripts/ -> hapfire/
+OUTER = HERE.parent                             # -> realdata_outcross/
 ROOT = Path("/global/scratch/users/tbellg/kmate")
-KMATE_OUT = HERE.parent / "out"
+KMATE_OUT = OUTER / "results" / "h_per_chrom"
 KMER_PA_META = ROOT / "data/kmer_pa_231_arch3_filt2inv/kmer_pa_Chr1.meta.npz"
 
 
@@ -59,7 +60,7 @@ def eff_n(vec):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--out", default=str(HERE / "compare_ecotype_vs_h"))
+    ap.add_argument("--out", default=str(HERE / "results" / "compare_ecotype_vs_h"))
     a = ap.parse_args()
 
     man = pd.read_csv(HERE / "samples.tsv", sep="\t")

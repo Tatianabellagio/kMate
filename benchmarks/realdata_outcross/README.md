@@ -50,9 +50,9 @@ analyze_moi.py     average per-chrom h -> genome-wide founder composition; compu
 Run:
 
 ```bash
-sbatch --array=1-10 benchmarks/realdata_outcross/run_moi.sbatch
+sbatch --array=1-10 benchmarks/realdata_outcross/scripts/run_moi.sbatch
 # when done:
-python benchmarks/realdata_outcross/analyze_moi.py
+python benchmarks/realdata_outcross/scripts/analyze_moi.py
 ```
 
 ## Output

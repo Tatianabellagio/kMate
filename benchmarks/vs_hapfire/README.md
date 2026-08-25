@@ -134,8 +134,8 @@ Averaged over depth ∈ {1,10}×5 seeds per N (the main grid):
 ## Reproduce (single-condition speed run above)
 
 ```bash
-sbatch benchmarks/vs_hapfire/run_hapfire.sh   # hapFIRE (env: hapfire)
-sbatch benchmarks/vs_hapfire/run_kmate.sh     # kMate   (env: kmate)
+sbatch benchmarks/vs_hapfire/scripts/run_hapfire.sh   # hapFIRE (env: hapfire)
+sbatch benchmarks/vs_hapfire/scripts/run_kmate.sh     # kMate   (env: kmate)
 # timings in results/{hapfire_time.txt,kmate_time_pinned8.txt}
 ```
 

@@ -65,7 +65,8 @@ per-block path. Prefer `--unit chrom` explicitly for this project's pools.
 - panel `data/kmer_pa_231_arch3_filt2inv` (in-house build), V_pa `panel/arch3` per-chrom triplet
 - `--unit chrom` (via `--block-mode global`), `--kmer-weight uniform`, `--normalize per_founder`
 - founder 9977 (previously ~4e-6, effectively zeroed pre-fix) is now defined
-  everywhere; min founding p0 = 1.5e-4 → the old `P0_FLOOR=1e-4` is now a no-op.
+  everywhere; min founding p0 = 1.5e-4 → the old `P0_FLOOR=1e-4` was a no-op, and was
+  removed from `build_selection_trait.py` on 2026-08-25.
 
 ## Status / next
 Cohort complete (2168/2168, 8,489,646 records each). Integrity check =

@@ -44,7 +44,7 @@ pd.set_option("display.width", 160)
 
 HERE = Path.cwd()
 ROOT = Path("/global/scratch/users/tbellg/kmate")
-OUT  = HERE / "out"
+OUT  = HERE / "results" / "h_per_chrom"
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 
 # founder order = EM order (from the kmer_pa panel meta)
@@ -54,7 +54,7 @@ print(len(FOUNDERS), "founders")""")
 
 md("## hapFIRE ground-truth labels (from Ruth)")
 
-code(r"""man = pd.read_csv(HERE / "manifest.tsv", sep="\t")
+code(r"""man = pd.read_csv(HERE / "data" / "manifest.tsv", sep="\t")
 HAPFIRE = dict(zip(man.sample_id, man.label))
 man[["sample_id", "label"]]""")
 
@@ -121,7 +121,7 @@ ax.set_ylabel("eff_n_founders = 1 / Σh²")
 h1 = [plt.Rectangle((0,0),1,1,color=cmap[k]) for k in cmap]
 ax.legend(h1 + [plt.Line2D([0],[0],ls='--',c='k')],
           [f"{k} (hapFIRE)" for k in cmap] + [f"threshold {thr:.2f}"], fontsize=9)
-fig.tight_layout(); fig.savefig(HERE/"fig1_eff_n.png", dpi=150); plt.show()""")
+fig.tight_layout(); fig.savefig(HERE/"results"/"plots"/"fig1_eff_n.png", dpi=150); plt.show()""")
 
 md("""## Figure 2 — genome-wide founder composition ($h$)
 
@@ -154,7 +154,7 @@ ax.set_xticks(range(len(d)))
 ax.set_xticklabels(list(d["sample"]), rotation=45, ha="right", fontsize=8)
 ax.set_ylabel("ecotype frequency")
 ax.set_ylim(0, 1.05)
-fig.tight_layout(); fig.savefig(HERE/"fig2_composition.png", dpi=150); plt.show()""")
+fig.tight_layout(); fig.savefig(HERE/"results"/"plots"/"fig2_composition.png", dpi=150); plt.show()""")
 
 md("""## Figure 3 — per-chromosome consistency
 
@@ -172,7 +172,7 @@ ax.set_xticks(range(len(CHROMS))); ax.set_xticklabels(CHROMS)
 ax.set_ylabel("eff_n_founders (per chrom)")
 h1 = [plt.Line2D([0],[0],color=cmap[k],marker='o') for k in cmap]
 ax.legend(h1, [f"{k} (hapFIRE)" for k in cmap], fontsize=9)
-fig.tight_layout(); fig.savefig(HERE/"fig3_perchrom.png", dpi=150); plt.show()""")
+fig.tight_layout(); fig.savefig(HERE/"results"/"plots"/"fig3_perchrom.png", dpi=150); plt.show()""")
 
 md(r"""## Conclusion
 

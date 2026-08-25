@@ -42,7 +42,7 @@ kMate MUST stay standalone: **hapFIRE was only a validation ruler; no fix may de
    `prior_weight` (anchor), `omega` — production uses none of the priors.
 
 ## YARDSTICK — BUILT
-`benchmarks/founder_h_accuracy/score_h_vs_truth.py` scores per-founder h vs sim truth
+`benchmarks/founder_h_accuracy/scripts/score_h_vs_truth.py` scores per-founder h vs sim truth
 (`benchmarks/p231/sims/cov10_n231_g0_s42_hotspots_p231_chr1/pool_weights.tsv`), tracks LR/SR mass.
 **BASELINE to beat (n231_g0 uniform sim):** production filt2mb **RMSE 0.00332, 27 absorbed,
 cactus mass Δ −0.017**. Raw arm: RMSE 0.00388, 38 absorbed, cactus Δ +0.215 (the imbalance).

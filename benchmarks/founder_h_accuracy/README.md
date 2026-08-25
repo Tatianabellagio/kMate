@@ -14,7 +14,7 @@ kMate-only: no competitor arm. For the kMate-vs-hapFIRE founder comparison see
 
 ## Scoring
 
-`score_h_vs_truth.py --est <h_per_chrom.npz> --truth <sim>/pool_weights.tsv --label <tag>`
+`scripts/score_h_vs_truth.py --est <h_per_chrom.npz> --truth <sim>/pool_weights.tsv --label <tag>`
 (run in the `basic` env). Metrics: per-founder h RMSE/MAE, **absorbed count**
 (founders driven to ~0), cactus-vs-PanGenie mass balance, est-vs-true slope.
 
@@ -26,9 +26,11 @@ downstream of it.
 
 ## Contents
 
-    BASELINE_n231_g0.csv          retained reference point for the old-vs-new delta
-    ldr01_<regime>_*.{npz,json,csv}   --unit ld r²=0.1 arm (per-block / SNP-parity control)
-    score_h_vs_truth.py           the scorer
+    scripts/score_h_vs_truth.py       the scorer
+    scripts/run_h_unit_chrom.sbatch   the --unit chrom runner
+    results/BASELINE_n231_g0.csv      retained reference point for the old-vs-new delta
+    results/ldr01_<regime>_*.{npz,json,csv}   --unit ld r²=0.1 arm (per-block / SNP-parity control)
+    results/<regime>_<arm>_*.{json,csv}       the filt2mb / filt2u / filt2invu / raw arms
 
 Arms scored here also include the earlier `filt2mb` / `filt2u` / `filt2invu`
 k-mer-filter × weighting combinations, kept for the same delta purpose.

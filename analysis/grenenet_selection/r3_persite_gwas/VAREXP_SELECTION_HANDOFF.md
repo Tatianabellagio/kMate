@@ -70,11 +70,14 @@ log-odds space**: `s = logit-slope of h over gens 0→3` → skew +1, variance s
 - founding reference `p0` = mean over 8 SEEDMIX reps (ESTIMATED, not forced uniform 1/231 — the
   twin-absorption identifiability bias cancels in the slope; verified seedmix averaging is correct,
   mean is exactly 1/231 by closure, spread is real & reproducible across all 8 reps).
-- **presence filter**: founders are kept via a small additive **p0 floor** (`P0_FLOOR`), NOT a
-  drop threshold, so **all 231 of 231 founders are analyzable** (post-fix, current). The old
-  `p0>1e-3` drop-floor kept only 212 (dropping ~19 twin-absorbed founders like 9977 at h≈1e-15);
-  after the full-panel Kf_w fix the collapse is gone (9977 now h≈1.5e-4) and the floor is a no-op —
-  every founder gets a defined near-zero slope instead of being excluded.
+- **presence filter: none.** `p0` is used exactly as estimated and **all 231 of 231 founders are
+  analyzable**. The old `p0>1e-3` drop-threshold kept only 212 (dropping ~19 twin-absorbed
+  founders like 9977 at h≈1e-15); after the full-panel Kf_w fix the collapse is gone — min
+  estimated p0 is 9977 at **1.54e-4**, and that same threshold would now drop only 3 — so every
+  founder gets a defined slope. An additive `P0_FLOOR=1e-4` guard was carried until 2026-08-25 and
+  then **removed**: it floored 0 of 231 founders, and since `logit()` clips at the same `EPS=1e-4`
+  it could not have changed a slope even if one had fallen below it. Removal verified — all 8
+  arrays of `selection_s_matrix.npz` reproduce bit-identically.
 - **NO reliability/cross-chrom-SD weighting** (user decision: chrom-averaging already regularizes).
 - raw `s` primary; **RINT** (rank-inverse-normal per site) as sensitivity.
 

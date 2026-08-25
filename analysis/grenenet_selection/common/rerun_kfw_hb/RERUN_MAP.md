@@ -34,7 +34,7 @@ Delete before re-running, else scripts reuse pre-fix values:
 Order matters; each reads the previous.
 1. `build_sample_h_cache.py` → `fitness/sample_genome_h.npz`  (per-sample genome h)
 2. `ecotype_fitness.py` → `ecotype_fitness/{ecotype_fitness.csv, founder_site_dh.npz, sample_global_h.npz}`  (per-founder fitness axes + the h cache)
-3. `build_selection_trait.py` → **`varexp/selection_s_matrix.npz`**  ← the per-founder×site selection coefficient S (the headline "selection on ecotypes"). Note: `P0_FLOOR=1e-4` is now a no-op (9977 = 1.5e-4).
+3. `build_selection_trait.py` → **`varexp/selection_s_matrix.npz`**  ← the per-founder×site selection coefficient S (the headline "selection on ecotypes"). Note: the `P0_FLOOR=1e-4` guard was a no-op (9977 = 1.5e-4) and was removed 2026-08-25 — no p0 threshold of any kind now.
 4. `build_fitness_table.py` → fitness table (census/relative)
 5. Founder GWAS on the traits:
    - `ecotype_selection_site.py` (per-site), `founder_gwas_231.py` (single-site)

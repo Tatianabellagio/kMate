@@ -24,7 +24,7 @@ re-running both arms.
 
 ## Scoring
 
-`score_ldblk.py` — two modes:
+`scripts/score_ldblk.py` — two modes:
 
     --validate <out.tsv> <truth.gz> <hblocks.npz>   one run: % windows locally fit
                                                     (status==0) + MAE/R²/r on SNPs
@@ -37,11 +37,11 @@ whether a block was fit locally or fell back.
 
 ## Contents
 
-    run_coarse_sweep.sbatch      the sweep driver
-    score_ldblk.py               scorer (both modes)
-    coarse_sweep_scores.csv      aggregated sweep result
-    *_mkb50.{tsv,npz,log}        per-run window outputs at the mkb50 floor
-    blockpanel_dynld_outcross_g3.png   the dynld-vs-global outcross figure
+    scripts/run_coarse_sweep.sbatch   the sweep driver
+    scripts/score_ldblk.py            scorer (both modes)
+    results/coarse_sweep_scores.csv   aggregated sweep result
+    results/*_mkb50.{tsv,npz,log}     per-run window outputs at the mkb50 floor
+    results/plots/blockpanel_dynld_outcross_g3.png   the dynld-vs-global outcross figure
 
 The `dynld_K500` map itself lives at
 `analysis/grenenet_selection/blocks/results/blocks_mcf90/chr{N}_units_dynld_K500.tsv`.

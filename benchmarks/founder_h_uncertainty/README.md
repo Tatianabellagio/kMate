@@ -26,7 +26,7 @@ This is why the per-founder `h` vector is reported with the caveat that aggregat
 
 ## Contents
 
-| script | what it probed |
+| `scripts/` | what it probed |
 |---|---|
 | `bench_h_uncertainty.py` | analytic Fisher SE on `ĥ` vs parametric bootstrap (the gold standard) |
 | `diag_convergence.py` | the EM convergence / bias floor seen in that benchmark |
