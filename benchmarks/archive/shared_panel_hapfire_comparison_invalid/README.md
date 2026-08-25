@@ -56,11 +56,25 @@ false-REF sites its native pipeline never sees.
   the shared panel. Still stands (`speed_vs_hapfire/`).
 - **The kMate estimator refresh itself.** ROADMAP_GLOBAL_REFRESH Phases 1-4 score
   kMate against simulation truth, with no hapFIRE involved.
-- **The vg comparison, in principle.** vg consumes the graph, not a phased VCF, so it
-  is not subject to this specific missing→REF handicap. It is archived here only
-  because it was entangled in the same 4-tool table/figure apparatus. If a
-  kMate-vs-vg panel is wanted, rebuild it standalone rather than reviving these
-  scripts.
+- **The kMate-vs-vg comparison — LIVE, and deliberately not archived.** The maintained
+  version is `accuracy_vs_competitors/results/plots/vg_vs_kmate_p231_snp_accuracy.png`
+  (p231, 5 seeds × {2,5,20,50,150,231} founders × {10,50}×), driven by
+  `scripts/score_vg_vs_kmate_p231.sh`. Only the *hapFIRE* half of the old 4-tool
+  apparatus is retired here.
+
+  **`score_snp_fair.py` is therefore NOT archived** — it was briefly moved here on
+  2026-08-25 and restored the same day, because the live p231 vg pipeline calls it. The
+  scorer was never the defect: its shared-panel restriction exists to make `(chrom,pos)`
+  a unique, allele-safe join key (SCORING_RULES RULE 1), which is correct and still
+  needed. The defect was feeding that panel to hapFIRE *as its model input*.
+
+  ⚠️ Open question, stated rather than assumed: vg is not fully immune either. Its
+  graph is built by `vg autoindex --workflow giraffe` from this same shared SNP VCF
+  (`build_giraffe_graph_p231.sbatch:25`), so the `MISSING -> 0|0` imputation does reach
+  vg's haplotype paths. It is much weaker than hapFIRE's exposure — vg's AF comes from
+  read coverage over graph nodes, not from inference over panel genotypes, so imputed
+  GTs bias mapping rather than the estimate itself. Not quantified. If the vg arm is
+  ever headlined, measure this rather than citing this paragraph.
 
 ## Contents
 
@@ -69,12 +83,37 @@ false-REF sites its native pipeline never sees.
     results/benchmark_4tool_RMSE_*.png             pre-refresh figures
     results/benchmark_4tool_chrom_RMSE_*.png       refreshed figures
     results/snp_fair_chrom_refresh.tsv             refreshed SNP scores
-    scripts/score_snp_fair.py                      shared-panel SNP scorer
     scripts/score_all_competitors{,_chrom}.sh      orchestration
     scripts/build_4tool_{table,figure}.py          table + figure builders
+
+(`score_snp_fair.py` is NOT here — see above; it lives at
+`accuracy_vs_competitors/scripts/` because the live vg pipeline calls it.)
 
 Historical note: the `_chrom` artifacts are the 2026-08-25 Phase-5 refresh, which
 re-ran the kMate arm under `--unit chrom` + per-founder normalization. That refresh
 was executed correctly (competitor rows came out byte-identical, confirming only the
 kMate arm moved) — it is archived because the *design* is invalid, not because the
 run was wrong.
+
+---
+
+## `ecotype_count_sharedpanel/` (added 2026-08-25)
+
+The second site of the same defect, found during the benchmarks cleanup.
+`ecotype_count/scripts/run_hapfire_ecotype.sbatch:23` fed hapFIRE the same
+`shared_snps_<panel>_Chr1.vcf.gz`, so its kMate-vs-hapFIRE ecotype figures carried the
+identical missing→REF handicap.
+
+Archived here: `run_hapfire_ecotype.sbatch`, `ecotype_kmate_vs_hapfire.png`,
+`ecotype_radar_vs_hapfire.png`, and the 12 `*_hapfire.tsv` per-pool rows.
+
+**Replaced, not merely retired** — unlike the SNP-AF case, the ecotype *question*
+survives the native-panel split, because its truth (`pool_weights.tsv`) is a property
+of the founder draw rather than of a variant-calling lineage. The replacement is
+`ecotype_count/scripts/score_ecotype_nativepanel.py` (+ its plot script): kMate on
+arch3, hapFIRE on greneNet, matched founder draw + seed, 70 matched pools across
+N ∈ {2,5,20,50,150,231} × depth {1,10} (+ N=50 × {30,50}) × seeds 42–46. It reuses
+existing runs — no new simulation or estimator jobs.
+
+kMate's own ecotype work in that dir (h-only, block-k-mer-floor, localonly smoke) was
+never affected and stayed live.
