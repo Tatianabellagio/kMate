@@ -10,7 +10,7 @@ validation (k-mer index comparison, panel stats, seed-mix duplicate rate).
 |---|---|---|
 | `_build_qc_notebook.py` | cohort coverage vs usable-panel-k-mer fraction. Found depth alone is a poor QC signal (corr 0.57), so the cohort is filtered on `nzfrac < 0.10` (17 dropped) rather than depth; 5 libraries look contaminated/mislabelled rather than merely shallow | `qc_coverage_audit.ipynb` |
 | `plot_coverage_distribution.py` | sequencing-depth distribution across the 2,415 evolved pool-seq samples | — |
-| `_build_support_nb.py` | how many SVs / how much pool mass is lost at each kMate `info` / `n_called` support threshold | `06_sv_support_filter.ipynb` |
+| ~~`_build_support_nb.py`~~ | SV support-threshold saturation — **archived 2026-08-25**, its `n_called>=100` recommendation superseded by production `lib.founder_panel_keep` (MAF>=0.05 **and** called_min=0.9). See `archive/sv_support_filter_2026-08-25/` | — |
 | `_compute_panel_overlap_grenenet.py` + `_build_panel_overlap_grenenet_nb.py` | arch3 panel vs the old GrENE-Net 231 SNP catalog — 76.5% exact match (up from 55.05% before the decomposition fix) | `panel_overlap_grenenet.ipynb` |
 | `_build_panel_stats_nb.py` | panel composition: class, SV size, AF spectrum, missingness, carriers, density | `panel_stats_arch3.ipynb` |
 | `_recreate_density_snp_only.py` | redraws the genomic-density figure SNP-only (and a 2-panel SNP vs SNP+indel+SV version) for the "what SNP-only studies miss" slide. Mirrors `_build_panel_stats_nb.py` section 7 | — |

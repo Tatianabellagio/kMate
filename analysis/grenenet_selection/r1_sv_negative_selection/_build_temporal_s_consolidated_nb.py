@@ -16,7 +16,7 @@ Sections:
      confirms the tail/climate signal is NOT the artifact that nulled section 1.
 
 Separate arm (not merged here): the replicate parallelism/PicMin analysis lives in its own
-consolidated notebook `parallelism_picmin.ipynb` (built by `_build_parallelism_picmin_nb.py`).
+notebook `sv_parallelism_climate.ipynb` (built by `_build_sv_parallelism_climate_nb.py`).
 
 **2026-07-15, later same day:** dropped the raw-histogram (2a) and per-class-ECDF (2b) panels from
 Section 2 as non-additive next to 2c's ECDF-difference (same information, less sensitive view) --

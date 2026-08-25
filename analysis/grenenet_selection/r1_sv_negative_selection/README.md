@@ -11,8 +11,13 @@ Outputs → `results/` (`sv_adaptive/`, `site_temporal/`); figures → `results/
 
 **Read the result in:** `../notebooks/temporal_s_consolidated.ipynb` — the
 consolidated notebook (2026-07-15) that replaced seven separately-named ones.
-Supporting: `parallelism_picmin.ipynb`, `sfs_shift_by_site.ipynb`,
-`sfs_time_site4.ipynb`, `temporal_s_nofilter.ipynb`.
+Supporting: `sv_parallelism_climate.ipynb`, `sfs_shift_by_site.ipynb`,
+`temporal_s_nofilter.ipynb`.
+
+> **Streamlined 2026-08-25** to headline + direct support. Archived, each reduced to a
+> one-liner in its archive README: bulk parallelism + PicMin
+> (`archive/replicate_arm_bulk_2026-08-25/`) and `sfs_time_site4`
+> (`archive/sfs_time_site4_2026-08-25/`).
 
 Narrative + caveats: `SV_TEMPORAL_PURGING_SUMMARY.md` (this folder).
 
@@ -63,10 +68,10 @@ Does the same signal appear as parallel change across replicate plots and sites?
 | script | what it does | writes |
 |---|---|---|
 | `_compute_parallelism.py` | per-variant parallelism across replicate plots (AF-vapeR / PicMin philosophy) | `parallelism.npz` |
-| `_picmin.py` | PicMin proper (Booker et al. 2024), lineages = sites | `picmin.npz` |
+| ~~`_picmin.py`~~ | PicMin (Booker et al.) — **archived 2026-08-25**: ~1.07-1.12x near parity, and direction-agnostic (`|z|` input) so it could not corroborate a purging result regardless. `archive/replicate_arm_bulk_2026-08-25/` | — |
 | `_site_parallelism.py` | per-site parallelism of *founder* frequency change | `site_parallelism.csv` |
 | `_plot_site_parallelism.py` | per-site purging vs per-site parallelism — the confound scatter | `site_parallelism_vs_purging.png` |
-| `_build_parallelism_picmin_nb.py` | builds the consolidated replicate-arm notebook | `parallelism_picmin.ipynb` |
+| `_build_sv_parallelism_climate_nb.py` | builds the surviving replicate-arm section (per-site parallelism excess vs climate) | `sv_parallelism_climate.ipynb` |
 
 ## E. Site-frequency-spectrum arm
 

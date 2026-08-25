@@ -21,9 +21,8 @@ Section: `r1_sv_negative_selection/` · detail: that folder's `README.md`
 |---|---|
 | **`temporal_s_consolidated.ipynb`** | **the headline** — per-variant selection coefficient `s`, SV vs p0-matched SNP baseline, plus the climate gradient. Consolidated 2026-07-15 from seven separate notebooks |
 | `temporal_s_nofilter.ipynb` | no-filter robustness twin of the above (matched smoothing bandwidth). Deliberate twin, not a stale copy |
-| `parallelism_picmin.ipynb` | replicate-plot parallelism + PicMin + per-site parallelism vs climate |
-| `sfs_shift_by_site.ipynb` | folded-SFS shift per site: mean shift null, but SV extinction rate elevated |
-| `sfs_time_site4.ipynb` | AF spectrum across generations 0→3 at site 4, by variant class |
+| `sv_parallelism_climate.ipynb` | per-site SV−matched-SNP parallelism excess vs climate (bio1 +0.44, bio18 −0.68) — corroborates the climate-slope β arm via an independent statistic. Reduced 2026-08-25 from the former `parallelism_picmin.ipynb`; its bulk-parallelism and PicMin sections are archived |
+| `sfs_shift_by_site.ipynb` | folded-SFS shift per site: mean shift null, but **SV extinction rate elevated** — robust across every aggregation, and not a variance artifact |
 
 ## Result 2 — GEA hits visible only in non-SNP data
 Section: `r2_gea_nonsnp/` (production pipeline in `phase1_replication/`)
@@ -79,7 +78,7 @@ record), `haploblock_r20{10,20}_eps0_validation.ipynb`.
 **`qc/`** — QC of this analysis.
 `qc_coverage_audit.ipynb`, `panel_stats_arch3.ipynb`,
 `panel_overlap_grenenet.ipynb`, `founder_9977_kmer_space.ipynb`,
-`06_sv_support_filter.ipynb`, `seedmix_kmate_vs_hapfire.ipynb`,
+`seedmix_kmate_vs_hapfire.ipynb`,
 `kmate_founder_fix_results.ipynb`, `kmate_kfw_fullpanel_results.ipynb`.
 
 **`extras/`** — `sv_selection_haplotype_audit.ipynb` (haplotype-unit SV
