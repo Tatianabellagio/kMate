@@ -34,6 +34,13 @@ from nbconvert.preprocessors import ExecutePreprocessor
 ROOT = "/global/scratch/projects/fc_moilab/tbellg/kmate"
 GEA = f"{ROOT}/analysis/grenenet_selection"
 NBDIR = f"{GEA}/notebooks"
+# Parallel-arm support: KMATE_MIN_MAC=12 builds the MAF 5% versions into *_maf05 notebooks
+# reading results/gemma_gwas_mac12/, so the MAC>=5 arm is not overwritten and the two can be
+# compared side by side.
+MIN_MAC = int(os.environ.get("KMATE_MIN_MAC", 5))
+DIRTAG = "" if MIN_MAC == 5 else f"_mac{MIN_MAC}"
+NBTAG = "" if MIN_MAC == 5 else "_maf05"
+
 os.makedirs(NBDIR, exist_ok=True)
 
 # ---------------------------------------------------------------- shared setup cell
@@ -49,7 +56,7 @@ sys.path.insert(0, "analysis/grenenet_selection/blocks")
 import lib, blocks_tiling as bt
 plt.rcParams.update({"figure.dpi": 120, "font.size": 10})
 
-RES = "analysis/grenenet_selection/r3_persite_gwas/results/gemma_gwas"
+RES = "analysis/grenenet_selection/r3_persite_gwas/results/gemma_gwas__DIRTAG__"
 PLOTS = f"{RES}/plots"; os.makedirs(PLOTS, exist_ok=True)
 CH = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
 
@@ -90,7 +97,7 @@ def genes_on(blk_id, d):
 
 print(f"{len(sites)} gardens, bio1 {bio1.min():.1f}-{bio1.max():.1f} C; "
       f"snp {len(SNP['pos']):,} markers")
-'''.replace("__ROOT__", ROOT)
+'''.replace("__ROOT__", ROOT).replace("__DIRTAG__", DIRTAG)
 
 HELPERS = '''
 def lam_gc(p):
@@ -397,6 +404,6 @@ if __name__ == "__main__":
     import sys
     which = sys.argv[1] if len(sys.argv) > 1 else "both"
     if which in ("both", "manhattan"):
-        run(build_manhattan(), f"{NBDIR}/persite_gwas_manhattan_qq.ipynb")
+        run(build_manhattan(), f"{NBDIR}/persite_gwas_manhattan_qq{NBTAG}.ipynb")
     if which in ("both", "dotgrid"):
-        run(build_dotgrid(), f"{NBDIR}/persite_gwas_dotgrid.ipynb")
+        run(build_dotgrid(), f"{NBDIR}/persite_gwas_dotgrid{NBTAG}.ipynb")

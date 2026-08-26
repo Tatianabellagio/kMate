@@ -26,7 +26,14 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 ROOT = "/global/scratch/projects/fc_moilab/tbellg/kmate"
 GEA = f"{ROOT}/analysis/grenenet_selection"
-OUT = f"{GEA}/notebooks/persite_gwas.ipynb"   # REPLACES class_gwas_{persite,multitrait}.ipynb
+
+# Parallel-arm support: KMATE_MIN_MAC=12 builds the MAF 5% versions into *_maf05 notebooks
+# reading results/gemma_gwas_mac12/, so the MAC>=5 arm is not overwritten and the two can be
+# compared side by side.
+MIN_MAC = int(os.environ.get("KMATE_MIN_MAC", 5))
+DIRTAG = "" if MIN_MAC == 5 else f"_mac{MIN_MAC}"
+NBTAG = "" if MIN_MAC == 5 else "_maf05"
+OUT = f"{GEA}/notebooks/persite_gwas{NBTAG}.ipynb"
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 
 setup = f'''
@@ -37,7 +44,7 @@ import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 plt.rcParams.update({{"figure.dpi": 110, "font.size": 8, "axes.grid": False}})
 
-RES = "{GEA}/r3_persite_gwas/results/gemma_gwas"
+RES = "{GEA}/r3_persite_gwas/results/gemma_gwas{DIRTAG}"
 PLOTS = f"{{RES}}/plots"; os.makedirs(PLOTS, exist_ok=True)
 CLASSES = ["snp", "nonsnp", "sv"]
 COL = {{"snp": "#4C72B0", "nonsnp": "#DD8452", "sv": "#55A868"}}

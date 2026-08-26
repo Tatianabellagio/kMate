@@ -52,7 +52,15 @@ from class_split_gwas import (_panel_order, _load_chrom_212, _classes, _dense_im
                               CHROMS, MIN_MAC_TEST, MIN_MAC_GRM, CALL_MIN)
 from gemma_validation import GEMMA_MAX, build_pooled_grms
 
-OUT = f"{lib.GEA}/r3_persite_gwas/results/gemma_gwas"
+# Test-marker MAC floor. Default 5 (MAF 2.16%) is the original run, kept so the two floors can
+# be compared side by side rather than one overwriting the other. Set KMATE_MIN_MAC=12 for the
+# MAF 5% arm; results then land in a parallel `..._mac12` tree and nothing is clobbered.
+# Motivation: at MAC>=5, ~90% of Bonferroni hits sit in MAC 5-11, whose TAIL runs 25-60x hot
+# (persite_mac_calibration.py) even though lambda reads ~1.0. The GRM floor is unaffected --
+# it is MIN_MAC_GRM=12 either way, so the cached pooled GRMs are reused across both arms.
+MIN_MAC = int(os.environ.get("KMATE_MIN_MAC", MIN_MAC_TEST))
+TAG = "" if MIN_MAC == MIN_MAC_TEST else f"_mac{MIN_MAC}"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/gemma_gwas{TAG}"
 PARTS = f"{OUT}/parts"
 IO = f"{OUT}/gemma_io"
 CLASSES = ("snp", "nonsnp", "sv")
@@ -87,7 +95,7 @@ def scan(chrom, clsname):
     pos, rl, al, vp, vc, n_alt, n_cal = _load_chrom_212(chrom, order)
     mac = np.minimum(n_alt, N - n_alt)
     vclass = _classes(rl, al)
-    keep = (mac >= MIN_MAC_TEST) & (n_cal >= CALL_MIN * N)
+    keep = (mac >= MIN_MAC) & (n_cal >= CALL_MIN * N)
     want = {"snp": vclass == 0, "nonsnp": vclass != 0, "sv": vclass == 2}[clsname]
     idx = np.where(keep & want)[0]
     if len(idx) == 0:

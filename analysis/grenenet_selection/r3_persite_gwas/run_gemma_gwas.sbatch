@@ -27,6 +27,7 @@ CLS=${CLASSES[$((SLURM_ARRAY_TASK_ID % 3))]}
 
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 export PATH=/global/home/users/tbellg/miniforge3/envs/gwas_tools/bin:$PATH
+export KMATE_MIN_MAC=${KMATE_MIN_MAC:-5}   # 12 = the MAF 5% arm
 export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
 
 echo "[$(date)] gemma GWAS task $SLURM_ARRAY_TASK_ID -> $CH / $CLS on $(hostname)"

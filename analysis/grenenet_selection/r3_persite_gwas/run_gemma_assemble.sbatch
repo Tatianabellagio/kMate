@@ -17,6 +17,7 @@ set -euo pipefail
 cd /global/scratch/projects/fc_moilab/tbellg/kmate
 mkdir -p logs
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
+export KMATE_MIN_MAC=${KMATE_MIN_MAC:-5}   # 12 = the MAF 5% arm
 export OMP_NUM_THREADS=4 OPENBLAS_NUM_THREADS=4 MKL_NUM_THREADS=4
 echo "[$(date)] gemma assemble start on $(hostname)"
 $PY analysis/grenenet_selection/r3_persite_gwas/gemma_persite_gwas.py assemble

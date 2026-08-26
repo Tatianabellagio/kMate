@@ -33,9 +33,14 @@ import lib
 from class_split_gwas import (_panel_order, _load_chrom_212, _classes, CHROMS,
                               MIN_MAC_TEST, CALL_MIN)
 
-OUT = f"{lib.GEA}/r3_persite_gwas/results/gemma_gwas"
+MIN_MAC = int(os.environ.get("KMATE_MIN_MAC", MIN_MAC_TEST))
+TAG = "" if MIN_MAC == MIN_MAC_TEST else f"_mac{MIN_MAC}"
+OUT = f"{lib.GEA}/r3_persite_gwas/results/gemma_gwas{TAG}"
 CLASSES = ("snp", "nonsnp", "sv")
-BINS = [(5, 7), (8, 11), (12, 22), (23, 45), (46, 115)]
+_ALL_BINS = [(5, 7), (8, 11), (12, 22), (23, 45), (46, 115)]
+# drop strata the current MAC floor excludes, so the table has no empty rows
+BINS = [(lo, hi) for lo, hi in _ALL_BINS if hi >= MIN_MAC]
+BINS = [(max(lo, MIN_MAC), hi) for lo, hi in BINS]
 CHI2_MED = stats.chi2.ppf(0.5, 1)
 
 
@@ -50,7 +55,7 @@ def mac_arrays():
     for cl in CHROMS:
         pos, rl, al, vp, vc, n_alt, n_cal = _load_chrom_212(cl, order)
         mac = np.minimum(n_alt, N - n_alt); vcl = _classes(rl, al)
-        keep = (mac >= MIN_MAC_TEST) & (n_cal >= CALL_MIN * N)
+        keep = (mac >= MIN_MAC) & (n_cal >= CALL_MIN * N)   # MUST match the scan's floor
         for name, m in (("snp", vcl == 0), ("nonsnp", vcl != 0), ("sv", vcl == 2)):
             acc[name].append(mac[keep & m])
         print(f"  MAC {cl} done", flush=True)
