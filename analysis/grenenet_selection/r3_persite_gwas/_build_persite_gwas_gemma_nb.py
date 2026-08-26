@@ -40,7 +40,7 @@ setup = f'''
 import os, json
 import numpy as np, pandas as pd
 from scipy import stats
-import matplotlib; matplotlib.use("Agg")
+import matplotlib\n# NO matplotlib.use("Agg") here: under Agg, plt.show() is a no-op and nbconvert embeds\n# NOTHING, so the notebook renders as text with the figures only on disk. Let ipykernel\n# use its inline backend so every figure lands in the notebook as well as in plots/.
 import matplotlib.pyplot as plt
 plt.rcParams.update({{"figure.dpi": 110, "font.size": 8, "axes.grid": False}})
 
@@ -107,7 +107,7 @@ for c in CLASSES:
     fig.tight_layout()
     fig.savefig(f"{PLOTS}/qq_grid_{c}.png", dpi=140, bbox_inches="tight")
     print(f"wrote qq_grid_{c}.png  (30 gardens, cold->hot)")
-    plt.close(fig)
+    plt.show(); plt.close(fig)
 '''
 
 cell_qq_mac = '''
@@ -140,7 +140,7 @@ for ax, c in zip(axes, CLASSES):
 axes[0].set_ylabel("observed $-\\\\log_{10}p$")
 fig.tight_layout(); fig.savefig(f"{PLOTS}/qq_by_mac_stratum.png", dpi=150, bbox_inches="tight")
 print("wrote qq_by_mac_stratum.png")
-plt.close(fig)
+plt.show(); plt.close(fig)
 print(mc[["cls", "mac_lo", "mac_hi", "lambda_gc", "ratio_1e4", "ratio_1e6"]].to_string(index=False))
 '''
 
@@ -181,7 +181,7 @@ for c in CLASSES:
     fig.tight_layout()
     fig.savefig(f"{PLOTS}/manhattan_grid_{c}.png", dpi=130, bbox_inches="tight")
     print(f"wrote manhattan_grid_{c}.png")
-    plt.close(fig)
+    plt.show(); plt.close(fig)
 '''
 
 cell_hits = '''
@@ -300,7 +300,7 @@ for ax, c in zip(axes, CLASSES):
 axes[0].set_ylabel("garden (cold $\\\\rightarrow$ hot)")
 fig.tight_layout(); fig.savefig(f"{PLOTS}/block_overlap_jaccard.png", dpi=150, bbox_inches="tight")
 print("\\nwrote block_overlap_jaccard.png")
-plt.close(fig)
+plt.show(); plt.close(fig)
 
 # ---- cross-CLASS overlap within a garden ----
 print("\\nWithin-garden overlap between classes (blocks flagged by snp AND by nonsnp):")
