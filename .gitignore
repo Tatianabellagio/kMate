@@ -506,3 +506,15 @@ benchmarks/vs_hapfire/sims_*/*/region.bed
 # deinflate arm: model inputs + per-record score tables (regeneratable, 100s of MB)
 analysis/grenenet_selection/wza/investigation/deinflate/inputs/
 analysis/grenenet_selection/wza/investigation/deinflate/*_scores.csv
+
+# --- 2026-08-26: genes/convergence/ bulk outputs ---
+# The candidate-list deliverables (master table, dossiers, verdicts, shortlists) ARE
+# tracked -- they are small and are the point of the section. What is excluded is the
+# regenerable bulk: the 44 MB of locus figures, and the per-variant pools the master
+# table is derived from. Rebuild with the builders in that directory, in README order.
+analysis/grenenet_selection/genes/convergence/results/plots/
+analysis/grenenet_selection/genes/convergence/results/gea_pool.csv
+analysis/grenenet_selection/genes/convergence/results/gea_pool_records.csv
+analysis/grenenet_selection/genes/convergence/results/variants_classified.csv
+analysis/grenenet_selection/genes/convergence/results/functional_variants.csv
+analysis/grenenet_selection/genes/convergence/results/candidate_genes.csv

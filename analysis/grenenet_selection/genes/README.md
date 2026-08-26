@@ -1,13 +1,29 @@
 # genes — which genes, and are they real
 
-Two layers, deliberately kept separate because the second exists to check the
-first.
+Three layers. The first two are organised by which scan they came from, and the
+second exists to check the first; the third crosses both.
 
 ```
 genes/
     attribution/   block -> gene, from the per-site GWAS      (tracked)
     dissection/    per-locus validation, from the LFMM-WZA GEA (untracked WIP)
+    convergence/   both scans pooled, ranked by independent lines of evidence
 ```
+
+> **`convergence/` (added 2026-08-26)** is the current candidate-list layer — see its
+> own `README.md`. It takes every Bonferroni non-SNP hit from *both* the GEA (22
+> climate axes) and the per-garden GWAS, assigns each to a gene at the variant's own
+> position, and ranks by lines of evidence rather than p-value, since neither scan is
+> calibrated well enough to rank on p. It also carries the two corrections that change
+> the answer: climate axes are correlated (so cross-axis recurrence is counted over 7
+> empirical clusters, not 22 axes), and neighbouring genes in one LD block are one
+> locus, not many.
+>
+> ⚠ **`attribution/`'s outputs are stale.** `nonsnp_only_genes.py` unions the
+> multitrait JOINT/GLOBAL/CLIMATE meta and 31 per-site EMMAX scans; the meta was
+> dropped and the per-site scans moved to GEMMA at 30 gardens on 2026-08-25, so
+> `nonsnp_only_genes*.csv` (dated Jul 21) predate the live GWAS. The live GWAS-side
+> block→gene layer is `r3_persite_gwas/results/gemma_gwas/persite_newpeak_genes.csv`.
 
 | | `attribution/` | `dissection/` |
 |---|---|---|
