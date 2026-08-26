@@ -201,6 +201,115 @@ print("\\nTop 15 by -log10 p:")
 print(hits.head(15).to_string(index=False))
 '''
 
+cell_blocks = '''
+import sys
+sys.path.insert(0, "__GEA__"); sys.path.insert(0, "__GEA__/blocks")
+import blocks_tiling as bt
+
+# Block unit = the clq0.9 TILING partition, UNMERGED and identical for all three classes.
+# Two deliberate choices:
+#  * tiling, not lib.assign_clq_blocks (the BigLD LD-islands): strict containment silently
+#    drops ~28% of variants into inter-block gaps. The old notebook used the island version.
+#  * NO merge_small_blocks: it re-partitions from whichever records you hand it, so merging
+#    per class would make an SV "block" a much larger genomic unit than a SNP block and the
+#    counts would not be comparable. Unmerged, a block is the same interval for every class.
+BLK = {}
+for c in CLASSES:
+    ch = np.char.replace(D[c]["chrom"].astype(str), "chr", "Chr")
+    BLK[c] = bt.assign_tiling(ch, D[c]["pos"], r2=0.9)
+    print(f"{c:7s} {len(BLK[c]):>9,d} markers -> {len(set(BLK[c])):>6,d} blocks carrying markers")
+
+sig_blocks = {}          # (class, garden) -> set of blocks with >=1 Bonferroni marker
+for c in CLASSES:
+    P = D[c]["P"]; thr = 0.05 / P.shape[0]; b = np.asarray(BLK[c], dtype=object)
+    for si in range(len(gardens)):
+        hit = np.isfinite(P[:, si]) & (P[:, si] < thr)
+        sig_blocks[(c, int(gardens[si]))] = set(b[hit])
+'''.replace("__GEA__", GEA)
+
+cell_block_table = '''
+rows = []
+for si in order:
+    g = int(gardens[si])
+    r = {"garden": g, "bio1": round(float(bio1[si]), 1)}
+    for c in CLASSES:
+        r[c] = len(sig_blocks[(c, g)])
+    r["any_class"] = len(set().union(*[sig_blocks[(c, g)] for c in CLASSES]))
+    rows.append(r)
+bt_tab = pd.DataFrame(rows)
+bt_tab.loc["TOTAL_distinct"] = ["-", "-"] + [
+    len(set().union(*[sig_blocks[(c, int(g))] for g in gardens])) for c in CLASSES] + [
+    len(set().union(*[sig_blocks[(c, int(g))] for c in CLASSES for g in gardens]))]
+print("Bonferroni-significant BLOCKS per garden (clq0.9 tiling, cold -> hot)\\n")
+print(bt_tab.to_string(index=False))
+bt_tab.to_csv(f"{RES}/persite_sig_blocks_per_garden.csv", index=False)
+print(f"\\nGardens with >=1 significant block: " +
+      ", ".join(f"{c}={sum(1 for g in gardens if sig_blocks[(c,int(g))])}/{len(gardens)}" for c in CLASSES))
+'''
+
+cell_block_overlap = '''
+# ---- overlap across gardens: how often does the SAME block recur? ----
+# DESCRIPTIVE ONLY. There is no cross-garden test here -- that was the meta this analysis
+# deliberately dropped. Recurrence is also inflated by the fact that the 30 gardens share one
+# founder panel and one p0, so their scans are correlated by construction.
+print("Recurrence of significant blocks across gardens (descriptive, NOT a tested contrast)\\n")
+rec_rows = []
+for c in CLASSES:
+    from collections import Counter
+    cnt = Counter()
+    for g in gardens:
+        for b in sig_blocks[(c, int(g))]:
+            cnt[b] += 1
+    dist = Counter(cnt.values())
+    tot = len(cnt)
+    rec_rows.append(dict(cls=c, blocks_total=tot,
+                         in_1=dist.get(1, 0),
+                         in_2=dist.get(2, 0),
+                         in_3plus=sum(v for k, v in dist.items() if k >= 3),
+                         max_gardens=max(cnt.values()) if cnt else 0))
+    top = cnt.most_common(5)
+    print(f"  {c:7s} {tot:4d} distinct blocks | recurring in >=2 gardens: "
+          f"{sum(1 for v in cnt.values() if v >= 2):3d} | top: {top}")
+rec = pd.DataFrame(rec_rows)
+print("\\n" + rec.to_string(index=False))
+rec.to_csv(f"{RES}/persite_block_recurrence.csv", index=False)
+
+# ---- pairwise garden overlap (Jaccard), per class ----
+fig, axes = plt.subplots(1, 3, figsize=(14, 4.6))
+for ax, c in zip(axes, CLASSES):
+    S = [sig_blocks[(c, int(gardens[si]))] for si in order]
+    n = len(S); J = np.full((n, n), np.nan)
+    for i in range(n):
+        for j in range(n):
+            u = len(S[i] | S[j])
+            J[i, j] = len(S[i] & S[j]) / u if u else np.nan
+    im = ax.imshow(J, cmap="magma", vmin=0, vmax=np.nanmax(J[~np.eye(n, dtype=bool)]) or 1)
+    ax.annotate(c, xy=(0.03, 0.97), xycoords="axes fraction", va="top",
+                fontsize=9, weight="bold", color="w")
+    ax.set_xticks(range(0, n, 5)); ax.set_xticklabels(gardens[order][::5], fontsize=6)
+    ax.set_yticks(range(0, n, 5)); ax.set_yticklabels(gardens[order][::5], fontsize=6)
+    ax.set_xlabel("garden (cold $\\\\rightarrow$ hot)")
+    plt.colorbar(im, ax=ax, fraction=0.046, label="Jaccard")
+axes[0].set_ylabel("garden (cold $\\\\rightarrow$ hot)")
+fig.tight_layout(); fig.savefig(f"{PLOTS}/block_overlap_jaccard.png", dpi=150, bbox_inches="tight")
+print("\\nwrote block_overlap_jaccard.png")
+plt.close(fig)
+
+# ---- cross-CLASS overlap within a garden ----
+print("\\nWithin-garden overlap between classes (blocks flagged by snp AND by nonsnp):")
+xs = []
+for si in order:
+    g = int(gardens[si]); a, b_ = sig_blocks[("snp", g)], sig_blocks[("nonsnp", g)]
+    if a or b_:
+        xs.append(dict(garden=g, bio1=round(float(bio1[si]), 1), snp=len(a), nonsnp=len(b_),
+                       shared=len(a & b_), nonsnp_only=len(b_ - a)))
+xdf = pd.DataFrame(xs)
+print(xdf.to_string(index=False) if len(xdf) else "  (none)")
+if len(xdf):
+    print(f"\\n  total non-SNP-only blocks across gardens: {xdf.nonsnp_only.sum()}")
+    xdf.to_csv(f"{RES}/persite_block_class_overlap.csv", index=False)
+'''.replace("{GEA}", GEA)
+
 md_top = r"""# Per-garden GWAS on the ecotype selection coefficient — GEMMA results
 
 30 gardens × 3 marker classes, each an **independent** GEMMA v0.98.5 univariate LMM
@@ -241,6 +350,23 @@ nb = new_notebook(cells=[
     new_code_cell(cell_manhattan),
     new_markdown_cell("## 5. The hit list, with MAC attached"),
     new_code_cell(cell_hits),
+    new_markdown_cell("""## 6. Significant blocks per garden, and overlap across gardens
+
+Block unit = the **clq0.9 tiling partition, unmerged**, identical for all three classes.
+Two deliberate departures from the retired notebook:
+
+- **tiling, not the BigLD LD-islands** (`lib.assign_clq_blocks`) — strict containment silently
+  drops ~28% of variants into inter-block gaps. The old table used the island version.
+- **no `merge_small_blocks`** — it re-partitions from whichever records it is given, so merging
+  per class would make an SV block a far larger genomic unit than a SNP block and the counts
+  would not be comparable. Unmerged, a block is the same interval for every class.
+
+Cross-garden recurrence below is **descriptive, not a tested contrast** — that test was the
+meta this analysis dropped, and the 30 gardens share one founder panel and one `p0`, so their
+scans are correlated by construction."""),
+    new_code_cell(cell_blocks),
+    new_code_cell(cell_block_table),
+    new_code_cell(cell_block_overlap),
 ])
 
 ep = ExecutePreprocessor(timeout=3600, kernel_name="basic", startup_timeout=180)
