@@ -219,6 +219,20 @@ families, led by the non-autonomous ATREP/Helitron group; 28.3% is duplicated Co
 sequence; the cold-origin excess of section C2 is specifically a **TE excess** (cold > warm
 in 5/5 frequency-matched strata). Organellar contamination screen clean (0.14%).
 
+Three things the per-family and per-class breakdowns add (notebook sections 4-5):
+- The TE excess is **broad-based, not family-driven** — 16/33 families with n>=300 are
+  cold-skewed, a coin flip. It is a compositional shift across the TE landscape.
+- **ATCOPIA78 is the one real outlier**: cold:warm 2.3x (log2 +1.22), the only family of 33
+  to survive Bonferroni, and the **youngest cargo in the dataset** (median 99.4% identity to
+  TAIR10 vs 94.6% for TE-derived overall, median 4,961 bp = near full length). ATCOPIA78 is
+  ONSEN, the heat-activated retrotransposon. **Carry this as a lead, not a result** — the
+  family name is TAIR10's `Alias`, nothing here tests activation, and the direction
+  (cold-origin founders carrying more of a heat-responsive element) is not the naive
+  prediction.
+- **Cargo class barely predicts frequency**, against the sharp CDS/intergenic gradient of
+  section 1. Purifying selection here is about *where the insertion landed*, not what it
+  carried.
+
 > **Two design choices worth not re-litigating.**
 > **Lift back, do not annotate the fragments.** Helixer's minimum record length is 25 kbp
 > and its land-plant window is 21-107 kbp; the median insertion is 754 bp. Running an ab
@@ -246,9 +260,14 @@ in 5/5 frequency-matched strata). Organellar contamination screen clean (0.14%).
 > chloroplast, mitochondria and N_stretch. It is useful as a free **organellar-contamination
 > screen**. TE families come from `_insertion_vs_tair10.py` instead.
 
-> ⚠ **Still open.** The Helixer de novo gene rate (28.0%) needs discounting against the TE
-> calls — ab initio finders read retrotransposon *gag*/*pol* as coding, so the two numbers
-> cannot both be taken at face value. Also open: tandem repeats beyond TRASH (via ULTRA;
+> **Resolved 2026-09-15: the ab initio TE-ORF worry does not bite, it runs the other way.**
+> The concern was that Helixer reads retrotransposon *gag*/*pol* as coding, inflating the
+> 28.0% de novo gene rate specifically in the TE fraction. Measured against the section-4 TE
+> calls, TE-derived cargo has the **lowest** Helixer rate of any class (22.4%, vs 66.2% for
+> `gene_dup`), and dropping it *raises* the overall rate to 34.3%. The separate caveat that
+> "overlaps a Helixer gene" is not "carries a gene" still bounds the number from above.
+
+> ⚠ **Still open.** Tandem repeats beyond TRASH (via ULTRA;
 > TRF mis-annotates >30% on AT-rich genomes); the per-variant climate-slope beta split
 > (exists only for MAC>=12 and is indexed by AF-store column order, so joining it needs an
 > ordinal two-pointer walk, **not** a `chrom:pos` join — 2.14% of arch3 positions are

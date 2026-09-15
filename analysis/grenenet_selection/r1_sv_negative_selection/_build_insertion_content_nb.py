@@ -329,6 +329,7 @@ SZL=["<100","100-300","300-1k","1k-3k","3k-10k",">10k"]
 
 B=pd.read_csv(f"{G}/insertion_tair10_class.csv",keep_default_na=False)
 B["family"]=B.family.replace("",np.nan)
+B["pident"]=pd.to_numeric(B.pident,errors="coerce")   # blank for the `novel` rows
 D=D.merge(B[["key","cls","family","qcov","pident"]],on="key",how="left")
 D["szbin"]=pd.cut(D["size"],SZB,labels=SZL)
 
@@ -389,7 +390,137 @@ print(f"  {'stratum':<10}{'cold':>9}{'warm':>9}")
 for l,c1,c2 in zip(labs,tc,tw): print(f"  {l:<10}{c1:>9.1f}{c2:>9.1f}")
 """
 
-md_close = """## 5. Summary and what is still open
+md_s4b = """### How the five cargo classes differ
+
+Three views of the same table, because the classes are not interchangeable:
+
+- **Left** applies section 1's purifying-selection test to *cargo* instead of *site*. If the
+  cargo mattered for fitness, the classes would separate here.
+- **Middle** crosses cargo against where the insertion landed.
+- **Right** is the identity of the best TAIR10 hit, a rough **age proxy** -- a copy that arose
+  recently has had little time to diverge from its source, so it sits near 100%."""
+
+code_s4b = r"""
+fig,ax=plt.subplots(1,3,figsize=(15,4.6))
+
+# A -- frequency spectrum by cargo class: the section-1 test, applied to cargo
+style(ax[0])
+for c in CARGO:
+    v=np.sort(D.loc[D.cls==c,"freq"].values)
+    ax[0].plot(v,np.arange(1,v.size+1)/v.size,color=KCOL[c],lw=1.8,label=f"{c} (n={v.size:,})")
+ax[0].set_xlabel("ALT (insertion) frequency among called founders")
+ax[0].set_ylabel("cumulative distribution"); ax[0].set_xlim(0,0.3)
+ax[0].legend(frameon=False,fontsize=7,loc="lower right")
+k=stats.ks_2samp(D.loc[D.cls=="te_derived","freq"],D.loc[D.cls=="gene_dup","freq"])
+stat(ax[0],f"te_derived vs gene_dup  KS p = {pfmt(k.pvalue)}",loc=(0.30,0.35))
+
+# B -- cargo composition by where the insertion landed
+style(ax[1],axis="y")
+comp=(pd.crosstab(D.genic,D.cls,normalize="index")*100)[CARGO].reindex(CLS)
+bot=np.zeros(len(CLS))
+for c in CARGO:
+    ax[1].bar(np.arange(len(CLS)),comp[c].values,bottom=bot,width=0.7,color=KCOL[c],
+              alpha=0.9,label=c,linewidth=0)
+    bot+=comp[c].values
+ax[1].set_xticks(np.arange(len(CLS))); ax[1].set_xticklabels(CLS,fontsize=7,rotation=20,ha="right")
+ax[1].set_ylabel("% of insertions landing in that class"); ax[1].set_ylim(0,100)
+
+# C -- identity of the best TAIR10 hit: a proxy for how long ago the copy arose
+style(ax[2])
+for c in CARGO:
+    v=np.sort(D.loc[(D.cls==c)&D.pident.notna(),"pident"].values)
+    if v.size==0: continue
+    ax[2].plot(v,np.arange(1,v.size+1)/v.size,color=KCOL[c],lw=1.8,label=c)
+ax[2].set_xlabel("% identity of best TAIR10 hit"); ax[2].set_ylabel("cumulative distribution")
+ax[2].set_xlim(70,100); ax[2].legend(frameon=False,fontsize=7,loc="upper left")
+stat(ax[2],"right = recent copy, left = diverged",loc=(0.42,0.90))
+fig.tight_layout(); fig.savefig(f"{G}/plots/ins_cargo_classes.png",dpi=130,bbox_inches="tight"); plt.show()
+
+print("cargo class      median freq   median pident   median size")
+for c in CARGO:
+    s=D[D.cls==c]
+    print(f"  {c:<16}{s.freq.median():>10.4f}{s.pident.median():>16.1f}{s['size'].median():>14,.0f}")
+"""
+
+md_s5 = """## 5. Which elements, and does the TE discount actually bite?
+
+Two questions the cargo table raises but cannot answer on its own.
+
+**Is the cold-origin TE excess driven by particular families?** Section 4 showed TE-derived cargo
+is higher for cold-carrier insertions in 5/5 frequency-matched strata. That could be a few
+families expanding, or a broad compositional shift. Panel A tests each family with >=300
+frequency-matched insertions against the panel-wide cold:warm base rate, Bonferroni-corrected.
+
+**Does the ab initio gene-finder caveat bite?** Section 3 flagged that Helixer hallucinates genes
+inside retrotransposon *gag*/*pol* ORFs, which would inflate the 28.0% de novo gene rate
+*specifically in the TE fraction*. Section 4 supplies the TE annotation that check needs, so
+panel B is the caveat made testable rather than assumed."""
+
+code_s5 = r"""
+L["cls"]=L.key.map(D.set_index("key").cls)   # D gained `cls` in section 4, after L was built
+
+TEB=D[D.cls=="te_derived"]
+sub=TEB[TEB.carrier_grp!="mid"]
+base=(sub.carrier_grp=="cold-carrier").mean()
+ct=pd.crosstab(sub.family,sub.carrier_grp)
+ct=ct[ct.sum(axis=1)>=300]
+ct["p"]=[stats.binomtest(int(r[0]),int(r[0]+r[1]),base).pvalue
+         for r in ct[["cold-carrier","warm-carrier"]].itertuples(index=False)]
+ct["p_bonf"]=(ct.p*len(ct)).clip(upper=1)
+ct["log2_cw"]=np.log2((ct["cold-carrier"]+1)/(ct["warm-carrier"]+1))
+ct=ct.sort_values("log2_cw")
+
+fig,ax=plt.subplots(1,3,figsize=(15,4.8))
+
+# A -- is the cold excess carried by particular families, or is it broad?
+style(ax[0],axis="x")
+sig=ct.p_bonf<0.05
+ax[0].barh(np.arange(len(ct)),ct.log2_cw.values,height=0.7,linewidth=0,
+           color=np.where(sig,"#CC79A7","0.72"))
+ax[0].axvline(0,color=ZERO,lw=0.8,ls=":")
+ax[0].set_yticks(np.arange(len(ct))); ax[0].set_yticklabels(ct.index,fontsize=6)
+ax[0].set_xlabel("log2 (cold-carrier / warm-carrier), frequency-matched")
+stat(ax[0],f"{int((ct.log2_cw>0).sum())}/{len(ct)} families cold-skewed\n"
+           f"{int(sig.sum())} Bonferroni-significant",loc=(0.55,0.06))
+
+# B -- the TE discount on the Helixer de novo gene rate
+style(ax[1],axis="y")
+hx=L.groupby("cls").helixer_hit.mean().reindex(CARGO)*100
+ax[1].bar(np.arange(len(CARGO)),hx.values,width=0.62,
+          color=[KCOL[c] for c in CARGO],alpha=0.9,linewidth=0)
+ax[1].axhline(100*L.helixer_hit.mean(),color=ZERO,lw=0.9,ls="--")
+ax[1].set_xticks(np.arange(len(CARGO)))
+ax[1].set_xticklabels(CARGO,fontsize=7,rotation=20,ha="right")
+ax[1].set_ylabel("% carrying a Helixer de novo gene")
+stat(ax[1],f"dashed = overall {100*L.helixer_hit.mean():.1f}%",loc=(0.45,0.93))
+
+# C -- ATCOPIA78/ONSEN against the rest of the TE cargo
+style(ax[2])
+for nm,msk,c in (("ATCOPIA78 (ONSEN)",TEB.family=="ATCOPIA78","#D55E00"),
+                 ("all other TE-derived",TEB.family!="ATCOPIA78","0.6")):
+    v=np.sort(TEB.loc[msk&TEB.pident.notna(),"pident"].values)
+    ax[2].plot(v,np.arange(1,v.size+1)/v.size,color=c,lw=1.9,label=f"{nm} (n={v.size:,})")
+ax[2].set_xlabel("% identity of best TAIR10 hit"); ax[2].set_ylabel("cumulative distribution")
+ax[2].set_xlim(75,100); ax[2].legend(frameon=False,fontsize=7.5,loc="upper left")
+o=TEB[TEB.family=="ATCOPIA78"]
+stat(ax[2],f"median identity {o.pident.median():.1f}% vs {TEB.loc[TEB.family!='ATCOPIA78','pident'].median():.1f}%\n"
+           f"median size {o['size'].median():,.0f} bp")
+fig.tight_layout(); fig.savefig(f"{G}/plots/ins_te_families.png",dpi=130,bbox_inches="tight"); plt.show()
+
+print(f"per-family cold/warm, frequency-matched (base cold fraction {base:.3f}, families with n>=300):")
+print(f"  cold-skewed {int((ct.log2_cw>0).sum())}/{len(ct)} -- a coin flip, so the excess is broad-based")
+print(f"  Bonferroni-significant: {int(sig.sum())}")
+print(ct.loc[sig,["cold-carrier","warm-carrier","log2_cw","p_bonf"]].round(4).to_string())
+print("\nHelixer de novo gene rate by cargo class (lifted only):")
+print((L.groupby("cls").agg(n=("helixer_hit","size"),pct=("helixer_hit",lambda s:100*s.mean()))
+       .reindex(CARGO).round(1)).to_string())
+print(f"\n  overall {100*L.helixer_hit.mean():.1f}%  |  excluding te_derived "
+      f"{100*L.loc[L.cls!='te_derived','helixer_hit'].mean():.1f}%")
+print(f"\nATCOPIA78 (ONSEN): n={len(o):,}, median identity {o.pident.median():.1f}%, "
+      f"median size {o['size'].median():,.0f} bp, median freq {o.freq.median():.4f}")
+"""
+
+md_close = """## 6. Summary and what is still open
 
 ### Established
 - Insertion **sites** are classified for all 172,220 insertions, with no MAC floor, so the rare tail
@@ -408,21 +539,33 @@ md_close = """## 5. Summary and what is still open
   13.3% `dispersed_dup`, 4.5% `local_dup`. Genuinely novel sequence is a minority everywhere and
   vanishes with length (64.1% of insertions <100 bp, **1.0%** of those >10 kb) -- i.e. the `novel`
   class is an alignment-power floor, not a biological category.
-- **The cold-origin excess is a TE excess.** Frequency-matched within carrier-count strata,
-  TE-derived cargo is higher for cold-carrier insertions in **5/5 strata** (e.g. 42.3% vs 32.7% at
-  n_alt 8-20) -- a much larger and more consistent gap than the site-level TE-overlap comparison
-  in section 2 (31.1% vs 29.7%) could show.
+- **The cold-origin excess is a TE excess, and it is broad-based.** Frequency-matched within
+  carrier-count strata, TE-derived cargo is higher for cold-carrier insertions in **5/5 strata**
+  (e.g. 42.3% vs 32.7% at n_alt 8-20) -- a much larger and more consistent gap than the site-level
+  TE-overlap comparison in section 2 (31.1% vs 29.7%) could show. But at family level it is a
+  **coin flip: 16/33 families cold-skewed**, so this is a compositional shift across the TE
+  landscape, not a few families expanding.
+- **One family is a real outlier: ATCOPIA78, cold:warm 2.3x (log2 +1.22), the only one of 33
+  surviving Bonferroni.** It is also the youngest cargo in the dataset -- median identity to
+  TAIR10 **99.4%** against 94.6% for TE-derived overall, at a median 4,961 bp, i.e. near-full-length
+  and recently transposed. ATCOPIA78 is ONSEN, the heat-activated retrotransposon. Treat the
+  identification as a lead, not a result: the family name is TAIR10's `Alias`, the direction
+  (cold-origin founders carrying more copies of a heat-responsive element) is not what a naive
+  reading predicts, and nothing here tests activation.
+- **Cargo class does not predict frequency the way site class does.** The five classes separate
+  only weakly in the frequency spectrum, against the sharp CDS/intergenic gradient of section 1.
+  Purifying selection here is about **where the insertion landed**, not what it carried.
 
 ### Two caveats that bound the gene numbers
 1. **"Overlaps a Helixer gene" is not "carries a gene."** An insertion can clip the edge of a
    predicted gene. The reported percentage is an upper bound until the overlap *fraction* is
    computed.
-2. **Ab initio gene finders hallucinate genes inside TE ORFs** -- retrotransposon *gag*/*pol* reads
-   as coding. This is the dominant failure mode in plant annotation, and it inflates the de novo
-   gene rate specifically in the TE-derived fraction. Section 4 now supplies the TE annotation that
-   discount needs: cross Helixer `helixer_hit` against `cls=="te_derived"` before quoting any de
-   novo gene number. The 28.0% Helixer rate and the 52.9% TE-derived rate cannot both be read at
-   face value.
+2. **The ab initio TE-ORF worry was tested in section 5 and does not bite -- it runs the other
+   way.** The concern was that Helixer reads retrotransposon *gag*/*pol* as coding and so inflates
+   the de novo gene rate specifically in the TE fraction. Measured, TE-derived cargo has the
+   **lowest** Helixer rate of any class (22.4%, vs 28.0% overall and 66.2% for `gene_dup`), and
+   dropping TE-derived *raises* the rate to 34.3%. So the 28.0% is if anything deflated by the TE
+   fraction, not inflated by it. Caveat 1 still stands and still bounds the number from above.
 
 ### Not yet done
 - **Tandem repeats** beyond TRASH, via ULTRA (TRF mis-annotates >30% on AT-rich genomes).
@@ -439,6 +582,8 @@ nb = new_notebook(cells=[
     new_markdown_cell(md_s2), new_code_cell(code_s2),
     new_markdown_cell(md_s3), new_code_cell(code_s3),
     new_markdown_cell(md_s4), new_code_cell(code_s4),
+    new_markdown_cell(md_s4b), new_code_cell(code_s4b),
+    new_markdown_cell(md_s5), new_code_cell(code_s5),
     new_markdown_cell(md_close),
 ])
 ep = ExecutePreprocessor(timeout=3600, kernel_name="basic", startup_timeout=180)
