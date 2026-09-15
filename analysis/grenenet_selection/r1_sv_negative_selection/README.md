@@ -191,6 +191,73 @@ The one block-unit arm in r1: are temporally-selected blocks SV-enriched?
 
 ---
 
+## G. What is in the insertions? (site context + cargo)
+
+Added 2026-08-26, downstream of C2: if cold-origin founders carry more inserted sequence
+and decline as gardens warm, what *is* that sequence? **Read the result in
+`../notebooks/sv_insertion_content.ipynb`.** All 172,220 SV insertions, **no MAC floor**
+(every other section of this arm filters MAC>=12; that is wrong here, because purifying
+selection lives in the rare tail that filter removes).
+
+Three layers, because an insertion is by definition absent from TAIR10 and so has no
+reference coordinates of its own:
+
+| script | what it establishes | writes |
+|---|---|---|
+| `_insertion_genomic_context.py` | **where it landed** — CDS/UTR/intron/non-coding-exon/intergenic + TE-overlap flag, from the TAIR10 `genes_transposons` GFF, plus carrier-mean origin bio1/bio18 | `insertion_context.{csv,npz}` |
+| `_extract_insertion_seqs.py` | the inserted sequences themselves, per chromosome | `seq/insertions_Chr{N}.fa` |
+| `_liftback_to_assemblies.py` | locates each insertion in a **carrier's assembly**, where it is an exact substring | `liftback_assignment.csv` |
+| `_liftback_recover_short.py` | recovers the short insertions the first pass length-biased away | — |
+| `_annotate_liftback.py` | **what it carries** — intersects the lifted interval with the Helixer / Liftoff / TRASH / repeat-compartment tracks precomputed on that assembly | `liftback_annotation.csv` |
+| `_insertion_vs_tair10.py` | **where else the sequence occurs** — dc-megablast vs TAIR10: duplication-vs-novel + **TE family** from the `Alias` attribute | `insertion_tair10_class.csv`, `blast/Chr{N}.tsv` |
+| `_build_insertion_content_nb.py` | builds the notebook + its four figures | `sv_insertion_content.ipynb` |
+
+**Result.** Insertions are **5.2x depleted in CDS** (log2 obs/exp -2.37) with a clean
+purifying gradient through UTR (-0.65) -> intron (-0.28) -> exon_noncoding (-0.24) ->
+intergenic (+0.65). 89.7% lift back. **52.9% of the cargo is TE-derived** across 314
+families, led by the non-autonomous ATREP/Helitron group; 28.3% is duplicated Col-0
+sequence; the cold-origin excess of section C2 is specifically a **TE excess** (cold > warm
+in 5/5 frequency-matched strata). Organellar contamination screen clean (0.14%).
+
+> **Two design choices worth not re-litigating.**
+> **Lift back, do not annotate the fragments.** Helixer's minimum record length is 25 kbp
+> and its land-plant window is 21-107 kbp; the median insertion is 754 bp. Running an ab
+> initio gene finder on the fragments is out-of-domain, not merely less accurate.
+> **dc-megablast, not minimap2.** minimap2's `asm5/asm10` presets use k=19,w=19 minimizers
+> and chain scores tuned for assembly-scale contigs, so at this query length they silently
+> miss short and diverged copies — the same preset trap that length-biased the first
+> lift-back pass.
+
+> ⚠ **`novel` measures alignment power, not biology.** A short query has little statistical
+> power in a homology search, and the class share shows it directly: `novel` is 64.1% of
+> insertions <100 bp and **1.0%** of those >10 kb. The pooled 18.7% figure is an artifact
+> ceiling. Always read the cargo composition **within a size bin**.
+
+> ⚠ **`carrier_bio1` is mathematically coupled to allele frequency** — a singleton's
+> carrier-mean *is* that one founder's origin, a common insertion regresses to the panel
+> mean (SD falls 4.83 -> 1.42 across carrier-count strata). A naive quartile split pulls
+> singletons into both tails, so any frequency comparison between the groups is confounded
+> *by construction* (unmatched: 56.5% vs 78.9% private). Section 2 splits cold/warm
+> **within** carrier-count strata, and section 3/4 inherit that same matching. The unmatched
+> numbers are printed for contrast only and must not be quoted.
+
+> ⚠ The track named `02_annotation_RepeatMasker` on the assemblies is **not** a TE-family
+> annotation despite the name — it holds only centromere, telomere, 45S/5S rDNA,
+> chloroplast, mitochondria and N_stretch. It is useful as a free **organellar-contamination
+> screen**. TE families come from `_insertion_vs_tair10.py` instead.
+
+> ⚠ **Still open.** The Helixer de novo gene rate (28.0%) needs discounting against the TE
+> calls — ab initio finders read retrotransposon *gag*/*pol* as coding, so the two numbers
+> cannot both be taken at face value. Also open: tandem repeats beyond TRASH (via ULTRA;
+> TRF mis-annotates >30% on AT-rich genomes); the per-variant climate-slope beta split
+> (exists only for MAC>=12 and is indexed by AF-store column order, so joining it needs an
+> ordinal two-pointer walk, **not** a `chrom:pos` join — 2.14% of arch3 positions are
+> multiallelic and a position join silently matches the wrong allele); and the long tail
+> above ~20 kb (p99 = 19.8 kb, max 291 kb), more plausibly segmental duplication or
+> mis-assembly than insertion.
+
+---
+
 ## Filed here but arguably belonging elsewhere
 
 Both are **builders whose notebooks are about a different question** — flagged,

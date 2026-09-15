@@ -7,9 +7,11 @@ TE, novel? Two layers:
   §1-2  WHERE the insertion landed, from the TAIR10 GFF (site context). Fully answerable.
   §3    WHAT the inserted sequence is, by lifting it back into a carrier's assembly and
         reading the annotations computed there with full genomic context.
+  §4    WHERE ELSE the sequence occurs -- dc-megablast against TAIR10 splits duplication from
+        novel and, via the TE `Alias` attribute, gives TE-family calls.
 
 Load-only from `_insertion_genomic_context.py`, `_liftback_to_assemblies.py`,
-`_liftback_recover_short.py` and `_annotate_liftback.py`.
+`_liftback_recover_short.py`, `_annotate_liftback.py` and `_insertion_vs_tair10.py`.
 
 Plot style matches notebooks/plots/s_nofilter_climate_scatter.png. `basic` env.
 """
@@ -39,6 +41,9 @@ contains:
 - **§3 — what it carries.** Requires the sequence itself. We lift each inserted sequence back into
   the assembly of a founder that carries it -- where it is an *exact substring* -- and read off the
   annotations already computed on those assemblies **with full genomic context**.
+- **§4 — where else that sequence occurs.** The same sequence aligned back against TAIR10: absent
+  *here* does not mean absent *everywhere*, so this splits copies-of-Col-0-sequence from genuinely
+  novel sequence, and reads TE family off TAIR10's own `transposable_element` records.
 
 Why lift back rather than annotate the fragments: **Helixer's minimum record length is 25 kbp** and
 its land-plant window is 21-107 kbp. Our median insertion is **754 bp**. Running any ab initio gene
@@ -167,6 +172,15 @@ def split(df):
     g=np.where(df.carrier_bio1<=q.iloc[0],"cold",np.where(df.carrier_bio1>=q.iloc[1],"warm","mid"))
     return df.assign(grp=g)
 
+# frequency-matched group assignment, kept on D so section 3 inherits the SAME matching
+D["carrier_grp"]="mid"
+for a,b in STRATA:
+    sel=(D.n_alt>=a)&(D.n_alt<=b)
+    q=D.loc[sel,"carrier_bio1"].quantile([.25,.75])
+    D.loc[sel,"carrier_grp"]=np.where(D.loc[sel,"carrier_bio1"]<=q.iloc[0],"cold-carrier",
+                             np.where(D.loc[sel,"carrier_bio1"]>=q.iloc[1],"warm-carrier","mid"))
+GC={"cold-carrier":"#0072B2","warm-carrier":"#D55E00"}
+
 labs=[f"{a}" if a==b else (f"{a}-{b}" if b<10**5 else f"{a}+") for a,b in STRATA]
 sds=[D.loc[(D.n_alt>=a)&(D.n_alt<=b),"carrier_bio1"].std() for a,b in STRATA]
 ns=[int(((D.n_alt>=a)&(D.n_alt<=b)).sum()) for a,b in STRATA]
@@ -202,17 +216,14 @@ fig.tight_layout(); fig.savefig(f"{G}/plots/ins_carrier_climate.png",dpi=130,bbo
 print("COUPLING CHECK -- SD of carrier-mean origin bio1 by carrier count:")
 for l,sd,n in zip(labs,sds,ns): print(f"  n_alt {l:<6} n={n:>7,}  sd={sd:.2f}")
 u=split(D); u=u[u.grp!="mid"]
-print("
-UNMATCHED split (CONFOUNDED -- for contrast, do not quote):")
+print("\nUNMATCHED split (CONFOUNDED -- for contrast, do not quote):")
 print(f"  median freq  cold {u.loc[u.grp=='cold','freq'].median():.4f}   warm {u.loc[u.grp=='warm','freq'].median():.4f}")
 print(f"  pct private  cold {100*(u.loc[u.grp=='cold','n_alt']==1).mean():.1f}    warm {100*(u.loc[u.grp=='warm','n_alt']==1).mean():.1f}")
-print("
-FREQUENCY-MATCHED (the valid comparison):")
+print("\nFREQUENCY-MATCHED (the valid comparison):")
 print(f"  {'stratum':<10}{'n':>9}{'TE cold':>10}{'TE warm':>10}{'CDS cold':>10}{'CDS warm':>10}")
 for l,n,tc,tw,c1,c2 in zip(labs,ns,tec,tew,cc,cw):
     print(f"  {l:<10}{n:>9,}{tc:>10.1f}{tw:>10.1f}{c1:>10.2f}{c2:>10.2f}")
-print("
-  TE overlap: cold > warm in %d/%d strata (consistent -> credible)"%(
+print("\n  TE overlap: cold > warm in %d/%d strata (consistent -> credible)"%(
       sum(1 for a,b in zip(tec,tew) if a>b),len(tec)))
 print("  CDS share : cold > warm in %d/%d strata (flips -> not a signal)"%(
       sum(1 for a,b in zip(cc,cw) if a>b),len(cc)))
@@ -238,6 +249,7 @@ computed on that assembly:
 
 code_s3 = r"""
 L=M[M.lifted].copy()
+L["carrier_grp"]=L.key.map(D.set_index("key").carrier_grp)   # frequency-matched split from section 2
 for c in ("helixer","liftoff","trash","repeat"):
     L[c+"_hit"]=L[c].astype(str).str.len()>0
 
@@ -254,8 +266,7 @@ ax[0].set_ylabel("% of lifted insertions")
 
 style(ax[1])
 for g,c in GC.items():
-    v=L[L.carrier_grp==g] if "carrier_grp" in L else L.iloc[0:0]
-    if len(v)==0: continue
+    v=L[L.carrier_grp==g]
     ax[1].bar([i+(0.5 if g=="warm-carrier" else -0.5)*0.38 for i in range(4)],
               [100*v[cc].mean() for cc,_,_ in cats],width=0.38,color=c,alpha=0.85,
               label=g,linewidth=0)
@@ -286,7 +297,99 @@ org=L.repeat.astype(str).str.contains("chloroplast|mitochondria").sum()
 print(f"\norganellar (chloroplast/mito): {org:,} = {100*org/len(L):.2f}% of lifted")
 """
 
-md_close = """## 4. Summary and what is still open
+md_s4 = """## 4. Duplication or novel, and which TE family -- the inserted sequence against TAIR10
+
+Section 3 read annotations computed on the *carrier assembly*. This section asks a different
+question of the same sequence: an insertion is absent from Col-0 **at that locus**, but is the
+sequence present in Col-0 **somewhere else**? One `blastn -task dc-megablast` of every inserted
+sequence against TAIR10 answers that and the TE-family question at once -- TAIR10's
+`transposable_element` records carry the family in their `Alias` attribute (ATREP, ATHILA,
+HELITRON, VANDAL...), so family calls come for free, with no RepeatMasker run and no external
+library. Classes are assigned in priority order: `te_derived` > `gene_dup` > `local_dup`
+(within 10 kb of its own site) > `dispersed_dup` > `novel` (no hit covering >=50% of the query).
+
+**Why dc-megablast and not minimap2.** minimap2's `asm5/asm10` presets use k=19,w=19 minimizers
+and chain scores tuned for assembly-scale contigs; at a median query of 754 bp they silently miss
+short and diverged copies -- the same preset trap that length-biased the first lift-back pass.
+Discontiguous megablast is sensitive to ~75% identity and is the right instrument at this length.
+
+> ### `novel` is a statement about alignment power, not about biology
+> "No homology hit" is weak evidence of novelty, and it gets weaker the shorter the query, because
+> a short query has little statistical power in an alignment search. Panel A is therefore the
+> **required** way to read this section: the `novel` share collapses monotonically with length, so
+> the genome-wide 18.7% figure is an artifact ceiling dominated by the shortest insertions. Read the
+> class composition **within a size bin**, never pooled."""
+
+code_s4 = r"""
+CARGO=["te_derived","gene_dup","local_dup","dispersed_dup","novel"]
+KCOL={"te_derived":"#CC79A7","gene_dup":"#D55E00","local_dup":"#E69F00",
+      "dispersed_dup":"#009E73","novel":"0.55"}
+SZB=[0,100,300,1000,3000,10000,10**9]
+SZL=["<100","100-300","300-1k","1k-3k","3k-10k",">10k"]
+
+B=pd.read_csv(f"{G}/insertion_tair10_class.csv",keep_default_na=False)
+B["family"]=B.family.replace("",np.nan)
+D=D.merge(B[["key","cls","family","qcov","pident"]],on="key",how="left")
+D["szbin"]=pd.cut(D["size"],SZB,labels=SZL)
+
+fig,ax=plt.subplots(1,3,figsize=(15,4.6))
+
+# A -- class share vs insertion length: the power check the classification demands
+style(ax[0],axis="y")
+sh=(pd.crosstab(D.szbin,D.cls,normalize="index")*100)[CARGO]
+bot=np.zeros(len(SZL))
+for c in CARGO:
+    ax[0].bar(np.arange(len(SZL)),sh[c].values,bottom=bot,width=0.7,color=KCOL[c],
+              alpha=0.9,label=c,linewidth=0)
+    bot+=sh[c].values
+ax[0].set_xticks(np.arange(len(SZL))); ax[0].set_xticklabels(SZL,fontsize=7.5,rotation=20,ha="right")
+ax[0].set_xlabel("insertion size (bp)"); ax[0].set_ylabel("% of insertions in that size bin")
+ax[0].set_ylim(0,100)
+ax[0].legend(frameon=False,fontsize=7,ncol=3,loc="upper center",bbox_to_anchor=(0.5,-0.18))
+stat(ax[0],"'novel' tracks alignment power, not biology",loc=(0.03,0.90))
+
+# B -- which TE families
+style(ax[1],axis="x")
+fam=D.loc[D.cls=="te_derived","family"].value_counts().head(15)[::-1]
+ax[1].barh(np.arange(len(fam)),fam.values,color="#CC79A7",alpha=0.9,height=0.65,linewidth=0)
+ax[1].set_yticks(np.arange(len(fam))); ax[1].set_yticklabels(fam.index,fontsize=7)
+ax[1].set_xlabel("insertions assigned to that TAIR10 TE family")
+stat(ax[1],f"{D.loc[D.cls=='te_derived','family'].nunique()} families total",loc=(0.45,0.03))
+
+# C -- frequency-matched cold/warm, TE-derived cargo
+style(ax[2],axis="y")
+w=0.38; x=np.arange(len(STRATA))
+labs=[f"{a}" if a==b else (f"{a}-{b}" if b<10**5 else f"{a}+") for a,b in STRATA]
+tc,tw=[],[]
+for a,b in STRATA:
+    t=D[(D.n_alt>=a)&(D.n_alt<=b)]
+    tc.append(100*(t.loc[t.carrier_grp=="cold-carrier","cls"]=="te_derived").mean())
+    tw.append(100*(t.loc[t.carrier_grp=="warm-carrier","cls"]=="te_derived").mean())
+ax[2].bar(x-w/2,tc,width=w,color=GC["cold-carrier"],alpha=0.85,label="cold-carrier",linewidth=0)
+ax[2].bar(x+w/2,tw,width=w,color=GC["warm-carrier"],alpha=0.85,label="warm-carrier",linewidth=0)
+ax[2].set_xticks(x); ax[2].set_xticklabels(labs,fontsize=8)
+ax[2].set_xlabel("carriers of the insertion (n_alt)")
+ax[2].set_ylabel("% of that group's insertions that are TE-derived")
+ax[2].legend(frameon=False,fontsize=8)
+stat(ax[2],"cold > warm in %d/%d strata"%(sum(1 for a,b in zip(tc,tw) if a>b),len(tc)))
+fig.tight_layout(); fig.savefig(f"{G}/plots/ins_tair10_cargo.png",dpi=130,bbox_inches="tight"); plt.show()
+
+n=len(D)
+print("cargo class        n        %     median size   median freq   %% private")
+for c in CARGO:
+    s=D[D.cls==c]
+    print(f"  {c:<16}{len(s):>8,}{100*len(s)/n:>8.1f}{s['size'].median():>14,.0f}"
+          f"{s.freq.median():>14.4f}{100*(s.n_alt==1).mean():>12.1f}")
+print("\nclass share (%) by insertion size -- the alignment-power check:")
+print(sh.round(1).to_string())
+print("\nsite context x cargo class (% of row):")
+print((pd.crosstab(D.genic,D.cls,normalize="index")*100)[CARGO].round(1).to_string())
+print("\nFREQUENCY-MATCHED TE-derived cargo share:")
+print(f"  {'stratum':<10}{'cold':>9}{'warm':>9}")
+for l,c1,c2 in zip(labs,tc,tw): print(f"  {l:<10}{c1:>9.1f}{c2:>9.1f}")
+"""
+
+md_close = """## 5. Summary and what is still open
 
 ### Established
 - Insertion **sites** are classified for all 172,220 insertions, with no MAC floor, so the rare tail
@@ -296,22 +399,32 @@ md_close = """## 4. Summary and what is still open
 - The **organellar screen is clean** -- chloroplast + mitochondrial insertions are a fraction of a
   percent, so the pangenome-singleton contamination worry does not bite here.
 
+- **The cargo is mostly transposable element.** 52.9% of insertions are TE-derived against TAIR10,
+  across 314 named families, led by the non-autonomous ATREP/Helitron group (ATREP3 n=6,897,
+  HELITRONY3 n=3,269). The site-level figure badly understates this: **30.4% of insertion *sites*
+  overlap an annotated TE, but 52.9% of the inserted *sequence* is TE-derived** -- elements are
+  landing outside existing TE annotation, as expected for recent transposition.
+- **Most of the rest is duplicated Col-0 sequence, not novel sequence.** 10.5% `gene_dup`,
+  13.3% `dispersed_dup`, 4.5% `local_dup`. Genuinely novel sequence is a minority everywhere and
+  vanishes with length (64.1% of insertions <100 bp, **1.0%** of those >10 kb) -- i.e. the `novel`
+  class is an alignment-power floor, not a biological category.
+- **The cold-origin excess is a TE excess.** Frequency-matched within carrier-count strata,
+  TE-derived cargo is higher for cold-carrier insertions in **5/5 strata** (e.g. 42.3% vs 32.7% at
+  n_alt 8-20) -- a much larger and more consistent gap than the site-level TE-overlap comparison
+  in section 2 (31.1% vs 29.7%) could show.
+
 ### Two caveats that bound the gene numbers
 1. **"Overlaps a Helixer gene" is not "carries a gene."** An insertion can clip the edge of a
    predicted gene. The reported percentage is an upper bound until the overlap *fraction* is
    computed.
 2. **Ab initio gene finders hallucinate genes inside TE ORFs** -- retrotransposon *gag*/*pol* reads
    as coding. This is the dominant failure mode in plant annotation, and it inflates the de novo
-   gene rate specifically in the TE-derived fraction. The number needs discounting against a TE
-   annotation we do not yet have.
+   gene rate specifically in the TE-derived fraction. Section 4 now supplies the TE annotation that
+   discount needs: cross Helixer `helixer_hit` against `cls=="te_derived"` before quoting any de
+   novo gene number. The 28.0% Helixer rate and the 52.9% TE-derived rate cannot both be read at
+   face value.
 
 ### Not yet done
-- **TE family calls.** Requires RepeatMasker against an Arabidopsis library built from the TAIR10
-  `transposable_element` features. This is the single biggest gap -- 30.4% of insertion *sites*
-  overlap an annotated TE, and the cargo is very likely more TE-derived than that.
-- **Duplication vs novel.** `blastn -task dc-megablast` (or LAST) of the inserted sequence against
-  TAIR10, to split "a copy of Col-0 sequence from elsewhere" from "absent from Col-0 entirely".
-  minimap2 is the wrong tool at this query length.
 - **Tandem repeats** beyond TRASH, via ULTRA (TRF mis-annotates >30% on AT-rich genomes).
 - **The beta split.** The per-variant climate slope exists only for the MAC>=12 subset and is indexed
   by the AF-store column order, not panel record order. Joining it needs an ordinal two-pointer walk,
@@ -325,6 +438,7 @@ nb = new_notebook(cells=[
     new_markdown_cell(md_s1), new_code_cell(code_s1),
     new_markdown_cell(md_s2), new_code_cell(code_s2),
     new_markdown_cell(md_s3), new_code_cell(code_s3),
+    new_markdown_cell(md_s4), new_code_cell(code_s4),
     new_markdown_cell(md_close),
 ])
 ep = ExecutePreprocessor(timeout=3600, kernel_name="basic", startup_timeout=180)
