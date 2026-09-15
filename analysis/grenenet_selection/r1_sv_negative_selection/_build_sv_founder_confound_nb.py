@@ -551,13 +551,23 @@ and so misses exactly the rare/private variation that marks divergent lineages:
   cannot contain. This is what the construction worry is actually about, and `n_snp` cannot measure it.
 - **Assembly size** — total chromosome-level length from the `.fai` indexes, for the 80 founders that
   have an assembly. The most direct genome-content control available: do cold-origin accessions simply
-  have bigger genomes?"""
+  have bigger genomes?
+
+The second panel repeats the first coloured by **sequencing platform**, because assembly size turns
+out to be almost entirely a platform variable rather than a biological one — the two questions it
+settles are whether size varies by technology (it does, enormously) and whether technology is spread
+evenly over origin climate (it is)."""
 
 code_s24c = r'''
 GRp=np.load(f"{G}/founder_graph_representation.npz",allow_pickle=True)
 max_kin=GRp["max_kin"]; asm_mb=GRp["asm_mb"]; have=np.isfinite(asm_mb)
 
-fig,ax=plt.subplots(1,3,figsize=(14.5,4.4))
+TCa=np.load(f"{G}/founder_assembly_technology.npz",allow_pickle=True)
+techa=TCa["tech"].astype(str); oka=TCa["ok"].astype(bool)
+tla=[t for t in ["CLR","HiFi","ONT","ONT_R10.4","ONT_HiFi"] if (oka&(techa==t)).sum()>=2]
+TCOLa=dict(zip(tla,["#D55E00","#0072B2","#009E73","#CC79A7","#E69F00"]))
+
+fig,ax=plt.subplots(1,4,figsize=(19,4.4))
 style(ax[0])
 ax[0].scatter(home1[have],asm_mb[have],c=home1[have],cmap="coolwarm",s=42,zorder=3,edgecolor="none")
 fitline(ax[0],home1[have],asm_mb[have])
@@ -566,23 +576,49 @@ ax[0].set_xlabel("ecotype origin bio1 (mean annual temp, C)")
 ax[0].set_ylabel("assembly size, 5 chromosomes (Mb)")
 r,p=stats.spearmanr(home1[have],asm_mb[have]); stat(ax[0],rho_txt(r,p))
 
+# same axes, coloured by sequencing platform: assembly size is a PLATFORM variable,
+# and the platforms are spread evenly over origin climate
 style(ax[1])
-ax[1].scatter(asm_mb[have],KB[have],s=34,color=CAC,alpha=0.8,linewidths=0,zorder=3)
-fitline(ax[1],asm_mb[have],KB[have])
-ax[1].set_xlabel("assembly size, 5 chromosomes (Mb)")
-ax[1].set_ylabel("founder kb of inserted sequence")
-r2,p2=stats.spearmanr(asm_mb[have],KB[have]); stat(ax[1],rho_txt(r2,p2))
+for t in tla:
+    m=have&oka&(techa==t)
+    if not m.sum(): continue
+    ax[1].scatter(home1[m],asm_mb[m],s=38,color=TCOLa[t],alpha=0.85,linewidths=0,zorder=3,
+                  label=f"{t} (n={int(m.sum())})")
+    ax[1].axhline(np.nanmedian(asm_mb[m]),color=TCOLa[t],lw=0.9,ls="--",alpha=0.55,zorder=1)
+ax[1].axhline(119.15,color=ZERO,lw=0.8,ls=":",zorder=1)
+ax[1].set_xlabel("ecotype origin bio1 (mean annual temp, C)")
+ax[1].set_ylabel("assembly size, 5 chromosomes (Mb)")
+ax[1].legend(frameon=False,fontsize=6.5,loc="center right")
+kw_a=stats.kruskal(*[asm_mb[have&oka&(techa==t)] for t in tla])
+kw_o=stats.kruskal(*[home1[have&oka&(techa==t)] for t in tla])
+stat(ax[1],f"size ~ platform:   H = {kw_a.statistic:.1f}   p = {pfmt(kw_a.pvalue)}\n"
+           f"origin ~ platform: H = {kw_o.statistic:.1f}   p = {pfmt(kw_o.pvalue)}",loc=(0.03,0.45))
 
 style(ax[2])
-for msk,c,lab in [(is_cac,CAC,"cactus"),(~is_cac,PGC,"PanGenie")]:
-    ax[2].scatter(max_kin[msk],KB[msk],s=30,color=c,alpha=0.8,linewidths=0,label=lab,zorder=3)
-ax[2].set_xlabel("max kinship to an assembly founder")
+ax[2].scatter(asm_mb[have],KB[have],s=34,color=CAC,alpha=0.8,linewidths=0,zorder=3)
+fitline(ax[2],asm_mb[have],KB[have])
+ax[2].set_xlabel("assembly size, 5 chromosomes (Mb)")
 ax[2].set_ylabel("founder kb of inserted sequence")
-r3,p3=stats.spearmanr(max_kin,KB); stat(ax[2],rho_txt(r3,p3))
-ax[2].legend(frameon=False,fontsize=8,loc="upper right")
+r2,p2=stats.spearmanr(asm_mb[have],KB[have]); stat(ax[2],rho_txt(r2,p2))
+
+style(ax[3])
+for msk,c,lab in [(is_cac,CAC,"cactus"),(~is_cac,PGC,"PanGenie")]:
+    ax[3].scatter(max_kin[msk],KB[msk],s=30,color=c,alpha=0.8,linewidths=0,label=lab,zorder=3)
+ax[3].set_xlabel("max kinship to an assembly founder")
+ax[3].set_ylabel("founder kb of inserted sequence")
+r3,p3=stats.spearmanr(max_kin,KB); stat(ax[3],rho_txt(r3,p3))
+ax[3].legend(frameon=False,fontsize=8,loc="upper right")
 fig.tight_layout(); fig.savefig(f"{G}/plots/confound_genome_content.png",dpi=130,bbox_inches="tight"); plt.show()
 
 print(f"assemblies matched: {int(have.sum())} of {int(is_cac.sum())} cactus founders")
+print("\nassembly size by sequencing platform (TAIR10 = 119.15 Mb):")
+for t in tla:
+    m=have&oka&(techa==t)
+    print(f"  {t:<11} n={int(m.sum()):>3}  median {np.nanmedian(asm_mb[m]):>7.2f} Mb   "
+          f"IQR {np.nanpercentile(asm_mb[m],25):>6.1f}-{np.nanpercentile(asm_mb[m],75):<6.1f}  "
+          f"median origin bio1 {np.nanmedian(home1[m]):>6.2f}")
+print(f"  size   ~ platform: Kruskal-Wallis H={kw_a.statistic:.2f} p={kw_a.pvalue:.2e}  -> assembly size IS a platform variable")
+print(f"  origin ~ platform: Kruskal-Wallis H={kw_o.statistic:.2f} p={kw_o.pvalue:.4f}  -> platforms are spread evenly over origin climate")
 print(f"assembly size (Mb): median {np.nanmedian(asm_mb[have]):.2f}  "
       f"range {np.nanmin(asm_mb[have]):.2f}-{np.nanmax(asm_mb[have]):.2f}   (TAIR10 = 119.15)")
 for nm,v in (("origin bio1",home1),("kb inserted",KB),("gamma_bio1",g1)):

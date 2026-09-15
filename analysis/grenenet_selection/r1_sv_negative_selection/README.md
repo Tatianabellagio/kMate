@@ -117,6 +117,23 @@ founder-level, **not** evidence of per-SV selection.
   ρ=+0.069 p=0.54; vs inserted kb ρ=−0.043 p=0.70), so cold-origin accessions do not simply
   have bigger genomes. Within the PanGenie half alone, kb~origin goes −0.576 → **−0.633**
   once graph representation and unfiltered divergence are held fixed.
+
+  > ⚠ **Assembly size is a platform variable, not a biological one — do not cite its
+  > flatness as corroboration.** Coloured by sequencing platform (added to the §2.4b figure
+  > 2026-09-15) it is sharply **bimodal**: CLR 119.5 Mb and ONT 120.6 Mb against HiFi
+  > 136.0, ONT_R10.4 134.7 and ONT_HiFi 135.6 (Kruskal-Wallis **H=53.3, p=7e-11**). The low
+  > mode sits essentially on TAIR10's 119.15 Mb — these are assemblies that collapse the
+  > centromeric/rDNA arrays rather than resolve them. So the 22.5 Mb spread is technical,
+  > and the test has no power against a 158 kb effect: the graph's entire net indel budget
+  > (ins − del) varies by **187 kb across the 80 founders while assembly size varies by
+  > 22,498 kb** — 120x more than the graph can account for — and net indel does not predict
+  > assembly size at all (ρ=+0.013, p=0.91). What the panel *does* establish is the thing
+  > worth having: **platform is spread evenly over ecotype origin (H=1.81, p=0.77)**, so
+  > the bimodality cannot manufacture a kb~origin correlation.
+  >
+  > Consequence for wording: "cold-origin ecotypes carry more inserted sequence" is
+  > supported; **"cold-origin ecotypes have larger genomes" is not**, and no measurement
+  > here could support it.
 - **Sequencing technology: real effect, but orthogonal.** Metadata found at
   `pang/long_read_seq_ara/ASSEMBLIES_Best_version_of_dataset.csv` (`Primary_Sequencing_Technology`,
   `Assembler`, `N50_contigs`, `Gaps_Scaffolds`); 80/80 cactus founders matched. Platform **does**
