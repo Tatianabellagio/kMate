@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """One tidy figure tree for the candidate review, built from the review tables.
 
-Files are HARD LINKS into results/plots/, so this tree costs no extra disk and a
+Files are HARD LINKS into the render dirs, so this tree costs no extra disk and a
 re-render followed by a re-run picks the new file up.
 
 Why this exists: figures accumulated in four places -- results/plots/screen (round-1 and
@@ -15,30 +15,37 @@ names beside the originals. Nothing tells you which file is the CURRENT allele.
 This script copies, for every reviewed gene, the figures that match the representative
 variant in the current tables into
 
-  results/figures/
-    01_top20/            rank-ordered, the shortlist handed to the user
-    atac/                functional-track figures from plot_atac.py (ATAC overlap)
-    gea_own_axis/        all 211 GEA own-axis genes (round 2)
-    gwas/                all 45 GWAS genes (allele-resolved, `_GWAS` renders)
-    round1/              the 89 round-1 genes still standing
-    INDEX.csv            gene, set, rank, verdict, grade, axis, files, store_row
-    README.md            provenance + how to read the two figure types
+  genes/figures/       ONE flat directory -- every figure for every gene, no subfolders.
+                       <sym>__grid.png / <sym>__locus.png / <sym>__atac.png, so a gene's
+                       figures sort together. Grouping (which scan, review round, top-20
+                       rank) lives in INDEX.csv columns, not in the directory layout.
+    INDEX.csv          gene, sym, set, rank, verdict, grade, axis, store_row, grid, locus, atac
+    README.md          provenance + how to read the three figure types
 
-File names are `<sym>__grid.png` (per-garden trajectories) and `<sym>__locus.png`
-(Manhattan + founder panel + LD). PDFs are copied next to the PNGs when they exist.
-The source directories are left untouched: they stay the raw render output.
+File names are `<sym>__grid.png` (per-garden allele-frequency trajectories),
+`<sym>__locus.png` (Manhattan + founder panel + LD) and `<sym>__atac.png` (functional
+tracks). PDFs are linked next to the PNGs when they exist. The source directories are left
+untouched: they stay the raw render output.
 
 env: kmate (pandas only). Re-runnable: the tree is rebuilt from scratch each time.
 """
 from __future__ import annotations
 import os
+import re
 import shutil
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RES = f"{HERE}/results"
-SRC = [f"{RES}/plots/screen", f"{RES}/plots/screen_ownaxis", f"{RES}/plots/loci"]
-DST = f"{RES}/figures"
+GENES = os.path.dirname(HERE)                  # analysis/grenenet_selection/genes
+# Every render dir under genes/, whichever layer produced it. dissection/ is included
+# because ~400 genes have a garden-trajectory figure there and nowhere else; without it
+# the tree silently omits them.
+SRC = [f"{RES}/plots/screen", f"{RES}/plots/screen_ownaxis", f"{RES}/plots/loci",
+       f"{GENES}/dissection/results/plots"]
+# One tree for all three layers, at the genes/ root rather than buried in
+# convergence/results/, so every figure for every gene is in one place.
+DST = f"{GENES}/figures"
 # listing each source dir once: these live on Lustre, where a few thousand stat() calls
 # cost more than the whole copy
 LISTING = {d: (set(os.listdir(d)) if os.path.isdir(d) else set()) for d in SRC}
@@ -83,8 +90,18 @@ def find(stems, kind):
     return out
 
 
-def copy_for(sym, gene, gwas, folder, prefix=""):
-    """Copy grid + locus for one gene; returns the names written."""
+TAKEN = {}          # basename -> the gene that owns it, so two syms cannot collide
+
+
+def copy_for(sym, gene, gwas):
+    """Link grid + locus for one gene into the flat tree; returns the names written.
+
+    Everything lands in ONE directory named `<sym>__<kind>.<ext>`, so all of a gene's
+    figures sort together and there is a single place to look. Where the same symbol is
+    carried by two different genes (round-1 and round-2 tables overlap), the second one
+    takes `<sym>_<gene>__<kind>` rather than silently overwriting the first -- in the old
+    per-folder tree they were kept apart by the folder and that hazard did not exist.
+    """
     raw = str(sym)
     s = raw.replace("/", "_").replace(" ", "_")
     # some renders kept the symbol verbatim, spaces and all ("KAS III_garden_...png")
@@ -92,8 +109,12 @@ def copy_for(sym, gene, gwas, folder, prefix=""):
     written = {}
     for kind in ("grid", "locus"):
         for f in find(stems, kind):
-            name = f"{prefix}{s}__{kind}{os.path.splitext(f)[1]}"
-            link(f, f"{folder}/{name}")
+            ext = os.path.splitext(f)[1]
+            name = f"{s}__{kind}{ext}"
+            if TAKEN.get(name, gene) != gene:
+                name = f"{s}_{gene}__{kind}{ext}"
+            TAKEN[name] = gene
+            link(f, f"{DST}/{name}")
             written.setdefault(kind, name)
     return written
 
@@ -105,24 +126,22 @@ def main():
            .str.startswith("DROPPED")]
     if os.path.isdir(DST):
         shutil.rmtree(DST)
-    for d in ("01_top20", "gea_own_axis", "gwas", "round1", "atac"):
-        os.makedirs(f"{DST}/{d}", exist_ok=True)
+    os.makedirs(DST, exist_ok=True)
 
     rows = []
     done = R[R.status == "done"]
     for r in done.itertuples():
         gw = r.set == "GWAS"
-        sub = "gwas" if gw else "gea_own_axis"
-        w = copy_for(r.sym, r.target_gene, gw, f"{DST}/{sub}")
+        w = copy_for(r.sym, r.target_gene, gw)
         rows.append(dict(gene=r.target_gene, sym=r.sym, set=r.set, rank="", verdict=r.verdict,
                          grade=r.grade, axis=r.axis, store_row=r.store_row,
-                         folder=sub, grid=w.get("grid", ""), locus=w.get("locus", "")))
+                         grid=w.get("grid", ""), locus=w.get("locus", ""), atac=""))
     for r in V.itertuples():
-        w = copy_for(r.sym, r.target_gene, False, f"{DST}/round1")
+        w = copy_for(r.sym, r.target_gene, False)
         rows.append(dict(gene=r.target_gene, sym=r.sym, set="round1", rank="",
                          verdict=r.final_tier, grade=r.own_verdict, axis=r.gea_best_axis,
-                         store_row=r.store_row, folder="round1",
-                         grid=w.get("grid", ""), locus=w.get("locus", "")))
+                         store_row=r.store_row,
+                         grid=w.get("grid", ""), locus=w.get("locus", ""), atac=""))
     I = pd.DataFrame(rows)
     for i, sym in enumerate(TOP20, 1):
         m = I[(I.sym == sym) & (I.set != "round1")]
@@ -131,59 +150,107 @@ def main():
         if not len(m):
             print(f"  top20: no figures for {sym}")
             continue
-        r = m.iloc[0]
-        copy_for(sym, r.gene, r.set == "GWAS", f"{DST}/01_top20", prefix=f"{i:02d}_")
-        I.loc[m.index[0], "rank"] = str(i)
+        I.loc[m.index[0], "rank"] = str(i)          # rank is a column now, not a folder
+    # Every render on disk, in any source dir, for a gene the review tables do NOT carry:
+    # genes withdrawn on audit (AT5G44220), ones that failed the LD-confirm (BT4), the
+    # dissection-era ROBUST calls that predate the screen (EMB1241, GSH1), and the CARK
+    # figures. Without this pass they exist on disk but appear nowhere in the tree, which
+    # is the whole failure this script was written to end.
+    seen = set(I.sym.astype(str))
+    urows, done = [], set()
+    for d in SRC:
+        for f in sorted(LISTING[d]):
+            if not f.endswith((".png", ".pdf")) or f in done:
+                continue
+            stem = re.sub(r"_GWAS$|_GEA$", "",
+                          re.sub(r"_garden_trajectories.*|_combined.*", "", f))
+            if stem in seen or not stem:
+                continue
+            done.add(f)
+            link(f"{d}/{f}", f"{DST}/{f}")          # original name: these are not
+            TAKEN[f] = stem                          # <sym>__grid / <sym>__locus pairs
+            if f.endswith(".png"):
+                urows.append(dict(gene="", sym=stem, set="unreviewed", rank="", verdict="",
+                                  grade="", axis="", store_row="",
+                                  grid=f if "trajector" in f else "",
+                                  locus=f if "combined" in f else "", atac=""))
+    I = pd.concat([I, pd.DataFrame(urows)], ignore_index=True)
+
     # functional-track figures (plot_atac.py) -- not per-gene review renders, so they are
     # linked wholesale rather than matched to a representative variant.
     atac_src = f"{RES}/plots/atac"
     if os.path.isdir(atac_src):
         arows = []
         for f in sorted(os.listdir(atac_src)):
-            link(f"{atac_src}/{f}", f"{DST}/atac/{f}")
-            if f.endswith(".png"):
-                sym = f[len("atac_locus_"):-4] if f.startswith("atac_locus_") else ""
+            ext = os.path.splitext(f)[1]
+            if ext not in (".png", ".pdf"):
+                continue
+            sym = f[len("atac_locus_"):-len(ext)] if f.startswith("atac_locus_") else ""
+            name = f"{sym}__atac{ext}" if sym else f
+            link(f"{atac_src}/{f}", f"{DST}/{name}")
+            if ext == ".png" and sym:
                 arows.append(dict(gene="", sym=sym, set="atac", rank="", verdict="",
-                                  grade="", axis="", store_row="", folder="atac",
-                                  grid="", locus=f))
+                                  grade="", axis="", store_row="", grid="", locus="",
+                                  atac=name))
         # concat, never rebuild from `rows` -- the TOP20 loop above writes `rank` into I,
         # and those edits are not in `rows`.
         I = pd.concat([I, pd.DataFrame(arows)], ignore_index=True)
 
     I.sort_values(["set", "rank", "sym"]).to_csv(f"{DST}/INDEX.csv", index=False)
 
-    n = {d: len(os.listdir(f"{DST}/{d}"))
-         for d in ("01_top20", "gea_own_axis", "gwas", "round1", "atac")}
+    files = os.listdir(DST)
+    n = {"png": sum(f.endswith(".png") for f in files),
+         "pdf": sum(f.endswith(".pdf") for f in files)}
     with open(f"{DST}/README.md", "w") as fh:
-        fh.write(f"""# Candidate figures, one tree
+        fh.write(f"""# Candidate figures -- one flat folder
 
-Built by `organize_figures.py` from the review tables; re-run it after any re-render.
-The raw render output stays in `../plots/` (screen/, screen_ownaxis/, loci/) -- this tree
-is the curated view, and every file here matches the representative variant in the
+Every figure for every gene under `genes/`, in one place. Built by
+`convergence/organize_figures.py`; re-run it after any re-render. Entries are hard links,
+so this costs no extra disk and the raw render output stays where the scripts put it
+(`convergence/results/plots/{{screen,screen_ownaxis,loci,atac}}`,
+`dissection/results/plots`). Every reviewed file matches the representative variant in the
 CURRENT tables (allele-resolved for the GWAS set, GEA-significant records only).
 
-    01_top20/       {n['01_top20']} files -- the 20 genes to look at first, rank-ordered
-    gea_own_axis/   {n['gea_own_axis']} files -- 211 GEA genes judged on their own climate axis
-    gwas/           {n['gwas']} files -- 45 per-garden GWAS genes
-    round1/         {n['round1']} files -- the round-1 89, minus the 7 withdrawn on 2026-09-17
-    INDEX.csv       gene, set, rank, verdict, grade, axis, store_row, file names
+FLAT -- one directory, {n['png']} PNGs and {n['pdf']} PDFs, no subfolders. A gene's figures
+share its symbol prefix, so they sort together and `ls | grep GPX6` finds all of them.
+Grouping that used to be folders (top-20 rank, which scan, review round) is in the
+`set` and `rank` columns of INDEX.csv instead.
 
-Two figure types per gene:
+Three figure types per gene:
 
   `<sym>__grid.png`   one panel per garden, ordered by the climate axis; dots = pools,
                       bold line = garden mean, dashed = founding frequency, red frame +
                       star = Bonferroni-significant in that garden's per-garden GWAS.
+                      This is the allele-frequency-over-time view.
   `<sym>__locus.png`  top: -log10 p around the gene (lead variant outlined, gene shaded,
                       dashed lines = SNP / SV Bonferroni); middle: founder genotypes
                       sorted by home temperature; bottom: founder LD.
+  `<sym>__atac.png`   functional tracks from `plot_atac.py`: GEA Manhattan, TFBS turnover,
+                      per-tissue open chromatin, gene models on a shared axis.
+
+INDEX.csv -- gene, sym, set, rank, verdict, grade, axis, store_row, grid, locus, atac.
+
+    set=GEA_ownaxis  211 GEA genes judged on their own climate axis
+    set=GWAS          45 per-garden GWAS genes
+    set=round1        82 round-1 genes, the 7 withdrawn on 2026-09-17 removed
+    set=unreviewed    rendered but carried by no review table: genes withdrawn on audit
+                      (AT5G44220), ones that failed the LD-confirm (BT4), the
+                      dissection-era ROBUST calls (EMB1241, GSH1), the CARK figures
+    set=atac          functional-track figures
+    rank=1..20        the genes to look at first
+
+Files whose names are not `<sym>__*` are `set=unreviewed`: they keep their original render
+names because they are not grid/locus review pairs. The coverage check this tree must pass
+is that every gene with a PNG in any source dir has a row in INDEX.csv -- `unreviewed` is
+what makes that true, without it ~90 genes existed on disk and nowhere here.
 
 Verdicts: A pattern + co-signal locus, B pattern + lone SNP-blind variant, C pattern but
 the lead is a passenger, D partial, E none. All are single-pass visual calls on raw
 uncalibrated LFMM / GEMMA p-values.
 """)
-    print(f"wrote {DST}: " + ", ".join(f"{k} {v} files" for k, v in n.items()))
+    print(f"wrote {DST} (flat): {n['png']} png + {n['pdf']} pdf")
     print(f"INDEX.csv rows: {len(I)}; genes with no grid found: "
-          f"{int(((I.grid == '') & (I.set != 'atac')).sum())}")   # atac rows carry no grid
+          f"{int(((I.grid == '') & (~I.set.isin(['atac', 'unreviewed']))).sum())}")
 
 
 if __name__ == "__main__":

@@ -523,3 +523,13 @@ analysis/grenenet_selection/genes/convergence/results/gea_pool_records.csv
 analysis/grenenet_selection/genes/convergence/results/variants_classified.csv
 analysis/grenenet_selection/genes/convergence/results/functional_variants.csv
 analysis/grenenet_selection/genes/convergence/results/candidate_genes.csv
+
+# eQTL track inputs from the syntheticevolution Drive (GBs; never commit)
+data/eqtl/
+
+# genes/figures/ -- the curated figure tree gathered from all three genes/ layers by
+# convergence/organize_figures.py. Hard links to the raw renders, ~1,400 images; only the
+# two text files that describe the tree are tracked.
+analysis/grenenet_selection/genes/figures/*
+!analysis/grenenet_selection/genes/figures/INDEX.csv
+!analysis/grenenet_selection/genes/figures/README.md
