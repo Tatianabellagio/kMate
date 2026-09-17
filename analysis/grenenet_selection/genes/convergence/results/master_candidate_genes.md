@@ -5,7 +5,7 @@
 | gene | sym | locus (n genes) | found by | GEA clusters/axes | gardens | mechanism | lead variant | r2 SNP | lines |
 |---|---|---|---|---|---|---|---|---|---|
 | AT4G23260 | CRK18 | L0128 (19) | GEA+GWAS | 2/2 | 1 | F1_CDS_frameshift | Chr4:12170418 (smallindel 1bp) | 1.00 | 2 |
-| AT3G22820 | EPFL5 | L0096 (20) | GEA+GWAS | 1/1 | 4 | F4_promoter | Chr3:8074451 (smallindel 10bp) | 0.77 | 2 |
+| AT3G22820 | EPFL5 | L0096 (20) | GEA+GWAS | 1/1 | 4 | F4_promoter | Chr3:8074451 (smallindel 10bp) | 0.84 | 2 |
 | AT5G67480 | BT4 | L0178 (12) | GEA+GWAS | 1/1 | 2 | F3_UTR | Chr5:26933736 (smallindel 1bp) | 0.80 | 2 |
 | AT4G11600 | GPX6 | L0124 (65) | GEA | 5/6 | 0 | F4_promoter | Chr4:7011705 (sv 1164bp) | - | 1 |
 | AT4G11510 | RALFL28 | L0124 (65) | GEA | 4/6 | 0 | F1_CDS_frameshift | Chr4:6984627 (smallindel 17bp) | - | 1 |
@@ -66,13 +66,13 @@
 | AT3G51870 | EAAC | L0107 (12) | GEA | 2/3 | 0 |  | Chr3:19243848 (mnp 0bp) | - | 1 |
 | AT4G19030 | NIP1-1 | L0127 (16) | GEA | 2/6 | 0 |  | Chr4:10422792 (mnp 0bp) | - | 1 |
 | AT2G29210 | AT2G29210 | L0067 (4) | GEA+GWAS | 1/1 | 1 | F2_CDS_inframe | Chr2:12557749 (smallindel 9bp) | 1.00 | 1 |
-| AT4G10030 | ABHD11 | L0123 (7) | GEA+GWAS | 1/1 | 1 | F4_promoter | Chr4:6273895 (smallindel 1bp) | - | 1 |
+| AT4G10030 | ABHD11 | L0123 (7) | GEA+GWAS | 1/1 | 1 | F4_promoter | Chr4:6273895 (smallindel 1bp) | 1.00 | 1 |
 | AT4G12680 | AT4G12680 | L0124 (65) | GEA+GWAS | 1/1 | 1 | F6_intron | Chr4:7477866 (smallindel 1bp) | 1.00 | 1 |
 | AT5G04170 | CML50 | L0142 (4) | GWAS | 0/0 | 13 | F6_intron | Chr5:1146373 (sv 94bp) | 0.45 | 1 |
 | AT5G18600 | GRXS2 | L0151 (20) | GWAS | 0/0 | 6 | F4_promoter | Chr5:6184898 (smallindel 1bp) | 0.83 | 1 |
 | AT5G56080 | NAS2 | L0173 (35) | GWAS | 0/0 | 4 | F4_promoter | Chr5:22713271 (mnp 0bp) | 1.00 | 1 |
-| AT1G24620 | CML25 | L0015 (12) | GWAS | 0/0 | 3 | F4_promoter | Chr1:8724890 (sv 1081bp) | 0.66 | 1 |
-| AT3G26280 | CYP71B4 | L0097 (36) | GWAS | 0/0 | 3 | F4_promoter | Chr3:9632650 (sv 2421bp) | - | 1 |
+| AT1G24620 | CML25 | L0015 (12) | GWAS | 0/0 | 3 | F4_promoter | Chr1:8724890 (sv 1050bp) | 1.00 | 1 |
+| AT3G26280 | CYP71B4 | L0097 (36) | GWAS | 0/0 | 3 | F4_promoter | Chr3:9632650 (sv 2175bp) | 1.00 | 1 |
 | AT4G25670 | DOB1 | L0130 (1) | GWAS | 0/0 | 3 | F4_promoter | Chr4:13087216 (smallindel 1bp) | 0.59 | 1 |
 | AT5G48410 | GLR1.3 | L0169 (7) | GWAS | 0/0 | 2 | F3_UTR | Chr5:19623282 (mnp 0bp) | 1.00 | 1 |
 | AT3G59240 | AT3G59240 | L0112 (14) | GWAS | 0/0 | 2 | F4_promoter | Chr3:21900886 (sv 80bp) | 1.00 | 1 |

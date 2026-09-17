@@ -14,10 +14,14 @@ concatenates the per-chrom parts in CHROMS order, then drops markers untestable 
 Replaying the same filter on the panel meta gives ref_len/alt_len per npz row; the positions
 are checked against the stored ones before anything is written.
 
-Output -> results/gwas_hits_allele_resolved.csv
-  one row per (class, chrom, pos, ref_len, alt_len) significant in >= 1 garden, with
-  n_gardens / gardens / best_nlp for THAT allele, n_alleles_tested_at_pos, and
-  n_sig_alleles_at_pos (more than one significant allele at a position is possible).
+Outputs -> results/
+  gwas_hits_allele_resolved.csv          one row per (class, chrom, pos, ref_len, alt_len)
+      significant in >= 1 garden, with n_gardens / gardens / best_nlp for THAT allele,
+      n_alleles_tested_at_pos and n_sig_alleles_at_pos (a position can carry more than
+      one significant allele).
+  gwas_hits_allele_resolved_records.csv  one row per (allele x significant garden) --
+      the allele-resolved replacement for `persite_bonferroni_hits.csv`, which is keyed
+      on position only. Carries garden, bio1, nlp, and the panel MAC/MAF of THAT allele.
 
 env: kmate. Compute node (loads the per-chrom panel presence matrices). ~5 min.
 """
@@ -48,15 +52,15 @@ def main():
         pos, rl, al, _, _, n_alt, n_cal = _load_chrom_212(cl, order)
         mac = np.minimum(n_alt, N - n_alt)
         keep = (mac >= gp.MIN_MAC) & (n_cal >= gp.CALL_MIN * N)
-        per_chrom[cl] = (pos, rl, al, _classes(rl, al), keep)
+        per_chrom[cl] = (pos, rl, al, _classes(rl, al), keep, mac, n_cal)
         print(f"{cl}: {keep.sum():,} testable records", flush=True)
 
-    rows = []
+    rows, rec = [], []
     for cls in ("nonsnp", "sv"):
         z = np.load(f"{GWASD}/persite_gwas_{cls}.npz", allow_pickle=True)
-        P_, RL, AL, KR = [], [], [], []
+        P_, RL, AL, KR, MC, NC = [], [], [], [], [], []
         for cl in gp.CHROMS:
-            pos, rl, al, vc, keep = per_chrom[cl]
+            pos, rl, al, vc, keep, mac, n_cal = per_chrom[cl]
             want = {"nonsnp": vc != 0, "sv": vc == 2}[cls]
             idx = np.where(keep & want)[0]
             part = np.load(f"{GWASD}/parts/{cl}_{cls}.npz", allow_pickle=True)
@@ -70,18 +74,24 @@ def main():
             # picks the store row
             kk = pd.Series(list(zip(pos, rl, al)))
             rank = kk.groupby(kk).cumcount().to_numpy()
-            KR.append(rank[idx][fin])
-        pos_all, rl_all, al_all, kr_all = map(np.concatenate, (P_, RL, AL, KR))
+            KR.append(rank[idx][fin]); MC.append(mac[idx][fin]); NC.append(n_cal[idx][fin])
+        pos_all, rl_all, al_all, kr_all, mac_all, ncal_all = map(
+            np.concatenate, (P_, RL, AL, KR, MC, NC))
         if not np.array_equal(pos_all, z["pos"]):
             sys.exit(f"{cls}: replayed positions do not match persite_gwas_{cls}.npz")
         nlp = -np.log10(np.clip(z["P"], 1e-300, None))
         sig = nlp >= BONF[cls]
         df = pd.DataFrame({"cls": cls, "chrom": z["chrom"], "pos": z["pos"],
-                           "ref_len": rl_all, "alt_len": al_all, "key_rank": kr_all})
+                           "ref_len": rl_all, "alt_len": al_all, "key_rank": kr_all,
+                           "mac": mac_all.astype(int),
+                           # MAF over ALL founders, as persite_bonferroni_hits.csv does
+                           # (mac / N, not mac / n_called)
+                           "maf": np.round(mac_all / N, 4)})
         key = df.chrom + ":" + df.pos.astype(str)
         df["n_alleles_tested_at_pos"] = key.map(key.value_counts())
         hit = np.where(sig.any(1))[0]
         sites = z["sites"].astype(int)
+        bio1 = z["bio1"] if "bio1" in z.files else np.full(len(sites), np.nan)
         for i in hit:
             s = sites[sig[i]]
             j = int(np.nanargmax(nlp[i]))
@@ -90,6 +100,14 @@ def main():
                          "best_nlp": round(float(nlp[i, j]), 2), "best_garden": int(sites[j]),
                          "best_Z": round(float(z["Z"][i, j]), 2),
                          "Z_sig_gardens": ",".join(f"{v:.1f}" for v in z["Z"][i][sig[i]])})
+            for si in np.where(sig[i])[0]:
+                rec.append({"cls": cls, "chrom": str(z["chrom"][i]), "pos": int(z["pos"][i]),
+                            "ref_len": int(rl_all[i]), "alt_len": int(al_all[i]),
+                            "key_rank": int(kr_all[i]), "garden": int(sites[si]),
+                            "bio1": float(bio1[si]), "mac": int(mac_all[i]),
+                            "maf": round(float(mac_all[i] / N), 4),
+                            "nlp": round(float(nlp[i, si]), 2),
+                            "Z": round(float(z["Z"][i, si]), 2)})
         print(f"{cls}: {len(hit)} significant allele records", flush=True)
 
     H = pd.DataFrame(rows)
@@ -97,8 +115,9 @@ def main():
     H["key_rank"] = H.key_rank.astype(int)
     H["n_sig_alleles_at_pos"] = k.map(k.value_counts())
     H.to_csv(OUT, index=False)
-    print(f"wrote {OUT}: {len(H)} rows; multiallelic positions: "
-          f"{(H.n_alleles_tested_at_pos > 1).sum()}")
+    pd.DataFrame(rec).to_csv(OUT.replace(".csv", "_records.csv"), index=False)
+    print(f"wrote {OUT}: {len(H)} rows ({len(rec)} allele x garden records); "
+          f"multiallelic positions: {(H.n_alleles_tested_at_pos > 1).sum()}")
 
 
 if __name__ == "__main__":

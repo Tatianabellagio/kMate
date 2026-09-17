@@ -97,16 +97,26 @@ def load_pools() -> pd.DataFrame:
              "gwas_maf", "gwas_bio1_min", "gwas_bio1_max", "gwas_classes",
              "gwas_pos_multiallelic", "size_inferred"]
 
-    # union on position (the GWAS arrays carry no allele, so position is the only
-    # key available for the cross-scan merge -- see panel-multiallelic-pos-key-trap;
-    # gwas_pos_multiallelic marks where that key is ambiguous)
-    U = pd.merge(G[gcols], W[wcols], on=["chrom", "pos"], how="outer",
-                 suffixes=("", "_w"))
-    for c in ("ref_len", "alt_len", "size", "vclass"):
+    # Union on the ALLELE, not the position. The GWAS side used to carry no allele, so
+    # this merged on (chrom, pos) and any GEA record met any GWAS record at that
+    # position -- at a multiallelic position that invents cross-scan support between two
+    # DIFFERENT variants (EPFL5: GEA 1->11 bp vs GWAS 1->2 bp, counted as GEA+GWAS).
+    # resolve_gwas_alleles.py now recovers the GWAS allele, so both sides key on
+    # (chrom, pos, ref_len, alt_len) and two alleles at one position stay two rows.
+    # `other_allele_same_pos` keeps the near-miss visible.
+    akey = ["chrom", "pos", "ref_len", "alt_len"]
+    U = pd.merge(G[gcols], W[wcols], on=akey, how="outer", suffixes=("", "_w"))
+    for c in ("size", "vclass"):
         U[c] = U[c].where(U[c].notna(), U[f"{c}_w"])
         U = U.drop(columns=[f"{c}_w"])
     U["in_gea"] = U.gea_nlp.notna()
     U["in_gwas"] = U.gwas_nlp.notna()
+    pos_gea = set(map(tuple, U.loc[U.in_gea, ["chrom", "pos"]].to_numpy()))
+    pos_gwas = set(map(tuple, U.loc[U.in_gwas, ["chrom", "pos"]].to_numpy()))
+    both_pos = pos_gea & pos_gwas
+    U["other_allele_same_pos"] = [
+        (c, p) in both_pos and not (g and w)
+        for c, p, g, w in zip(U.chrom, U.pos, U.in_gea, U.in_gwas)]
     U["ref_len"] = U.ref_len.fillna(1).astype(int)
     U["alt_len"] = U.alt_len.fillna(1).astype(int)
     return U

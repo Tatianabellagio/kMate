@@ -3,9 +3,13 @@
 
 What goes in
 ------------
-`r3_persite_gwas/results/gemma_gwas/persite_bonferroni_hits.csv` -- the 30 per-garden
-GEMMA scans on the founder selection coefficient `s`, restricted to the non-SNP classes
-(`nonsnp`, `sv`; `nonsnp` is smallindel+sv pooled, so a marker can appear in both).
+`results/gwas_hits_allele_resolved_records.csv` (resolve_gwas_alleles.py) -- the same 30
+per-garden GEMMA scans on the founder selection coefficient `s`, non-SNP classes only
+(`nonsnp`, `sv`; `nonsnp` is smallindel+sv pooled, so a marker can appear in both), but
+with the ALLELE of each hit recovered. The upstream `persite_bonferroni_hits.csv` is keyed
+on position alone; taking the largest panel record at the position (what this script did
+until 2026-09-17) named the wrong allele at 21 of 33 multiallelic markers, which is why
+CYP71B4 / CML25 / EPFL5 were drawn with alleles significant in no garden.
 
 **MAC floor stays at 5 (MAF 2.16%), per the user 2026-08-26.** The MAF-5% arm in
 `gemma_gwas_mac12/` is deliberately NOT used. Raising the floor would not have bought
@@ -23,11 +27,11 @@ the climate span over which a marker recurs.
 
 Variant size
 ------------
-The per-garden result arrays carry only chrom/pos, so ref_len/alt_len are recovered
-from the arch3 panel meta. 2.14% of arch3 positions carry more than one biallelic
-record (memory `panel-multiallelic-pos-key-trap`), so a position key can match the
-wrong alt allele. Rather than hide that, the largest record at the position is taken
-and `pos_multiallelic` flags every row where the position is ambiguous.
+ref_len/alt_len now come with the hit, so `size` and `vclass` are the real allele's and
+`size_inferred` is always False. `n_alleles_at_pos` / `pos_multiallelic` still flag
+positions carrying more than one tested allele, and `key_rank` distinguishes same-length
+ALT sequences (the second layer of `panel-multiallelic-pos-key-trap`): the pool is keyed
+on (chrom, pos, ref_len, alt_len, key_rank), so two alleles at one position stay two rows.
 
 Outputs -> results/
   gwas_pool.csv            one row per unique marker
@@ -45,52 +49,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 import lib                                                    # noqa: E402
 
-HITS = (f"{lib.GEA}/r3_persite_gwas/results/gemma_gwas/"
-        "persite_bonferroni_hits.csv")
-PANEL = "/global/scratch/projects/fc_moilab/tbellg/kmate/panel/arch3"
 OUT = f"{HERE}/results"
+HITS = f"{OUT}/gwas_hits_allele_resolved_records.csv"
 
 CLASSES = ["nonsnp", "sv"]        # non-SNP layer only; the snp scan is not the pool
-
-
-def panel_sizes(need: pd.DataFrame) -> pd.DataFrame:
-    """chrom/pos -> ref_len/alt_len from the arch3 panel meta, with an ambiguity flag.
-
-    Returns one row per (chrom,pos) present in `need`: the LARGEST record at that
-    position, plus n_records_at_pos so multiallelic positions are visible.
-    """
-    # the GEMMA hit table writes chrom lowercase ("chr2"); lib.CHROMS is "Chr2"
-    rows = []
-    for ch in lib.CHROMS:
-        key_ch = ch.lower()
-        want = need.loc[need.chrom.str.lower() == key_ch, "pos"].astype(np.int64)
-        if not len(want):
-            continue
-        f = f"{PANEL}/{key_ch}/var_pa_231_arch3_{key_ch}.meta.npz"
-        if not os.path.exists(f):
-            print(f"  MISSING {f}", flush=True)
-            continue
-        d = np.load(f, allow_pickle=True)
-        pos = d["pos"]
-        sel = np.isin(pos, want.to_numpy())
-        if not sel.any():
-            continue
-        sub = pd.DataFrame({"chrom": key_ch, "pos": pos[sel],
-                            "ref_len": d["ref_len"][sel], "alt_len": d["alt_len"][sel]})
-        sub["size"] = (sub.alt_len - sub.ref_len).abs()
-        n_at = sub.groupby("pos")["size"].size().rename("n_records_at_pos")
-        best = sub.sort_values("size", ascending=False).groupby("pos").first()
-        best = best.join(n_at).reset_index()
-        best["chrom"] = key_ch
-        rows.append(best)
-        print(f"  {key_ch}: {len(best):,} of {len(set(want)):,} positions matched",
-              flush=True)
-    if not rows:
-        raise SystemExit("no panel positions matched")
-    M = pd.concat(rows, ignore_index=True)
-    M["pos_multiallelic"] = M.n_records_at_pos > 1
-    return M[["chrom", "pos", "ref_len", "alt_len", "size",
-              "n_records_at_pos", "pos_multiallelic"]]
 
 
 def main():
@@ -101,7 +63,7 @@ def main():
     print(f"non-SNP classes only: {len(R):,} "
           f"({R.cls.value_counts().to_dict()})")
 
-    key = ["chrom", "pos"]
+    key = ["chrom", "pos", "ref_len", "alt_len", "key_rank"]
     R = R.sort_values("nlp", ascending=False)
     g = R.groupby(key, sort=False)
     C = g.agg(
@@ -118,21 +80,16 @@ def main():
         lambda s: ",".join(str(x) for x in dict.fromkeys(s))).values
     C["sig_classes"] = g["cls"].apply(lambda s: ",".join(sorted(set(s)))).values
 
-    M = panel_sizes(C)
-    n_before = len(C)
-    C = C.merge(M, on=key, how="left")
-    miss = int(C.ref_len.isna().sum())
-    if miss:
-        print(f"  WARNING: {miss} markers had no panel record (size left NaN)")
-    assert len(C) == n_before, "panel merge changed row count"
-
+    C["size"] = (C.alt_len - C.ref_len).abs()
     C["vclass"] = np.where(C["size"] > 50, "sv",
                            np.where(C["size"] > 0, "smallindel", "mnp"))
-    # `size` is the LARGEST record at the position. Where the position carries more
-    # than one record that is a GUESS, not the associated allele -- so vclass, any
-    # frameshift call downstream, and any join keyed on size are all unreliable for
-    # these rows. Flag them explicitly rather than let the guess look like data.
-    C["size_inferred"] = C.pos_multiallelic.fillna(False)
+    # the allele travels with the hit now, so nothing about size is inferred
+    C["size_inferred"] = False
+    A = pd.read_csv(f"{OUT}/gwas_hits_allele_resolved.csv")
+    nat = A.drop_duplicates(["chrom", "pos"]).set_index(["chrom", "pos"]).n_alleles_tested_at_pos
+    C["n_alleles_at_pos"] = pd.MultiIndex.from_frame(C[["chrom", "pos"]]).map(nat)
+    C["n_records_at_pos"] = C["n_alleles_at_pos"]
+    C["pos_multiallelic"] = C.n_alleles_at_pos > 1
     C = C.sort_values(["n_gardens", "best_nlp"],
                       ascending=[False, False]).reset_index(drop=True)
 
@@ -145,8 +102,8 @@ def main():
     print(C.n_gardens.value_counts().sort_index().to_string())
     print(f"\nMAC < 12 (would be dropped by the MAF-5% arm): "
           f"{int((C.mac < 12).sum()):,} / {len(C):,}")
-    print(f"multiallelic positions (alt allele ambiguous): "
-          f"{int(C.pos_multiallelic.fillna(False).sum()):,}")
+    print(f"markers at a position carrying >1 tested allele (allele now resolved, "
+          f"not guessed): {int(C.pos_multiallelic.fillna(False).sum()):,}")
     print(f"\nwrote {OUT}/gwas_pool.csv, {OUT}/gwas_pool_records.csv")
 
 
