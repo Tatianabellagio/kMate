@@ -17,6 +17,7 @@ variant in the current tables into
 
   results/figures/
     01_top20/            rank-ordered, the shortlist handed to the user
+    atac/                functional-track figures from plot_atac.py (ATAC overlap)
     gea_own_axis/        all 211 GEA own-axis genes (round 2)
     gwas/                all 45 GWAS genes (allele-resolved, `_GWAS` renders)
     round1/              the 89 round-1 genes still standing
@@ -104,7 +105,7 @@ def main():
            .str.startswith("DROPPED")]
     if os.path.isdir(DST):
         shutil.rmtree(DST)
-    for d in ("01_top20", "gea_own_axis", "gwas", "round1"):
+    for d in ("01_top20", "gea_own_axis", "gwas", "round1", "atac"):
         os.makedirs(f"{DST}/{d}", exist_ok=True)
 
     rows = []
@@ -133,9 +134,26 @@ def main():
         r = m.iloc[0]
         copy_for(sym, r.gene, r.set == "GWAS", f"{DST}/01_top20", prefix=f"{i:02d}_")
         I.loc[m.index[0], "rank"] = str(i)
+    # functional-track figures (plot_atac.py) -- not per-gene review renders, so they are
+    # linked wholesale rather than matched to a representative variant.
+    atac_src = f"{RES}/plots/atac"
+    if os.path.isdir(atac_src):
+        arows = []
+        for f in sorted(os.listdir(atac_src)):
+            link(f"{atac_src}/{f}", f"{DST}/atac/{f}")
+            if f.endswith(".png"):
+                sym = f[len("atac_locus_"):-4] if f.startswith("atac_locus_") else ""
+                arows.append(dict(gene="", sym=sym, set="atac", rank="", verdict="",
+                                  grade="", axis="", store_row="", folder="atac",
+                                  grid="", locus=f))
+        # concat, never rebuild from `rows` -- the TOP20 loop above writes `rank` into I,
+        # and those edits are not in `rows`.
+        I = pd.concat([I, pd.DataFrame(arows)], ignore_index=True)
+
     I.sort_values(["set", "rank", "sym"]).to_csv(f"{DST}/INDEX.csv", index=False)
 
-    n = {d: len(os.listdir(f"{DST}/{d}")) for d in ("01_top20", "gea_own_axis", "gwas", "round1")}
+    n = {d: len(os.listdir(f"{DST}/{d}"))
+         for d in ("01_top20", "gea_own_axis", "gwas", "round1", "atac")}
     with open(f"{DST}/README.md", "w") as fh:
         fh.write(f"""# Candidate figures, one tree
 
@@ -165,7 +183,7 @@ uncalibrated LFMM / GEMMA p-values.
 """)
     print(f"wrote {DST}: " + ", ".join(f"{k} {v} files" for k, v in n.items()))
     print(f"INDEX.csv rows: {len(I)}; genes with no grid found: "
-          f"{int((I.grid == '').sum())}")
+          f"{int(((I.grid == '') & (I.set != 'atac')).sum())}")   # atac rows carry no grid
 
 
 if __name__ == "__main__":

@@ -105,15 +105,25 @@ to the focal variant, i.e. it sits on the focal haplotype.
 
 ## What is needed to run any of this
 
-| input | where |
+Resolved 2026-09-17. Two of these never needed downloading — the ATAC track and the motifs
+are already on Savio, in Wei Wei's own project tree. The Drive column is the fallback.
+
+| input | where it actually is |
 |---|---|
-| `Ath_TF_binding_motifs.meme` + `..._information.txt` | PlantTFDB (Drive: `arabidopsispangenomes/data/motifs/`) |
-| `ATAC-seq_multitissue.csv` | Drive `colab_data/` |
+| `Ath_TF_binding_motifs.meme` + `..._information.txt` | **local** `data/motifs/` (also `fc_moilab/weiwei/synthetic_evolution/TFbinding/`) |
+| ATAC multi-tissue peak union | **local** `fc_moilab/weiwei/synthetic_evolution/ATAC-seq/ATAC-seq_multitissue.bed` — the source BED the Drive's `ATAC-seq_multitissue.csv` was derived from; `num` is the CSV's `number_tissue`, and per-tissue intersects sit in `flower/ leaf/ root/ shoot/` beside it |
 | `TAIR10.fa` (+ `.fai`) | local (`lib`) |
-| `1001gbi.{bed,bim,fam}` | Drive `arabidopsisgenomes/` |
-| `TG_data_20180606.RData`, `gene_infoV2.RData` | Drive `data/eqtl/inputs/` |
+| `1001gbi.{bed,bim,fam}` | **local** `data/eqtl/` (gitignored); Drive `syntheticevolution/eQTL/data/1001_genotype/` |
+| `TG_data_20180606.Rdata`, `gene_infoV2.Rdata` | **local** `data/eqtl/` (gitignored); Drive `syntheticevolution/eQTL/data/1001_expression/`. Note the extension is `.Rdata`, not `.RData` |
+| `TAIR10_parsedgenes.csv` | not needed — `lib.load_genes()` parses the local TAIR10 GFF |
 | `fimo` (MEME suite), `plink2` | install via mamba (`meme`, `plink2`) |
 | `gemma` | already here: `~/miniforge3/envs/gwas_tools/bin/gemma` |
+
+A local alternative to the 3.7 GB `1001gbi` PLINK set, if it is ever unavailable:
+`fc_moilab/projects/natvar/data-raw/2029gsub.{bed,bim,fam}` — 1.35 M markers over 2029
+accessions (a superset of 1001gbi's 1135), ~320 markers in a 20 kb cis window, so dense
+enough for a cis-eQTL scan. Different filtering, so it will not reproduce their results
+marker for marker.
 
 Order of work for our candidates: ATAC overlap (cheapest, gives a number), then the
 indel-aware TFBS turnover on the promoter candidates, then eQTL last — it is the only one
