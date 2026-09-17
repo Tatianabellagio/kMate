@@ -74,6 +74,36 @@ def gea_axis(cfg):
     return m.best_axis.iloc[0] if len(m) else None
 
 
+def load_eqtl(cfg, sym):
+    """cis-eQTL profile for this gene, plus the tagging SNP our variant rides on.
+
+    The tag is what makes the panel readable. "Is there a cis-eQTL in this window" is
+    almost always yes and says nothing; the question is whether the eQTL sits on OUR
+    haplotype, which is read at `best_r2_snp_pos` (founder-panel r^2 from
+    build_snp_tagging.py). Where `tag_untestable` is set -- GPX6 and FUS3, whose SVs are
+    called in 27% of founders -- no SNP is known to carry the variant and the profile
+    cannot be interrogated at all. That is drawn as a stated absence, not a blank panel.
+    """
+    f = f"{OUT}/eqtl/cis_eqtl_all.csv"
+    if not os.path.exists(f):
+        return pd.DataFrame(), None
+    Q = pd.read_csv(f)
+    Q = Q[Q.symbol == sym]
+    tag = None
+    F = pd.read_csv(f"{OUT}/functional_variants.csv")
+    m = F[(F.chrom == cfg["chrom"]) & (F.pos == cfg["pos"])
+          & (F.ref_len == cfg["ref_len"]) & (F.alt_len == cfg["alt_len"])]
+    if len(m):
+        r = m.iloc[0]
+        if bool(r.tag_untestable) or not np.isfinite(r.best_r2_snp_pos) \
+                or r.best_r2_snp_pos < 0:
+            tag = dict(untestable=True)
+        else:
+            tag = dict(untestable=False, pos=int(r.best_r2_snp_pos),
+                       r2=float(r.best_r2_snp))
+    return Q, tag
+
+
 def load_gea(cfg, lo, hi, axis):
     frames = []
     for cls in ("snp", "smallindel", "sv"):
@@ -107,13 +137,15 @@ def plot_locus(sym, pad=8000):
     ps, pe, num, tm = ps[k], pe[k], num[k], tm[k]
 
     G = load_gea(cfg, lo, hi, axis) if axis else pd.DataFrame()
+    Q, tag = load_eqtl(cfg, sym)
     tf = f"{OUT}/tfbs/{sym}_turnover.csv"
     T = pd.read_csv(tf) if os.path.exists(tf) else pd.DataFrame()
     if len(T):
         T = T[T.effect.isin(["LOST", "GAINED"])]
 
-    fig, axs = plt.subplots(4, 1, figsize=(11, 8.6), sharex=True,
-                            gridspec_kw=dict(height_ratios=[3.0, 1.5, 1.3, 1.1], hspace=0.12))
+    fig, axs = plt.subplots(5, 1, figsize=(11, 11.0), sharex=True,
+                            gridspec_kw=dict(height_ratios=[2.7, 2.2, 1.4, 1.3, 1.1],
+                                             hspace=0.12))
     # The variant footprint, behind every panel. A 2 bp indel is sub-pixel across a 16 kb
     # window, so the band is widened to a visible minimum and the true position is carried
     # by the dashed line -- the band marks "here", the line marks "exactly here".
@@ -142,8 +174,48 @@ def plot_locus(sym, pad=8000):
     ax.annotate("A   climate association", (0.012, 0.93), xycoords="axes fraction",
                 fontsize=9, fontweight="bold", va="top")
 
-    # ---- B: TFBS turnover ----------------------------------------------------------------
+    # ---- B: cis-eQTL ---------------------------------------------------------------------
     ax = axs[1]
+    if len(Q):
+        ax.scatter(Q.ps, Q.nlp, s=12, c="#7f7f7f", edgecolor="none", alpha=0.75, zorder=2)
+        pk = Q.loc[Q.nlp.idxmax()]
+        ax.scatter([pk.ps], [pk.nlp], s=42, c="#333333", edgecolor="k", linewidth=0.4,
+                   zorder=4)
+        n = int(Q.n_miss.iloc[0]) if "n_miss" in Q.columns else None
+        if tag and not tag["untestable"]:
+            d = (Q.ps - tag["pos"]).abs()
+            j = d.idxmin()
+            nl, off = Q.loc[j, "nlp"], int(d.min())
+            pct = 100 * (Q.nlp < nl).mean()
+            # marker goes on the SNP actually TESTED, not on the tag position -- drawing
+            # it at the tag with a neighbour's p-value would invent a datum
+            ax.scatter([Q.loc[j, "ps"]], [nl], s=150, marker="D", facecolor="none",
+                       edgecolor="#c44e52", linewidth=1.8, zorder=5)
+            if off:
+                ax.axvline(tag["pos"], color="#c44e52", ls=":", lw=0.8, alpha=0.6, zorder=1)
+            msg = (f"tag SNP r²={tag['r2']:.2f}: $-\\log_{{10}}p$={nl:.2f} "
+                   f"({pct:.0f}th pctile; window peak {pk.nlp:.1f})"
+                   + ("" if off == 0 else f" — tag itself untested, value is the "
+                      f"nearest tested SNP {off} bp away"))
+            col = "#2e7d32" if (pct >= 90 and off == 0) else "#c44e52"
+        else:
+            msg = ("variant has NO tagging SNP (r² untestable): it is called in 27% of "
+                   "founders, so no SNP is known to carry it and this profile\ncannot be "
+                   "read at the variant — a weak peak here does NOT exonerate it")
+            col = "#c44e52"
+        ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.30)     # headroom for the caption
+        ax.annotate(msg, (0.012, 0.80), xycoords="axes fraction", fontsize=8, color=col,
+                    va="top")
+    else:
+        ax.annotate("no cis-eQTL run for this gene", (0.012, 0.5),
+                    xycoords="axes fraction", fontsize=8, color="#c44e52")
+    ax.set_ylabel("$-\\log_{10}p$  cis-eQTL")
+    ax.annotate("B   expression (1001T, n=471 accessions, SNPs only)",
+                (0.012, 0.93), xycoords="axes fraction", fontsize=9, fontweight="bold",
+                va="top")
+
+    # ---- C: TFBS turnover ----------------------------------------------------------------
+    ax = axs[2]
     if len(T):
         for eff, y, c, mk in [("LOST", 0.68, "#c44e52", "v"), ("GAINED", 0.28, "#2e7d32", "^")]:
             d = T[T.effect == eff]
@@ -155,11 +227,11 @@ def plot_locus(sym, pad=8000):
                         xycoords=("axes fraction", "data"), fontsize=8, color=c, va="center")
     ax.set_ylim(0, 1); ax.set_yticks([])
     ax.set_ylabel("TFBS")
-    ax.annotate("B   motif turnover, REF vs ALT", (0.012, 0.93), xycoords="axes fraction",
+    ax.annotate("C   motif turnover, REF vs ALT", (0.012, 0.93), xycoords="axes fraction",
                 fontsize=9, fontweight="bold", va="top")
 
-    # ---- C: ATAC -------------------------------------------------------------------------
-    ax = axs[2]
+    # ---- D: ATAC -------------------------------------------------------------------------
+    ax = axs[3]
     for i, t in enumerate(TISSUES):
         y = len(TISSUES) - 1 - i
         ax.axhline(y, color="#eeeeee", lw=0.6, zorder=0)
@@ -186,12 +258,12 @@ def plot_locus(sym, pad=8000):
                + f"; up to {ntis} of 4 tissues")
     else:
         msg = f"variant sits inside a peak called in {ntis} of 4 tissues"
-    ax.annotate(f"C   open chromatin — {msg}",
+    ax.annotate(f"D   open chromatin — {msg}",
                 (0.012, 0.93), xycoords="axes fraction", fontsize=9, fontweight="bold",
                 va="top")
 
-    # ---- D: gene models ------------------------------------------------------------------
-    ax = axs[3]
+    # ---- E: gene models ------------------------------------------------------------------
+    ax = axs[4]
     for j, g in enumerate(gw.itertuples()):
         y = -(j % 2) * 0.45
         ax.add_patch(Rectangle((g.start, y - 0.10), g.end - g.start, 0.20,
@@ -204,7 +276,7 @@ def plot_locus(sym, pad=8000):
                     color="#c44e52" if g.gene == cfg["gene"] else "#37474f")
     ax.set_ylim(-0.75, 0.42); ax.set_yticks([]); ax.set_ylabel("genes")
     ax.set_xlim(lo, hi)
-    ax.annotate("D   genes", (0.012, 1.14), xycoords="axes fraction", fontsize=9,
+    ax.annotate("E   genes", (0.012, 1.14), xycoords="axes fraction", fontsize=9,
                 fontweight="bold", va="top")
     ax.set_xlabel(f"{ch} position (bp)")
     ax.set_xlim(lo, hi)

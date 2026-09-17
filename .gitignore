@@ -533,3 +533,6 @@ data/eqtl/
 analysis/grenenet_selection/genes/figures/*
 !analysis/grenenet_selection/genes/figures/INDEX.csv
 !analysis/grenenet_selection/genes/figures/README.md
+
+# gemma's raw per-gene output; results/eqtl/cis_eqtl_all.csv is the combined version
+analysis/grenenet_selection/genes/convergence/results/eqtl/output/
