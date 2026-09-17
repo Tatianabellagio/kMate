@@ -513,6 +513,11 @@ analysis/grenenet_selection/wza/investigation/deinflate/*_scores.csv
 # regenerable bulk: the 44 MB of locus figures, and the per-variant pools the master
 # table is derived from. Rebuild with the builders in that directory, in README order.
 analysis/grenenet_selection/genes/convergence/results/plots/
+# curated figure tree (hard links into results/plots/, rebuilt by organize_figures.py);
+# its INDEX.csv + README.md ARE tracked, the figures are not
+analysis/grenenet_selection/genes/convergence/results/figures/*
+!analysis/grenenet_selection/genes/convergence/results/figures/INDEX.csv
+!analysis/grenenet_selection/genes/convergence/results/figures/README.md
 analysis/grenenet_selection/genes/convergence/results/gea_pool.csv
 analysis/grenenet_selection/genes/convergence/results/gea_pool_records.csv
 analysis/grenenet_selection/genes/convergence/results/variants_classified.csv
