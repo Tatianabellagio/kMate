@@ -52,6 +52,10 @@ from scipy import stats
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 import lib
+sys.path.insert(0, os.path.join(HERE, "..", "convergence"))
+import plot_theme as TH                                   # noqa: E402
+
+TH.apply()
 
 WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 GROUP_MEANS = f"{lib.GEA}/common/results/group_means.npz"
@@ -196,18 +200,30 @@ def load_gwas(cfg, lo, hi, garden):
 
 
 def load_panel(vcf, ch, lo, hi):
+    """Founder genotypes in the window, plus a NO-CALL mask.
+
+    The mask is not cosmetic. This panel used to score `GT == 1` and call everything else
+    0, which renders a no-call identically to a reference call. For a well-genotyped SNP
+    that is harmless; for an SV it is a misstatement -- GPX6's 1.16 kb deletion is called
+    in 34% of the 231 founders, so two thirds of the column was being drawn as REF when it
+    is unknown (memory `sv-panel-support-asymmetry`). G stays 0/1 so the LD triangle and
+    r2/D' are unchanged; MISS is carried alongside for display.
+    """
     v = pysam.VariantFile(vcf)
     samp = [int(s) for s in v.header.samples]
-    recs, G = [], []
+    recs, G, MISS = [], [], []
     for r in v.fetch(ch, lo, hi):
         rl, al = len(r.ref), len(r.alts[0])
         recs.append((r.pos, rl, al, vclass(rl, al)))
-        G.append([1 if r.samples[s].get("GT", (None,))[0] == 1 else 0 for s in v.header.samples])
+        gt = [r.samples[s].get("GT", (None,))[0] for s in v.header.samples]
+        G.append([1 if g == 1 else 0 for g in gt])
+        MISS.append([g is None for g in gt])
     G = np.array(G, np.int8).T
+    MISS = np.array(MISS, bool).T
     V = pd.DataFrame(recs, columns=["pos", "ref_len", "alt_len", "cls"])
     bio1 = pd.read_csv(BIO_CSV).set_index("ecotypeid")["bio1"].to_dict()
     b1 = np.array([bio1.get(e, np.nan) for e in samp])
-    return np.array(samp), b1, V, G
+    return np.array(samp), b1, V, G, MISS
 
 
 def agg_lead(V, G, cfg):
@@ -222,6 +238,19 @@ def agg_lead(V, G, cfg):
     if not len(cols):
         cols = np.where(at)[0]
     return (G[:, cols].sum(1) > 0).astype(float) if len(cols) else None
+
+
+def lead_cols(V, cfg):
+    """Column indices of the focal variant (same rule as agg_lead, multiallelic-safe)."""
+    size = abs(cfg["alt_len"] - cfg["ref_len"])
+    at = V.pos.values == cfg["vpos"]
+    if size >= 50:
+        cols = np.where(at & (np.abs(V.alt_len.values - V.ref_len.values)
+                              >= max(50, size // 2)))[0]
+    else:
+        cols = np.where(at & (V.ref_len.values == cfg["ref_len"]) &
+                        (V.alt_len.values == cfg["alt_len"]))[0]
+    return cols if len(cols) else np.where(at)[0]
 
 
 def r2(a, b):
@@ -474,7 +503,7 @@ def main():
         gea = load_gwas(cfg, lo, hi, garden)
     else:
         gea = load_gea(cfg, lo, hi)
-    samp, b1, V, G = load_panel(vcf, ch, lo, hi)
+    samp, b1, V, G, MISS = load_panel(vcf, ch, lo, hi)
     # exon/CDS structure for the window, parsed once and reused by the gene track
     models = load_gene_models(ch, lo, hi)
     # the lead's footprint: for a deletion the REF spans pos..pos+ref_len-1 and the
@@ -557,28 +586,57 @@ def main():
     cb.set_label(cblab, fontsize=7); cb.ax.tick_params(labelsize=6.5)
 
     # B: founder panel
-    stripx0, stripw = lo - (hi - lo) * 0.045, (hi - lo) * 0.025
+    # Two strips on the left: home temperature, then the FOCAL variant's own genotype in
+    # three states. The background variation is pushed right down in alpha -- at ~600
+    # variants x 231 founders it is texture, not data, and at full opacity it buried the
+    # one column the figure exists to show.
+    stripw = (hi - lo) * 0.020
+    gap = (hi - lo) * 0.006
+    x_gt = lo - (hi - lo) * 0.030                 # focal-genotype strip
+    x_t = x_gt - stripw - gap                     # home-temperature strip
     for i in range(nF):
-        c = BLUERED(bnorm(b1[i])) if not np.isnan(b1[i]) else "#ccc"
-        axH.add_patch(Rectangle((stripx0, yrow[i] - 0.5), stripw, 1.0, facecolor=c,
+        c = BLUERED(bnorm(b1[i])) if not np.isnan(b1[i]) else "#CCCCCC"
+        axH.add_patch(Rectangle((x_t, yrow[i] - 0.5), stripw, 1.0, facecolor=c,
                       edgecolor="none", zorder=2, clip_on=False))
-    for cls, (mk, base, col) in (("snp", (".", 0.6, "#7a7a7a")), ("smallindel", ("s", 4, "#E67E22")),
-                                 ("sv", ("D", 9, "#C0392B"))):
+
+    lc = lead_cols(V, cfg)
+    if len(lc):
+        alt = (G[:, lc] == 1).any(1)
+        miss = MISS[:, lc].all(1)                 # no call in ANY record of the variant
+        GT_C = {"alt": "#B2182B", "ref": "#E8E8E8", "miss": "#FFFFFF"}
+        for i in range(nF):
+            st = "alt" if alt[i] else ("miss" if miss[i] else "ref")
+            axH.add_patch(Rectangle((x_gt, yrow[i] - 0.5), stripw, 1.0,
+                          facecolor=GT_C[st], edgecolor="#BDBDBD" if st == "miss" else "none",
+                          linewidth=0.2, zorder=2, clip_on=False))
+        n_alt, n_miss = int(alt.sum()), int(miss.sum())
+        n_ref = nF - n_alt - n_miss
+        axH.annotate(f"carriers {n_alt}  ·  ref {n_ref}  ·  no call {n_miss}",
+                     xy=(x_t, nF + 1.5), xycoords=("data", "data"), fontsize=7,
+                     color="#5E5E5E", ha="left", va="bottom", annotation_clip=False)
+        # carriers also marked in the body, so their haplotype context is readable
+        for i in np.where(alt)[0]:
+            axH.plot([cfg["vpos"]], [yrow[i]], marker="D", ms=3.2, color="#B2182B",
+                     zorder=6, clip_on=False)
+
+    for cls, (mk, base, col, al) in (
+            ("snp", (".", 0.5, "#9E9E9E", 0.16)),
+            ("smallindel", ("s", 2.4, "#E67E22", 0.22)),
+            ("sv", ("D", 5.0, "#C0392B", 0.35))):
         cols = np.where(V.cls.values == cls)[0]
         xs, ys = [], []
         for j in cols:
             car = np.where(G[:, j] == 1)[0]
             xs.extend([V.pos.values[j]] * len(car)); ys.extend([yrow[i] for i in car])
-        axH.scatter(xs, ys, s=base, marker=mk, c=col, alpha=0.5 if cls == "snp" else 0.85,
-                    edgecolors="none", zorder=3 if cls == "snp" else 4)
+        axH.scatter(xs, ys, s=base, marker=mk, c=col, alpha=al, edgecolors="none",
+                    zorder=3)
     axH.set_ylim(-1, nF); axH.set_yticks([])
     axH.set_ylabel(f"founder (n={nF}) / home temperature", fontsize=9)
     ticks = np.linspace(lo, hi, 6).astype(int)
     axH.set_xticks(ticks); axH.set_xticklabels([f"{t:,}" for t in ticks], fontsize=7)
     axH.set_xlabel(f"{ch} position (bp)", fontsize=9)
-    for sp in ("top", "right", "left"):
-        axH.spines[sp].set_visible(False)
-    cbb = fig.colorbar(plt.cm.ScalarMappable(cmap=BLUERED, norm=bnorm), ax=axH, fraction=0.02, pad=0.005)
+    cbb = fig.colorbar(plt.cm.ScalarMappable(cmap=BLUERED, norm=bnorm), ax=axH,
+                       fraction=0.02, pad=0.005)
     cbb.set_label("home temperature (°C)", fontsize=7); cbb.ax.tick_params(labelsize=6.5)
 
     # C: LD triangle
