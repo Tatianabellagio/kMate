@@ -142,9 +142,18 @@ def plot_locus(sym, pad=8000):
     T = pd.read_csv(tf) if os.path.exists(tf) else pd.DataFrame()
     if len(T):
         T = T[T.effect.isin(["LOST", "GAINED"])]
+    # the motif sites that did NOT change: without them a gene with no turnover draws an
+    # empty panel, which reads as "track missing" when it actually means "FIMO found sites
+    # here and the variant touches none of them" -- a result, not an absence
+    hf = f"{OUT}/tfbs/{sym}_hits.csv"
+    H = pd.read_csv(hf) if os.path.exists(hf) else pd.DataFrame()
+    if len(H):
+        H = H[(H.kept) & (H.seq == "ref")]
+    SUM = pd.read_csv(f"{OUT}/tfbs/turnover_summary.csv")
+    SUM = SUM[SUM.symbol == sym]
 
-    fig, axs = plt.subplots(5, 1, figsize=(11, 11.0), sharex=True,
-                            gridspec_kw=dict(height_ratios=[2.7, 2.2, 1.4, 1.3, 1.1],
+    fig, axs = plt.subplots(5, 1, figsize=(11, 11.8), sharex=True,
+                            gridspec_kw=dict(height_ratios=[3.2, 2.2, 1.4, 1.3, 1.1],
                                              hspace=0.12))
     # The variant footprint, behind every panel. A 2 bp indel is sub-pixel across a 16 kb
     # window, so the band is widened to a visible minimum and the true position is carried
@@ -159,19 +168,36 @@ def plot_locus(sym, pad=8000):
     # ---- A: GEA Manhattan ---------------------------------------------------------------
     ax = axs[0]
     if len(G):
+        # In a tight LD block hundreds of markers carry the SAME genotype vector and
+        # therefore the SAME LFMM p, so they stack into a horizontal line -- 229 records
+        # on one p-value at CRK14. That is a real property of the locus, not overplotting
+        # to be jittered away, but heavy marker edges turn it into a smear. Edges are
+        # thinned and alpha lowered so the line reads as a line; values are untouched.
+        dup = int(G.pval.round(12).value_counts().max())
+        thin = dup >= 20
         for cls, d in G.groupby("cls"):
-            ax.scatter(d.pos, d.nlp, s=np.where(d.cls == "snp", 11, 34), c=CLS_C[cls],
+            ax.scatter(d.pos, d.nlp, s=np.where(d.cls == "snp", 10, 26 if thin else 34),
+                       c=CLS_C[cls],
                        marker="o" if cls == "snp" else ("D" if cls == "sv" else "s"),
-                       edgecolor="none" if cls == "snp" else "k", linewidth=0.4,
-                       label=f"{cls} (n={len(d)})", zorder=3, alpha=0.85)
+                       edgecolor="none" if cls == "snp" else "k",
+                       linewidth=0.2 if thin else 0.4,
+                       label=f"{cls} (n={len(d)})", zorder=3,
+                       alpha=0.55 if thin else 0.85)
             ax.axhline(BONF[cls], color=CLS_C[cls], ls=":", lw=0.9, zorder=1)
+        # headroom so the two captions never sit on the data
+        ax.set_ylim(top=max(G.nlp.max(), max(BONF.values())) * 1.34)
+        if thin:
+            ax.annotate(f"{len(G)} records share {G.pval.nunique()} distinct p-values; "
+                        f"{dup} of them are one value — a single LD block",
+                        (0.012, 0.855), xycoords="axes fraction", fontsize=7.5,
+                        color="#666666", va="top")
         lead = G[(G.pos == vpos) & (G.ref_len == rl) & (G.alt_len == cfg["alt_len"])]
         if len(lead):
             ax.scatter(lead.pos, lead.nlp, s=190, facecolor="none", edgecolor="#c44e52",
                        linewidth=1.8, zorder=5)
         ax.legend(loc="upper right", fontsize=7.5, frameon=False, ncol=3)
     ax.set_ylabel(f"$-\\log_{{10}}p$  GEA ({axis})")
-    ax.annotate("A   climate association", (0.012, 0.93), xycoords="axes fraction",
+    ax.annotate("A   climate association", (0.012, 0.965), xycoords="axes fraction",
                 fontsize=9, fontweight="bold", va="top")
 
     # ---- B: cis-eQTL ---------------------------------------------------------------------
@@ -203,32 +229,50 @@ def plot_locus(sym, pad=8000):
                    "founders, so no SNP is known to carry it and this profile\ncannot be "
                    "read at the variant — a weak peak here does NOT exonerate it")
             col = "#c44e52"
-        ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.30)     # headroom for the caption
-        ax.annotate(msg, (0.012, 0.80), xycoords="axes fraction", fontsize=8, color=col,
+        ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.45)     # headroom for the caption
+        ax.annotate(msg, (0.012, 0.845), xycoords="axes fraction", fontsize=8, color=col,
                     va="top")
     else:
         ax.annotate("no cis-eQTL run for this gene", (0.012, 0.5),
                     xycoords="axes fraction", fontsize=8, color="#c44e52")
     ax.set_ylabel("$-\\log_{10}p$  cis-eQTL")
     ax.annotate("B   expression (1001T, n=471 accessions, SNPs only)",
-                (0.012, 0.93), xycoords="axes fraction", fontsize=9, fontweight="bold",
+                (0.012, 0.965), xycoords="axes fraction", fontsize=9, fontweight="bold",
                 va="top")
 
     # ---- C: TFBS turnover ----------------------------------------------------------------
     ax = axs[2]
-    if len(T):
-        for eff, y, c, mk in [("LOST", 0.68, "#c44e52", "v"), ("GAINED", 0.28, "#2e7d32", "^")]:
-            d = T[T.effect == eff]
-            if not len(d):
-                continue
+    if len(H):
+        ax.scatter(H.gstart, np.full(len(H), 0.5), marker="|", s=70, c="#9e9e9e",
+                   linewidth=1.0, zorder=2)
+        ax.annotate(f"unchanged  n={len(H)}", (0.012, 0.5),
+                    xycoords=("axes fraction", "data"), fontsize=7.5, color="#777777",
+                    va="center")
+    for eff, y, c, mk in [("GAINED", 0.82, "#2e7d32", "^"), ("LOST", 0.18, "#c44e52", "v")]:
+        d = T[T.effect == eff] if len(T) else T
+        if len(d):
             ax.scatter(d.gstart, np.full(len(d), y), marker=mk, s=46, c=c,
                        edgecolor="k", linewidth=0.3, zorder=3)
-            ax.annotate(f"{eff.lower()}  n={len(d)}", (0.012, y + 0.14),
-                        xycoords=("axes fraction", "data"), fontsize=8, color=c, va="center")
+        ax.annotate(f"{eff.lower()}  n={len(d)}", (0.012, y),
+                    xycoords=("axes fraction", "data"), fontsize=8,
+                    color=c if len(d) else "#aaaaaa", va="center")
+    if len(SUM) and not len(T):
+        r = SUM.iloc[0]
+        # r["size"] NOT r.size -- on a Series `.size` is the element count (18 columns),
+        # which silently printed "18 bp deletion" for CRK14's 63 bp one
+        ax.annotate(f"FIMO: {int(r.n_ref_hits)} site(s) in the window, the "
+                    f"{int(r['size'])} bp {r['kind']} overlaps none\n"
+                    f"— no turnover, not missing data",
+                    (0.988, 0.20), xycoords="axes fraction", fontsize=7.5,
+                    color="#c44e52", va="center", ha="right")
+    elif not len(SUM):
+        ax.annotate("tfbs_turnover.py not run for this variant", (0.988, 0.20),
+                    xycoords="axes fraction", fontsize=7.5, color="#c44e52",
+                    va="center", ha="right")
     ax.set_ylim(0, 1); ax.set_yticks([])
     ax.set_ylabel("TFBS")
-    ax.annotate("C   motif turnover, REF vs ALT", (0.012, 0.93), xycoords="axes fraction",
-                fontsize=9, fontweight="bold", va="top")
+    ax.annotate("C   motif turnover, REF vs ALT", (0.012, 0.965),
+                xycoords="axes fraction", fontsize=9, fontweight="bold", va="top")
 
     # ---- D: ATAC -------------------------------------------------------------------------
     ax = axs[3]
