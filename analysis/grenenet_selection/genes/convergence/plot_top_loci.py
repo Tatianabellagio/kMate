@@ -66,10 +66,28 @@ def config_for(r, V: pd.DataFrame) -> dict | None:
             "region": str(v.region) if isinstance(v.region, str) else "intergenic"}
 
 
+def scan_for(r, requested: str) -> str:
+    """Which upstream scan to draw panel A against.
+
+    `auto` (the default) picks the scan that actually found the gene. Drawing a
+    GWAS-only gene against the LFMM GEA panel yields an EMPTY Manhattan that reads
+    as a null result -- which is what CML50 looked like before this existed.
+    """
+    if requested != "auto":
+        return requested
+    # master table carries `found_by` in {GEA, GWAS, GEA+GWAS}, not in_gea/in_gwas
+    return "gwas" if str(r.found_by) == "GWAS" else "gea"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--n", type=int, default=6)
     ap.add_argument("--genes", nargs="*", default=None)
+    ap.add_argument("--scan", choices=["auto", "gea", "gwas", "both"], default="auto",
+                    help="which scan panel A shows; auto = whichever found the gene")
+    ap.add_argument("--garden", type=int, default=None,
+                    help="gwas mode: force a garden (default = median-strength "
+                         "significant garden, not the strongest)")
     a = ap.parse_args()
 
     M = pd.read_csv(f"{OUT}/master_candidate_genes.csv")
@@ -79,24 +97,33 @@ def main():
 
     ok, bad = [], []
     for r in sel.itertuples():
-        cfg = config_for(r, V)
-        if cfg is None:
+        base = config_for(r, V)
+        if base is None:
             bad.append((r.gene, "no lead variant")); continue
-        print(f"\n===== {cfg['sym']} ({r.gene}) {cfg['chrom']}:{cfg['vpos']} "
-              f"axis={cfg['axis']} =====", flush=True)
-        p = subprocess.run([PY, PLOTTER, json.dumps(cfg)],
-                           capture_output=True, text=True)
-        print(p.stdout[-1500:] if p.stdout else "")
-        if p.returncode != 0:
-            print(p.stderr[-1200:])
-            bad.append((r.gene, "plotter failed")); continue
-        moved = False
-        for ext in (".png", ".pdf"):
-            s = f"{SRC_LOCI}/{cfg['sym']}_combined{ext}"
-            if os.path.exists(s):
-                shutil.copy2(s, f"{DST_LOCI}/{cfg['sym']}_combined{ext}")
-                moved = True
-        ok.append(cfg["sym"]) if moved else bad.append((r.gene, "no figure written"))
+        scans = ["gea", "gwas"] if a.scan == "both" else [scan_for(r, a.scan)]
+        for scan in scans:
+            cfg = dict(base, scan=scan)
+            if scan == "gwas" and a.garden is not None:
+                cfg["garden"] = a.garden
+            tag = f"garden={a.garden or 'median-sig'}" if scan == "gwas" \
+                else f"axis={cfg['axis']}"
+            print(f"\n===== {cfg['sym']} ({r.gene}) {cfg['chrom']}:{cfg['vpos']} "
+                  f"scan={scan} {tag} =====", flush=True)
+            p = subprocess.run([PY, PLOTTER, json.dumps(cfg)],
+                               capture_output=True, text=True)
+            print(p.stdout[-1500:] if p.stdout else "")
+            if p.returncode != 0:
+                print(p.stderr[-1200:])
+                bad.append((r.gene, f"plotter failed ({scan})")); continue
+            sfx = "_gwas" if scan == "gwas" else ""
+            moved = False
+            for ext in (".png", ".pdf"):
+                s = f"{SRC_LOCI}/{cfg['sym']}_combined{sfx}{ext}"
+                if os.path.exists(s):
+                    shutil.copy2(s, f"{DST_LOCI}/{cfg['sym']}_combined{sfx}{ext}")
+                    moved = True
+            ok.append(cfg["sym"] + sfx) if moved else \
+                bad.append((r.gene, f"no figure written ({scan})"))
 
     print(f"\nrendered {len(ok)}: {', '.join(ok)}")
     if bad:

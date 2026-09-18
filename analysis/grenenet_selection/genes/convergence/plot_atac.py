@@ -4,15 +4,20 @@
 Two outputs.
 
 `atac_locus_<sym>.png` -- our version of the MOI-LAB zoom-Manhattan, with the tracks we
-can actually compute for a non-SNP candidate. Four panels on a shared genomic axis:
+can actually compute for a non-SNP candidate. Five panels on a shared genomic axis:
   A  GEA -log10 p per record on the candidate's own climate axis (from wza_in_clq09_tile),
      by variant class, Bonferroni lines per class.
-  B  TFBS turnover from tfbs_turnover.py -- sites LOST and GAINED on the ALT allele.
-  C  ATAC peaks, one row per tissue (flower / leaf / root / shoot), from the multi-tissue
+  B  cis-eQTL from run_eqtl_cis.py, with our variant's tagging SNP marked -- or a stated
+     absence where no SNP is known to carry the variant (GPX6, FUS3).
+  C  TFBS turnover from tfbs_turnover.py -- sites LOST, GAINED and unchanged.
+  D  ATAC peaks, one row per tissue (flower / leaf / root / shoot), from the multi-tissue
      peak union; the pale band behind every panel is the candidate variant's REF footprint.
-  D  TAIR10 gene models.
+  E  TAIR10 gene models.
 
-`atac_enrichment.png` -- why panel C is not evidence on its own. Overlap rate by region for
+Panels carry no numeric captions by design; the quantitative ATAC and TFBS results are
+printed to the terminal when the figure is written.
+
+`atac_enrichment.png` -- why panel D is not evidence on its own. Overlap rate by region for
 candidates against the region-annotated testable background, and the shortlist against its
 region-matched expectation. The pool sits on the diagonal (1.04x overall); only the
 shortlist leaves it.
@@ -181,16 +186,11 @@ def plot_locus(sym, pad=8000):
                        marker="o" if cls == "snp" else ("D" if cls == "sv" else "s"),
                        edgecolor="none" if cls == "snp" else "k",
                        linewidth=0.2 if thin else 0.4,
-                       label=f"{cls} (n={len(d)})", zorder=3,
+                       label=cls, zorder=3,
                        alpha=0.55 if thin else 0.85)
             ax.axhline(BONF[cls], color=CLS_C[cls], ls=":", lw=0.9, zorder=1)
-        # headroom so the two captions never sit on the data
-        ax.set_ylim(top=max(G.nlp.max(), max(BONF.values())) * 1.34)
-        if thin:
-            ax.annotate(f"{len(G)} records share {G.pval.nunique()} distinct p-values; "
-                        f"{dup} of them are one value — a single LD block",
-                        (0.012, 0.855), xycoords="axes fraction", fontsize=7.5,
-                        color="#666666", va="top")
+        # headroom so the panel label never sits on the data
+        ax.set_ylim(top=max(G.nlp.max(), max(BONF.values())) * 1.2)
         lead = G[(G.pos == vpos) & (G.ref_len == rl) & (G.alt_len == cfg["alt_len"])]
         if len(lead):
             ax.scatter(lead.pos, lead.nlp, s=190, facecolor="none", edgecolor="#c44e52",
@@ -198,7 +198,7 @@ def plot_locus(sym, pad=8000):
         ax.legend(loc="upper right", fontsize=7.5, frameon=False, ncol=3)
     ax.set_ylabel(f"$-\\log_{{10}}p$  GEA ({axis})")
     ax.annotate("A   climate association", (0.012, 0.965), xycoords="axes fraction",
-                fontsize=9, fontweight="bold", va="top")
+                fontsize=9, va="top")
 
     # ---- B: cis-eQTL ---------------------------------------------------------------------
     ax = axs[1]
@@ -207,7 +207,6 @@ def plot_locus(sym, pad=8000):
         pk = Q.loc[Q.nlp.idxmax()]
         ax.scatter([pk.ps], [pk.nlp], s=42, c="#333333", edgecolor="k", linewidth=0.4,
                    zorder=4)
-        n = int(Q.n_miss.iloc[0]) if "n_miss" in Q.columns else None
         if tag and not tag["untestable"]:
             d = (Q.ps - tag["pos"]).abs()
             j = d.idxmin()
@@ -219,25 +218,20 @@ def plot_locus(sym, pad=8000):
                        edgecolor="#c44e52", linewidth=1.8, zorder=5)
             if off:
                 ax.axvline(tag["pos"], color="#c44e52", ls=":", lw=0.8, alpha=0.6, zorder=1)
-            msg = (f"tag SNP r²={tag['r2']:.2f}: $-\\log_{{10}}p$={nl:.2f} "
-                   f"({pct:.0f}th pctile; window peak {pk.nlp:.1f})"
-                   + ("" if off == 0 else f" — tag itself untested, value is the "
-                      f"nearest tested SNP {off} bp away"))
+            msg = f"tag SNP r²={tag['r2']:.2f} ({pct:.0f}th pctile)"
             col = "#2e7d32" if (pct >= 90 and off == 0) else "#c44e52"
         else:
-            msg = ("variant has NO tagging SNP (r² untestable): it is called in 27% of "
-                   "founders, so no SNP is known to carry it and this profile\ncannot be "
-                   "read at the variant — a weak peak here does NOT exonerate it")
+            msg = "no tagging SNP (r² untestable)"
             col = "#c44e52"
-        ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.45)     # headroom for the caption
-        ax.annotate(msg, (0.012, 0.845), xycoords="axes fraction", fontsize=8, color=col,
+        ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.3)
+        ax.annotate(msg, (0.012, 0.88), xycoords="axes fraction", fontsize=8, color=col,
                     va="top")
     else:
         ax.annotate("no cis-eQTL run for this gene", (0.012, 0.5),
                     xycoords="axes fraction", fontsize=8, color="#c44e52")
     ax.set_ylabel("$-\\log_{10}p$  cis-eQTL")
-    ax.annotate("B   expression (1001T, n=471 accessions, SNPs only)",
-                (0.012, 0.965), xycoords="axes fraction", fontsize=9, fontweight="bold",
+    ax.annotate("B   expression (1001T, SNPs only)",
+                (0.012, 0.965), xycoords="axes fraction", fontsize=9,
                 va="top")
 
     # ---- C: TFBS turnover ----------------------------------------------------------------
@@ -245,7 +239,7 @@ def plot_locus(sym, pad=8000):
     if len(H):
         ax.scatter(H.gstart, np.full(len(H), 0.5), marker="|", s=70, c="#9e9e9e",
                    linewidth=1.0, zorder=2)
-        ax.annotate(f"unchanged  n={len(H)}", (0.012, 0.5),
+        ax.annotate("unchanged", (0.012, 0.5),
                     xycoords=("axes fraction", "data"), fontsize=7.5, color="#777777",
                     va="center")
     for eff, y, c, mk in [("GAINED", 0.82, "#2e7d32", "^"), ("LOST", 0.18, "#c44e52", "v")]:
@@ -253,26 +247,20 @@ def plot_locus(sym, pad=8000):
         if len(d):
             ax.scatter(d.gstart, np.full(len(d), y), marker=mk, s=46, c=c,
                        edgecolor="k", linewidth=0.3, zorder=3)
-        ax.annotate(f"{eff.lower()}  n={len(d)}", (0.012, y),
+        ax.annotate(eff.lower(), (0.012, y),
                     xycoords=("axes fraction", "data"), fontsize=8,
                     color=c if len(d) else "#aaaaaa", va="center")
     if len(SUM) and not len(T):
-        r = SUM.iloc[0]
-        # r["size"] NOT r.size -- on a Series `.size` is the element count (18 columns),
-        # which silently printed "18 bp deletion" for CRK14's 63 bp one
-        ax.annotate(f"FIMO: {int(r.n_ref_hits)} site(s) in the window, the "
-                    f"{int(r['size'])} bp {r['kind']} overlaps none\n"
-                    f"— no turnover, not missing data",
-                    (0.988, 0.20), xycoords="axes fraction", fontsize=7.5,
-                    color="#c44e52", va="center", ha="right")
+        ax.annotate("no turnover", (0.988, 0.20), xycoords="axes fraction",
+                    fontsize=7.5, color="#c44e52", va="center", ha="right")
     elif not len(SUM):
-        ax.annotate("tfbs_turnover.py not run for this variant", (0.988, 0.20),
+        ax.annotate("not run for this variant", (0.988, 0.20),
                     xycoords="axes fraction", fontsize=7.5, color="#c44e52",
                     va="center", ha="right")
     ax.set_ylim(0, 1); ax.set_yticks([])
     ax.set_ylabel("TFBS")
     ax.annotate("C   motif turnover, REF vs ALT", (0.012, 0.965),
-                xycoords="axes fraction", fontsize=9, fontweight="bold", va="top")
+                xycoords="axes fraction", fontsize=9, va="top")
 
     # ---- D: ATAC -------------------------------------------------------------------------
     ax = axs[3]
@@ -287,24 +275,13 @@ def plot_locus(sym, pad=8000):
     ax.set_yticks(range(len(TISSUES)))
     ax.set_yticklabels(TISSUES[::-1], fontsize=8)
     ax.set_ylabel("ATAC")
-    # "overlaps a peak" undersells a deletion: report how much accessible sequence the REF
-    # footprint actually covers, and whether any peak is removed outright. GPX6 spans two.
+    # not drawn on the panel (no caption by design); reported in the print below
     hit = np.where((pe >= vpos) & (ps <= vend))[0]
     ntis = int(num[hit].max()) if len(hit) else 0
     ov = int(sum(min(pe[j], vend) - max(ps[j], vpos) + 1 for j in hit))
     whole = int(sum((ps[j] >= vpos) and (pe[j] <= vend) for j in hit))
-    if not len(hit):
-        msg = "no ATAC peak overlaps the variant"
-    elif rl > 50:                                   # a deletion: it removes peak sequence
-        msg = (f"deletion covers {ov:,} bp of peak across {len(hit)} peak"
-               f"{'s' if len(hit) > 1 else ''}"
-               + (f", {whole} removed outright" if whole else "")
-               + f"; up to {ntis} of 4 tissues")
-    else:
-        msg = f"variant sits inside a peak called in {ntis} of 4 tissues"
-    ax.annotate(f"D   open chromatin — {msg}",
-                (0.012, 0.93), xycoords="axes fraction", fontsize=9, fontweight="bold",
-                va="top")
+    ax.annotate("D   open chromatin", (0.012, 0.93), xycoords="axes fraction",
+                fontsize=9, va="top")
 
     # ---- E: gene models ------------------------------------------------------------------
     ax = axs[4]
@@ -316,12 +293,11 @@ def plot_locus(sym, pad=8000):
         ax.annotate(f"{nm} {'▶' if g.strand == '+' else '◀'}",
                     ((max(g.start, lo) + min(g.end, hi)) / 2, y + 0.16),
                     ha="center", fontsize=7.5,
-                    fontweight="bold" if g.gene == cfg["gene"] else "normal",
                     color="#c44e52" if g.gene == cfg["gene"] else "#37474f")
     ax.set_ylim(-0.75, 0.42); ax.set_yticks([]); ax.set_ylabel("genes")
     ax.set_xlim(lo, hi)
     ax.annotate("E   genes", (0.012, 1.14), xycoords="axes fraction", fontsize=9,
-                fontweight="bold", va="top")
+                va="top")
     ax.set_xlabel(f"{ch} position (bp)")
     ax.set_xlim(lo, hi)
     ax.ticklabel_format(axis="x", style="plain", useOffset=False)
@@ -330,8 +306,14 @@ def plot_locus(sym, pad=8000):
     for ext in ("png", "pdf"):
         fig.savefig(f"{FIG}/atac_locus_{sym}.{ext}", dpi=170, bbox_inches="tight")
     plt.close(fig)
+    # `ov` / `whole` are the quantitative ATAC result -- how much accessible sequence the
+    # REF footprint covers and how many peaks it removes outright. The panel deliberately
+    # carries no caption, so they are reported here; without this line the number exists
+    # nowhere (GPX6: 272 bp across 2 peaks, 1 removed outright).
     print(f"  wrote {FIG}/atac_locus_{sym}.png   "
-          f"(deletion {vpos:,}-{vend:,}, {rl-1:,} bp; peak in {ntis}/4 tissues; "
+          f"(deletion {vpos:,}-{vend:,}, {rl-1:,} bp; "
+          f"ATAC {ov:,} bp of peak across {len(hit)}, {whole} removed outright, "
+          f"up to {ntis}/4 tissues; "
           f"TFBS lost {int((T.effect=='LOST').sum()) if len(T) else 0} / "
           f"gained {int((T.effect=='GAINED').sum()) if len(T) else 0})")
 
