@@ -145,6 +145,13 @@ def plot_locus(sym, pad=8000):
 
     G = load_gea(cfg, lo, hi, axis) if axis else pd.DataFrame()
     Q, tag = load_eqtl(cfg, sym)
+    TAGS = pd.read_csv(f"{OUT}/eqtl_tag_snps.csv") if \
+        os.path.exists(f"{OUT}/eqtl_tag_snps.csv") else pd.DataFrame()
+    trow = TAGS[TAGS.symbol == sym] if len(TAGS) else TAGS
+    tag_pos = int(trow.tag_pos.iloc[0]) if len(trow) and np.isfinite(trow.tag_pos.iloc[0]) \
+        else None
+    tag_meth = trow.method.iloc[0] if len(trow) else ""
+    tag_stat = float(trow.tag_stat.iloc[0]) if len(trow) else np.nan
     tf = f"{OUT}/tfbs/{sym}_turnover.csv"
     T = pd.read_csv(tf) if os.path.exists(tf) else pd.DataFrame()
     if len(T):
@@ -159,9 +166,11 @@ def plot_locus(sym, pad=8000):
     SUM = pd.read_csv(f"{OUT}/tfbs/turnover_summary.csv")
     SUM = SUM[SUM.symbol == sym]
 
+    # genes on top as the reference track, eQTL last
     fig, axs = plt.subplots(5, 1, figsize=(11, 11.8), sharex=True,
-                            gridspec_kw=dict(height_ratios=[3.2, 2.2, 1.4, 1.3, 1.1],
+                            gridspec_kw=dict(height_ratios=[1.1, 3.2, 1.4, 1.3, 2.2],
                                              hspace=0.12))
+    ax_gene, ax_gea, ax_tfbs, ax_atac, ax_eqtl = axs
     # The variant footprint, behind every panel. A 2 bp indel is sub-pixel across a 16 kb
     # window, so the band is widened to a visible minimum and the true position is carried
     # by the dashed line -- the band marks "here", the line marks "exactly here".
@@ -171,9 +180,11 @@ def plot_locus(sym, pad=8000):
         ax.axvspan(mid - band / 2, mid + band / 2, color=ACC, alpha=0.07, lw=0,
                    zorder=0)
         ax.axvline(vpos, color=ACC, ls="--", lw=0.7, alpha=0.5, zorder=1)
+        if tag_pos is not None and lo <= tag_pos <= hi:
+            ax.axvline(tag_pos, color=TH.TAG, ls=(0, (1, 2)), lw=0.9, alpha=0.75, zorder=1)
 
-    # ---- A: GEA Manhattan ---------------------------------------------------------------
-    ax = axs[0]
+    # ---- B: GEA Manhattan ---------------------------------------------------------------
+    ax = ax_gea
     if len(G):
         # In a tight LD block hundreds of markers carry the SAME genotype vector and
         # therefore the SAME LFMM p, so they stack into a horizontal line -- 229 records
@@ -196,42 +207,55 @@ def plot_locus(sym, pad=8000):
         if len(lead):
             ax.scatter(lead.pos, lead.nlp, s=190, facecolor="none", edgecolor=ACC,
                        linewidth=1.8, zorder=5)
+        # the SNP the eQTL is actually read at -- outlined in the tag colour so panel E's
+        # value can be traced to a marker here rather than taken on trust
+        if tag_pos is not None:
+            t = G[(G.cls == "snp") & (G.pos == tag_pos)]
+            if len(t):
+                ax.scatter(t.pos, t.nlp, s=120, marker="o", facecolor="none",
+                           edgecolor=TH.TAG, linewidth=1.5, zorder=5)
+            lab = (f"eQTL tag SNP {tag_pos:,}  "
+                   + (f"founder r²={tag_stat:.2f}" if tag_meth == "founder_r2"
+                      else f"pool-AF r={tag_stat:.3f}"))
+            ax.annotate(lab, xy=(tag_pos, 0.995), xycoords=("data", "axes fraction"),
+                        ha="center", va="top", fontsize=7.5, color=TH.TAG)
         ax.legend(loc="upper right", fontsize=7.5, frameon=False, ncol=3)
     ax.set_ylabel(f"$-\\log_{{10}}p$  GEA ({axis})")
-    TH.panel(ax, "A", "climate association")
+    TH.panel(ax, "B", "climate association")
 
-    # ---- B: cis-eQTL ---------------------------------------------------------------------
-    ax = axs[1]
+    # A small tag on the focal band: what the variant IS. Without it the reader has the
+    # position and the footprint but not the edit -- and "1,225 bp REF" vs "1,164 bp
+    # deleted" are different numbers that are easy to conflate.
+    kind = "del" if rl > cfg["alt_len"] else "ins"
+    dsize = abs(cfg["alt_len"] - rl)
+    tag_x = min(max(mid, lo + (hi - lo) * 0.13), hi - (hi - lo) * 0.13)
+    ax_gene.annotate(f"ALT {kind} {dsize:,} bp  ·  REF {rl:,} bp",
+                    xy=(tag_x, 1.005), xycoords=("data", "axes fraction"),
+                    ha="center", va="bottom", fontsize=8, color=ACC)
+
+    # ---- E: cis-eQTL ---------------------------------------------------------------------
+    ax = ax_eqtl
     if len(Q):
         ax.scatter(Q.ps, Q.nlp, s=12, c=TH.FAINT, edgecolor="none", alpha=0.9, zorder=2)
         pk = Q.loc[Q.nlp.idxmax()]
         ax.scatter([pk.ps], [pk.nlp], s=42, c=TH.GREENS[2], edgecolor="none",
                    zorder=4)
-        if tag and not tag["untestable"]:
-            d = (Q.ps - tag["pos"]).abs()
+        if tag_pos is not None:
+            d = (Q.ps - tag_pos).abs()
             j = d.idxmin()
             nl, off = Q.loc[j, "nlp"], int(d.min())
             pct = 100 * (Q.nlp < nl).mean()
-            # marker goes on the SNP actually TESTED, not on the tag position -- drawing
-            # it at the tag with a neighbour's p-value would invent a datum
             ax.scatter([Q.loc[j, "ps"]], [nl], s=150, marker="D", facecolor="none",
-                       edgecolor=ACC, linewidth=1.8, zorder=5)
-            if off:
-                ax.axvline(tag["pos"], color=ACC, ls=":", lw=0.8, alpha=0.6, zorder=1)
-            msg = f"tag SNP r²={tag['r2']:.2f} ({pct:.0f}th pctile)"
-            col = "#2e7d32" if (pct >= 90 and off == 0) else "#c44e52"
-        else:
-            msg = "no tagging SNP (r² untestable)"
-            col = "#c44e52"
-        ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.3)
-        ax.annotate(msg, (0.012, 0.88), xycoords="axes fraction", fontsize=8, color=col, va="top")
-    else:
-        TH.note(ax, "no cis-eQTL run for this gene", y=0.5, color=ACC)
+                       edgecolor=TH.TAG, linewidth=1.8, zorder=5)
+            TH.note(ax, f"tag SNP: $-\\log_{{10}}p$ = {nl:.2f} ({pct:.0f}th pctile)"
+                    + ("" if off == 0 else f", nearest tested {off} bp away"),
+                    y=0.80, color=TH.TAG)
+        ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.60)
     ax.set_ylabel("$-\\log_{10}p$  cis-eQTL")
-    TH.panel(ax, "B", "expression (1001T, SNPs only)")
+    TH.panel(ax, "E", "expression — cis-eQTL at the tagging SNP (1001T, n=471)")
 
     # ---- C: TFBS turnover ----------------------------------------------------------------
-    ax = axs[2]
+    ax = ax_tfbs
     if len(H):
         ax.scatter(H.gstart, np.full(len(H), 0.5), marker="|", s=70, c=TH.MUTED,
                    linewidth=1.0, zorder=2)
@@ -249,19 +273,19 @@ def plot_locus(sym, pad=8000):
         TH.note(ax, "no turnover", y=0.20, x=0.988, color=ACC, ha="right")
     elif not len(SUM):
         TH.note(ax, "not run for this variant", y=0.20, x=0.988, color=ACC, ha="right")
-    ax.set_ylim(0, 1); ax.set_yticks([])
+    ax.set_ylim(0, 1.32); ax.set_yticks([])   # headroom for the panel label
     ax.set_ylabel("TFBS")
     TH.panel(ax, "C", "motif turnover, REF vs ALT")
 
     # ---- D: ATAC -------------------------------------------------------------------------
-    ax = axs[3]
+    ax = ax_atac
     for i, t in enumerate(TISSUES):
         y = len(TISSUES) - 1 - i
         sel = tm[:, i] == 1
         for s, e in zip(ps[sel], pe[sel]):
             ax.add_patch(Rectangle((s, y - 0.3), e - s, 0.6, color=TIS_C[t], alpha=0.85,
                                    lw=0, zorder=2))
-    ax.set_ylim(-0.7, len(TISSUES) - 0.3)
+    ax.set_ylim(-0.7, len(TISSUES) + 0.45)   # headroom: the label sits above the rows
     ax.set_yticks(range(len(TISSUES)))
     ax.set_yticklabels(TISSUES[::-1], fontsize=8)
     ax.set_ylabel("ATAC")
@@ -272,8 +296,8 @@ def plot_locus(sym, pad=8000):
     whole = int(sum((ps[j] >= vpos) and (pe[j] <= vend) for j in hit))
     TH.panel(ax, "D", "open chromatin")
 
-    # ---- E: gene models ------------------------------------------------------------------
-    ax = axs[4]
+    # ---- A: gene models ------------------------------------------------------------------
+    ax = ax_gene
     for j, g in enumerate(gw.itertuples()):
         y = -(j % 2) * 0.45
         ax.add_patch(Rectangle((g.start, y - 0.10), g.end - g.start, 0.20,
@@ -285,10 +309,12 @@ def plot_locus(sym, pad=8000):
                     color=ACC if g.gene == cfg["gene"] else TH.TICK)
     ax.set_ylim(-0.75, 0.42); ax.set_yticks([]); ax.set_ylabel("genes")
     ax.set_xlim(lo, hi)
-    TH.panel(ax, "E", "genes", y=1.22)
-    ax.set_xlabel(f"{ch} position (bp)")
-    ax.set_xlim(lo, hi)
-    ax.ticklabel_format(axis="x", style="plain", useOffset=False)
+    TH.panel(ax, "A", "genes", y=1.30)
+    # the shared x-axis is labelled on the BOTTOM panel (now the eQTL one), not here --
+    # leaving it on the gene panel printed the axis title between panels A and B
+    ax_eqtl.set_xlabel(f"{ch} position (bp)")
+    ax_eqtl.set_xlim(lo, hi)
+    ax_eqtl.ticklabel_format(axis="x", style="plain", useOffset=False)
 
     os.makedirs(FIG, exist_ok=True)
     for ext in ("png", "pdf"):

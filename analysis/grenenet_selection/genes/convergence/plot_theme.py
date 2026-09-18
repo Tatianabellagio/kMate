@@ -47,6 +47,10 @@ GREENS = ["#8CC98C", "#3F9B49", "#1B5E20"]
 CLASS = {"snp": FAINT, "smallindel": "#3F9B49", "sv": "#1B5E20"}
 # the one warm accent, reserved for the focal variant
 ACCENT = "#B2182B"
+# a second, cooler accent for the SNP the eQTL is actually read at -- it has to be
+# distinguishable from the focal variant (red), the variant classes (greens) and the
+# tissue rows, so it is the only purple in the figure
+TAG = "#6A4C93"
 # tissues (ATAC): muted qualitative, no primary colours
 TISSUE = {"flower": "#B48EAD", "leaf": "#8FBF7F", "root": "#C0A080", "shoot": "#8AAFCB"}
 # two-way comparisons (candidates vs background)
