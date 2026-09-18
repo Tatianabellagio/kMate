@@ -42,6 +42,10 @@ import matplotlib.colors as mcolors
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "..", "..")))
 import lib                                                    # noqa: E402
+sys.path.insert(0, os.path.join(HERE, "..", "convergence"))
+import plot_theme as TH                                   # noqa: E402
+
+TH.apply()
 
 GM = f"{lib.GEA}/common/results/gen_matrices"
 GWASD = f"{lib.GEA}/r3_persite_gwas/results/gemma_gwas"
@@ -293,23 +297,20 @@ def main():
                 mec="white", mew=0.7, zorder=4)
         # panel identity as a corner annotation (project convention: no subplot titles)
         ax.annotate(f"garden {site}", xy=(0.055, 0.93), xycoords="axes fraction",
-                    fontsize=7.5, fontweight="bold", va="top", ha="left", color="#222")
+                    fontsize=7.5, va="top", ha="left", color=TH.LABEL)
         ax.annotate(_fmt_axis(cax, b1),
                     xy=(0.055, 0.78), xycoords="axes fraction",
                     fontsize=7, va="top", ha="left", color=col)
+        # the theme removes every spine; a significant garden turns them back on in the
+        # accent colour, which is the only frame in the figure and so reads immediately
         if site in sig:
             ax.annotate("★", xy=(0.955, 0.93), xycoords="axes fraction", fontsize=10,
-                        va="top", ha="right", color="#b2182b")
+                        va="top", ha="right", color=TH.ACCENT)
             for sp in ax.spines.values():
-                sp.set_color("#b2182b"); sp.set_linewidth(1.5)
-        else:
-            for sp in ("top", "right"):
-                ax.spines[sp].set_visible(False)
+                sp.set_visible(True); sp.set_color(TH.ACCENT); sp.set_linewidth(1.1)
         ax.set_xticks([0, 1, 2, 3])
         ax.set_ylim(ylo, yhi)
         ax.tick_params(labelsize=7)
-        ax.grid(True, lw=0.3, c="0.92")
-        ax.set_axisbelow(True)
 
     for ax in axes[len(gardens):]:
         ax.axis("off")
@@ -324,17 +325,14 @@ def main():
     cb = fig.colorbar(sm, ax=axes.tolist(), fraction=0.014, pad=0.012)
     cb.set_label(AXIS_LABEL.get(cax, f"garden {cax}"), fontsize=9)
     cb.ax.tick_params(labelsize=7.5)
-    fig.text(0.055, 1.005,
-             f"ONE variant: {cfg['chrom']}:{cfg['pos']:,}  ref {cfg['ref_len']} / alt "
-             f"{cfg['alt_len']}  ({abs(cfg['alt_len']-cfg['ref_len'])} bp {sym} {lab2}) "
-             f"— the marker significant in {len(sig)}/{n_scan} gardens of the {sigcls} scan",
-             fontsize=9.5, color="#222", va="bottom", ha="left", fontweight="bold")
-    fig.text(0.055, 0.982,
-             "every dot is that SAME variant in one sequenced pool (one garden plot, one "
-             "generation);  bold line = mean over the garden's pools;  "
-             f"dashed = founding frequency p0 = {p0:.3f};  "
-             f"★ / red frame = Bonferroni-significant in that garden;  every pool drawn at its real value (no clipping)",
-             fontsize=8, color="#555", va="bottom", ha="left")
+    # No header text. The house rule is no titles, and these two blocks were the figure's
+    # de-facto title and caption -- the variant, p0, the star/frame key and the significant
+    # garden count. Everything they said is now printed to the terminal when the figure is
+    # written, so the numbers survive without being drawn on the page.
+    print(f"  {sym} {cfg['chrom']}:{cfg['pos']:,} ref {cfg['ref_len']}/alt {cfg['alt_len']} "
+          f"({abs(cfg['alt_len']-cfg['ref_len'])} bp {lab2});  p0 = {p0:.3f};  "
+          f"significant in {len(sig)}/{n_scan} gardens of the {sigcls} scan;  "
+          f"{len(gardens)} gardens drawn")
 
     os.makedirs(OUT, exist_ok=True)
     out = cfg.get("out", f"{OUT}/{sym}_garden_trajectories")

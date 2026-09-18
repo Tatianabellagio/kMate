@@ -41,6 +41,9 @@ sys.path.insert(0, GEA_DIR); sys.path.insert(0, HERE)
 sys.path.insert(0, f"{GEA_DIR}/r2_gea_nonsnp/phase1_replication")
 import lib                                                        # noqa: E402
 import atac_overlap as AO                                         # noqa: E402
+import plot_theme as TH                                           # noqa: E402
+
+TH.apply()
 
 OUT = f"{HERE}/results"
 FIG = f"{OUT}/plots/atac"          # raw render dir; organize_figures.py links it
@@ -49,8 +52,7 @@ FIG = f"{OUT}/plots/atac"          # raw render dir; organize_figures.py links i
 WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
 TISSUES = AO.TISSUES
 BONF = {"snp": 7.55, "smallindel": 7.02, "sv": 5.41}       # per-class, as plot_locus_combined
-CLS_C = {"snp": "#b8b8b8", "smallindel": "#4c72b0", "sv": "#c44e52"}
-TIS_C = {"flower": "#b07aa1", "leaf": "#59a14f", "root": "#9c755f", "shoot": "#4e79a7"}
+CLS_C, TIS_C, ACC = TH.CLASS, TH.TISSUE, TH.ACCENT
 
 # candidate -> the variant to zoom on; axis is the record's own best GEA axis
 CANDIDATES = {
@@ -166,9 +168,9 @@ def plot_locus(sym, pad=8000):
     band = max(vend - vpos, (hi - lo) / 400)
     mid = (vpos + vend) / 2
     for ax in axs:
-        ax.axvspan(mid - band / 2, mid + band / 2, color="#c44e52", alpha=0.13, lw=0,
+        ax.axvspan(mid - band / 2, mid + band / 2, color=ACC, alpha=0.07, lw=0,
                    zorder=0)
-        ax.axvline(vpos, color="#c44e52", ls="--", lw=0.7, alpha=0.55, zorder=1)
+        ax.axvline(vpos, color=ACC, ls="--", lw=0.7, alpha=0.5, zorder=1)
 
     # ---- A: GEA Manhattan ---------------------------------------------------------------
     ax = axs[0]
@@ -184,8 +186,7 @@ def plot_locus(sym, pad=8000):
             ax.scatter(d.pos, d.nlp, s=np.where(d.cls == "snp", 10, 26 if thin else 34),
                        c=CLS_C[cls],
                        marker="o" if cls == "snp" else ("D" if cls == "sv" else "s"),
-                       edgecolor="none" if cls == "snp" else "k",
-                       linewidth=0.2 if thin else 0.4,
+                       edgecolor="none",
                        label=cls, zorder=3,
                        alpha=0.55 if thin else 0.85)
             ax.axhline(BONF[cls], color=CLS_C[cls], ls=":", lw=0.9, zorder=1)
@@ -193,19 +194,18 @@ def plot_locus(sym, pad=8000):
         ax.set_ylim(top=max(G.nlp.max(), max(BONF.values())) * 1.2)
         lead = G[(G.pos == vpos) & (G.ref_len == rl) & (G.alt_len == cfg["alt_len"])]
         if len(lead):
-            ax.scatter(lead.pos, lead.nlp, s=190, facecolor="none", edgecolor="#c44e52",
+            ax.scatter(lead.pos, lead.nlp, s=190, facecolor="none", edgecolor=ACC,
                        linewidth=1.8, zorder=5)
         ax.legend(loc="upper right", fontsize=7.5, frameon=False, ncol=3)
     ax.set_ylabel(f"$-\\log_{{10}}p$  GEA ({axis})")
-    ax.annotate("A   climate association", (0.012, 0.965), xycoords="axes fraction",
-                fontsize=9, va="top")
+    TH.panel(ax, "A", "climate association")
 
     # ---- B: cis-eQTL ---------------------------------------------------------------------
     ax = axs[1]
     if len(Q):
-        ax.scatter(Q.ps, Q.nlp, s=12, c="#7f7f7f", edgecolor="none", alpha=0.75, zorder=2)
+        ax.scatter(Q.ps, Q.nlp, s=12, c=TH.FAINT, edgecolor="none", alpha=0.9, zorder=2)
         pk = Q.loc[Q.nlp.idxmax()]
-        ax.scatter([pk.ps], [pk.nlp], s=42, c="#333333", edgecolor="k", linewidth=0.4,
+        ax.scatter([pk.ps], [pk.nlp], s=42, c=TH.GREENS[2], edgecolor="none",
                    zorder=4)
         if tag and not tag["untestable"]:
             d = (Q.ps - tag["pos"]).abs()
@@ -215,58 +215,48 @@ def plot_locus(sym, pad=8000):
             # marker goes on the SNP actually TESTED, not on the tag position -- drawing
             # it at the tag with a neighbour's p-value would invent a datum
             ax.scatter([Q.loc[j, "ps"]], [nl], s=150, marker="D", facecolor="none",
-                       edgecolor="#c44e52", linewidth=1.8, zorder=5)
+                       edgecolor=ACC, linewidth=1.8, zorder=5)
             if off:
-                ax.axvline(tag["pos"], color="#c44e52", ls=":", lw=0.8, alpha=0.6, zorder=1)
+                ax.axvline(tag["pos"], color=ACC, ls=":", lw=0.8, alpha=0.6, zorder=1)
             msg = f"tag SNP r²={tag['r2']:.2f} ({pct:.0f}th pctile)"
             col = "#2e7d32" if (pct >= 90 and off == 0) else "#c44e52"
         else:
             msg = "no tagging SNP (r² untestable)"
             col = "#c44e52"
         ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.3)
-        ax.annotate(msg, (0.012, 0.88), xycoords="axes fraction", fontsize=8, color=col,
-                    va="top")
+        ax.annotate(msg, (0.012, 0.88), xycoords="axes fraction", fontsize=8, color=col, va="top")
     else:
-        ax.annotate("no cis-eQTL run for this gene", (0.012, 0.5),
-                    xycoords="axes fraction", fontsize=8, color="#c44e52")
+        TH.note(ax, "no cis-eQTL run for this gene", y=0.5, color=ACC)
     ax.set_ylabel("$-\\log_{10}p$  cis-eQTL")
-    ax.annotate("B   expression (1001T, SNPs only)",
-                (0.012, 0.965), xycoords="axes fraction", fontsize=9,
-                va="top")
+    TH.panel(ax, "B", "expression (1001T, SNPs only)")
 
     # ---- C: TFBS turnover ----------------------------------------------------------------
     ax = axs[2]
     if len(H):
-        ax.scatter(H.gstart, np.full(len(H), 0.5), marker="|", s=70, c="#9e9e9e",
+        ax.scatter(H.gstart, np.full(len(H), 0.5), marker="|", s=70, c=TH.MUTED,
                    linewidth=1.0, zorder=2)
-        ax.annotate("unchanged", (0.012, 0.5),
-                    xycoords=("axes fraction", "data"), fontsize=7.5, color="#777777",
-                    va="center")
-    for eff, y, c, mk in [("GAINED", 0.82, "#2e7d32", "^"), ("LOST", 0.18, "#c44e52", "v")]:
+        ax.annotate("unchanged", (0.012, 0.5), xycoords=("axes fraction", "data"),
+                    fontsize=7.5, color=TH.MUTED, va="center")
+    for eff, y, c, mk in [("GAINED", 0.82, TH.GREENS[1], "^"), ("LOST", 0.18, ACC, "v")]:
         d = T[T.effect == eff] if len(T) else T
         if len(d):
             ax.scatter(d.gstart, np.full(len(d), y), marker=mk, s=46, c=c,
-                       edgecolor="k", linewidth=0.3, zorder=3)
+                       edgecolor="none", zorder=3)
         ax.annotate(eff.lower(), (0.012, y),
                     xycoords=("axes fraction", "data"), fontsize=8,
-                    color=c if len(d) else "#aaaaaa", va="center")
+                    color=c if len(d) else TH.FAINT, va="center")
     if len(SUM) and not len(T):
-        ax.annotate("no turnover", (0.988, 0.20), xycoords="axes fraction",
-                    fontsize=7.5, color="#c44e52", va="center", ha="right")
+        TH.note(ax, "no turnover", y=0.20, x=0.988, color=ACC, ha="right")
     elif not len(SUM):
-        ax.annotate("not run for this variant", (0.988, 0.20),
-                    xycoords="axes fraction", fontsize=7.5, color="#c44e52",
-                    va="center", ha="right")
+        TH.note(ax, "not run for this variant", y=0.20, x=0.988, color=ACC, ha="right")
     ax.set_ylim(0, 1); ax.set_yticks([])
     ax.set_ylabel("TFBS")
-    ax.annotate("C   motif turnover, REF vs ALT", (0.012, 0.965),
-                xycoords="axes fraction", fontsize=9, va="top")
+    TH.panel(ax, "C", "motif turnover, REF vs ALT")
 
     # ---- D: ATAC -------------------------------------------------------------------------
     ax = axs[3]
     for i, t in enumerate(TISSUES):
         y = len(TISSUES) - 1 - i
-        ax.axhline(y, color="#eeeeee", lw=0.6, zorder=0)
         sel = tm[:, i] == 1
         for s, e in zip(ps[sel], pe[sel]):
             ax.add_patch(Rectangle((s, y - 0.3), e - s, 0.6, color=TIS_C[t], alpha=0.85,
@@ -280,24 +270,22 @@ def plot_locus(sym, pad=8000):
     ntis = int(num[hit].max()) if len(hit) else 0
     ov = int(sum(min(pe[j], vend) - max(ps[j], vpos) + 1 for j in hit))
     whole = int(sum((ps[j] >= vpos) and (pe[j] <= vend) for j in hit))
-    ax.annotate("D   open chromatin", (0.012, 0.93), xycoords="axes fraction",
-                fontsize=9, va="top")
+    TH.panel(ax, "D", "open chromatin")
 
     # ---- E: gene models ------------------------------------------------------------------
     ax = axs[4]
     for j, g in enumerate(gw.itertuples()):
         y = -(j % 2) * 0.45
         ax.add_patch(Rectangle((g.start, y - 0.10), g.end - g.start, 0.20,
-                               color="#37474f", alpha=0.85, lw=0, zorder=2))
+                               color="#B0B0B0", alpha=1.0, lw=0, zorder=2))
         nm = g.name if isinstance(g.name, str) and g.name else g.gene
         ax.annotate(f"{nm} {'▶' if g.strand == '+' else '◀'}",
                     ((max(g.start, lo) + min(g.end, hi)) / 2, y + 0.16),
                     ha="center", fontsize=7.5,
-                    color="#c44e52" if g.gene == cfg["gene"] else "#37474f")
+                    color=ACC if g.gene == cfg["gene"] else TH.TICK)
     ax.set_ylim(-0.75, 0.42); ax.set_yticks([]); ax.set_ylabel("genes")
     ax.set_xlim(lo, hi)
-    ax.annotate("E   genes", (0.012, 1.14), xycoords="axes fraction", fontsize=9,
-                va="top")
+    TH.panel(ax, "E", "genes", y=1.22)
     ax.set_xlabel(f"{ch} position (bp)")
     ax.set_xlim(lo, hi)
     ax.ticklabel_format(axis="x", style="plain", useOffset=False)
@@ -338,20 +326,18 @@ def plot_enrichment():
     y = np.arange(len(order))
     cv = [100 * C[C.region == r].in_atac.mean() for r in order]
     bv = [100 * rate.get(r, np.nan) for r in order]
-    ax.barh(y + 0.19, bv, height=0.36, color="#c9c9c9", label="testable background")
-    ax.barh(y - 0.19, cv, height=0.36, color="#4c72b0", label="candidates")
+    ax.barh(y + 0.19, bv, height=0.36, color=TH.BACKDROP, label="testable background")
+    ax.barh(y - 0.19, cv, height=0.36, color=TH.FOCUS, label="candidates")
     for i, r in enumerate(order):
         ax.annotate(f"{cv[i]/bv[i]:.2f}x   n={len(C[C.region==r]):,}",
-                    (max(cv[i], bv[i]) + 1.4, i), va="center", fontsize=7.5, color="#555555")
+                    (max(cv[i], bv[i]) + 1.4, i), va="center", fontsize=7.5, color=TH.MUTED)
     ax.set_yticks(y); ax.set_yticklabels(order)
-    ax.set_ylim(len(order) - 0.4, -1.25)                 # blank top row for the annotation
+    TH.grid_only(ax, "x")
+    ax.set_ylim(len(order) - 0.4, -0.6)
     ax.set_xlim(0, 72)
     ax.set_xlabel("variants overlapping an ATAC peak (%)")
-    ax.legend(fontsize=8, frameon=False, loc="lower right", bbox_to_anchor=(1.0, 0.02))
-    ax.annotate("A   the pool is explained by region alone — 21.6% observed "
-                "vs 20.8% expected = 1.04x",
-                (0.0, -1.0), xycoords=("axes fraction", "data"), xytext=(4, 0),
-                textcoords="offset points", fontsize=8.8, va="center", ha="left")
+    ax.legend(fontsize=8, loc="lower right", bbox_to_anchor=(1.0, 0.02))
+    TH.panel(ax, "A", "overlap by region", y=1.09)
 
     # --- B: the shortlist, against its region-matched expectation -------------------------
     ax = axs[1]
@@ -359,28 +345,32 @@ def plot_enrichment():
                              exp=("p_bg", lambda s: 1 - np.prod(1 - s.values))).reset_index()
     g = g.sort_values(["obs", "exp"], ascending=[False, True]).reset_index(drop=True)
     yy = np.arange(len(g))
-    ax.barh(yy, 100 * g.exp, height=0.46, color="#d6d6d6", label="expected (region-matched)")
+    ax.barh(yy, 100 * g.exp, height=0.46, color=TH.BACKDROP, label="expected (region-matched)")
     ax.scatter(np.where(g.obs, 100, 0), yy, marker="o", s=58,
-               c=np.where(g.obs, "#2e7d32", "#c44e52"), zorder=3, edgecolor="k", linewidth=0.4)
+               c=np.where(g.obs, TH.FOCUS, ACC), zorder=3, edgecolor="none")
     for i, r in g.iterrows():
         ax.annotate("in a peak" if r.obs else "not in a peak",
                     (100 if r.obs else 0, i), xytext=(-6 if r.obs else 6, 0),
                     textcoords="offset points", ha="right" if r.obs else "left",
-                    va="center", fontsize=7, color="#2e7d32" if r.obs else "#c44e52")
+                    va="center", fontsize=7, color=TH.FOCUS if r.obs else ACC)
     ax.set_yticks(yy); ax.set_yticklabels(g["sym"], fontsize=8.5)
-    ax.set_ylim(len(g) - 0.4, -1.5)                      # blank top row for the annotation
+    TH.grid_only(ax, "x")
+    ax.set_ylim(len(g) - 0.4, -0.6)
     ax.set_xlim(-2, 118); ax.set_xticks([0, 25, 50, 75, 100])
     ax.set_xlabel("P(gene has a variant in a peak), %")
-    ax.legend(fontsize=7.5, frameon=False, loc="lower right", bbox_to_anchor=(1.0, -0.03))
-    ax.annotate(f"B   shortlist: {int(g.obs.sum())}/10 genes, 3.9 expected, p = 0.006",
-                (0.0, -1.2), xycoords=("axes fraction", "data"), xytext=(4, 0),
-                textcoords="offset points", fontsize=8.8, va="center", ha="left")
+    ax.legend(fontsize=7.5, loc="upper left", bbox_to_anchor=(0.14, 1.0))
+    TH.panel(ax, "B", "shortlist vs region-matched expectation", y=1.09)
 
     os.makedirs(FIG, exist_ok=True)
     for ext in ("png", "pdf"):
         fig.savefig(f"{FIG}/atac_enrichment.{ext}", dpi=170, bbox_inches="tight")
     plt.close(fig)
-    print(f"  wrote {FIG}/atac_enrichment.png")
+    obs_rate = 100 * C.in_atac.mean()
+    exp_rate = 100 * C.region.map(rate).dropna().mean()
+    print(f"  wrote {FIG}/atac_enrichment.png   "
+          f"(pool {obs_rate:.1f}% observed vs {exp_rate:.1f}% expected from its own region "
+          f"mix = {obs_rate/exp_rate:.2f}x; shortlist {int(g.obs.sum())}/10 genes, "
+          f"{g.exp.sum():.1f} expected, p = 0.006)")
 
 
 if __name__ == "__main__":
