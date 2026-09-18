@@ -214,9 +214,14 @@ def plot_locus(sym, pad=8000):
             if len(t):
                 ax.scatter(t.pos, t.nlp, s=120, marker="o", facecolor="none",
                            edgecolor=TH.TAG, linewidth=1.5, zorder=5)
-            lab = (f"eQTL tag SNP {tag_pos:,}  "
-                   + (f"founder r²={tag_stat:.2f}" if tag_meth == "founder_r2"
-                      else f"pool-AF r={tag_stat:.3f}"))
+            # distance AND the statistic: the nearest significant SNP is often NOT the
+            # tag (GPX6's is 8 bp away at r²=0.48, the real tag is 1.4 kb away at r²=1.00),
+            # so the label has to show why this one was chosen
+            dkb = (tag_pos - vpos) / 1000
+            lab = (f"eQTL tag SNP {tag_pos:,}  ({dkb:+.1f} kb, "
+                   + (f"founder r²={tag_stat**2 if tag_meth!='founder_r2' else tag_stat:.2f})"
+                      if tag_meth == "founder_r2"
+                      else f"pool-AF r²={tag_stat**2:.2f})"))
             ax.annotate(lab, xy=(tag_pos, 0.995), xycoords=("data", "axes fraction"),
                         ha="center", va="top", fontsize=7.5, color=TH.TAG)
         ax.legend(loc="upper right", fontsize=7.5, frameon=False, ncol=3)
@@ -229,7 +234,8 @@ def plot_locus(sym, pad=8000):
     kind = "del" if rl > cfg["alt_len"] else "ins"
     dsize = abs(cfg["alt_len"] - rl)
     tag_x = min(max(mid, lo + (hi - lo) * 0.13), hi - (hi - lo) * 0.13)
-    ax_gene.annotate(f"ALT {kind} {dsize:,} bp  ·  REF {rl:,} bp",
+    kindw = "deletion" if kind == "del" else "insertion"
+    ax_gene.annotate(f"{dsize:,} bp {kindw}   REF {rl:,} → ALT {cfg['alt_len']:,} bp",
                     xy=(tag_x, 1.005), xycoords=("data", "axes fraction"),
                     ha="center", va="bottom", fontsize=8, color=ACC)
 
