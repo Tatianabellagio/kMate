@@ -1,0 +1,3 @@
+symbol,gene,motif,family,strand,gstart,span_variant,in_alt_allele,ref_len_bp,alt_len_bp,ref_score,alt_score,effect,best_q
+CYP28,AT5G35100,AT4G38000,Dof,+,13362264,True,False,28,,13.4,,LOST,0.0029
+CYP28,AT5G35100,AT2G45660,MIKC_MADS,-,13362900,True,False,21,,15.2,,LOST,0.0029

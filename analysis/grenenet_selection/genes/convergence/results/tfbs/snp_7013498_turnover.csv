@@ -1,0 +1,2 @@
+symbol,gene,motif,family,strand,gstart,span_variant,in_alt_allele,ref_len_bp,alt_len_bp,ref_score,alt_score,effect,best_q
+snp_7013498,AT4G11600,AT2G45660,MIKC_MADS,-,7013495,True,False,,21,,13.6,GAINED,0.0036
