@@ -255,11 +255,20 @@ AT3G51450,SSL7,GWAS,5,A,GOOD,bio9,1317904,SSL7__grid.png,SSL7__locus.png,
 AT5G23210,SCPL34,GWAS,7,A,GOOD,bio15,1847015,SCPL34__grid.png,SCPL34__locus.png,
 AT5G48410,GLR1.3,GWAS,8,A,GOOD,bio15,2135272,GLR1.3__grid.png,GLR1.3__locus.png,
 AT2G01180,LPP1,GWAS,9,B,GOOD,bio15,594079,LPP1__grid.png,LPP1__locus.png,
+,ALA6,atac,,,,,,,,ALA6__atac.png
+,AT1G52450,atac,,,,,,,,AT1G52450__atac.png
 ,AT2G30000,atac,,,,,,,,AT2G30000__atac.png
+,AT3G43230,atac,,,,,,,,AT3G43230__atac.png
+,AT4G02540,atac,,,,,,,,AT4G02540__atac.png
+,AT4G10130,atac,,,,,,,,AT4G10130__atac.png
 ,AT4G13200,atac,,,,,,,,AT4G13200__atac.png
 ,CRK14,atac,,,,,,,,CRK14__atac.png
+,CYP28,atac,,,,,,,,CYP28__atac.png
 ,FUS3,atac,,,,,,,,FUS3__atac.png
 ,GPX6,atac,,,,,,,,GPX6__atac.png
+,MTERF24,atac,,,,,,,,MTERF24__atac.png
+,PGIP1,atac,,,,,,,,PGIP1__atac.png
+,PKP3,atac,,,,,,,,PKP3__atac.png
 AT1G17310,AGL100,round1,,E no pattern,WEAK,bio15,80582,AGL100__grid.png,AGL100__locus.png,
 AT2G14750,APK1,round1,,E no pattern,WEAK,bio15,734815,APK1__grid.png,APK1__locus.png,
 AT3G10740,ASD1,round1,,E no pattern,WEAK,,1008581,ASD1__grid.png,ASD1__locus.png,

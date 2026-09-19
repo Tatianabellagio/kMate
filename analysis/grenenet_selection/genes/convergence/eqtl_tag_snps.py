@@ -32,17 +32,10 @@ import lib                                                       # noqa: E402
 OUT = f"{HERE}/results"
 WIN = 25_000
 
-CAND = {  # sym -> (gene, chrom, pos, ref_len, alt_len)
-    "GPX6": ("AT4G11600", "Chr4", 7011705, 1225, 61),
-    "FUS3": ("AT3G26790", "Chr3", 9856500, 3, 1),
-    "AT2G30000": ("AT2G30000", "Chr2", 12805666, 1, 2),
-    "AT4G13200": ("AT4G13200", "Chr4", 7669175, 1, 3),
-    "CRK14": ("AT4G23220", "Chr4", 12157244, 64, 1),
-    "SSL7": ("AT3G51450", "Chr3", 19091417, 2, 13),
-    "SCPL34": ("AT5G23210", "Chr5", 7812576, 3, 1),
-    "GLR1.3": ("AT5G48410", "Chr5", 19619649, 2, 1),
-    "LPP1": ("AT2G01180", "Chr2", 108729, 1, 2),
-}
+# candidate list lives in results/functional_track_candidates.csv (one table, three scripts)
+_T = pd.read_csv(f"{HERE}/results/functional_track_candidates.csv")
+CAND = {r.symbol: (r.gene, r.chrom, int(r.pos), int(r.ref_len), int(r.alt_len))
+        for r in _T.itertuples()}
 
 
 def main():

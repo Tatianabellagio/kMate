@@ -50,9 +50,9 @@ PLINK2, GEMMA = f"{ENVBIN}/plink2", f"{ENVBIN}/gemma"
 WINDOW = 10_000
 MIN_N = 50
 
-CANDIDATES = {"AT4G11600": "GPX6", "AT3G26790": "FUS3", "AT2G30000": "AT2G30000",
-              "AT4G13200": "AT4G13200", "AT4G23220": "CRK14", "AT3G51450": "SSL7",
-              "AT5G23210": "SCPL34", "AT5G48410": "GLR1.3", "AT2G01180": "LPP1"}
+# candidate list lives in results/functional_track_candidates.csv (one table, three scripts)
+CANDIDATES = dict(pd.read_csv(f"{HERE}/results/functional_track_candidates.csv")[["gene", "symbol"]]
+                  .drop_duplicates("gene").itertuples(index=False, name=None))
 
 
 def phenotypes() -> pd.DataFrame:

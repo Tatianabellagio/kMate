@@ -1,10 +1,19 @@
 symbol,gene,chrom,var_pos,tag_pos,tag_stat,method,dist_bp,note,eqtl_nlp,eqtl_pct,tag_tested
 GPX6,AT4G11600,Chr4,7011705,7013143,1.0,pool_af,1438,founder r2 untestable; best pool-AF match over 352 pools (r=+1.0000),0.466,44.7,True
-FUS3,AT3G26790,Chr3,9856500,9854938,0.608,pool_af,-1562,founder r2 untestable; best pool-AF match over 352 pools (r=+0.6080),0.731,82.8,True
-AT2G30000,AT2G30000,Chr2,12805666,12805556,0.9641,founder_r2,-110,,0.43,36.0,True
 AT4G13200,AT4G13200,Chr4,7669175,7670176,0.5682,founder_r2,1001,,1.113,76.6,True
+AT2G30000,AT2G30000,Chr2,12805666,12805556,0.9641,founder_r2,-110,,0.43,36.0,True
+FUS3,AT3G26790,Chr3,9856500,9854938,0.608,pool_af,-1562,founder r2 untestable; best pool-AF match over 352 pools (r=+0.6080),0.731,82.8,True
 CRK14,AT4G23220,Chr4,12157244,12156606,1.0,founder_r2,-638,,31.131,93.4,False
 SSL7,AT3G51450,Chr3,19091417,19089479,1.0,founder_r2,-1938,,1.983,75.4,True
 SCPL34,AT5G23210,Chr5,7812576,7812494,1.0,founder_r2,-82,,1.402,63.6,True
 GLR1.3,AT5G48410,Chr5,19619649,19623429,0.7962,founder_r2,3780,,,,False
 LPP1,AT2G01180,Chr2,108729,108950,1.0,founder_r2,221,,0.227,30.3,False
+AT4G02540,AT4G02540,Chr4,1114940,1117461,0.438,pool_af,2521,founder r2 untestable; best pool-AF match over 352 pools (r=+0.4380),0.068,7.4,False
+MTERF24,AT1G62085,Chr1,22950155,22942841,1.0,founder_r2,-7314,,0.939,57.1,False
+AT4G10130,AT4G10130,Chr4,6321638,6321991,1.0,pool_af,353,founder r2 untestable; best pool-AF match over 352 pools (r=+1.0000),0.204,16.8,False
+ALA6,AT1G54280,Chr1,20268185,20268137,0.7182,founder_r2,-48,,,,False
+CYP28,AT5G35100,Chr5,13362159,13361626,0.809,founder_r2,-533,,1.224,65.4,True
+AT3G43230,AT3G43230,Chr3,15205485,15215454,0.6765,pool_af,9969,founder r2 untestable; best pool-AF match over 352 pools (r=+0.6765),1.734,88.3,True
+PGIP1,AT5G06860,Chr5,2131980,2131115,0.4854,founder_r2,-865,,0.046,7.5,True
+PKP3,AT1G32440,Chr1,11710599,11710303,1.0,founder_r2,-296,,0.289,30.4,False
+AT1G52450,AT1G52450,Chr1,19546776,19546659,1.0,founder_r2,-117,,,,False

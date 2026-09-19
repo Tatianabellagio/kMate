@@ -55,21 +55,13 @@ BONF = {"snp": 7.55, "smallindel": 7.02, "sv": 5.41}       # per-class, as plot_
 CLS_C, TIS_C, ACC = TH.CLASS, TH.TISSUE, TH.ACCENT
 
 # candidate -> the variant to zoom on; axis is the record's own best GEA axis
-CANDIDATES = {
-    # alt_len is not decoration: 2.14% of arch3 positions carry several records, and
-    # circling on chrom+pos alone outlines the wrong allele (memory
-    # `panel-multiallelic-pos-key-trap`). AT4G13200 has two records at 7,669,175.
-    "GPX6":      dict(gene="AT4G11600", chrom="Chr4", pos=7011705, ref_len=1225,
-                      alt_len=61, axis="pc1"),
-    "AT4G13200": dict(gene="AT4G13200", chrom="Chr4", pos=7669175, ref_len=1,
-                      alt_len=3, axis=None),
-    "AT2G30000": dict(gene="AT2G30000", chrom="Chr2", pos=12805666, ref_len=1,
-                      alt_len=2, axis=None),
-    "FUS3":      dict(gene="AT3G26790", chrom="Chr3", pos=9856500, ref_len=3,
-                      alt_len=1, axis=None),
-    "CRK14":     dict(gene="AT4G23220", chrom="Chr4", pos=12157244, ref_len=64,
-                      alt_len=1, axis=None),
-}
+# candidate list lives in results/functional_track_candidates.csv (one table, three scripts)
+# alt_len is required, not decoration: 2.14% of arch3 positions carry several records and
+# circling on chrom+pos alone outlines the wrong allele (memory panel-multiallelic-pos-key-trap)
+_T = pd.read_csv(f"{HERE}/results/functional_track_candidates.csv").fillna({"axis": ""})
+CANDIDATES = {r.symbol: dict(gene=r.gene, chrom=r.chrom, pos=int(r.pos),
+                             ref_len=int(r.ref_len), alt_len=int(r.alt_len),
+                             axis=r.axis or None) for r in _T.itertuples()}
 
 
 def gea_axis(cfg):
@@ -163,7 +155,9 @@ def plot_locus(sym, pad=8000):
     H = pd.read_csv(hf) if os.path.exists(hf) else pd.DataFrame()
     if len(H):
         H = H[(H.kept) & (H.seq == "ref")]
-    SUM = pd.read_csv(f"{OUT}/tfbs/turnover_summary.csv")
+    SUM = pd.concat([pd.read_csv(f) for f in (f"{OUT}/tfbs/turnover_summary.csv",
+                     f"{OUT}/tfbs/mech_shortlist_turnover_summary.csv") if os.path.exists(f)],
+                    ignore_index=True).drop_duplicates("symbol", keep="last")
     SUM = SUM[SUM.symbol == sym]
 
     # genes on top as the reference track, eQTL last
