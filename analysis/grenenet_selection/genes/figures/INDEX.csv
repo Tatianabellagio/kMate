@@ -257,11 +257,14 @@ AT5G48410,GLR1.3,GWAS,8,A,GOOD,bio15,2135272,GLR1.3__grid.png,GLR1.3__locus.png,
 AT2G01180,LPP1,GWAS,9,B,GOOD,bio15,594079,LPP1__grid.png,LPP1__locus.png,,
 ,ALA6,atac,,,,,,,,ALA6__atac.png,
 ,AT1G52450,atac,,,,,,,,AT1G52450__atac.png,
+,AT2G14910,atac,,,,,,,,AT2G14910__atac.png,
 ,AT2G30000,atac,,,,,,,,AT2G30000__atac.png,
 ,AT3G19515,atac,,,,,,,,AT3G19515__atac.png,
 ,AT3G43230,atac,,,,,,,,AT3G43230__atac.png,
 ,AT4G02540,atac,,,,,,,,AT4G02540__atac.png,
+,AT4G02820,atac,,,,,,,,AT4G02820__atac.png,
 ,AT4G10130,atac,,,,,,,,AT4G10130__atac.png,
+,AT4G11800,atac,,,,,,,,AT4G11800__atac.png,
 ,AT4G13200,atac,,,,,,,,AT4G13200__atac.png,
 ,CRK14,atac,,,,,,,,CRK14__atac.png,
 ,CYP28,atac,,,,,,,,CYP28__atac.png,
@@ -271,7 +274,10 @@ AT2G01180,LPP1,GWAS,9,B,GOOD,bio15,594079,LPP1__grid.png,LPP1__locus.png,,
 ,PGIP1,atac,,,,,,,,PGIP1__atac.png,
 ,PKP3,atac,,,,,,,,PKP3__atac.png,
 ,RLM3,atac,,,,,,,,RLM3__atac.png,
+,AT2G14910,expr,,,,,,,,,AT2G14910__expr.png
 ,AT3G19515,expr,,,,,,,,,AT3G19515__expr.png
+,AT4G02820,expr,,,,,,,,,AT4G02820__expr.png
+,AT4G11800,expr,,,,,,,,,AT4G11800__expr.png
 ,AT5G40855,expr,,,,,,,,,AT5G40855__expr.png
 ,CRK14,expr,,,,,,,,,CRK14__expr.png
 ,GPX6,expr,,,,,,,,,GPX6__expr.png
@@ -365,9 +371,11 @@ AT2G27030,CAM5,round1,20,A pattern + co-signal locus,GOOD,bio3,848530,CAM5__grid
 ,AT1G52180,unreviewed,,,,,,,AT1G52180__locus.png,,
 ,AT1G53790,unreviewed,,,,,,AT1G53790__grid.png,AT1G53790__locus.png,,
 ,AT2G03370,unreviewed,,,,,,AT2G03370__grid.png,AT2G03370__locus.png,,
+,AT2G14910,unreviewed,,,,,,AT2G14910__grid.png,AT2G14910__locus.png,,
 ,AT3G19515,unreviewed,,,,,,AT3G19515__grid.png,AT3G19515__locus.png,,
 ,AT3G27540,unreviewed,,,,,,AT3G27540__grid.png,AT3G27540__locus.png,,
 ,AT3G43430,unreviewed,,,,,,AT3G43430__grid.png,AT3G43430__locus.png,,
+,AT4G02820,unreviewed,,,,,,AT4G02820__grid.png,AT4G02820__locus.png,,
 ,AT4G05018,unreviewed,,,,,,AT4G05018__grid.png,AT4G05018__locus.png,,
 ,AT4G11870,unreviewed,,,,,,AT4G11870__grid.png,AT4G11870__locus.png,,
 ,AT4G12500,unreviewed,,,,,,AT4G12500__grid.png,AT4G12500__locus.png,,

@@ -35,7 +35,7 @@ PROJ = CT.PROJ
 
 
 def main(syms):
-    D = pd.read_csv(f"{OUT}/carrier_expression_test.csv")
+    D = pd.read_csv(f"{OUT}/functional_track_candidates.csv").rename(columns={"symbol": "sym"})
     Gx = pd.read_csv(f"{CT.EQ}/expr_genes.csv")
     Cx = pd.read_csv(f"{CT.EQ}/expr_control.csv")
     graw = Gx.pivot_table(index="acc", columns="id", values="raw", aggfunc="mean")
