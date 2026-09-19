@@ -64,7 +64,11 @@ D["L_mechanism"] = (D.mech_grade >= 1).astype(int)
 regulatory = D["mode"].isin(["promoter", "5'UTR", "3'UTR", "intron", "intergenic", "splice"])
 D["L_chromatin"] = ((D.atac_bp > 0) & regulatory).astype(int)
 D["L_expression"] = ((D.q_expr < 0.10) & (D.p_expr_emp <= 0.05)).astype(int)
-D["L_motif"] = ((D.get("tfbs_lost", 0).fillna(0) + D.get("tfbs_gained", 0).fillna(0)) > 0).astype(int)
+# a motif call that is repeat-driven (same motif matched at many offsets, or an indel inside a
+# microsatellite -- repeat_context.py) is not counted as a line; tfbs_repeat stays as a flag
+turnover = (D.get("tfbs_lost", 0).fillna(0) + D.get("tfbs_gained", 0).fillna(0)) > 0
+D["tfbs_repeat"] = D.get("tfbs_repeat", False).fillna(False).astype(bool)
+D["L_motif"] = (turnover & ~D.tfbs_repeat).astype(int)
 L = ["L_climate", "L_locus", "L_gwas", "L_mechanism", "L_chromatin", "L_motif", "L_expression"]
 D["n_lines"] = D[L].sum(1)
 

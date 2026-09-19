@@ -144,14 +144,20 @@ def plot_locus(sym, pad=8000):
         else None
     tag_meth = trow.method.iloc[0] if len(trow) else ""
     tag_stat = float(trow.tag_stat.iloc[0]) if len(trow) else np.nan
-    tf = f"{OUT}/tfbs/{sym}_turnover.csv"
-    T = pd.read_csv(tf) if os.path.exists(tf) else pd.DataFrame()
+    # hand-run files are keyed by symbol; the whole-pool run (tfbs_pool.py) by variant
+    pool_tag = f"{cfg['gene']}_{vpos}_{rl}_{cfg['alt_len']}"
+    base = f"{OUT}/tfbs/{sym}"
+    if not os.path.exists(f"{base}_hits.csv") and os.path.exists(
+            f"{OUT}/tfbs/pool/{pool_tag}_hits.csv"):
+        base = f"{OUT}/tfbs/pool/{pool_tag}"
+    tf = f"{base}_turnover.csv"
+    T = pd.read_csv(tf) if os.path.exists(tf) and os.path.getsize(tf) > 1 else pd.DataFrame()
     if len(T):
         T = T[T.effect.isin(["LOST", "GAINED"])]
     # the motif sites that did NOT change: without them a gene with no turnover draws an
     # empty panel, which reads as "track missing" when it actually means "FIMO found sites
     # here and the variant touches none of them" -- a result, not an absence
-    hf = f"{OUT}/tfbs/{sym}_hits.csv"
+    hf = f"{base}_hits.csv"
     H = pd.read_csv(hf) if os.path.exists(hf) else pd.DataFrame()
     if len(H):
         H = H[(H.kept) & (H.seq == "ref")]
@@ -159,6 +165,8 @@ def plot_locus(sym, pad=8000):
                      f"{OUT}/tfbs/mech_shortlist_turnover_summary.csv") if os.path.exists(f)],
                     ignore_index=True).drop_duplicates("symbol", keep="last")
     SUM = SUM[SUM.symbol == sym]
+    if not len(SUM) and base.endswith(pool_tag):
+        SUM = pd.DataFrame([dict(symbol=sym)])             # pool run exists: "run", not "missing"
 
     # genes on top as the reference track, eQTL last
     fig, axs = plt.subplots(5, 1, figsize=(11, 11.8), sharex=True,
@@ -216,8 +224,17 @@ def plot_locus(sym, pad=8000):
                    + (f"founder r²={tag_stat**2 if tag_meth!='founder_r2' else tag_stat:.2f})"
                       if tag_meth == "founder_r2"
                       else f"pool-AF r²={tag_stat**2:.2f})"))
-            ax.annotate(lab, xy=(tag_pos, 0.995), xycoords=("data", "axes fraction"),
-                        ha="center", va="top", fontsize=7.5, color=TH.TAG)
+            # a tag outside the window is labelled at the nearer edge, pointing out --
+            # drawn at its own x it would sit off-axis and stretch the saved canvas
+            if lo <= tag_pos <= hi:
+                ax.annotate(lab, xy=(tag_pos, 0.995), xycoords=("data", "axes fraction"),
+                            ha="center", va="top", fontsize=7.5, color=TH.TAG)
+            else:
+                left = tag_pos < lo
+                ax.annotate(("← " if left else "") + lab + (" →" if not left else ""),
+                            xy=(0.005 if left else 0.995, 0.86), xycoords="axes fraction",
+                            ha="left" if left else "right", va="top", fontsize=7.5,
+                            color=TH.TAG)
         ax.legend(loc="upper right", fontsize=7.5, frameon=False, ncol=3)
     ax.set_ylabel(f"$-\\log_{{10}}p$  GEA ({axis})")
     TH.panel(ax, "B", "climate association")
