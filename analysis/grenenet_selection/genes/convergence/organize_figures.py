@@ -200,6 +200,22 @@ def main():
                                   grade="", axis="", store_row="", grid="", locus=f, atac=""))
     I = pd.concat([I, pd.DataFrame(urows)], ignore_index=True)
 
+    # expression figures (plot_expression.py): carriers vs non-carriers + lineage control
+    expr_src = f"{RES}/plots/expr"
+    if os.path.isdir(expr_src):
+        erows = []
+        for f in sorted(os.listdir(expr_src)):
+            ext = os.path.splitext(f)[1]
+            if ext not in (".png", ".pdf") or not f.startswith("expr_"):
+                continue
+            sym = f[len("expr_"):-len(ext)]
+            link(f"{expr_src}/{f}", f"{DST}/{sym}__expr{ext}")
+            if ext == ".png":
+                erows.append(dict(gene="", sym=sym, set="expr", rank="", verdict="", grade="",
+                                  axis="", store_row="", grid="", locus="", atac="",
+                                  expr=f"{sym}__expr.png"))
+        I = pd.concat([I, pd.DataFrame(erows)], ignore_index=True)
+
     # functional-track figures (plot_atac.py) -- not per-gene review renders, so they are
     # linked wholesale rather than matched to a representative variant.
     atac_src = f"{RES}/plots/atac"
@@ -274,7 +290,7 @@ uncalibrated LFMM / GEMMA p-values.
 """)
     print(f"wrote {DST} (flat): {n['png']} png + {n['pdf']} pdf")
     print(f"INDEX.csv rows: {len(I)}; genes with no grid found: "
-          f"{int(((I.grid == '') & (~I.set.isin(['atac', 'unreviewed']))).sum())}")
+          f"{int(((I.grid == '') & (~I.set.isin(['atac', 'unreviewed', 'expr']))).sum())}")
 
 
 if __name__ == "__main__":
