@@ -158,22 +158,46 @@ def main():
     # is the whole failure this script was written to end.
     seen = set(I.sym.astype(str))
     urows, done = [], set()
+    stems = set()
+    for d in SRC:
+        for f in LISTING[d]:
+            if f.endswith(".png"):
+                st = re.sub(r"_GWAS$|_GEA$", "",
+                            re.sub(r"_garden_trajectories.*|_combined.*", "", f))
+                if st and st not in seen:
+                    stems.add(st)
+    # Genes outside the review tables get the SAME <sym>__grid / <sym>__locus names as
+    # everyone else, picked by the same newest-render rule (find). They used to keep their
+    # raw render names, so a gene rendered twice showed up as two differently named grids.
+    linked = set()
+    for st in sorted(stems):
+        w = {}
+        for kind in ("grid", "locus"):
+            for f in find([st, f"{st}_GWAS", f"{st}_GEA"], kind):
+                name = f"{st}__{kind}{os.path.splitext(f)[1]}"
+                link(f, f"{DST}/{name}"); TAKEN[name] = st
+                w.setdefault(kind, name)
+                done.add(os.path.basename(f))
+        if w:
+            linked.add(st)
+            urows.append(dict(gene="", sym=st, set="unreviewed", rank="", verdict="",
+                              grade="", axis="", store_row="", grid=w.get("grid", ""),
+                              locus=w.get("locus", ""), atac=""))
+    # anything left that is not a grid/locus render (e.g. cark_sv_garden_dynamics) keeps
+    # its original name
     for d in SRC:
         for f in sorted(LISTING[d]):
             if not f.endswith((".png", ".pdf")) or f in done:
                 continue
-            stem = re.sub(r"_GWAS$|_GEA$", "",
-                          re.sub(r"_garden_trajectories.*|_combined.*", "", f))
-            if stem in seen or not stem:
+            st = re.sub(r"_GWAS$|_GEA$", "", re.sub(r"_garden_trajectories.*|_combined.*", "", f))
+            # skip only stems that actually got __grid/__locus links; the CARK figures
+            # match neither pattern and would otherwise vanish from the tree
+            if st in seen or st in linked or not st:
                 continue
-            done.add(f)
-            link(f"{d}/{f}", f"{DST}/{f}")          # original name: these are not
-            TAKEN[f] = stem                          # <sym>__grid / <sym>__locus pairs
+            link(f"{d}/{f}", f"{DST}/{f}"); done.add(f)
             if f.endswith(".png"):
-                urows.append(dict(gene="", sym=stem, set="unreviewed", rank="", verdict="",
-                                  grade="", axis="", store_row="",
-                                  grid=f if "trajector" in f else "",
-                                  locus=f if "combined" in f else "", atac=""))
+                urows.append(dict(gene="", sym=st, set="unreviewed", rank="", verdict="",
+                                  grade="", axis="", store_row="", grid="", locus=f, atac=""))
     I = pd.concat([I, pd.DataFrame(urows)], ignore_index=True)
 
     # functional-track figures (plot_atac.py) -- not per-gene review renders, so they are
