@@ -236,7 +236,24 @@ def plot_locus(sym, pad=8000):
                             ha="left" if left else "right", va="top", fontsize=7.5,
                             color=TH.TAG)
         ax.legend(loc="upper right", fontsize=7.5, frameon=False, ncol=3)
-    ax.set_ylabel(f"$-\\log_{{10}}p$  GEA ({axis})")
+    else:
+        # a per-garden GWAS marker can sit below the GEA pool's MAF floor, so it has no GEA
+        # record at all. An empty 0-1 panel reads as "no signal"; it means "not tested here".
+        ax.set_yticks([])
+        msg = "no GEA record for this variant — it is not in the gen9 GEA pool"
+        E = pd.read_csv(f"{OUT}/evidence_matrix.csv")
+        e = E[(E.chrom == ch) & (E.pos == vpos) & (E.ref_len == rl)
+              & (E.alt_len == cfg["alt_len"])]
+        if len(e):
+            e = e.iloc[0]
+            msg += (f"\ngarden-level gradient vs {e.best_axis}: {e.pct_sel:.0f}th percentile"
+                    f" of the selection-aware background")
+            if np.isfinite(e.get("gwas_nlp", np.nan)):
+                msg += (f"\nper-garden GWAS: garden {int(e.gwas_best_garden)}, "
+                        f"$-\\log_{{10}}p$ = {e.gwas_nlp:.2f}")
+        ax.annotate(msg, xy=(0.5, 0.5), xycoords="axes fraction", ha="center", va="center",
+                    fontsize=8.5, color=TH.MUTED)
+    ax.set_ylabel(f"$-\\log_{{10}}p$  GEA ({axis})" if axis else "GEA")
     TH.panel(ax, "B", "climate association")
 
     # A small tag on the focal band: what the variant IS. Without it the reader has the

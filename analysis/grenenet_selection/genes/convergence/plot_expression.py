@@ -78,6 +78,17 @@ def main(syms):
         a1.set_xlim(-0.6, 1.6)
         TH.panel(a1, "A", f"{v.gene}, 1001T rosettes", y=1.10)
 
+        if not np.isfinite(p) or not len(pc):
+            # too few expressed carriers for a test (CYP28: 1 of 9) -- panel A still shows
+            # where they sit; panel B says why there is no control rather than going blank
+            a2.set_axis_off()
+            a2.text(0.5, 0.5, f"not testable:\n{len(yc)} carrier(s) with 1001T expression",
+                    transform=a2.transAxes, ha="center", va="center", color=TH.MUTED)
+            for ext in ("png", "pdf"):
+                fig.savefig(f"{FIG}/expr_{sym}.{ext}", dpi=170, bbox_inches="tight")
+            plt.close(fig)
+            print(f"  {sym:<10} carriers {len(yc):>3} | non-carriers {len(yr):>3} | not testable")
+            continue
         lp = -np.log10(pc)
         a2.hist(lp, bins=25, color=TH.FAINT, edgecolor="white")
         obs = -np.log10(max(p, 1e-300))
