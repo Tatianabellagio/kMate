@@ -15,10 +15,10 @@ names beside the originals. Nothing tells you which file is the CURRENT allele.
 This script copies, for every reviewed gene, the figures that match the representative
 variant in the current tables into
 
-  genes/figures/       ONE flat directory -- every figure for every gene, no subfolders.
-                       <sym>__grid.png / <sym>__locus.png / <sym>__atac.png, so a gene's
-                       figures sort together. Grouping (which scan, review round, top-20
-                       rank) lives in INDEX.csv columns, not in the directory layout.
+  genes/figures/<sym>/ ONE FOLDER PER GENE -- grid.png, locus.png, atac.png, expr.png.
+                       Flat until 2026-09-19, when ~1,550 files in one directory became
+                       slow to open and hard to search. Grouping that is not the gene
+                       (which scan, review round, top-20 rank) lives in INDEX.csv.
     INDEX.csv          gene, sym, set, rank, verdict, grade, axis, store_row, grid, locus, atac
     README.md          provenance + how to read the three figure types
 
@@ -51,8 +51,28 @@ DST = f"{GENES}/figures"
 LISTING = {d: (set(os.listdir(d)) if os.path.isdir(d) else set()) for d in SRC}
 
 
+def dest(name: str) -> str:
+    """Flat figure name -> its path in the per-gene tree.
+
+    The tree was one flat directory until 2026-09-19; at ~1,550 files it became slow to
+    open and hard to search, so each gene now gets its own folder and the kind becomes the
+    file name: `GPX6__atac.png` -> `GPX6/atac.png`. Callers still build flat names, so the
+    naming rules (collision suffixes, GWAS/GEA stems) are unchanged -- only the layout is.
+    Figures that are not `<sym>__<kind>` (cark_sv_garden_dynamics and friends) keep their
+    render name under a folder taken from their stem.
+    """
+    base = os.path.basename(name)
+    m = re.match(r"(.+?)__(grid|locus|atac|expr)(\.[A-Za-z0-9]+)$", base)
+    if m:
+        return f"{DST}/{m.group(1)}/{m.group(2)}{m.group(3)}"
+    st = re.sub(r"_GWAS$|_GEA$", "",
+                re.sub(r"_garden_trajectories.*|_combined.*", "", os.path.splitext(base)[0]))
+    return f"{DST}/{st or '_misc'}/{base}"
+
+
 def link(src: str, dst: str) -> None:
     """Hard-link (same filesystem, no second copy of ~1 GB of figures); copy if refused."""
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
     if os.path.exists(dst):
         os.remove(dst)
     try:
@@ -114,7 +134,7 @@ def copy_for(sym, gene, gwas):
             if TAKEN.get(name, gene) != gene:
                 name = f"{s}_{gene}__{kind}{ext}"
             TAKEN[name] = gene
-            link(f, f"{DST}/{name}")
+            link(f, dest(f"{name}"))
             written.setdefault(kind, name)
     return written
 
@@ -175,7 +195,7 @@ def main():
         for kind in ("grid", "locus"):
             for f in find([st, f"{st}_GWAS", f"{st}_GEA"], kind):
                 name = f"{st}__{kind}{os.path.splitext(f)[1]}"
-                link(f, f"{DST}/{name}"); TAKEN[name] = st
+                link(f, dest(f"{name}")); TAKEN[name] = st
                 w.setdefault(kind, name)
                 done.add(os.path.basename(f))
         if w:
@@ -194,7 +214,7 @@ def main():
             # match neither pattern and would otherwise vanish from the tree
             if st in seen or st in linked or not st:
                 continue
-            link(f"{d}/{f}", f"{DST}/{f}"); done.add(f)
+            link(f"{d}/{f}", dest(f)); done.add(f)
             if f.endswith(".png"):
                 urows.append(dict(gene="", sym=st, set="unreviewed", rank="", verdict="",
                                   grade="", axis="", store_row="", grid="", locus=f, atac=""))
@@ -209,7 +229,7 @@ def main():
             if ext not in (".png", ".pdf") or not f.startswith("expr_"):
                 continue
             sym = f[len("expr_"):-len(ext)]
-            link(f"{expr_src}/{f}", f"{DST}/{sym}__expr{ext}")
+            link(f"{expr_src}/{f}", dest(f"{sym}__expr{ext}"))
             if ext == ".png":
                 erows.append(dict(gene="", sym=sym, set="expr", rank="", verdict="", grade="",
                                   axis="", store_row="", grid="", locus="", atac="",
@@ -227,7 +247,7 @@ def main():
                 continue
             sym = f[len("atac_locus_"):-len(ext)] if f.startswith("atac_locus_") else ""
             name = f"{sym}__atac{ext}" if sym else f
-            link(f"{atac_src}/{f}", f"{DST}/{name}")
+            link(f"{atac_src}/{f}", dest(f"{name}"))
             if ext == ".png" and sym:
                 arows.append(dict(gene="", sym=sym, set="atac", rank="", verdict="",
                                   grade="", axis="", store_row="", grid="", locus="",
@@ -236,13 +256,18 @@ def main():
         # and those edits are not in `rows`.
         I = pd.concat([I, pd.DataFrame(arows)], ignore_index=True)
 
+    # INDEX carries the path you can open, so it tracks the layout
+    for c in ("grid", "locus", "atac", "expr"):
+        if c in I:
+            I[c] = [os.path.relpath(dest(v), DST) if isinstance(v, str) and v else v
+                    for v in I[c]]
     I.sort_values(["set", "rank", "sym"]).to_csv(f"{DST}/INDEX.csv", index=False)
 
-    files = os.listdir(DST)
+    files = [f for _, _, fs in os.walk(DST) for f in fs]
     n = {"png": sum(f.endswith(".png") for f in files),
          "pdf": sum(f.endswith(".pdf") for f in files)}
     with open(f"{DST}/README.md", "w") as fh:
-        fh.write(f"""# Candidate figures -- one flat folder
+        fh.write(f"""# Candidate figures -- one folder per gene
 
 Every figure for every gene under `genes/`, in one place. Built by
 `convergence/organize_figures.py`; re-run it after any re-render. Entries are hard links,
@@ -251,21 +276,22 @@ so this costs no extra disk and the raw render output stays where the scripts pu
 `dissection/results/plots`). Every reviewed file matches the representative variant in the
 CURRENT tables (allele-resolved for the GWAS set, GEA-significant records only).
 
-FLAT -- one directory, {n['png']} PNGs and {n['pdf']} PDFs, no subfolders. A gene's figures
-share its symbol prefix, so they sort together and `ls | grep GPX6` finds all of them.
-Grouping that used to be folders (top-20 rank, which scan, review round) is in the
-`set` and `rank` columns of INDEX.csv instead.
+ONE FOLDER PER GENE -- `<sym>/grid.png`, `<sym>/locus.png`, `<sym>/atac.png`,
+`<sym>/expr.png`; {n['png']} PNGs and {n['pdf']} PDFs in total. It was a single flat
+directory until 2026-09-19, when ~1,550 files made it slow to open and hard to search.
+Grouping that is not the gene (top-20 rank, which scan, review round) stays in the `set`
+and `rank` columns of INDEX.csv.
 
-Three figure types per gene:
+Four figure types per gene:
 
-  `<sym>__grid.png`   one panel per garden, ordered by the climate axis; dots = pools,
+  `<sym>/grid.png`   one panel per garden, ordered by the climate axis; dots = pools,
                       bold line = garden mean, dashed = founding frequency, red frame +
                       star = Bonferroni-significant in that garden's per-garden GWAS.
                       This is the allele-frequency-over-time view.
-  `<sym>__locus.png`  top: -log10 p around the gene (lead variant outlined, gene shaded,
+  `<sym>/locus.png`   top: -log10 p around the gene (lead variant outlined, gene shaded,
                       dashed lines = SNP / SV Bonferroni); middle: founder genotypes
                       sorted by home temperature; bottom: founder LD.
-  `<sym>__atac.png`   functional tracks from `plot_atac.py`: GEA Manhattan, TFBS turnover,
+  `<sym>/atac.png`     functional tracks from `plot_atac.py`: GEA Manhattan, TFBS turnover,
                       per-tissue open chromatin, gene models on a shared axis.
 
 INDEX.csv -- gene, sym, set, rank, verdict, grade, axis, store_row, grid, locus, atac.
@@ -288,7 +314,8 @@ Verdicts: A pattern + co-signal locus, B pattern + lone SNP-blind variant, C pat
 the lead is a passenger, D partial, E none. All are single-pass visual calls on raw
 uncalibrated LFMM / GEMMA p-values.
 """)
-    print(f"wrote {DST} (flat): {n['png']} png + {n['pdf']} pdf")
+    print(f"wrote {DST} (one folder per gene, {len(os.listdir(DST))} folders): "
+          f"{n['png']} png + {n['pdf']} pdf")
     print(f"INDEX.csv rows: {len(I)}; genes with no grid found: "
           f"{int(((I.grid == '') & (~I.set.isin(['atac', 'unreviewed', 'expr']))).sum())}")
 
