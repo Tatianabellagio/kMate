@@ -203,6 +203,47 @@ is reported separately from "untagged": they mean opposite things, and 242 of 1,
 GEA-derived functional variants are untestable, so absence of an r² is not evidence of
 SNP-blindness.
 
+### Which gene is a variant *about*? (`host_gene`, `prom_genes`)
+
+Two columns look interchangeable and are not, and conflating them misnames genes.
+
+| column | what it is |
+|---|---|
+| `nearest_gene` / `dist_to_gene` | the nearest GFF **`gene`** feature, by distance, ignoring strand |
+| `gene` / `region` / `tier` | the gene the variant's **region call** is about — strand-aware |
+
+`screen_sig_blocks.load_gff()` keeps only `typ == "gene"`, so
+`transposable_element_gene` (3,903 features) and `pseudogene` are **absent from
+`nearest_gene` by construction**. It therefore cannot name the TE gene a variant sits
+inside, and it is never the right partner for a region call. Audited over the 193 cargo
+insertion loci: of the 110 whose call claims a host gene, **36 (33%) would be given a
+different gene** by `nearest_gene` — all 18 TE-gene calls and all 3 pseudogene calls (wrong
+by construction, the named gene up to **193 kb** away), plus **15 of 57** promoters. The
+worked case is the one the cargo dossier displays: Chr5:19,636,028 reads "promoter of
+AT5G48460, 73 bp away", but AT5G48460 is on the minus strand and the insertion sits at its
+3′ end — a terminator. The gene whose promoter it occupies is **AT5G48450 (SKS3)**, 364 bp
+away.
+
+So `build_sv_hit_dossier.py` publishes **`host_gene`** — the gene the call is about — with
+`host_gene_basis` (`body` 31 / `te_pseudogene_body` 22 / `promoter` 57 / `none` 83) and
+`host_dist_bp`, resolvable for 110/110. Body overlap wins over promoter adjacency because
+one locus is both (Chr3_11718952 is inside TE gene AT3G29798 *and* in AT3G29800's
+promoter). **An empty `host_gene` is meaningful**: the call claims no host at all (TE region
+/ intergenic / gene desert, 83 loci), and `nearest_gene` there is a neighbour to be
+reported as one — not as "*region* of *gene*". `cargo_line.py`'s independently derived
+`target_gene` agrees with `host_gene` on 105/105 loci where both are populated.
+
+**Promoters are not one-to-one.** Divergent (head-to-head) gene pairs share upstream DNA,
+so a variant can sit in two promoters at once: **126 of 909** promoter variants in the pool
+(13.9%) are in 2–4 promoters. `classify()` kept the first match *by coordinate* — where the
+array happens to start, not a biological choice — and said nothing about the alternatives.
+It now also emits `prom_genes` (all of them, nearest-TSS first), `n_prom_genes` and
+`prom_gene_nearest_tss`. `gene` is unchanged, so nothing downstream moves; the ambiguity is
+now visible instead of silently resolved. For reference, a nearest-TSS tie-break would
+change the primary for **58 of 909** promoter variants across 43 gene pairs — including
+shortlist genes (AT3G44010→AT3G44020, AT5G45740→AT5G45745, AT5G57270→AT5G57280,
+AT1G13440→AT1G13448, AT5G48280→AT5G48290) — so it is **not** applied without a decision.
+
 ### ⚠ `size_inferred` — the multiallelic trap, in this pipeline
 
 The per-garden GWAS arrays carry **only chrom/pos, no allele**, so `build_gwas_pool.py`

@@ -148,6 +148,7 @@ def classify(C):
             for ch, d in TE.groupby("chrom")}
 
     tiers, genes, subreg, strands, dists, te_flags, nearest = [], [], [], [], [], [], []
+    prom_all, prom_tss = [], []          # divergent-promoter ambiguity; see the promoter branch below
     for _, r in C.iterrows():
         ch, vs, ve = r.chrom, int(r.pos), int(r.pos) + int(r.ref_len) - 1
         gene = subr = strand = ""
@@ -174,8 +175,20 @@ def classify(C):
                 hi = np.where(sd == "+", st - 1, en + PROM_BP)
                 pm = (vs <= hi) & (ve >= lo)
                 if pm.any():
-                    k = int(np.where(pm)[0][0])
+                    # A variant can sit in TWO genes' promoters at once -- divergent
+                    # (head-to-head) pairs share upstream DNA, and 126 of 909 promoter
+                    # variants in the candidate pool (13.9%) are in 2-4 promoters. `gene`
+                    # keeps the first match by coordinate, which is where the array happens
+                    # to start, not a biological choice; every alternative is recorded in
+                    # `prom_genes` so the ambiguity is visible rather than silently resolved.
+                    idx = np.where(pm)[0]
+                    k = int(idx[0])
                     gene, strand, tier, subr = gn[k], sd[k], "3_promoter", "promoter"
+                    tss = np.where(sd[idx] == "+", st[idx], en[idx])
+                    d2t = np.maximum.reduce([tss - ve, vs - tss, np.zeros(len(idx), np.int64)])
+                    order = idx[np.argsort(d2t, kind="stable")]
+                    prom_all.append(",".join(gn[order]))
+                    prom_tss.append(gn[order[0]])
         # TE overlap
         te_hit = False
         if ch in tenp:
@@ -193,6 +206,8 @@ def classify(C):
                 tier, subr = "7_proximal_intergenic", "intergenic"
             else:
                 tier, subr = "8_gene_desert", "intergenic"
+        if len(prom_all) < len(tiers) + 1:              # not a promoter row
+            prom_all.append(""); prom_tss.append("")
         tiers.append(tier); genes.append(gene); subreg.append(subr)
         strands.append(strand); te_flags.append(te_hit)
         nearest.append(ngene); dists.append(ndist)
@@ -200,6 +215,13 @@ def classify(C):
     C["tier"] = tiers; C["region"] = subreg; C["gene"] = genes
     C["strand"] = strands; C["te_overlap"] = te_flags
     C["nearest_gene"] = nearest; C["dist_to_gene"] = dists
+    # `nearest_gene` is the nearest GFF `gene` feature and nothing else: load_gff keeps only
+    # typ == "gene", so a TE gene or a pseudogene can never appear here. Do NOT pair it with a
+    # region/tier call as "<region> of <nearest_gene>" -- for a variant inside a TE gene the two
+    # name different loci, up to 193 kb apart. Use `gene` for promoter/genic calls.
+    C["prom_genes"] = prom_all                     # all promoters the variant sits in, nearest TSS first
+    C["n_prom_genes"] = [0 if not v else v.count(",") + 1 for v in prom_all]
+    C["prom_gene_nearest_tss"] = prom_tss          # the nearest-TSS alternative to `gene`
     return C, G
 
 
@@ -260,7 +282,8 @@ def main():
     cols = ["chrom", "pos", "ref_len", "alt_len", "size", "vclass", "sig_classes",
             "best_axis", "best_nlp", "n_axes", "MAF", "tier", "region", "gene",
             "symbol", "protein_name", "categories", "strand", "te_overlap",
-            "nearest_gene", "dist_to_gene", "block", "block_span_genes",
+            "nearest_gene", "dist_to_gene", "prom_genes", "n_prom_genes",
+            "prom_gene_nearest_tss", "block", "block_span_genes",
             "block_gene_mismatch"]
     out = f"{HERE}/sig_block_functional_screen.csv"
     C[cols].to_csv(out, index=False)
