@@ -62,7 +62,7 @@ def dest(name: str) -> str:
     render name under a folder taken from their stem.
     """
     base = os.path.basename(name)
-    m = re.match(r"(.+?)__(grid|locus|atac|expr)(\.[A-Za-z0-9]+)$", base)
+    m = re.match(r"(.+?)__(grid|locus|atac|expr|cargo)(\.[A-Za-z0-9]+)$", base)
     if m:
         return f"{DST}/{m.group(1)}/{m.group(2)}{m.group(3)}"
     st = re.sub(r"_GWAS$|_GEA$", "",
@@ -256,6 +256,44 @@ def main():
         # and those edits are not in `rows`.
         I = pd.concat([I, pd.DataFrame(arows)], ignore_index=True)
 
+    # cargo dossiers (cargo/plot_insertion_dossier.py): what an INSERTION carries. Read-only
+    # across the boundary -- that tree is another line of work; nothing is written back into
+    # it. Filenames are <locus_id>__<AGI>, so the AGI is mapped to the symbol we file under.
+    cargo_src = f"{os.path.dirname(GENES)}/cargo/results/figures"
+    if os.path.isdir(cargo_src):
+        tbl = f"{RES}/functional_track_candidates.csv"
+        sym_of = {}
+        if os.path.exists(tbl):
+            t = pd.read_csv(tbl)
+            sym_of = dict(zip(t.gene.astype(str), t.symbol.astype(str)))
+        # the rows already built carry this gene's folder name; prefer them, so the dossier
+        # joins that gene's other figures instead of opening a second AGI-named folder
+        sym_of.update({str(g): str(sy) for g, sy in zip(I.gene, I.sym)
+                       if str(g) not in ("", "nan")})
+        # the dossier is named for the NEAREST gene; our candidate is the TARGET gene, and
+        # they differ (Chr5_19636028 is nearest AT5G48460, target SKS3/AT5G48450). Map
+        # through cargo_evidence.csv so the figure files under the gene we are judging.
+        tgt = {}
+        cev = f"{RES}/cargo_evidence.csv"
+        if os.path.exists(cev):
+            c = pd.read_csv(cev)
+            tgt = dict(zip(c.locus_id.astype(str), c.target_gene.astype(str)))
+        crows = []
+        for f in sorted(os.listdir(cargo_src)):
+            ext = os.path.splitext(f)[1]
+            if ext not in (".png", ".pdf") or "__" not in f:
+                continue
+            locus, agi = f.split("__")[0], f.split("__")[1][:-len(ext)]
+            gene = tgt.get(locus, agi)
+            gene = agi if gene in ("", "nan") else gene
+            sym = sym_of.get(gene, gene)
+            link(f"{cargo_src}/{f}", dest(f"{sym}__cargo{ext}"))
+            if ext == ".png":
+                crows.append(dict(gene=gene, sym=sym, set="cargo", rank="", verdict="",
+                                  grade="", axis="", store_row="", grid="", locus="",
+                                  atac="", expr="", cargo=f"{sym}__cargo.png"))
+        I = pd.concat([I, pd.DataFrame(crows)], ignore_index=True)
+
     # one row per gene: the atac and expr passes append their own rows, which left a gene
     # split across three rows with one figure column filled in each. With a folder per gene
     # the row IS the folder, so collapse them and keep the first non-empty value per column.
@@ -267,7 +305,7 @@ def main():
         I = I.groupby(I.sym.astype(str), as_index=False).agg(first)
 
     # INDEX carries the path you can open, so it tracks the layout
-    for c in ("grid", "locus", "atac", "expr"):
+    for c in ("grid", "locus", "atac", "expr", "cargo"):
         if c in I:
             I[c] = [os.path.relpath(dest(v), DST) if isinstance(v, str) and v else v
                     for v in I[c]]

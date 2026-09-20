@@ -70,7 +70,22 @@ D["L_expression"] = ((D.q_expr < 0.10) & (D.p_expr_emp <= 0.05)).astype(int)
 turnover = (D.get("tfbs_lost", 0).fillna(0) + D.get("tfbs_gained", 0).fillna(0)) > 0
 D["tfbs_repeat"] = D.get("tfbs_repeat", False).fillna(False).astype(bool)
 D["L_motif"] = (turnover & ~D.tfbs_repeat).astype(int)
-L = ["L_climate", "L_locus", "L_gwas", "L_mechanism", "L_chromatin", "L_motif", "L_expression"]
+# cargo (cargo_line.py): what an INSERTION carries, from the sequence itself. Only
+# assessable for the 193 characterised insertions -- every deletion scores 0 here by
+# construction, so this line can add to a candidate but never subtracts from one, and
+# n_lines is not comparable between insertions and deletions on its own.
+if os.path.exists(f"{OUT}/cargo_evidence.csv"):
+    CG = pd.read_csv(f"{OUT}/cargo_evidence.csv")
+    keep = ["store_row", "L_cargo", "cargo_bp", "cargo_class", "cargo_enrich", "cargo_p",
+            "cargo_top_family", "cargo_note", "cargo_gc_caution"]
+    D = D.merge(CG[CG.store_row.notna()][keep].drop_duplicates("store_row"),
+                on="store_row", how="left")
+    D["L_cargo"] = D.L_cargo.fillna(0).astype(int)
+else:
+    D["L_cargo"] = 0
+
+L = ["L_climate", "L_locus", "L_gwas", "L_mechanism", "L_chromatin", "L_motif",
+     "L_expression", "L_cargo"]
 D["n_lines"] = D[L].sum(1)
 
 # The two standard genotype-quality axes, kept as separate columns with separate
