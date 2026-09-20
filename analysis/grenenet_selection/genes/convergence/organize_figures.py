@@ -256,6 +256,16 @@ def main():
         # and those edits are not in `rows`.
         I = pd.concat([I, pd.DataFrame(arows)], ignore_index=True)
 
+    # one row per gene: the atac and expr passes append their own rows, which left a gene
+    # split across three rows with one figure column filled in each. With a folder per gene
+    # the row IS the folder, so collapse them and keep the first non-empty value per column.
+    if len(I):
+        I = I.fillna("")
+        def first(c):
+            v = [x for x in c if str(x) != ""]
+            return v[0] if v else ""
+        I = I.groupby(I.sym.astype(str), as_index=False).agg(first)
+
     # INDEX carries the path you can open, so it tracks the layout
     for c in ("grid", "locus", "atac", "expr"):
         if c in I:
