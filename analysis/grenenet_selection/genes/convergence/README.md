@@ -203,6 +203,62 @@ is reported separately from "untagged": they mean opposite things, and 242 of 1,
 GEA-derived functional variants are untestable, so absence of an r² is not evidence of
 SNP-blindness.
 
+### ⛔ `L_cargo` is withdrawn — a dinucleotide shuffle is not a null for long sequence
+
+`cargo_line.py` turned the `cargo/` tree's TF-motif payload into an eighth line: what an
+*insertion* brings with it, scored against each locus's own dinucleotide-shuffled null.
+**It scores 0 everywhere and should not be revived by lowering a threshold.** Three steps
+got there, and the third is the one that matters.
+
+1. **The statistic counted motif hits, which are not independent.** One element is matched
+   by every motif in its family at every offset — at Chr5:19,636,028 a single 44 bp ABRE
+   draws 59 bZIP hits from 23 motifs — while a dinucleotide shuffle destroys clustered
+   elements and rarely piles hits that way. One real element becomes dozens of counts
+   against a null that cannot produce them.
+2. **`cargo_sites_null.py`** redid all 193 loci with overlapping hits merged into distinct
+   sites, everything else identical. 25/193 reached p ≤ 0.05 family-merged, median
+   enrichment 1.06 — which *looks* calibrated. It is not: the rate is a function of
+   **length**, 4.9% below 200 bp (nominal) against **63% above 2 kb**, at enrichments of
+   only 1.14–1.19× with p pinned to the 1/101 floor. Concordance with the hit-count
+   statistic is poor (13 of 22 shared), which is not what a sharpened real signal looks
+   like.
+3. **`cargo_null_control.py`** ran the identical statistic on **1,158 signal-free
+   length-matched windows** — 3 random genomic and 3 TE-overlapping per real locus,
+   everything downstream of sequence choice imported unchanged. Any p ≤ 0.05 there is a
+   false positive by construction, so the per-length-bin rate *is* the null's calibration
+   curve:
+
+| statistic | <200 bp | 200–500 | 500 bp–2 kb | >2 kb |
+|---|---|---|---|---|
+| `hits_p` (original) | 11.1% | 13.6% | 30.8% | **64.9%** |
+| `fam_sites_p` (family-merged) | 9.5% | 15.4% | 25.6% | **70.2%** |
+| `any_sites_p` (all-motif-merged) | 2.1% | 3.7% | 3.4% | **3.5%** |
+
+A dinucleotide shuffle preserves mono- and dinucleotide composition and nothing else, so
+its bias is per-base and roughly constant while its sampling noise shrinks as sequence
+grows — a fixed ~15% excess is unbeatable at 5 kb and invisible at 150 bp. **Only the
+all-motif merge is calibrated at every length** (control FPR 2.8% overall, if anything
+conservative): collapsing *any* overlapping hits is what reduces the unit to "distinct
+pieces of DNA that match something", and a shuffle is a fair null for that count. Merging
+within family is not enough, because a single GC- or AT-rich stretch recruits several
+families at once. Note the TE arm is *less* inflated than the random-genomic arm, so this
+is generic genomic sequence structure, not TE-ness.
+
+**Head-to-head, there is no signal.** Real insertions sit at or *below* the false-positive
+rate of signal-free sequence in **every** length bin of **every** statistic — pooled
+`fam_sites_p` real 25/193 = 13.0% against a 16.5% control rate, and no bin reaches a
+one-sided Fisher p < 0.43. On the one calibrated statistic the real loci give **5/193 =
+2.6% against a 2.8% control rate**. The cargo README's "24 of 193 at p ≤ 0.05 vs 9.7
+expected" excess, the 25 family-merged survivors, and the six-locus shortlist built on them
+are all null mis-specification.
+
+> The descriptive `cargo_*` columns stay — the sequence facts are still facts, and the
+> merged-site columns are carried for auditing. What would revive this line is **a different
+> control, not a different threshold**: the honest null for non-reference insertion sequence
+> is the other panel SV insertions that are *not* GEA/GWAS hits — signal-free sequence of
+> the same class — rather than reference windows. Until then no candidate gains or loses a
+> line from its cargo, and `n_lines` tops out at 5.
+
 ### Which gene is a variant *about*? (`host_gene`, `prom_genes`)
 
 Two columns look interchangeable and are not, and conflating them misnames genes.
