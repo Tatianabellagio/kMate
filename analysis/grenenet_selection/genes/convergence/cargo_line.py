@@ -44,6 +44,7 @@ import pandas as pd
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import tfbs_turnover as TF                                       # noqa: E402
+import sv_content as SC                                          # noqa: E402
 import repeat_context as RC                                      # noqa: E402
 
 OUT = f"{HERE}/results"
@@ -67,7 +68,10 @@ def main():
         d = S[S.locus_id == r.locus_id]
         hpm = len(d) / d.motif_id.nunique() if len(d) and d.motif_id.nunique() else np.nan
         ref, alt = TF.fetch_allele(r.chrom, int(r.pos), int(r.ref_len), int(r.alt_len))
-        ins = alt[len(ref):] if alt and len(alt) > len(ref) else ""
+        # strip the prefix AND suffix shared with REF: a naive alt[len(ref):] is wrong for a
+        # record that is not left-anchored (Chr3:10,204,785 is REF=TG -> ALT starting AA, so
+        # the whole 187 bp ALT is new, not the last 185)
+        ins = SC.inserted_part(ref, alt) if ref else ""
         tandem = RC.tandem_fraction(ins) if len(ins) > 20 else 0.0
         fam = F[F.locus_id == r.locus_id].sort_values("enrich", ascending=False)
         top = fam.tf_family.iloc[0] if len(fam) else ""
@@ -87,8 +91,23 @@ def main():
     C["cargo_artefact_family"] = C.cargo_top_family.isin(ARTEFACT_FAMILIES)
     C["cargo_gc_caution"] = C.cargo_top_family.isin(CAUTION_FAMILIES)
     landed = C.cargo_site_cat.str.startswith(REGULATORY) | C.cargo_atac
-    C["L_cargo"] = ((C.cargo_p <= 0.05) & ~C.cargo_repeat_driven
-                    & ~C.cargo_artefact_family & landed).astype(int)
+    # SUSPENDED 2026-09-20 pending cargo_sites_null.py. The payload statistic counts FIMO
+    # HITS, and hits inside one element are not independent: at Chr5:19,636,028 a single
+    # 44 bp ABRE draws 59 bZIP hits from 23 motifs, while a dinucleotide shuffle destroys
+    # clustered elements and rarely piles hits up that way. Recomputed on merged sites the
+    # result reverses -- that locus goes from 2.10x at p = 0.03 to 1.07x at p = 0.40
+    # (family-merged) and 0.68x at p = 0.99 (all-motif merged); of six loci checked only the
+    # two ERF/GATA ones survive family-merging, and those are the GC-clustering suspects.
+    # Until the merged-site null exists for all 193 loci this line scores 0 everywhere; the
+    # cargo_* description columns stay, because the sequence facts are still facts.
+    C["cargo_hits_p"] = C.cargo_p
+    C["L_cargo"] = 0
+    if os.path.exists(f"{OUT}/cargo_sites_null.csv"):
+        M = pd.read_csv(f"{OUT}/cargo_sites_null.csv")[
+            ["locus_id", "fam_sites_enrich", "fam_sites_p", "any_sites_enrich", "any_sites_p"]]
+        C = C.merge(M, on="locus_id", how="left")
+        C["L_cargo"] = ((C.fam_sites_p <= 0.05) & ~C.cargo_repeat_driven
+                        & ~C.cargo_artefact_family & landed).astype(int)
 
     # store_row on the full four-part key: one position can carry several records
     C = C.merge(A[KEY + ["store_row", "target_gene", "mode", "n_lines"]], on=KEY, how="left")

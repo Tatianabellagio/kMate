@@ -1,0 +1,6 @@
+target_gene,symbol,chrom,pos,ref_len,alt_len,region,ftier,store_row,C3own_axis
+AT2G43700,LECRK54,Chr2,18114766,1,778,promoter,F4_promoter,944611,bio11
+AT3G27540,AT3G27540,Chr3,10204785,2,187,promoter,F4_promoter,1119863,pc3
+AT3G47420,G3Pp1,Chr3,17476013,2,1012,promoter,F4_promoter,1286565,bio8
+AT5G26270,AT5G26270,Chr5,9207553,1,237,3'UTR,F4_promoter,1883240,bio3
+AT5G48450,SKS3,Chr5,19636028,1,424,promoter,F4_promoter,2135573,bio15
