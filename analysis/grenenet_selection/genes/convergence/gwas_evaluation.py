@@ -91,7 +91,7 @@ def main():
     X = pd.read_csv(f"{OUT}/evidence_matrix.csv")
     keep = ["store_row", "target_gene", "sym", "mode", "dist_tss", "mech_grade", "atac_bp",
             "expr_fold", "q_expr", "p_expr_emp", "L_expression", "local_rank", "snp_rivals",
-            "carriers", "called", "af_shared_vector", "low_support", "gene_silent"]
+            "carriers", "called", "af_shared_vector", "call_rate_lt90", "gene_silent"]
     E = E.merge(X[[c for c in keep if c in X.columns]], on="store_row", how="left")
     E.to_csv(f"{OUT}/gwas_evaluation.csv", index=False)
     print(E.grade.value_counts().to_string())
