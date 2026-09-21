@@ -259,6 +259,65 @@ are all null mis-specification.
 > the same class — rather than reference windows. Until then no candidate gains or loses a
 > line from its cargo, and `n_lines` tops out at 5.
 
+### Cargo, asked properly: candidate insertions vs *other insertions*
+
+`cargo_null_control.py` showed the shuffle null is unusable, but it never asked the
+biological question. `cargo_vs_background.py` does: **do the 193 GEA/GWAS-hit insertions
+carry different cargo from insertions that are not hits?** Both arms are real genomic
+insertion sequence, so the length artefact cannot arise — it would have to act equally on
+matched arms.
+
+Each candidate draws **K = 10 matched non-hit records** from the 172,220-record arch3
+insertion set (`r1_sv_negative_selection`), matched on BLAST class `cls` (the strongest
+confounder for motif content), allele-frequency stratum, and inserted length within ±25%
+(widened only where needed: 1,830 of 1,930 matches are at ±25%). The 2,337 records at a
+pooled hit position are excluded, and sampling is without replacement. Elements are scored
+as **presence by core sequence inside a family-restricted hit** — ABRE/G-box = `ACGTG` in a
+bZIP hit, W-box = `TTGAC` in a WRKY hit, DRE/CRT = `[AG]CCGAC` in an ERF hit — with
+overlapping hits merged, so one element is one site however many motifs name it. Cores are
+tested in **both orientations**: some PlantTFDB matrices are defined on the minus strand, so
+the same 44 bp ABRE appears both as `GATGATGACGTGGCA` and as `TGCCACGTCATCATC`.
+
+| element | candidates | null (perm) | p | mean cluster bp | p | max bp | p |
+|---|---|---|---|---|---|---|---|
+| ABRE / G-box | 15/193 | 17.7 | 0.83 | 1.59 | 0.68 | 44 | 0.092 |
+| W-box | 59/193 | 49.3 | **0.029** | 5.73 | 0.068 | 29 | 1.00 |
+| DRE / CRT | 21/193 | 18.6 | 0.28 | 2.49 | 0.31 | 61 | 0.18 |
+
+**As a class, the answer is no.** Nothing survives Bonferroni over 3 elements × 3 statistics
+(α = 0.0056). The W-box presence excess (30.6% vs 25.0%) is the only nominal signal and it
+is 1 of 9 tests. This is a *properly controlled* negative, unlike the shuffle-based one:
+real sequence against matched real sequence.
+
+> ⚠ **The test is a within-stratum permutation, not a rank statistic.** The outcome is
+> heavily zero-inflated — 103 of 193 ABRE strata have no ABRE anywhere across all 11
+> sequences — and a mid-rank percentile then has null expectation
+> (K+2)/2/(K+1) = **0.545, not 0.5**. An earlier version of the script compared the mean
+> percentile to 0.5 and reported p = 0.0009 for W-box cluster size; the permutation gives
+> **0.068** for the same data. Also note the p-value **floor**: with K = 10, any statistic
+> driven by one extreme candidate cannot go below 1/11 = 0.09, since under H0 that sequence
+> is the labelled candidate 1 time in 11. That is why ABRE `max_bp` reads 0.092.
+
+**The one locus that survives is SKS3 (AT5G48450), and it needed its own deeper
+background.** Its 423 bp insertion carries a **44 bp ABRE array** — 59 bZIP hits collapsing
+to a single merged site, every one containing an ACGT core and 41 an `ACGTG`, none removed
+by the repeat/complexity/telomere filters. Against 1,200 length-matched `novel`-class
+non-hit insertions the maximum ABRE cluster is **26 bp** and none reaches 30 bp
+(p = 0.00083); against 1,200 length-matched insertions of *any* class the maximum is 41 bp
+and none reaches 44 (p = 0.00083). Carrying *an* ABRE is unremarkable — ~4% of ordinary
+insertions have one ≥ 20 bp — but a 44 bp array of them is roughly a 1-in-1,200
+configuration.
+
+> Read that as a **mechanism for an already-nominated candidate, not a discovery**. SKS3 was
+> selected as the most extreme of 193 candidates, so accounting for those 193 looks the
+> multiplicity-aware figure is the permutation's 0.092 (floored by K = 10), not 0.00083. The
+> value of the 1-in-1,200 number is that SKS3 was *independently* at 5 lines of evidence
+> before its cargo was examined, and the insertion sits in an ATAC-accessible promoter
+> 364 bp from its TSS with `content_class = dup_nongenic` — i.e. the ABRE array was copied
+> from elsewhere in the genome. Regulatory-element capture by duplication is a describable
+> mechanism. It still does not add a line: `L_cargo` stays withdrawn, and cargo as a class
+> carries no signal.
+
 ### Which gene is a variant *about*? (`host_gene`, `prom_genes`)
 
 Two columns look interchangeable and are not, and conflating them misnames genes.
