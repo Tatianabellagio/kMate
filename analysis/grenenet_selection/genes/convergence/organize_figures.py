@@ -261,32 +261,60 @@ def main():
     # it. Filenames are <locus_id>__<AGI>, so the AGI is mapped to the symbol we file under.
     cargo_src = f"{os.path.dirname(GENES)}/cargo/results/figures"
     if os.path.isdir(cargo_src):
+        # NOTE both dict builds guard the VALUE as well as the key. Guarding only the key
+        # let a gene with a missing symbol map to the literal string "nan", so the figure
+        # filed under `nan/` -- which is how three loci ended up overwriting each other in
+        # one `nan/` folder even after the target-gene fallback was fixed.
+        def _ok(v):
+            v = str(v).strip()
+            return v not in ("", "nan", "None", "NaN")
+
         tbl = f"{RES}/functional_track_candidates.csv"
         sym_of = {}
         if os.path.exists(tbl):
             t = pd.read_csv(tbl)
-            sym_of = dict(zip(t.gene.astype(str), t.symbol.astype(str)))
+            sym_of = {str(g): str(sy) for g, sy in zip(t.gene, t.symbol) if _ok(g) and _ok(sy)}
         # the rows already built carry this gene's folder name; prefer them, so the dossier
         # joins that gene's other figures instead of opening a second AGI-named folder
-        sym_of.update({str(g): str(sy) for g, sy in zip(I.gene, I.sym)
-                       if str(g) not in ("", "nan")})
-        # the dossier is named for the NEAREST gene; our candidate is the TARGET gene, and
-        # they differ (Chr5_19636028 is nearest AT5G48460, target SKS3/AT5G48450). Map
-        # through cargo_evidence.csv so the figure files under the gene we are judging.
+        sym_of.update({str(g): str(sy) for g, sy in zip(I.gene, I.sym) if _ok(g) and _ok(sy)})
+        # The dossier figure is named for `nearest_gene`, which is the nearest GFF `gene`
+        # feature and NOT the gene the landing-site call is about -- 8 of the 24 rendered
+        # figures name a different gene that way, and 9 more name a neighbour for a call
+        # (TE region / intergenic) that claims no host at all. So file under `host_gene`
+        # from sv_hit_dossier.csv, falling back to cargo_evidence's target_gene.
+        #
+        # Where there is genuinely no host gene, file under the LOCUS. Using the filename's
+        # AGI would assert a gene the call does not claim, and the previous fallback chain
+        # could yield the string "nan": three rendered loci (Chr4_4995761, Chr4_6273282,
+        # Chr2_7032778) had no target_gene and collapsed into one `nan/` folder, each
+        # overwriting the last, so two of the three figures were unreachable.
         tgt = {}
+        dos = f"{RES}/sv_hit_dossier.csv"
+        if os.path.exists(dos):
+            d = pd.read_csv(dos, keep_default_na=False)
+            d["locus_id"] = d.chrom + "_" + d.pos.astype(str)
+            tgt = {l: g for l, g in zip(d.locus_id.astype(str), d.host_gene) if _ok(g)}
         cev = f"{RES}/cargo_evidence.csv"
         if os.path.exists(cev):
             c = pd.read_csv(cev)
-            tgt = dict(zip(c.locus_id.astype(str), c.target_gene.astype(str)))
+            # `_ok`, not `g != "nan"`: Series.astype(str) does NOT stringify a float NaN, it
+            # leaves np.nan in place, and np.nan is truthy and != "nan" -- so a "nan" guard
+            # written that way passes and files the figure under a folder literally called
+            # nan/. That is what put three loci in one nan/ folder overwriting each other.
+            for l, g in zip(c.locus_id.astype(str), c.target_gene):
+                if l not in tgt and _ok(g):
+                    tgt[l] = str(g).strip()
         crows = []
         for f in sorted(os.listdir(cargo_src)):
             ext = os.path.splitext(f)[1]
             if ext not in (".png", ".pdf") or "__" not in f:
                 continue
-            locus, agi = f.split("__")[0], f.split("__")[1][:-len(ext)]
-            gene = tgt.get(locus, agi)
-            gene = agi if gene in ("", "nan") else gene
-            sym = sym_of.get(gene, gene)
+            locus = f.split("__")[0]
+            gene = tgt.get(locus, "")
+            gene = gene if _ok(gene) else ""
+            # no host gene -> file under the locus, never under the filename's nearest gene
+            sym = sym_of.get(gene, gene) if gene else locus
+            assert _ok(sym), f"cargo figure {f} resolved to an unusable folder name {sym!r}"
             link(f"{cargo_src}/{f}", dest(f"{sym}__cargo{ext}"))
             if ext == ".png":
                 crows.append(dict(gene=gene, sym=sym, set="cargo", rank="", verdict="",
