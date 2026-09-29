@@ -1,0 +1,75 @@
+# Final founder burden models, fitted with lme4qtl (Ziyatdinov et al. 2018, BMC Bioinformatics 19:68) on all
+# founder x garden observations (231 founders x 31 gardens = 7,161 rows; `_sv_burden_onestage_export.py`).
+#
+# Reference TE added 2026-09-22 (SV6, was SV4): the GEA hit list (`gea_hit_landscape.ipynb`) showed a TE
+# enrichment, and TE was already a tested context in the SFS/Tajima's D burden work (Fig. 1 / S1) but not
+# in this founder-fitness model.
+#
+# Model 1 -- overall effects:
+#   y ~ snp_CDS + ins_CDS + ins_TE + ins_promoter + ins_intergenic
+#       + del_CDS + del_TE + del_promoter + del_intergenic + cactus
+#       + (1 | garden) + (1 | kin) + (1 | fid)
+#       + (0 + ins_CDS | garden) + (0 + ins_TE | garden) + (0 + ins_promoter | garden)
+#       + (0 + del_CDS | garden) + (0 + del_TE | garden) + (0 + del_promoter | garden)
+# Model 2 -- climate dependence: Model 1 + {term}:bio1c for each of the six SV6 terms above
+#
+# y = founder log-fitness in the garden; burden terms = standardised shared-variant rates (per SD); cactus =
+# assembly route; bio1c = garden bio1 centred on the mean of the 31 gardens; kin = founder effect with covariance
+# s2 * K (SNP kinship, passed as relmat); fid = independent founder effect; (0 + term | garden) = independent
+# random garden slopes for the six SV terms of interest.
+#
+# One fit per SLURM array task (TASK = 0..8):
+#   0 M1_reml   1 M2_reml   2 M2_ml   3-8 M2_ml_drop_<term>  (ML refit of Model 2 without that one interaction;
+#   the likelihood-ratio test = 2 * (logLik M2_ml - logLik drop), 1 df)
+# Per task: coef_<task>.csv, varcomp_<task>.csv, loglik_<task>.csv; REML tasks also vcov_<task>.csv and
+# garden_<task>.csv (each garden's total effect of the six SV terms: fixed part + its random slope, with the
+# slope's conditional SD). Env: r_env (lme4, lme4qtl). Output: results/sv_adaptive/final_models/.
+suppressMessages({library(lme4); library(lme4qtl)})
+args <- commandArgs(trailingOnly = FALSE)
+here <- dirname(normalizePath(sub("--file=", "", args[grep("--file=", args)])))
+IN <- file.path(here, "results", "sv_adaptive", "onestage"); OUT <- file.path(here, "results", "sv_adaptive", "final_models")
+dir.create(OUT, showWarnings = FALSE)
+task <- as.integer(Sys.getenv("TASK", Sys.getenv("SLURM_ARRAY_TASK_ID", "0")))
+
+L <- read.csv(file.path(IN, "long.csv"), colClasses = c(founder = "character"))
+K <- as.matrix(read.csv(file.path(IN, "kinship.csv"), row.names = 1, check.names = FALSE))
+L$kin <- L$founder; L$fid <- factor(L$founder); L$garden <- factor(L$garden)
+b1 <- unique(L[, c("garden", "bio1")]); L$bio1c <- L$bio1 - mean(b1$bio1); b1$bio1c <- b1$bio1 - mean(b1$bio1)
+
+SV6 <- c("ins_CDS", "ins_TE", "ins_promoter", "del_CDS", "del_TE", "del_promoter")
+fixed <- "snp_CDS + ins_CDS + ins_TE + ins_promoter + ins_intergenic + del_CDS + del_TE + del_promoter + del_intergenic + cactus"
+re <- paste(c("(1 | garden) + (1 | kin) + (1 | fid)", sprintf("(0 + %s | garden)", SV6)), collapse = " + ")
+form <- function(inter) as.formula(paste("y ~", paste(c(fixed, if (length(inter)) sprintf("%s:bio1c", inter)), collapse = " + "), "+", re))
+
+TASKS <- list(list(name = "M1_reml", inter = character(0), REML = TRUE),
+              list(name = "M2_reml", inter = SV6, REML = TRUE),
+              list(name = "M2_ml", inter = SV6, REML = FALSE))
+for (t in SV6) TASKS[[length(TASKS) + 1]] <- list(name = paste0("M2_ml_drop_", t), inter = setdiff(SV6, t), REML = FALSE)
+T <- TASKS[[task + 1]]
+cat(sprintf("task %d: %s  (REML = %s)\nformula: %s\n", task, T$name, T$REML, deparse1(form(T$inter))))
+
+t0 <- Sys.time()
+m <- relmatLmer(form(T$inter), data = L, relmat = list(kin = K), REML = T$REML)
+cat(sprintf("fitted in %.1f s\n", as.numeric(difftime(Sys.time(), t0, units = "secs"))))
+
+s <- summary(m)$coefficients
+write.csv(data.frame(term = rownames(s), estimate = s[, 1], se = s[, 2], z = s[, 3], p = 2 * pnorm(-abs(s[, 3]))),
+          file.path(OUT, sprintf("coef_%s.csv", T$name)), row.names = FALSE)
+vc <- as.data.frame(VarCorr(m)); write.csv(vc[, c("grp", "var1", "vcov")], file.path(OUT, sprintf("varcomp_%s.csv", T$name)), row.names = FALSE)
+ll <- logLik(m); write.csv(data.frame(model = T$name, REML = T$REML, logLik = as.numeric(ll), df = attr(ll, "df"),
+          singular = isSingular(m)), file.path(OUT, sprintf("loglik_%s.csv", T$name)), row.names = FALSE)
+
+if (T$REML) {
+  write.csv(as.matrix(vcov(m)), file.path(OUT, sprintf("vcov_%s.csv", T$name)))
+  fe <- fixef(m); rg <- ranef(m, condVar = TRUE)$garden; pv <- attr(rg, "postVar"); out <- NULL
+  for (t in SV6) {
+    k <- match(t, names(rg)); sdv <- rep(NA_real_, nrow(rg))
+    if (is.list(pv) && length(pv) >= k) sdv <- sqrt(pv[[k]][1, 1, ]) else if (is.array(pv)) sdv <- sqrt(pv[k, k, ])
+    x <- b1$bio1c[match(rownames(rg), b1$garden)]
+    fixed_part <- fe[t] + (if (paste0(t, ":bio1c") %in% names(fe)) fe[paste0(t, ":bio1c")] * x else 0)
+    out <- rbind(out, data.frame(term = t, garden = rownames(rg), bio1 = b1$bio1[match(rownames(rg), b1$garden)],
+                                 fixed_part = fixed_part, slope_blup = rg[[t]], cond_sd = sdv, total = fixed_part + rg[[t]]))
+  }
+  write.csv(out, file.path(OUT, sprintf("garden_%s.csv", T$name)), row.names = FALSE)
+}
+cat("done\n")

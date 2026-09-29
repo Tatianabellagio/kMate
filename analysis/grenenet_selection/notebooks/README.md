@@ -48,6 +48,7 @@ Section: `r2_gea_nonsnp/` (production pipeline in `phase1_replication/`)
 | `persite_new_peaks_{nonsnp,sv}.ipynb` | the same question per garden, on the production tiling blocks |
 | `persite_new_peaks.ipynb` | ⚠ **superseded** — the pre-tiling version; its partition silently dropped ~28% of variants to inter-block gaps. Kept only as the predecessor |
 | `block_gene_significance_overlap.ipynb`, `nonsnp_block_characterization.ipynb` | block→gene attribution and characterization of the non-SNP blocks |
+| `class_signal_gain.ipynb` | significant blocks SNP / non-SNP / SV and their overlap, GEA **and** per-garden GWAS on one block rule (re-assigned unmerged tiling), split shared / SNP near-miss / SNP-blind, per axis, per garden, GEA vs GWAS. **§9 = the raw-vs-GIF arithmetic**: union over 22 axes, GIF (χ²/λ, only where λ>1) leaves **0** Bonferroni blocks for snp/nonsnp/smallindel and **4** for SV (BH: 9 SV, 3 nonsnp, from sv·bio6, sv·pc1, nonsnp·bio6 only), against raw Bonferroni 1,430 snp / 1,312 nonsnp / 273 sv — while raw BH goes the other way and calls 66–69% of blocks. Builder `genes/convergence/_build_class_signal_nb.py`, numbers `genes/convergence/class_signal_counts.py` + the GEA production table `raw_block_significance_lfmm{,_union}.csv` |
 | `lfmm_k_calibration.ipynb` | the CAM5 replication (`cam5_replication/`) |
 | `10_lfmm_k_selection.ipynb` | why K=16 latent factors — the standing K decision, and still load-bearing for the live LFMM |
 

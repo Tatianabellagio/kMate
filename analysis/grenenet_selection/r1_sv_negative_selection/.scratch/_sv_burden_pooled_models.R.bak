@@ -1,0 +1,85 @@
+# Sensitivity analysis: the founder burden models with insertions and deletions POOLED per context.
+#
+# Why. INS and DEL are defined relative to Col-0, not ancestral/derived (the SFS in Figure 1 is folded
+# for exactly that reason), so a reviewer can reasonably ask whether splitting them is justified or
+# whether one "SV burden" per context is the honest unit. This refits the final models with
+# sv_<ctx> = (ins carried + del carried) / (ins called + del called), everything else identical to
+# _sv_burden_final_models.R: same response, same covariates, same kinship, same random-effect
+# structure, same REML/ML and LRT scheme.
+#
+# Read it as a sensitivity analysis, NOT a replacement: pooling is only the right unit if the two
+# classes have the same effect. The companion script `_sv_burden_class_contrast.R` tests that
+# directly (H0: beta_ins = beta_del within a context) on the split model; if the classes differ, the
+# pooled coefficient is a weighted average of two different effects, with weights set by how many
+# events of each class exist (2.4x more insertions than deletions), not by biology.
+#
+# Model 1p: y ~ snp_CDS + sv_CDS + sv_TE + sv_promoter + sv_intergenic + cactus
+#               + (1 | garden) + (1 | kin) + (1 | fid)
+#               + (0 + sv_CDS | garden) + (0 + sv_TE | garden) + (0 + sv_promoter | garden)
+# Model 2p: Model 1p + {sv_CDS, sv_TE, sv_promoter}:bio1c
+#
+# Tasks (TASK env or SLURM array): 0 M1p_reml  1 M2p_reml  2 M2p_ml  3-5 M2p_ml_drop_<term>
+# Burden rates are rebuilt from results/sv_adaptive/founder_burden_event.csv (the `shared_*_all`
+# columns: shared variants, >= 2 carriers, called in >= 90% of founders) and z-scored across the 231
+# founders -- verified to reproduce long.csv's split columns at r = 1.000000 before pooling.
+# Env: r_env (lme4, lme4qtl). Output: results/sv_adaptive/final_models_pooled/.
+suppressMessages({library(lme4); library(lme4qtl)})
+args <- commandArgs(trailingOnly = FALSE)
+here <- dirname(normalizePath(sub("--file=", "", args[grep("--file=", args)])))
+IN <- file.path(here, "results", "sv_adaptive", "onestage")
+RAW <- file.path(here, "results", "sv_adaptive", "founder_burden_event.csv")
+OUT <- file.path(here, "results", "sv_adaptive", "final_models_pooled")
+dir.create(OUT, showWarnings = FALSE)
+task <- as.integer(Sys.getenv("TASK", Sys.getenv("SLURM_ARRAY_TASK_ID", "0")))
+
+L <- read.csv(file.path(IN, "long.csv"), colClasses = c(founder = "character"))
+K <- as.matrix(read.csv(file.path(IN, "kinship.csv"), row.names = 1, check.names = FALSE))
+B <- read.csv(RAW, colClasses = c(founder = "character"))
+
+CTX <- c("CDS", "TE", "promoter", "intergenic")
+z <- function(v) (v - mean(v)) / sd(v)
+P <- data.frame(founder = B$founder)
+cnt <- list()
+for (ctx in CTX) {
+  carried <- B[[paste0("ins_shared_", ctx, "_all")]] + B[[paste0("del_shared_", ctx, "_all")]]
+  called  <- B[[paste0("called_ins_shared_", ctx, "_all")]] + B[[paste0("called_del_shared_", ctx, "_all")]]
+  rate <- carried / called
+  P[[paste0("sv_", ctx)]] <- z(rate)
+  # kept for the per-variant conversion: SD of the raw rate and the median called count
+  cnt[[ctx]] <- c(sd_rate = sd(rate), med_called = median(called), med_carried = median(carried))
+}
+write.csv(do.call(rbind, lapply(names(cnt), function(x) data.frame(context = x, t(cnt[[x]])))),
+          file.path(OUT, "pooled_rate_scale.csv"), row.names = FALSE)
+
+L <- merge(L, P, by = "founder")
+stopifnot(nrow(L) == 7161)
+L$kin <- L$founder; L$fid <- factor(L$founder); L$garden <- factor(L$garden)
+b1 <- unique(L[, c("garden", "bio1")]); L$bio1c <- L$bio1 - mean(b1$bio1); b1$bio1c <- b1$bio1 - mean(b1$bio1)
+
+SV3 <- c("sv_CDS", "sv_TE", "sv_promoter")
+fixed <- "snp_CDS + sv_CDS + sv_TE + sv_promoter + sv_intergenic + cactus"
+re <- paste(c("(1 | garden)", "(1 | kin)", "(1 | fid)", sprintf("(0 + %s | garden)", SV3)), collapse = " + ")
+form <- function(inter) as.formula(paste("y ~", paste(c(fixed, if (length(inter)) sprintf("%s:bio1c", inter)),
+                                                      collapse = " + "), "+", re))
+
+TASKS <- list(list(name = "M1p_reml", inter = character(0), REML = TRUE),
+              list(name = "M2p_reml", inter = SV3, REML = TRUE),
+              list(name = "M2p_ml", inter = SV3, REML = FALSE))
+for (t in SV3) TASKS[[length(TASKS) + 1]] <- list(name = paste0("M2p_ml_drop_", t), inter = setdiff(SV3, t), REML = FALSE)
+T <- TASKS[[task + 1]]
+cat(sprintf("task %d: %s  (REML = %s)\nformula: %s\n", task, T$name, T$REML, deparse1(form(T$inter))))
+
+t0 <- Sys.time()
+m <- relmatLmer(form(T$inter), data = L, relmat = list(kin = K), REML = T$REML)
+cat(sprintf("fitted in %.1f s  singular = %s\n", as.numeric(difftime(Sys.time(), t0, units = "secs")), isSingular(m)))
+
+s <- summary(m)$coefficients
+write.csv(data.frame(term = rownames(s), estimate = s[, 1], se = s[, 2], z = s[, 3], p = 2 * pnorm(-abs(s[, 3]))),
+          file.path(OUT, sprintf("coef_%s.csv", T$name)), row.names = FALSE)
+vc <- as.data.frame(VarCorr(m))
+write.csv(vc[, c("grp", "var1", "vcov")], file.path(OUT, sprintf("varcomp_%s.csv", T$name)), row.names = FALSE)
+ll <- logLik(m)
+write.csv(data.frame(model = T$name, REML = T$REML, logLik = as.numeric(ll), df = attr(ll, "df"),
+                     singular = isSingular(m)), file.path(OUT, sprintf("loglik_%s.csv", T$name)), row.names = FALSE)
+if (T$REML) write.csv(as.matrix(vcov(m)), file.path(OUT, sprintf("vcov_%s.csv", T$name)))
+cat("done\n")
