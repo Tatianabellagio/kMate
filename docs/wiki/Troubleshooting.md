@@ -86,7 +86,7 @@ Check these in order:
    libraries before estimating.
 2. **`--unit`.** Selfing/inbred pools need `--unit chrom`; recombinant pools need
    `--unit bp`. The wrong one produces plausible-looking but wrong numbers — see
-   [Running kMate](Running-kMate#the-one-setting-you-must-think-about---unit).
+   [Running kMate](Running-kMate#--unit).
 3. **The founder-haplotype mixture** (`*.h_per_chrom.npz`). If it collapsed onto a few
    haplotypes when you expected many, the problem is upstream of the frequencies.
 4. **How you joined samples.** Merging on `chrom`/`pos` alone matches the wrong allele

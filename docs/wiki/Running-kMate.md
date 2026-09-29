@@ -31,7 +31,7 @@ holding the estimated founder-haplotype mixture.
 
 ---
 
-## The one setting you must think about: `--unit`
+## `--unit`
 
 `--unit` decides **over what span** the founder-haplotype mixture is estimated — a whole
 chromosome, or a window. Choose it from your species' biology, not from the default.
