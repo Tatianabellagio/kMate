@@ -54,23 +54,49 @@ The recipe's `test:` block now also runs `kmate selftest`, which exercises
 jellyfish/samtools end-to-end. The old test ran only `--help`, `--version` and
 `import kmate`, which is exactly why a package that could not count k-mers passed CI.
 
-## Step 2 — open the bioconda PR
+## Step 2 — open the bioconda PR (this is an UPDATE, not a new recipe)
+
+`recipes/kmate/meta.yaml` **already exists** in bioconda-recipes at version 0.1.0 —
+that is the broken build. So this is a version bump to an existing recipe, not a new
+submission.
 
 ```bash
 # fork + clone bioconda-recipes (one-time)
 gh repo fork bioconda/bioconda-recipes --clone --remote
 cd bioconda-recipes
-git checkout -b add-kmate
+git checkout master && git pull upstream master
+git checkout -b kmate-0.1.1
 
-mkdir -p recipes/kmate
-cp /global/scratch/users/tbellg/kmate/conda/bioconda/meta.yaml recipes/kmate/meta.yaml
+# overwrite the existing recipe with ours
+cp <kMate checkout>/conda/bioconda/meta.yaml recipes/kmate/meta.yaml
 
 git add recipes/kmate/meta.yaml
-git commit -m "Add kmate"
-git push -u origin add-kmate
+git commit -m "Update kmate to 0.1.1"
+git push -u origin kmate-0.1.1
+
 gh pr create --repo bioconda/bioconda-recipes --base master \
-  --title "Add kmate" --body "k-mer-based founder-mixture allele-frequency estimation for pool-seq."
+  --title "Update kmate to 0.1.1" \
+  --body "kMate 0.1.1.
+
+Fixes two independent problems in the published 0.1.0, both reproduced against a
+clean \\`mamba create -c conda-forge -c bioconda kmate\\`:
+
+1. **The package cannot count k-mers.** The recipe depended on \\`jellyfish\\`, which on
+   conda-forge is a Python string-similarity library and ships no \\`jellyfish\\`
+   binary. kMate shells out to the k-mer counter, so \\`kmate selftest\\` exited 1 with
+   \\`jellyfish: command not found\\`. Now depends on \\`kmer-jellyfish\\`.
+2. **0.1.0 was built from a stale snapshot**, predating an estimator fix; it lacks
+   \\`--normalize\\`, \\`--unit\\` and \\`--emit-af-se\\`.
+
+The \\`test:\\` block now also runs \\`kmate selftest\\`, a bundled offline end-to-end
+fixture that exercises jellyfish and samtools. The previous test ran only
+\\`--help\\`/\\`--version\\`/\\`import\\`, which is why a package that could not count
+k-mers passed CI. Verified locally: selftest passes from the 0.1.1 sdist in a clean
+environment."
 ```
+
+> **Order matters:** upload to PyPI (Step 1) *before* opening the PR. The recipe
+> fetches the sdist from PyPI, so CI fails on a 404 if the release is not up yet.
 
 Bioconda's CI then builds the recipe in a clean container and runs the `test:`
 stage (`kmate --help`, `kmate --version`, `import kmate`). A reviewer merges it;
