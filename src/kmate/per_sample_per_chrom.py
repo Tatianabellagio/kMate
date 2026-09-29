@@ -13,7 +13,7 @@ differ only because the whole-chromosome one-h estimand supports extra outputs:
         (no anchor prior, no fallback → thin/empty blocks give NaN AF, no smoothing),
         projected per block. `ld` = r²-LD CompleteLDPartition blocks (production);
         `bp` = fixed --window-bp windows; `tsv` = explicit --blocks-tsv. (Deprecated
-        alias: --block-mode window → bp.) Pass --no-local-only for the legacy
+        alias: --block-mode window → bp.) Pass --smooth-windows for the legacy
         anchored+smoothed "star2" recipe.
 
 Memory note: instead of loading the genome-wide kmer_pa matrix (~74 GB dense
@@ -540,22 +540,20 @@ def main():
                          "falls back to the chrom-wide h. Lower it to probe thin LD blocks.")
     ap.add_argument("--global-anchor-weight", type=float, default=0.3,
                     help="λ for per-window EM Dirichlet anchor toward chrom-wide "
-                         "h_global. ONLY applies with --no-local-only (the legacy "
-                         "'star2' recipe); local-only (the default) forces it to 0.")
-    ap.add_argument("--local-only", action=argparse.BooleanOptionalAction, default=True,
-                    help="GLOBAL-FREE window mode (DEFAULT, production recipe for "
-                         "recombinant pools): no global anchor prior, no global "
-                         "fallback, and NO cross-window smoothing. Forces "
-                         "--global-anchor-weight and --hmm-smooth-passes to 0; windows "
-                         "below --min-kmers-per-block (and empty windows / unassigned "
-                         "records) get NaN AF instead of the chrom-wide h. global_h is "
-                         "still stored for diagnostics only. Pass --no-local-only to "
-                         "restore the legacy anchored+smoothed 'star2' recipe. "
-                         "(Ignored in --block-mode global.)")
+                         "h_global. Applies only with --smooth-windows.")
+    ap.add_argument("--smooth-windows", action="store_true",
+                    help="Window units only. Tie neighbouring windows together instead of "
+                         "fitting each from its own k-mers: enables the Dirichlet anchor "
+                         "toward the chromosome-wide mixture (--global-anchor-weight) and "
+                         "cross-window smoothing (--hmm-smooth-passes), and fills "
+                         "low-support windows with the chromosome-wide mixture instead of "
+                         "NaN. OFF by default: each window uses only the information its "
+                         "own k-mers carry.")
+    ap.add_argument("--local-only", action=argparse.BooleanOptionalAction, default=None,
+                    help=argparse.SUPPRESS)   # deprecated: --no-local-only == --smooth-windows
     ap.add_argument("--hmm-smooth-passes", type=int, default=5,
                     help="Post-EM Li-Stephens-style smoothing passes on h_blocks. "
-                         "ONLY applies with --no-local-only; local-only (the default) "
-                         "forces it to 0. Legacy 'star2': 5.")
+                         "Applies only with --smooth-windows.")
     ap.add_argument("--hmm-smooth-alpha", type=float, default=0.5,
                     help="α for HMM smoothing: h_b' = α·h_b + (1-α)·neighbor_avg. "
                          "Smaller = more smoothing. Production: 0.5.")
@@ -578,6 +576,13 @@ def main():
                          "whose presence differs in ≤ eps·(unit k-mers) — APPROXIMATE, "
                          "merges near-indistinguishable founders (both modes).")
     args = ap.parse_args()
+
+    # --smooth-windows is the flag; --local-only/--no-local-only is the old spelling.
+    if args.local_only is not None:
+        print(f"  NOTE: --{'' if args.local_only else 'no-'}local-only is DEPRECATED; "
+              f"use {'(default)' if args.local_only else '--smooth-windows'}.", flush=True)
+        args.smooth_windows = not args.local_only
+    args.local_only = not args.smooth_windows
 
     # `se` is the binomial SE from panel support (n_called). The calibrated
     # Fisher-plus-floor variant is not exposed: it was never validated.
@@ -604,7 +609,7 @@ def main():
     if unit == "tsv" and not args.blocks_tsv:
         sys.exit("ERROR: --unit tsv requires --blocks-tsv <path>")
 
-    # --local-only (default True) forces no anchor / no smoothing / no fallback in the
+    # Without --smooth-windows: no anchor, no smoothing, no fallback in the
     # per-unit (non-chrom) path; _fit_unit_blocks does that forcing itself.
 
     print(f"=== {args.sample} (per-chrom unit={unit}"

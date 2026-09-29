@@ -59,9 +59,9 @@ Used when `--unit bp`, `ld` or `tsv`; ignored for `--unit chrom`.
 | `--ld-blocks` | — | precomputed LD blocks |
 | `--blocks-tsv` | — | explicit block partition, required by `--unit tsv` |
 | `--min-kmers-per-block` | `200` | a window with fewer *observed* k-mers gets no local fit |
-| `--local-only` | **on** | fit each window independently. `--no-local-only` restores the legacy anchored and smoothed recipe |
-| `--global-anchor-weight` | `0.3` | anchor strength toward the chromosome-wide mixture. Applies only with `--no-local-only` |
-| `--hmm-smooth-passes` | `5` | cross-window smoothing passes. Applies only with `--no-local-only` |
+| `--smooth-windows` | **off** | tie neighbouring windows together: enables the anchor and smoothing below, and fills low-support windows with the chromosome-wide mixture instead of NaN. Off by default, so each window uses only the information its own k-mers carry |
+| `--global-anchor-weight` | `0.3` | anchor strength toward the chromosome-wide mixture. Applies only with `--smooth-windows` |
+| `--hmm-smooth-passes` | `5` | cross-window smoothing passes. Applies only with `--smooth-windows` |
 | `--hmm-smooth-alpha` | `0.5` | smoothing strength; smaller smooths more |
 | `--hmm-smooth-recomb-rate` | `4e-08` | recombination rate used by the smoother |
 
@@ -70,6 +70,7 @@ Used when `--unit bp`, `ld` or `tsv`; ignored for `--unit chrom`.
 | option | meaning |
 |---|---|
 | `--block-mode` | alias for `--unit`: `global`→`chrom`, `window`→`bp`. `--unit` wins if both are given |
+| `--local-only` / `--no-local-only` | old spelling; `--no-local-only` is `--smooth-windows` |
 
 ---
 
