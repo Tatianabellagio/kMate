@@ -8,6 +8,7 @@ live at the project root.
 |---|---|
 | `GETTING_STARTED.md` | **Start here.** Install kMate (bioconda), what inputs it needs, building a panel from founder assemblies, running a sample, choosing `--unit` for your population, and reading the output. |
 | `BUILDING_A_PANEL.md` | How to produce the `kmer_pa`/`var_pa` matrices from a VCF or pangenome: input requirements, three routes to a panel VCF, the build commands, `--min-ac` by panel size, and panel QC. |
+| `wiki/` | Source for the **GitHub wiki** — the user-facing front door (install, inputs, build a panel, run, output, troubleshooting). Edit here, publish from here; see `wiki/README.md`. |
 | `OPEN_ITEMS.md` | Known-unfinished or untested things, each with what "done" looks like. Check before assuming something is verified. |
 | `PIPELINE_STATE.md` | **Single source of truth** for what is production vs in-evaluation vs deprecated (panel, projection, filters). Read before making pipeline decisions. |
 | `METHODS_TRIED_AND_RESULTS.md` | What was tried and how it scored — k-mer-filter sweep, EM weighting (ω_k=1/m_b vs uniform), projection variants. Complements `RESULTS_LOG.md`. |
