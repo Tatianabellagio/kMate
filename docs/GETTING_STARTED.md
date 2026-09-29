@@ -55,7 +55,7 @@ the three build commands, choosing `--min-ac` for your panel size, and how to ch
 result. The shape of it:
 
 ```
-assemblies ──cactus-pangenome──▶ graph VCF ──build_kmers_tsv.py──▶ k-mer index
+assemblies ──cactus-pangenome──▶ graph VCF ──kmate build-index──▶ k-mer index
                                      │                                  │
                                      ├──── kmate build-var-pa ──▶ var_pa / var_called / meta
                                      └──── kmate build-kmer-pa ─▶ kmer_pa

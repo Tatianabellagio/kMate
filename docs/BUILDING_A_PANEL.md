@@ -25,16 +25,12 @@ VCFs and the EM and the projection disagree silently.
 Producing them is three steps:
 
 ```
-panel VCF ──(1) build_kmers_tsv.py──▶ k-mer index ──┐
+panel VCF ──(1) kmate build-index ────▶ k-mer index ──┐
     │                                                ├──(2) kmate build-kmer-pa ──▶ kmer_pa
     └────────────────────────────────────────────────┘
     └──(3) kmate build-var-pa ──▶ var_pa + var_called + meta
 ```
 
-> ⚠️ **Step 1 is not in the installed package.** `build_kmers_tsv.py` ships only in the
-> git repo (`panel/pangenie_index/scripts/`), not in the conda/PyPI package, so building
-> a panel currently requires a clone even if you installed kMate as a package. Steps 2
-> and 3 are available as `kmate` subcommands.
 
 ---
 
@@ -72,21 +68,17 @@ bcftools index -t panel.seg.vcf.gz
 ### Input reference
 
 - **Indexed FASTA** (`.fai`) matching the VCF's coordinates and contig names.
-- **Two variants of it, and they are not interchangeable:**
+- **One reference, used for every step.** IUPAC ambiguity codes are fine: kMate
+  normalises any non-ACGTN base to `N` when it reads the reference, which is what
+  Minigraph-Cactus does when building the graph, so the reference and the graph's REF
+  alleles agree. k-mers spanning such a position contain `N` and are skipped.
+  `build-kmer-pa` reports how many bases it normalised.
 
-  | step | reference to use |
-  |---|---|
-  | pangenome build, k-mer index (step 1) | the plain reference |
-  | `build-kmer-pa` (step 2) | the **IUPAC→N** reference |
-
-  Minigraph-Cactus normalises IUPAC ambiguity codes to `N` inside the graph. Step 2
-  reconstructs haplotypes from reference flanks, so its reference must match what the
-  graph did, or the flanking k-mers are wrong. Make the N-version once:
-
-  ```bash
-  seqkit fx2tab REF.fa | awk -v OFS='\t' '{gsub(/[^ACGTNacgtn]/,"N",$2); print}' \
-    | seqkit tab2fx > REF.iupacN.fa && samtools faidx REF.iupacN.fa
-  ```
+  *(Earlier versions of this pipeline required a separately prepared IUPAC→N copy of the
+  reference for `build-kmer-pa` while other steps used the plain one — mixing them up
+  silently corrupted bubble flanks. That is handled internally now; a single reference is
+  correct everywhere. On TAIR10 the two files differed at exactly 469 positions, all
+  IUPAC→N.)*
 
 ---
 
@@ -153,7 +145,7 @@ Per chromosome — loop or use a job array. `$CHR` is the VCF's contig name.
 ### Step 1 — k-mer index
 
 ```bash
-python panel/pangenie_index/scripts/build_kmers_tsv.py \
+kmate build-index \
     --vcf  panel.vcf.gz \
     --ref  REF.fa \
     --out  index/ours \
@@ -172,7 +164,7 @@ Reproduces `PanGenie-index`'s output; full algorithm in
 kmate build-kmer-pa \
     --kmers index/ours_${CHR}_kmers.tsv.gz \
     --vcf   panel.vcf.gz \
-    --ref   REF.iupacN.fa \
+    --ref   REF.fa \
     --chrom $CHR \
     --out   kmer_pa/kmer_pa_${CHR} \
     --treat-missing-as-n \

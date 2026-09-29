@@ -80,8 +80,11 @@ Also writes `*.h_per_chrom.npz` (global) or `*.h_blocks_per_chrom.npz` (window).
   only env. Created on the current cluster after the migration removed `hapfm`/`gwas`/
   `sequencing_pipeline`/`pang`/`pangenie`. Contains numpy/scipy/pysam/pandas +
   samtools/bcftools/htslib/jellyfish/kmer-jellyfish + bbmap/minimap2/wgsim.
-- **Reference FASTA**: `TAIR10.chr.iupacN.fa` (cactus normalizes IUPAC→N; `build_kmer_pa`
-  uses it for bubble flanks only).
+- **Reference FASTA**: `TAIR10.chr.fa` — **one reference for every step** (2026-09-29).
+  `build_kmer_pa` normalises non-ACGTN bases to N internally, matching what cactus does
+  inside the graph, so the separate `TAIR10.chr.iupacN.fa` copy is no longer needed
+  (the two differed at exactly 469 positions, all IUPAC→N). Historical runs used the
+  pre-N'd file; results are unchanged, the normalisation is equivalent.
 - **Chrom naming**: GrENE-Net VCF uses `1..5`; cactus / kMate / arch3 use `Chr1..Chr5`.
 - **Sample list**: the 231-founder VCF header has a blank trailing 232nd column; drop with
   `bcftools query -l … | grep -v '^$'`.

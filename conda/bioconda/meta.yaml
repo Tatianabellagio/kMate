@@ -1,5 +1,5 @@
 {% set name = "kmate" %}
-{% set version = "0.1.1" %}
+{% set version = "0.1.2" %}
 
 # Bioconda recipe for kMate (recipes/kmate/meta.yaml upstream). Fetches the PyPI
 # sdist, NOT the GitHub auto-tarball, which archives the whole ~185 MB repo.
@@ -10,6 +10,7 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  # STALE: hash of the 0.1.1 sdist. Rebuild + re-hash before submitting 0.1.2.
   sha256: 11ec193178131d2c51b9790430e0871d377b617cedc3bc203922b9617a499752
 
 build:

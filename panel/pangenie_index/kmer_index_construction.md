@@ -1,7 +1,8 @@
 # k-mer index construction
 
 This document describes the construction of the per-bubble unique-k-mer table
-emitted by `panel/pangenie_index/scripts/build_kmers_tsv.py` (run at scale on the
+emitted by **`kmate build-index`** (`src/kmate/build_index.py`; the old
+`panel/pangenie_index/scripts/build_kmers_tsv.py` path still works as a shim) (run at scale on the
 pang_135 panel via `scripts/slurm_pang135_haploid.sh`). The algorithm reproduces
 the `kmers.tsv.gz` output produced by `PanGenie-index` (PanGenie v4.2.1; Ebler
 et al. 2022, Nat. Genet.), but as a standalone Python tool that avoids building

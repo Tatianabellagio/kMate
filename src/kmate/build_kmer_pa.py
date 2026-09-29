@@ -24,6 +24,17 @@ import pysam
 
 _COMPLEMENT = str.maketrans("ACGTNacgtn", "TGCANtgcan")
 
+# IUPAC ambiguity codes -> N. Minigraph-Cactus normalises ambiguity codes to N when
+# it builds the graph, so the VCF's REF alleles already carry N where the source
+# reference had e.g. Y or W. We normalise the reference the same way on read, which
+# makes a plain reference behave identically to a pre-N'd copy and removes the need
+# to keep two FASTAs in step. (Verified on TAIR10: the two files differed at exactly
+# 469 positions, all IUPAC -> N, and normalising reproduces the N'd file exactly.)
+# k-mers spanning a normalised position contain N and are skipped by
+# canonical_kmer_set(), which is the same behaviour as before.
+_IUPAC = "RYSWKMBDHVryswkmbdhv"
+_IUPAC_TO_N = str.maketrans(_IUPAC, "N" * len(_IUPAC))
+
 def revcomp(s: str) -> str:
     return s.translate(_COMPLEMENT)[::-1]
 
@@ -123,6 +134,7 @@ def build_kmer_pa_for_chrom(
     # Open reference and VCF
     fasta = pysam.FastaFile(ref_fasta)
     vcf = pysam.VariantFile(vcf_path)
+    n_iupac_norm = 0          # reference bases normalised IUPAC -> N (see _IUPAC_TO_N)
     founders = list(vcf.header.samples)
     F = len(founders)
     if verbose:
@@ -157,6 +169,10 @@ def build_kmer_pa_for_chrom(
         re_ = b["end"] + flank
         try:
             full_ref = fasta.fetch(chrom, rs, re_).upper()
+            _pre = full_ref
+            full_ref = full_ref.translate(_IUPAC_TO_N)
+            if full_ref != _pre:
+                n_iupac_norm += sum(1 for x, y in zip(_pre, full_ref) if x != y)
         except Exception as e:
             if verbose:
                 print(f"  WARN: fetch failed for {chrom}:{rs}-{re_}: {e}")
@@ -236,6 +252,10 @@ def build_kmer_pa_for_chrom(
     if verbose:
         print(f"[build_cn] DONE. kmer_pa shape={kmer_pa.shape}, nnz={kmer_pa.nnz:,}, "
               f"density={kmer_pa.nnz / (kmer_pa.shape[0]*kmer_pa.shape[1]):.4%}")
+    if verbose and n_iupac_norm:
+        print(f"[build_cn] normalised {n_iupac_norm:,} reference bases IUPAC -> N "
+              f"(k-mers spanning them are skipped, as with a pre-N'd reference)")
+
     return kmer_pa, kmer_index, bubble_id, bubble_meta, founders
 
 

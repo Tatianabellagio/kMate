@@ -45,6 +45,22 @@ def build_var_pa(vcf_path: str, out_prefix: str, chrom_filter: str | None = None
     for r_idx, rec in enumerate(iterator):
         if not rec.alts:
             continue
+        # The panel VCF must be biallelic. var_pa stores alts[0] as THE alt, but the
+        # carrier rule below is any(allele > 0) -- so on a multi-allelic record a
+        # founder carrying ALT 2 would be recorded as carrying ALT 1. build_kmer_pa
+        # resolves the correct allele, so the two matrices would disagree silently.
+        # Fail loudly instead of producing a quietly wrong panel.
+        if len(rec.alts) > 1:
+            raise ValueError(
+                f"Panel VCF must be biallelic (one ALT per record); got "
+                f"{len(rec.alts)} ALTs at {rec.chrom}:{rec.pos} ({rec.alts}).\n"
+                f"Decompose first. Note that `bcftools norm -m -any` scatters or drops "
+                f"carriers at co-located multi-allelic sites; the HPRC human-pangenome "
+                f"route (annotate_vcf.py from prepare-vcf-MC, then convert-to-biallelic.py "
+                f"from pangenie-tools) propagates allele IDs instead and is what this "
+                f"project uses -- see panel/arch3/README.md and "
+                f"docs/BUILDING_A_PANEL.md."
+            )
         chrom_arr.append(rec.chrom)
         pos_arr.append(rec.pos)
         ref_arr.append(rec.ref)
