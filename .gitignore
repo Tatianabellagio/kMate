@@ -536,3 +536,19 @@ analysis/grenenet_selection/genes/figures/*
 
 # gemma's raw per-gene output; results/eqtl/cis_eqtl_all.csv is the combined version
 analysis/grenenet_selection/genes/convergence/results/eqtl/output/
+
+# --- 2026-09-28: archive trees are no longer tracked ---
+# Retired work stays on disk and in history, but leaves the working repo.
+# A leading-slash-free pattern matches at ANY depth, so this covers archive/,
+# src/archive/, tests/archive/, benchmarks/*/archive/, ... and archive_gea/.
+#
+# WHY archive_gea/ is listed separately: the older rules were written as
+# `**/archive/**`, which does NOT match a directory named `archive_gea`. That
+# gap let a 104 MB CSV (archive_gea/wza/investigation/deinflate/
+# snp_site_bio1_K1_scores.csv) into the history and blocked every push to
+# GitHub, which rejects any object >100 MB.
+#
+# To keep a specific archived tree tracked (e.g. the archived kMate source),
+# add a negation BELOW these lines, e.g.:  !src/archive/
+archive/
+archive_gea/
