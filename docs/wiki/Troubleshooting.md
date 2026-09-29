@@ -58,7 +58,7 @@ path with `--convert-to-biallelic`.
 ### `kmate selftest` fails
 
 Something is wrong with the install itself; fix this before anything else. The usual
-cause is the `jellyfish` mix-up above. Check `kmate --version` is 0.1.1 or newer.
+cause is the `jellyfish` mix-up above. Check `kmate --version` is 0.1.2 or newer.
 
 ---
 

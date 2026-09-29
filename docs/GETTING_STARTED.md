@@ -15,14 +15,13 @@ production vs deprecated see [`PIPELINE_STATE.md`](PIPELINE_STATE.md) §0.
 ```bash
 mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
 mamba activate kmate
-pip install kmate==0.1.1
+pip install kmate
 kmate selftest          # must print PASS before you go further
 ```
 
 > ⚠️ **Do not `conda install kmate` yet.** bioconda serves 0.1.0, which cannot count
 > k-mers (it pulls `jellyfish`, a Python string library with no binary) and predates the
-> per-founder normalization fix (no `--normalize`/`--unit`/`--emit-af-se`). A corrected
-> recipe is ready in the repo but not yet submitted, since kMate is still changing.
+> per-founder normalization fix (no `--normalize`/`--unit`/`--emit-af-se`). The fix is in review: [bioconda-recipes#69722](https://github.com/bioconda/bioconda-recipes/pull/69722).
 > The k-mer counter is **`kmer-jellyfish`**.
 
 `kmate selftest` runs a bundled tiny fixture end-to-end (k-mer counting → EM → AF

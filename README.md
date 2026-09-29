@@ -37,16 +37,15 @@ the cold-regulated *COR413-PM2* gene, rising in cold gardens and falling in warm
 > broken two ways: it depends on `jellyfish` (a Python string-similarity library that
 > ships no `jellyfish` binary, so kMate cannot count k-mers), and it was built from a
 > pre-July-2026 snapshot lacking `--normalize`, `--unit` and `--emit-af-se` — it would
-> silently run an older estimator. A corrected recipe is ready in
-> [`conda/bioconda/`](conda/bioconda/) but has not been submitted, because kMate is
-> still changing. Until it is, use one of the two routes below.
+> silently run an older estimator. The fix is in review:
+> [bioconda-recipes#69722](https://github.com/bioconda/bioconda-recipes/pull/69722). Until it merges, use one of the two routes below.
 
 **Current release (0.1.1), from PyPI into a conda environment:**
 
 ```bash
 mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
 mamba activate kmate
-pip install kmate==0.1.1        # bioconda's 0.1.0 is broken; see above
+pip install kmate               # bioconda's 0.1.0 is broken; see above
 kmate selftest                  # must print PASS
 ```
 

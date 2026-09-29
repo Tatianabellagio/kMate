@@ -15,8 +15,8 @@ pip install kmate
 
 > ### Do not use `conda install kmate` yet
 > The bioconda package is currently stuck at an old, broken 0.1.0: it pulls in the
-> wrong `jellyfish` and cannot count k-mers at all. A corrected recipe exists but has
-> not been submitted yet. Install as shown above instead.
+> wrong `jellyfish` and cannot count k-mers at all. The fix is in review:
+> [bioconda-recipes#69722](https://github.com/bioconda/bioconda-recipes/pull/69722). Install as shown above until it merges.
 
 > ### The k-mer counter is `kmer-jellyfish`, not `jellyfish`
 > On conda-forge, `jellyfish` is an unrelated Python string-similarity library that
@@ -46,7 +46,7 @@ PASS: kMate is correctly installed and working.
 kmate --version
 ```
 
-Use **0.1.1 or newer**. Older builds lack `--normalize`, `--unit` and `--emit-af-se`
+Use **0.1.2 or newer**. Older builds lack `--normalize`, `--unit` and `--emit-af-se`
 and silently use a superseded estimator.
 
 ## From source
