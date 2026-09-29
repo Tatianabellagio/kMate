@@ -1,5 +1,16 @@
 # Submitting kMate to bioconda
 
+> **STATUS (2026-09-29): ready, deliberately NOT submitted.** PyPI 0.1.1 is published and
+> the recipe below is complete and verified (its `sha256` matches what PyPI serves,
+> byte-for-byte). The bioconda PR is being held because kMate is still under active
+> change — submitting now would mean asking bioconda reviewers to re-review on every
+> iteration. Submit when the API settles; everything here stays valid, only `version:`
+> and `sha256:` need bumping for a later release.
+>
+> Meanwhile bioconda keeps serving the broken **0.1.0**, so the README and
+> `docs/GETTING_STARTED.md` tell users to install 0.1.1 from PyPI and explicitly warn
+> against `conda install kmate`.
+
 The recipe in [`meta.yaml`](meta.yaml) is ready to submit. It fetches the **PyPI
 sdist** (~122 KB), not the GitHub auto-tarball (which archives the whole ~185 MB
 repo and would be rejected). Do the two steps below in order.

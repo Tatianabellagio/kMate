@@ -33,39 +33,37 @@ the cold-regulated *COR413-PM2* gene, rising in cold gardens and falling in warm
 
 ## Install
 
-kMate is packaged on **bioconda** — one command gets you the `kmate` CLI and every
-tool it shells out to:
+> ⚠️ **Do not `conda install kmate` yet.** bioconda currently serves **0.1.0**, which is
+> broken two ways: it depends on `jellyfish` (a Python string-similarity library that
+> ships no `jellyfish` binary, so kMate cannot count k-mers), and it was built from a
+> pre-July-2026 snapshot lacking `--normalize`, `--unit` and `--emit-af-se` — it would
+> silently run an older estimator. A corrected recipe is ready in
+> [`conda/bioconda/`](conda/bioconda/) but has not been submitted, because kMate is
+> still changing. Until it is, use one of the two routes below.
+
+**Current release (0.1.1), from PyPI into a conda environment:**
 
 ```bash
-mamba create -n kmate -c conda-forge -c bioconda kmate
+mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
 mamba activate kmate
+pip install kmate==0.1.1        # bioconda's 0.1.0 is broken; see above
+kmate selftest                  # must print PASS
 ```
 
-> ⚠️ **Check `kmate --version` reports 0.1.1 or newer.** The 0.1.0 build currently on
-> bioconda is a pre-July-2026 snapshot with two problems: it depends on `jellyfish`
-> instead of `kmer-jellyfish` (so it cannot count k-mers at all), and it predates the
-> per-founder normalization fix — it has no `--normalize`, `--unit` or `--emit-af-se`,
-> and would silently run the old EM in which k-mer-poor founders collapse toward zero.
-> Until 0.1.1 is published, install from source (below).
-
-### From source (for development)
+**From source (for development, and to track `master`):**
 
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
 cd kMate
 mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
 mamba activate kmate
-pip install -e .          # installs the `kmate` command (no compilation step)
+pip install -e .
+kmate selftest
 ```
 
-Python deps: `numpy`, `scipy`, `pysam`. kMate also shells out to **`kmer-jellyfish`**
-(k-mer counting) and `samtools` (read handling). This gives you a `kmate` command with
-subcommands (`kmate --help`).
-
-> **Use `kmer-jellyfish`, not `jellyfish`.** On conda-forge, `jellyfish` is a Python
-> string-similarity library that ships no `jellyfish` binary; installing it leaves kMate
-> unable to count k-mers (`jellyfish: command not found`). The k-mer counter is
-> `kmer-jellyfish` on bioconda.
+The conda step installs the non-Python tools kMate shells out to: **`kmer-jellyfish`**
+(the k-mer counter — *not* `jellyfish`) and `samtools`. The Python deps are `numpy`,
+`scipy`, `pysam`.
 
 ### Verify the install
 
