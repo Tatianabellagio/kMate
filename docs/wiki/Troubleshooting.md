@@ -65,8 +65,7 @@ cause is the `jellyfish` mix-up above. Check `kmate --version` is 0.1.2 or newer
 ### The job runs out of memory
 
 The k-mer matrix is loaded densely: roughly **20 GB** for a few hundred founder haplotypes on
-one chromosome. Request ~32 GB, and run one chromosome at a time rather than the whole
-genome at once.
+one chromosome. Request ~32 GB and run one chromosome at a time.
 
 ---
 

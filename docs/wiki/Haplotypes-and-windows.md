@@ -57,9 +57,8 @@ constant?**
 On a selfing benchmark, fitting per LD-block instead of per
 chromosome moved AF error from **0.0033 to 0.0080** and outliers from **0.001% to
 0.625%**: low-diversity regions such as centromeres cannot distinguish founder
-haplotypes from local k-mers alone, so the local fit drifts. Conversely, a
-chromosome-wide fit on a recombinant pool reports one average ancestry for a chromosome
-that has none.
+haplotypes from local k-mers alone, so the local fit drifts. On a recombinant pool, a
+chromosome-wide fit reports one average ancestry for a chromosome that has none.
 
 ### It also depends on sequencing depth
 

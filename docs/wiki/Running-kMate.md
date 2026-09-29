@@ -42,8 +42,8 @@ chromosome, or a window. Choose it from your species' biology.
 
 On a selfing benchmark, fitting per LD-block instead of per chromosome moved AF error
 from 0.0033 to 0.0080 and outliers from 0.001% to 0.625%: low-diversity regions such as
-centromeres cannot distinguish founder haplotypes from local k-mers alone. Conversely, a
-chromosome-wide fit on a recombinant pool averages away the mosaic being measured.
+centromeres cannot distinguish founder haplotypes from local k-mers alone. On a
+recombinant pool, a chromosome-wide fit averages away the mosaic being measured.
 
 Window size is also bounded by sequencing depth: a window needs enough *observed* k-mers
 to be fittable. → **[Haplotypes and windows](Haplotypes-and-windows)**.

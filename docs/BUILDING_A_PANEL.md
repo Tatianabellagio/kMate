@@ -162,8 +162,8 @@ assumes.
 With outbred founders that rule would discard half your data and bias AF, so `--het split`
 keeps both haplotypes and kMate estimates a frequency per haplotype — which is what a
 founder-mixture model means for an outbred panel. It requires **phased** genotypes; an
-unphased heterozygote is an error rather than a coin flip, because guessing phase would
-fabricate haplotypes that were never observed.
+unphased heterozygote is an error, because guessing phase would fabricate haplotypes that
+were never observed.
 
 > ⚠️ `--het split` has so far only been exercised on synthetic input — see
 > [`OPEN_ITEMS.md`](OPEN_ITEMS.md) §1 before relying on it for a real phased panel.

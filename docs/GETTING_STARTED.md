@@ -88,7 +88,7 @@ kmate run \
 Getting this wrong is not subtle. On a selfing benchmark, fitting per LD-block instead of
 per chromosome moved AF-MAE from 0.0033 to 0.0080 and outliers from 0.001% to 0.625%,
 because low-diversity regions (centromeres) cannot identify founders from local k-mers
-alone. Conversely, on a recombinant pool a chromosome-wide fit averages away the mosaic
+alone. On a recombinant pool, a chromosome-wide fit averages away the mosaic
 you are trying to measure. Background:
 [`EM_UNIT_CHOICE_AND_NONIDENTIFIABILITY.md`](EM_UNIT_CHOICE_AND_NONIDENTIFIABILITY.md).
 
