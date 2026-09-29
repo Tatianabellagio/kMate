@@ -58,8 +58,8 @@ def build_var_pa(vcf_path: str, out_prefix: str, chrom_filter: str | None = None
                 f"carriers at co-located multi-allelic sites; the HPRC human-pangenome "
                 f"route (annotate_vcf.py from prepare-vcf-MC, then convert-to-biallelic.py "
                 f"from pangenie-tools) propagates allele IDs instead and is what this "
-                f"project uses -- see panel/arch3/README.md and "
-                f"docs/BUILDING_A_PANEL.md."
+                f"project uses. Run it via `kmate decompose` (see that command's "
+                f"--citation, and docs/BUILDING_A_PANEL.md)."
             )
         chrom_arr.append(rec.chrom)
         pos_arr.append(rec.pos)

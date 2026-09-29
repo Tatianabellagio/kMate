@@ -15,6 +15,8 @@ _CMDS = {
     "build-kmer-pa": ("build_kmer_pa",        "build the founder x k-mer membership matrix (kmer_pa)"),
     "build-var-pa":  ("build_var_pa",         "build the founder x variant matrix (var_pa) from a panel VCF"),
     "build-index":   ("build_index",          "build the per-bubble k-mer index (kmers.tsv.gz) from a panel VCF"),
+    "decompose":     ("decompose",            "multi-allelic -> biallelic VCF (HPRC symbolic-ID propagation; third-party tools)"),
+    "transfer-id":   ("transfer_id",          "copy INFO/ID from an annotated catalog onto a genotyped VCF"),
     "build-kmer-db": ("build_kmer_db",        "build a Jellyfish k-mer DB from reads once (count-once path)"),
     "filter-pa":     ("filter_kmer_pa_production", "drop private (ac<=1) / invariant (ac==F) k-mer columns"),
     "selftest":      ("selftest",              "run the bundled fixture end-to-end to verify the install"),

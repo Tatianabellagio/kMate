@@ -119,22 +119,59 @@ bcftools index -t panel.vcf.gz
 ### From a phased multi-sample callset (no graph)
 
 Workable, but you only get what the callset contains — typically SNPs and short indels,
-no SVs. Decompose to biallelic and haploidize:
+no SVs. You still need it biallelic and haploid.
+
+## Making a multi-allelic VCF biallelic — `kmate decompose`
+
+Graph VCFs are usually multi-allelic, and kMate requires one ALT per record.
+
+**Do not decompose by realignment.** `bcftools norm -m -any` (and `--atomize`,
+`vcfwave`) split each record by pairwise REF↔ALT alignment. On a pangenome graph that
+scatters carriers across shifted positions and silently drops them where ALT paths
+converge on the same atomic variant — measured here at up to **~99% carrier loss** at a
+SNP co-located with a multi-allelic indel. It is silent: nothing errors.
+
+The correct method is **symbolic-ID propagation**, developed for the Human Pangenome
+Reference Consortium: each atomic variant nested in a bubble carries a symbolic ID, and
+genotypes move from the multi-allelic record to the biallelic catalog by *matching IDs*,
+never by alignment.
 
 ```bash
-bcftools norm -m -any -f REF.fa callset.vcf.gz -Oz -o biallelic.vcf.gz
-# then haploidize: one allele per GT
+kmate decompose \
+    --annotated-vcf      annotated_multiallelic.vcf.gz \   # from annotate_vcf.py
+    --biallelic-catalog  annotated_biallelic.vcf.gz \      # from annotate_vcf.py
+    --genotyped-vcf      your_genotyped.vcf.gz \
+    --convert-to-biallelic /path/to/convert-to-biallelic.py \
+    --haploidize \
+    --out panel.vcf.gz
 ```
 
-> ⚠️ `bcftools norm -m -any` **scatters or drops carriers at co-located multi-allelic
-> sites** — up to ~99% carrier loss at one measured SNP in this project. That is why the
-> 231-founder panel uses a symbolic-ID decomposition instead (`panel/arch3/`, and
-> [`INVESTIGATION_CN_VAR_DECOMPOSITION.md`](INVESTIGATION_CN_VAR_DECOMPOSITION.md)). If
-> your VCF has co-located multi-allelic records, check carrier counts before and after.
+`--haploidize` also emits one allele per GT (`0/0`→`0`, `1/1`→`1`, het→`.`, `./.`→`.`),
+which the builders require. Heterozygous calls become **missing**, not a guessed allele:
+the panel represents inbred founders, so a het call is more likely an artefact, and
+marking it missing lets the AF projection exclude that founder at that record rather than
+inventing a call. The command reports the het→missing rate — check it is small.
 
-**Merging two heterogeneous sources** (e.g. long-read assemblies plus short-read
-genotypes) is the hard case; that is what `panel/arch3/` exists for. A single coherent
-graph needs none of it.
+### ⚠️ Attribution — this method is not kMate's
+
+`kmate decompose` is mostly **orchestration of third-party tools**, which are **not
+bundled**; you must obtain them separately. Run `kmate decompose --citation` to print this
+at any time. If you publish results that used it, cite the works below.
+
+| tool | origin | cite |
+|---|---|---|
+| `annotate_vcf.py` (`prepare-vcf-MC`) | Human Pangenome Reference Consortium, [HPRC/genotyping-pipelines](https://github.com/human-pangenomics/hpp_pangenome_resources) | Liao et al. (2023) *A draft human pangenome reference*, Nature 617:312–324 |
+| `convert-to-biallelic.py` | Jana Ebler, [eblerjana/pangenie-tools](https://github.com/eblerjana/pangenie-tools) | Ebler et al. (2022) *Pangenome-based genome inference…*, Nature Genetics 54:518–525 |
+| `bcftools` | samtools project | Danecek et al. (2021) *Twelve years of SAMtools and BCFtools*, GigaScience 10:giab008 |
+
+The only original step is the `INFO/ID` transfer (`kmate transfer-id`), which copies
+symbolic IDs from the annotated catalog onto a genotyped VCF built from the same graph.
+It exists because `bcftools annotate -c INFO/ID` corrupts the angle-bracketed graph-node
+IDs.
+
+**Inherited limitation:** `annotate_vcf.py` builds its atomic catalog with `vcfwave`
+internally, so a small fraction of atomic variants (~0.8% on this project's panel) are
+absent from the catalog and cannot be recovered by ID matching.
 
 ---
 
