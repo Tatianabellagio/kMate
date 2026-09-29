@@ -47,9 +47,12 @@ The matrices are **per chromosome** and are built once per panel (§3). They are
 
 ## 3. Building a panel from founder assemblies
 
-Only if you do not already have matrices. The full worked example — 8 *A. thaliana*
-founders, every command, and the decisions that are panel-size dependent — is the MAGIC
-runbook (see the project directory referenced in `PIPELINE_STATE.md` §6). In outline:
+Only if you do not already have matrices.
+
+**→ [`BUILDING_A_PANEL.md`](BUILDING_A_PANEL.md)** covers this properly: what the panel VCF
+must satisfy (haploid, biallelic, sequence-resolved, indexed), three routes to producing one,
+the three build commands, choosing `--min-ac` for your panel size, and how to check the
+result. The shape of it:
 
 ```
 assemblies ──cactus-pangenome──▶ graph VCF ──build_kmers_tsv.py──▶ k-mer index
@@ -58,35 +61,8 @@ assemblies ──cactus-pangenome──▶ graph VCF ──build_kmers_tsv.py─
                                      └──── kmate build-kmer-pa ─▶ kmer_pa
 ```
 
-```bash
-# 1. pangenome (Minigraph-Cactus) -> a vcfbub-filtered VCF with real genotypes
-cactus-pangenome <jobstore> <seqfile> --outDir out --outName mypanel \
-    --reference <REFNAME> --haplo --vcf --gfa --gbz --giraffe
-
-# 2. per-bubble k-mer index
-python panel/pangenie_index/scripts/build_kmers_tsv.py \
-    --vcf out/mypanel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
-
-# 3. founder x k-mer matrix, per chromosome
-kmate build-kmer-pa --kmers index/ours_Chr1_kmers.tsv.gz --vcf out/mypanel.vcf.gz \
-    --ref REF.iupacN.fa --chrom Chr1 --out kmer_pa/kmer_pa_Chr1 \
-    --treat-missing-as-n --filter-production --min-ac 1 --invariant-margin 1
-
-# 4. founder x variant matrices, per chromosome
-kmate build-var-pa --vcf out/mypanel.vcf.gz --chrom Chr1 --out var_pa/var_pa_Chr1
-```
-
-**Three things that bite people:**
-
-1. **`--min-ac` depends on panel size.** `--min-ac 2` (drop k-mers carried by one
-   founder) is right for a large panel, where singletons are mostly noise. On a *small*
-   panel those singletons are your most informative columns — on 8 founders `--min-ac 2`
-   removed ~46% of k-mers. Use `--min-ac 1` for small panels.
-2. **Two different reference FASTAs.** The graph build and the k-mer index take the
-   plain reference; `build-kmer-pa` takes the **IUPAC→N** version, because Cactus
-   normalises ambiguity codes inside the graph and the bubble flanks must match.
-3. **Drop monomorphic records** (`AC=0 || AC=AN`) from the panel VCF before building
-   `var_pa`, so the matrix is segregating-only.
+Both matrices must come from the **same** VCF, or the EM and the projection disagree
+silently.
 
 ## 4. Run kMate on a sample
 

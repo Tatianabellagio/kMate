@@ -79,7 +79,7 @@ kMate processes **one pooled sample at a time, per chromosome**.
 
 **You need**
 - **Pooled reads**: paired FASTQ (`R1.fq R2.fq`) of one pool/sample.
-- **A reference panel** encoded as per-chromosome matrices: `kmer_pa` (k-mer × founder presence/absence), `var_pa` (founder × variant alt-allele), and record `meta`. Built once from your founders' phased VCF (see [Building a panel](#building-a-panel)). The 231-founder *Arabidopsis thaliana* panel used by GrENE-Net is available on request; the matrix files are large and are not stored in the Git repo.
+- **A reference panel** encoded as per-chromosome matrices: `kmer_pa` (k-mer × founder presence/absence), `var_pa` (founder × variant alt-allele), and record `meta`. Built once from your founders' VCF — see **[`docs/BUILDING_A_PANEL.md`](docs/BUILDING_A_PANEL.md)**. The 231-founder *Arabidopsis thaliana* panel used by GrENE-Net is available on request; the matrix files are large and are not stored in the Git repo.
 
 **Run**
 
@@ -124,11 +124,16 @@ genome-wide solve (per-chrom `h` agrees to ~0.1%). Full math + code wiring: [`AL
 
 ## Building a panel
 
-To run kMate on your own founder set you build the panel matrices once from a multi-founder
-**phased VCF**: `var_pa` from the founder genotypes and `kmer_pa` from a k-mer index of the
-founders. The builders live in [`panel/`](panel/) and [`data/`](data/). The bundled
-231-founder *Arabidopsis* panel (used by GrENE-Net) and its exact construction are documented
-in [`docs/PIPELINE_STATE.md`](docs/PIPELINE_STATE.md) §0.
+**→ [`docs/BUILDING_A_PANEL.md`](docs/BUILDING_A_PANEL.md)** — the step-by-step guide: what
+the panel VCF must satisfy, how to produce one (from assemblies via a pangenome graph, from
+an existing graph VCF, or from a phased callset), the three build commands, how to pick
+`--min-ac` for your panel size, and how to check the result before you use it.
+
+In short: you build the matrices once from a multi-founder **haploid, biallelic** VCF —
+`var_pa` from the founder genotypes, `kmer_pa` from a k-mer index of the same VCF. The
+231-founder *Arabidopsis* panel used by GrENE-Net is available on request (the matrices are
+large and not in the repo); its exact construction is in
+[`docs/PIPELINE_STATE.md`](docs/PIPELINE_STATE.md) §0.
 
 ## Repository layout
 
@@ -142,6 +147,12 @@ benchmarks/  end-to-end accuracy benchmarks (p80 control, p231 headline)
 sims/        pool-seq simulation framework (AF truth); see sims/README.md
 docs/        methods + analysis writeups
 ```
+
+
+> **`archive/` trees are not tracked.** Retired work (`archive/`, `archive_gea/`, and
+> `archive/` directories nested anywhere, e.g. `src/archive/`) stays on disk in a working
+> checkout but is deliberately excluded from the repository. Links to `archive/…` paths in
+> the docs therefore resolve only in a local checkout, not on GitHub.
 
 ## Documentation
 

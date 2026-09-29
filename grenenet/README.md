@@ -81,20 +81,6 @@ done
 
 ---
 
-## Two-phase runner (optional): `run_phaseA/B/C` + `submit_two_phase_cohort.sh`
-
-Phase A builds all DBs, Phase B is a flat `N×5` (sample,chrom) array, Phase C
-concatenates. Maximizes fan-out for huge cohorts.
-
-**Caveat that usually makes single-phase the better choice:** in two-phase the DB is
-built by one job and read by 5 separate jobs that may land on *different* nodes — so
-it **cannot** be node-local, putting Vessel-B I/O back on the shared filesystem. The
-single-phase design keeps each sample's 5 chroms on one node, which is exactly what
-lets the DB live in that node's RAM. Prefer single-phase unless you specifically need
-the extra fan-out.
-
----
-
 ## Manifests (this cohort)
 - `data/sample_manifest_usesample.tsv` — **2,168** samples = `usesample=True` = Table_S5
   = the hapFIRE analysis set ⭐ (recommended).
