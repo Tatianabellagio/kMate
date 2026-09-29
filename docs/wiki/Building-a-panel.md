@@ -31,9 +31,8 @@ cactus-pangenome <jobstore> panel.seqfile \
 `panel.seqfile` is `<name><TAB><path>`, with the **reference first**. The output
 `out/mypanel.vcf.gz` is already reduced to top-level bubbles.
 
-Two practical points: put the jobstore on **node-local disk**, not shared storage; and
-if your reference contains IUPAC codes, use **Cactus 3.1.0 or newer** — older versions
-stop with `Non-ACGTN character`.
+Put the jobstore on **node-local disk**. If your reference contains IUPAC codes, use
+**Cactus 3.1.0 or newer**; older versions stop with `Non-ACGTN character`.
 
 ### B. You have a pangenome graph VCF already
 

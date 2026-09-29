@@ -11,8 +11,8 @@ kmate run \
     --threads 8 --chroms Chr1 --unit chrom
 ```
 
-Both `--*-prefix` options are **prefixes, not files**. kMate appends the chromosome
-and suffix itself, so with `--chroms Chr1` it looks for:
+Both `--*-prefix` options are **prefixes**. kMate appends the chromosome and suffix, so
+with `--chroms Chr1` it looks for:
 
 ```
 panel/kmer_pa/kmer_pa_Chr1.kmer_pa.npz      the k-mer evidence
@@ -22,44 +22,40 @@ panel/var_pa/var_pa_Chr1.var_called.npz     where each haplotype had a call
 panel/var_pa/var_pa_Chr1.meta.npz           the variants themselves
 ```
 
-If a file is missing, kMate says which one. (The individual `--var-pa`,
-`--var-called` and `--var-meta` options still exist if your files are not named to a
-common stem.)
+A missing file is named in the error. `--var-pa`, `--var-called` and `--var-meta` take
+explicit paths if your files share no common stem.
 
-This writes the frequency table — see [Output](Output) — plus a `.h_per_chrom.npz`
-holding the estimated founder-haplotype mixture.
+Writes the frequency table ([Output](Output)) and `.h_per_chrom.npz`, the estimated
+founder-haplotype mixture.
 
 ---
 
 ## `--unit`
 
 `--unit` decides **over what span** the founder-haplotype mixture is estimated — a whole
-chromosome, or a window. Choose it from your species' biology, not from the default.
+chromosome, or a window. Choose it from your species' biology.
 
 | your pools are… | use | why |
 |---|---|---|
 | **selfing, inbred, or a founder mix** (F0 seed pools) | `--unit chrom` | ancestry is essentially constant along a chromosome, so using all its k-mers gives the best-determined mixture |
 | **recombinant** — a few generations of outcrossing | `--unit bp --window-bp 10000 --kmer-weight inv_mb` | ancestry is a mosaic along the chromosome and must be fitted locally |
 
-This matters. On a selfing benchmark, fitting per LD-block instead of per chromosome
-moved the error from 0.0033 to 0.0080 and outliers from 0.001% to 0.625%, because
-low-diversity regions such as centromeres cannot tell founder haplotypes apart from
-local k-mers alone. In the other direction, a chromosome-wide fit on a recombinant pool
-averages away the very mosaic you are trying to measure.
+On a selfing benchmark, fitting per LD-block instead of per chromosome moved AF error
+from 0.0033 to 0.0080 and outliers from 0.001% to 0.625%: low-diversity regions such as
+centromeres cannot distinguish founder haplotypes from local k-mers alone. Conversely, a
+chromosome-wide fit on a recombinant pool averages away the mosaic being measured.
 
-**Window size is also limited by sequencing depth** — a window needs enough *observed*
-k-mers to be fittable at all. → **[Haplotypes and windows](Haplotypes-and-windows)**
-explains both constraints and how to check you chose well.
+Window size is also bounded by sequencing depth: a window needs enough *observed* k-mers
+to be fittable. → **[Haplotypes and windows](Haplotypes-and-windows)**.
 
-Leave `--normalize per_founder` on. It corrects for founder haplotypes differing in how
-many k-mers they contribute; without it, k-mer-poor haplotypes collapse toward zero.
+Leave `--normalize per_founder` on: it corrects for haplotypes differing in k-mer
+content. Without it, k-mer-poor haplotypes collapse toward zero.
 
 ---
 
 ## Whole genome, counting reads once
 
-Counting k-mers is the slow part. Do it once per pool and reuse it for every
-chromosome:
+k-mer counting dominates runtime. Count once per pool, query per chromosome:
 
 ```bash
 kmate build-kmer-db --reads R1.fq.gz R2.fq.gz --out pool.jf --threads 8
@@ -74,14 +70,13 @@ for CHR in Chr1 Chr2 Chr3 Chr4 Chr5; do
 done
 ```
 
-Results are identical to re-scanning the reads each time, and about twice as fast.
+Identical results to re-scanning, ~2× faster.
 
 ---
 
 ## Many samples
 
-One job per sample. Here is a complete SLURM array script — adapt the header to your
-cluster:
+One job per sample. A complete SLURM array script — adapt the header to your cluster:
 
 ```bash
 #!/bin/bash
@@ -122,21 +117,19 @@ done
 Submit with `sbatch --array=1-<N> runner.sh`.
 
 > ### Put the k-mer database on node-local storage
-> Never on shared network storage. With many jobs reading their databases off the same
-> shared filesystem at once, we measured queries up to **48× slower**. `$SLURM_TMPDIR`
-> or `/dev/shm` as above. This is the single biggest performance factor at scale, and
-> it is not specific to kMate.
+> Use `$SLURM_TMPDIR` or `/dev/shm`. With many jobs reading databases off one shared
+> filesystem, we measured queries up to **48× slower** — the largest performance factor
+> at scale.
 >
-> If you use `/dev/shm`, the database counts against your job's memory — request
-> ~32 GB. The `trap` frees it even if the job is killed.
+> On `/dev/shm` the database counts against job memory; request ~32 GB. The `trap`
+> frees it if the job is killed.
 
-The repository also contains the production runner this is distilled from,
-`grenenet/run_site_array_perchrom.sh`, which adds manifest chunking past the array-size
-limit and finer resume logic.
+The production runner this is distilled from, `grenenet/run_site_array_perchrom.sh`,
+adds manifest chunking past the array-size limit and finer resume logic.
 
 ---
 
 ## Memory
 
-Roughly **20 GB** for a few hundred founder haplotypes on one chromosome, because the k-mer
-matrix is loaded densely. Request ~32 GB. Fewer haplotypes need much less.
+~**20 GB** for a few hundred founder haplotypes on one chromosome; the k-mer matrix is
+loaded densely. Request ~32 GB. Fewer haplotypes need less.

@@ -4,9 +4,8 @@ kMate estimates **allele frequencies for SNPs, short indels and large structural
 variants** from pooled sequencing of a population descended from a known set of
 **founder haplotypes**.
 
-It is **alignment-free**: reads are never mapped. Everything happens in k-mer space,
-which is why structural variants are handled exactly like SNPs instead of needing
-separate calling.
+It is **alignment-free**: reads are never mapped. Working in k-mer space is why
+structural variants are handled exactly like SNPs.
 
 ---
 
@@ -14,11 +13,11 @@ separate calling.
 
 ### Step 1 — put your founders into k-mer space
 
-Take your founder haplotypes' pangenome and turn it into **two matrices**. This is done
-**once** per founder set, and reused for every pool you ever sequence.
+Turn your founder haplotypes' pangenome into **two matrices** — once per founder set,
+reused for every pool.
 
-A *founder haplotype* is one continuous sequence — one allele at every variant. An inbred
-line is one haplotype; a phased outbred individual is two. See
+A *founder haplotype* is one continuous sequence, one allele per variant. An inbred line
+is one haplotype; a phased outbred individual is two —
 [Haplotypes and windows](Haplotypes-and-windows).
 
 ```
@@ -39,13 +38,12 @@ that missing data is excluded rather than silently counted as reference.
 
 ### Step 2 — run a pool against them
 
-Count the k-mers in your pooled reads. kMate asks: *what mixture of founder haplotypes
-would produce these counts?* — modelling each k-mer count as Poisson with mean
-`λ · Σ h_f · K_pa[f,k]`, and solving for the founder-haplotype mixture **`h`** by
-expectation-maximisation.
+Count the k-mers in the pooled reads and solve for the mixture that produced them: each
+count is modelled as Poisson with mean `λ · Σ h_f · K_pa[f,k]`, and the founder-haplotype
+mixture **`h`** is fitted by expectation-maximisation.
 
-Then it projects that mixture through **V_pa**: a variant's frequency is the summed
-proportion of the founder haplotypes that carry it. One pass gives every SNP, indel and SV.
+Projecting `h` through **V_pa** gives each variant's frequency: the summed proportion of
+haplotypes carrying it. One pass covers every SNP, indel and SV.
 
 ```
    pooled reads ──▶ k-mer counts ──▶ EM ──▶ h (haplotype mixture) ──▶ × V_pa ──▶ allele frequencies
@@ -103,9 +101,8 @@ kmate run \
     --chroms Chr1 --unit chrom
 ```
 
-Your VCF has to satisfy a few requirements before step 1 (haploid, biallelic,
-sequence-resolved) — [Building a panel](Building-a-panel) covers how to get there,
-including from raw assemblies.
+Step 1 requires a haploid, biallelic, sequence-resolved VCF.
+[Building a panel](Building-a-panel) covers how to get one, including from raw assemblies.
 
 ---
 

@@ -23,7 +23,7 @@ one value per haplotype, summing to 1.
 
 ## There is no variant-type column
 
-Work it out from the lengths:
+Derive it from the lengths:
 
 | type | rule |
 |---|---|
@@ -42,8 +42,8 @@ sv  = df[["ref_len", "alt_len"]].max(axis=1) >= 50
 
 ## Comparing samples
 
-Every sample run against the same panel produces **the same rows in the same order**.
-So you can stack them directly:
+Every sample run against the same panel produces **the same rows in the same order**, so
+they stack directly:
 
 ```python
 import pandas as pd
@@ -52,19 +52,18 @@ b = pd.read_csv("POOL_B_Chr1.tsv", sep="\t")
 delta = b.alt_freq - a.alt_freq          # row-wise, no merge needed
 ```
 
-> **Do not merge on `chrom` and `pos`.** A position can carry more than one variant
-> (for example a SNP and an indel starting at the same base), so a position key will
-> match the wrong allele. Join row-wise, or on all four of
-> `chrom, pos, ref_len, alt_len`.
+> **Do not merge on `chrom` and `pos`.** A position can carry several variants (a SNP and
+> an indel starting at the same base), so a position key matches the wrong allele. Join
+> row-wise, or on all four of `chrom, pos, ref_len, alt_len`.
 
 ---
 
 ## Judging an estimate
 
-- **`n_called`** is the honest support: a frequency derived from few haplotypes is
-  weaker, whatever `se` says. Filtering on it is usually wise.
+- **`n_called`** is the support: a frequency from few haplotypes is weak regardless of
+  `se`. Filter on it.
 - **`alt_freq` is a frequency among *called* haplotypes.** Founder haplotypes missing at
   a variant are excluded rather than counted as reference.
-- **Check the founder-haplotype mixture** before trusting per-variant numbers. If it has
-  collapsed onto a handful of haplotypes when you expected many, something upstream is
-  wrong — coverage, the panel, or the wrong `--unit`.
+- **Check the founder-haplotype mixture** before trusting per-variant numbers. Collapse
+  onto a handful of haplotypes where many were expected indicates a problem upstream:
+  coverage, the panel, or `--unit`.
