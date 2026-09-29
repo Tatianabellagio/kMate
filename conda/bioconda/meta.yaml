@@ -14,9 +14,7 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
-  # STALE -- this is the 0.1.0 sdist hash. Regenerate after uploading the
-  # 0.1.1 sdist to PyPI (see SUBMISSION.md 'Confirm the sha256').
-  sha256: ac20fee8912f78c41f873408ef2a69c8239fbb50e914da9195b7d7f82662c045
+  sha256: 11ec193178131d2c51b9790430e0871d377b617cedc3bc203922b9617a499752
 
 build:
   noarch: python                       # pure-Python -> one build, no platform matrix

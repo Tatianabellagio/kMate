@@ -6,38 +6,53 @@ repo and would be rejected). Do the two steps below in order.
 
 ## Step 1 — publish the sdist to PyPI
 
-`kmate` is available on PyPI (checked 2026-06-18). You need a PyPI account and an
-API token (https://pypi.org/manage/account/token/).
+The 0.1.1 sdist is **already built** at `dist/kmate-0.1.1.tar.gz`, and the `sha256`
+in [`meta.yaml`](meta.yaml) is the hash of *that exact file*:
+
+```
+11ec193178131d2c51b9790430e0871d377b617cedc3bc203922b9617a499752
+```
+
+> ⚠️ **Upload that artifact, do not rebuild it.** Rebuilding produces a different
+> hash (gzip embeds a timestamp), which would make `meta.yaml` wrong and fail
+> bioconda CI. If you must rebuild, re-read the hash from PyPI afterwards using the
+> command below and paste it into `meta.yaml`.
 
 ```bash
 mamba activate kmate
-cd /global/scratch/users/tbellg/kmate
+cd <kMate checkout>
 
-# build the clean sdist (already built once at dist/kmate-0.1.0.tar.gz)
-python -m build --sdist          # needs `mamba install -c conda-forge python-build twine`
-
-# optional but recommended: check metadata renders
-twine check dist/kmate-0.1.0.tar.gz
-
-# upload (will prompt for the token, or set TWINE_USERNAME=__token__ TWINE_PASSWORD=pypi-...)
-twine upload dist/kmate-0.1.0.tar.gz
+python -m twine check dist/kmate-0.1.1.tar.gz     # already PASSES
+python -m twine upload dist/kmate-0.1.1.tar.gz    # needs a PyPI API token
 ```
 
-After upload, `pip install kmate` works, and the source URL in `meta.yaml`
-resolves.
+After upload, `pip install kmate==0.1.1` works and the `url:` in `meta.yaml` resolves.
 
-### Confirm the sha256
-
-The `sha256` in `meta.yaml` (`ac20fee8…`) is for the sdist built here. **If you
-rebuild the sdist, the hash changes** (gzip timestamps), so use the authoritative
-hash from PyPI after uploading:
+### Confirm the hash PyPI actually serves
 
 ```bash
-curl -sL https://pypi.org/pypi/kmate/0.1.0/json \
+curl -sL https://pypi.org/pypi/kmate/0.1.1/json \
   | python -c "import sys,json; d=json.load(sys.stdin); print([f['digests']['sha256'] for f in d['urls'] if f['packagetype']=='sdist'][0])"
 ```
 
-Paste that value into `meta.yaml`'s `source: sha256:` if it differs.
+It must equal the value above. If not, paste what PyPI reports into `meta.yaml`.
+
+### What 0.1.1 fixes (say this in the PR)
+
+The published 0.1.0 is broken in two independent ways, both verified against a clean
+`mamba create -c conda-forge -c bioconda kmate`:
+
+1. **It cannot count k-mers.** The recipe depended on `jellyfish`, which on
+   conda-forge is a Python string-similarity library shipping no `jellyfish`
+   binary. `kmate selftest` exited 1 with `jellyfish: command not found`. Fixed by
+   depending on **`kmer-jellyfish`** (the real counter, 2.3.1).
+2. **It is a pre-July-2026 snapshot.** It has no `--normalize`, `--unit` or
+   `--emit-af-se`, and `per_founder` appears zero times in its source — so it would
+   silently run the older EM in which k-mer-poor founders collapse toward zero.
+
+The recipe's `test:` block now also runs `kmate selftest`, which exercises
+jellyfish/samtools end-to-end. The old test ran only `--help`, `--version` and
+`import kmate`, which is exactly why a package that could not count k-mers passed CI.
 
 ## Step 2 — open the bioconda PR
 
