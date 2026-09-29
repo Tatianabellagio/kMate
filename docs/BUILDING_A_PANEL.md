@@ -169,6 +169,11 @@ founder-mixture model means for an outbred panel. It requires **phased** genotyp
 unphased heterozygote is an error rather than a coin flip, because guessing phase would
 fabricate haplotypes that were never observed.
 
+> ⚠️ `--het split` has so far only been exercised on synthetic input — see
+> [`OPEN_ITEMS.md`](OPEN_ITEMS.md) §1 before relying on it for a real phased panel.
+> In particular it assumes diploid, fully-phased genotypes; partially phased blocks,
+> `PS` phase-set tags and ploidy ≠ 2 are not handled.
+
 ### ⚠️ Attribution — this method is not kMate's
 
 `kmate decompose` is mostly **orchestration of third-party tools**, which are **not
