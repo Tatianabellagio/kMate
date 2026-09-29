@@ -120,5 +120,5 @@ outdoor evolution experiment in *Arabidopsis thaliana*. It is not yet published 
 standalone method — if you want to use it, or collaborate, get in touch:
 **Tatiana Bellagio** (tatianabellagio@gmail.com).
 
-Parts of the panel-building path use tools written by others; see
-[Building a panel](Building-a-panel#attribution) for who to cite.
+The panel-building path builds on tools from HPRC and eblerjana — see
+[Building a panel](Building-a-panel#acknowledgement).

@@ -94,19 +94,17 @@ warns if more than 10% of calls are heterozygous — that usually means your fou
 `--het split` needs **phased** genotypes. An unphased heterozygote is an error, not a
 coin flip, because guessing the phase would invent haplotypes.
 
-### Attribution
+### Acknowledgement
 
-`kmate decompose` mostly **runs tools written by other people**, which are not bundled —
-you obtain them separately. Run `kmate decompose --citation` to print this.
-**If you publish results that used it, cite them:**
+The decomposition method is not kMate's — it is **HPRC symbolic-ID propagation**, run
+here via [`annotate_vcf.py`](https://github.com/human-pangenomics/hpp_pangenome_resources)
+(HPRC) and [`convert-to-biallelic.py`](https://github.com/eblerjana/pangenie-tools)
+(eblerjana). Neither is bundled; you install them yourself. Only the `INFO/ID` transfer
+step is kMate's own.
 
-| tool | from | cite |
-|---|---|---|
-| `annotate_vcf.py` | Human Pangenome Reference Consortium | Liao et al. (2023) Nature 617:312–324 |
-| `convert-to-biallelic.py` | [eblerjana/pangenie-tools](https://github.com/eblerjana/pangenie-tools) | Ebler et al. (2022) Nature Genetics 54:518–525 |
-| `bcftools` | samtools project | Danecek et al. (2021) GigaScience 10:giab008 |
-
-Only the `INFO/ID` transfer step is kMate's own.
+If the decomposition matters to your results, cite
+Ebler et al. (2022) *Nature Genetics* 54:518–525 and
+Liao et al. (2023) *Nature* 617:312–324.
 
 ---
 

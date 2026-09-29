@@ -174,22 +174,18 @@ fabricate haplotypes that were never observed.
 > In particular it assumes diploid, fully-phased genotypes; partially phased blocks,
 > `PS` phase-set tags and ploidy ≠ 2 are not handled.
 
-### ⚠️ Attribution — this method is not kMate's
+### Acknowledgement
 
-`kmate decompose` is mostly **orchestration of third-party tools**, which are **not
-bundled**; you must obtain them separately. Run `kmate decompose --citation` to print this
-at any time. If you publish results that used it, cite the works below.
+The decomposition method is not kMate's — it is **HPRC symbolic-ID propagation**, run via
+`annotate_vcf.py` (HPRC `prepare-vcf-MC`) and `convert-to-biallelic.py`
+([eblerjana/pangenie-tools](https://github.com/eblerjana/pangenie-tools)). Neither is
+bundled; obtain them separately. Only the `INFO/ID` transfer (`kmate transfer-id`) is
+kMate's own — it exists because `bcftools annotate -c INFO/ID` corrupts the
+angle-bracketed graph-node IDs.
 
-| tool | origin | cite |
-|---|---|---|
-| `annotate_vcf.py` (`prepare-vcf-MC`) | Human Pangenome Reference Consortium, [HPRC/genotyping-pipelines](https://github.com/human-pangenomics/hpp_pangenome_resources) | Liao et al. (2023) *A draft human pangenome reference*, Nature 617:312–324 |
-| `convert-to-biallelic.py` | Jana Ebler, [eblerjana/pangenie-tools](https://github.com/eblerjana/pangenie-tools) | Ebler et al. (2022) *Pangenome-based genome inference…*, Nature Genetics 54:518–525 |
-| `bcftools` | samtools project | Danecek et al. (2021) *Twelve years of SAMtools and BCFtools*, GigaScience 10:giab008 |
-
-The only original step is the `INFO/ID` transfer (`kmate transfer-id`), which copies
-symbolic IDs from the annotated catalog onto a genotyped VCF built from the same graph.
-It exists because `bcftools annotate -c INFO/ID` corrupts the angle-bracketed graph-node
-IDs.
+If the decomposition matters to your results, cite Ebler et al. (2022) *Nat Genet*
+54:518–525 and Liao et al. (2023) *Nature* 617:312–324. `kmate decompose --citation`
+prints this.
 
 **Inherited limitation:** `annotate_vcf.py` builds its atomic catalog with `vcfwave`
 internally, so a small fraction of atomic variants (~0.8% on this project's panel) are

@@ -16,31 +16,21 @@ by alignment, so convergence and position shifts are handled by construction.
 
 ATTRIBUTION
 -----------
-This command is mostly ORCHESTRATION of third-party tools. It does not
-reimplement them, and they are not bundled — you must obtain them separately.
+The method is not kMate's. This command orchestrates two third-party tools, which
+are not bundled:
 
-  * `annotate_vcf.py` — Human Pangenome Reference Consortium, from the
-    `prepare-vcf-MC` workflow in HPRC/genotyping-pipelines. Produces the annotated
-    multi-allelic VCF and the matching biallelic catalog, both carrying INFO/ID.
-      Liao et al. (2023) "A draft human pangenome reference", Nature 617:312-324.
+  * `annotate_vcf.py` — HPRC `prepare-vcf-MC`. Emits the annotated multi-allelic
+    VCF and the matching biallelic catalog, both carrying INFO/ID.
+  * `convert-to-biallelic.py` — eblerjana/pangenie-tools. Propagates each sample's
+    GT onto every catalog record whose symbolic ID is on the called ALT path.
 
-  * `convert-to-biallelic.py` — Jana Ebler (eblerjana), from `pangenie-tools`
-    / the PanGenie run-from-callset pipeline. Propagates each sample's GT onto
-    every catalog record whose symbolic ID appears in the called ALT path.
-      Ebler et al. (2022) "Pangenome-based genome inference allows efficient and
-      accurate genotyping across a wide spectrum of variant classes",
-      Nature Genetics 54:518-525.
-
-  * `bcftools` for tag filling.
-      Danecek et al. (2021) "Twelve years of SAMtools and BCFtools", GigaScience 10:giab008.
+Cite Ebler et al. (2022) Nature Genetics 54:518-525 and Liao et al. (2023)
+Nature 617:312-324 if the decomposition matters to your results.
 
 The only step original to kMate is `transfer-id` (`kmate.transfer_id`), which
 copies INFO/ID from the annotated catalog onto a genotyped VCF produced from the
 same graph. It exists because `bcftools annotate -c INFO/ID` corrupts the
 angle-bracketed graph-node IDs.
-
-If you publish results that used this command, cite the works above — the method
-is theirs.
 
 KNOWN LIMITATION (inherited)
 ----------------------------
@@ -58,13 +48,12 @@ import sys
 import tempfile
 
 CITATION = """\
-kmate decompose orchestrates third-party tools; the method is not ours:
-  annotate_vcf.py         HPRC prepare-vcf-MC   — Liao et al. 2023, Nature 617:312-324
-  convert-to-biallelic.py eblerjana/pangenie-tools — Ebler et al. 2022, Nat Genet 54:518-525
-  bcftools                                      — Danecek et al. 2021, GigaScience 10:giab008
-Only the INFO/ID transfer step is kMate's own. Please cite the above.
+The decomposition method here is not kMate's: it is HPRC symbolic-ID propagation,
+run via annotate_vcf.py (HPRC prepare-vcf-MC) and convert-to-biallelic.py
+(eblerjana/pangenie-tools), neither of which is bundled.
+  Ebler et al. (2022) Nature Genetics 54:518-525
+  Liao et al. (2023) Nature 617:312-324
 """
-
 
 def _need(tool: str, hint: str) -> str:
     p = shutil.which(tool)
@@ -123,7 +112,8 @@ def main(argv=None) -> None:
 
     args = ap.parse_args(argv)
 
-    sys.stderr.write(CITATION + "\n")
+    sys.stderr.write("[kmate decompose] method: HPRC symbolic-ID propagation "
+                     "(see --citation)\n")
 
     bcftools = _need("bcftools", "Install with: mamba install -c bioconda bcftools")
     convert = _need_script(
