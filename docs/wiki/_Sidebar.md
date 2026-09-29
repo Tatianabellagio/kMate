@@ -7,6 +7,7 @@
 - [Building a panel](Building-a-panel)
 - [Running kMate](Running-kMate)
 - [Output](Output)
+- [Command reference](Command-reference)
 - [Troubleshooting](Troubleshooting)
 
 ---

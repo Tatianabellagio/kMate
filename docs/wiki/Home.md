@@ -63,6 +63,7 @@ haplotypes carrying it. One pass covers every SNP, indel and SV.
 | **[Building a panel](Building-a-panel)** | **step 1**: build the matrices from your founder haplotypes |
 | **[Running kMate](Running-kMate)** | **step 2**: estimate frequencies for a pool |
 | **[Output](Output)** | the result table, and how to read it |
+| **[Command reference](Command-reference)** | every option, with its default |
 | **[Troubleshooting](Troubleshooting)** | common errors and what they mean |
 
 ---
