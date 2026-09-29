@@ -30,7 +30,7 @@ kmate selftest
 ```
 
 This runs a tiny bundled example end to end: k-mer counting, the EM, and the
-frequency projection. It needs no network and none of your data.
+frequency projection.
 
 It should end with:
 

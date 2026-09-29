@@ -16,7 +16,6 @@ panel matrices ┘
 - **Paired FASTQ** from one pool (`R1.fq.gz`, `R2.fq.gz`). A single-end file works too.
 - **Adapter- and quality-trimmed.**
 - **Deduplicated, if your library is PCR-based.** PCR duplicates inflate k-mer counts.
-  PCR-free libraries need no deduplication.
 - One pool per run. Run kMate once per sample.
 
 Coverage: a few × is enough for usable estimates. Below ~1× the result is dominated
@@ -32,8 +31,8 @@ four files per chromosome:
 
 | file | what it holds |
 |---|---|
-| `kmer_pa_<CHR>.kmer_pa.npz` | which founder haplotypes carry each k-mer; the evidence for the mixture |
-| `var_pa_<CHR>.var_pa.npz` | which founder haplotypes carry the ALT at each variant; the projection target |
+| `kmer_pa_<CHR>.kmer_pa.npz` | which founder haplotypes carry each k-mer |
+| `var_pa_<CHR>.var_pa.npz` | which founder haplotypes carry the ALT at each variant |
 | `var_pa_<CHR>.var_called.npz` | which founder haplotypes have a genotype call at each variant |
 | `var_pa_<CHR>.meta.npz` | the variants themselves: chromosome, position, REF, ALT |
 

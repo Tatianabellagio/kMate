@@ -11,7 +11,7 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 |---|---|
 | `chrom`, `pos` | position, 1-based |
 | `ref_len`, `alt_len` | length of the REF and ALT alleles |
-| `alt_freq` | **the estimate**: frequency of the ALT allele in the pool, 0-1 |
+| `alt_freq` | frequency of the ALT allele in the pool, 0-1 |
 | `info` | how much haplotype mass had a genotype call here |
 | `n_called` | how many founder haplotypes had a genotype call here |
 | `se` | standard error of `alt_freq` |
@@ -60,8 +60,8 @@ delta = b.alt_freq - a.alt_freq          # row-wise, no merge needed
 
 ## Judging an estimate
 
-- **`n_called`** is the support: a frequency from few haplotypes is weak regardless of
-  `se`. Filter on it.
+- **`n_called`** is the support behind each estimate: a frequency from few haplotypes is
+  weak regardless of `se`. Filter on it.
 - **`alt_freq` is a frequency among *called* haplotypes.** Founder haplotypes missing at
   a variant are excluded rather than counted as reference.
 - **Check the founder-haplotype mixture** before trusting per-variant numbers. Collapse

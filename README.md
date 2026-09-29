@@ -70,7 +70,7 @@ The conda step installs the non-Python tools kMate shells out to: **`kmer-jellyf
 kmate selftest
 ```
 
-This runs the bundled tiny fixture (a real Chr1 panel slice + a simulated 5-founder pool) end-to-end — exercising the full k-mer-count → EM → AF-projection path through `jellyfish`/`samtools` — and checks that the planted founder mixture is recovered. It takes a few seconds, needs no network, and prints `PASS` on a correct install. Run this **before** pointing kMate at your own data.
+This runs the bundled tiny fixture (a real Chr1 panel slice + a simulated 5-founder pool) end-to-end — exercising the full k-mer-count → EM → AF-projection path through `jellyfish`/`samtools` — and checks that the planted founder mixture is recovered. It takes a few seconds and prints `PASS` on a correct install. Run this **before** pointing kMate at your own data.
 
 ## Usage
 

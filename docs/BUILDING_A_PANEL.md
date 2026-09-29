@@ -2,9 +2,6 @@
 
 `kmate run` consumes four per-chromosome files. This page is how you produce them.
 
-If someone handed you a panel already, skip to
-[`GETTING_STARTED.md`](GETTING_STARTED.md) §4 and just run it.
-
 ---
 
 ## The panel files
@@ -108,8 +105,7 @@ your reference contains IUPAC codes: 3.1.0 normalises them to `N`, 2.9.3 errors 
 
 ### From an existing graph VCF
 
-If you already have a graph VCF (HPRC, a published pangenome), you only need to reduce
-it to top-level bubbles:
+Reduce an existing graph VCF (HPRC, a published pangenome) to top-level bubbles:
 
 ```bash
 vcfbub -l 0 -a 100000 --input graph.vcf.gz | bgzip > panel.vcf.gz

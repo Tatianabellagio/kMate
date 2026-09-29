@@ -25,7 +25,7 @@ kmate selftest          # must print PASS before you go further
 > The k-mer counter is **`kmer-jellyfish`**.
 
 `kmate selftest` runs a bundled tiny fixture end-to-end (k-mer counting → EM → AF
-projection). It needs no network and no data of yours. **If it does not pass, stop** —
+projection). **If it does not pass, stop** —
 everything below depends on it.
 
 
@@ -45,8 +45,6 @@ The matrices are **per chromosome** and are built once per panel (§3). They are
 (tens of GB for a 231-founder panel) and are not in the git repo.
 
 ## 3. Building a panel from founder assemblies
-
-Only if you do not already have matrices.
 
 **→ [`BUILDING_A_PANEL.md`](BUILDING_A_PANEL.md)** covers this properly: what the panel VCF
 must satisfy (haploid, biallelic, sequence-resolved, indexed), three routes to producing one,
