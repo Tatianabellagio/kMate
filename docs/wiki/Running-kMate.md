@@ -38,7 +38,7 @@ chromosome, or a window. Choose it from your species' biology.
 | your pools are… | use | why |
 |---|---|---|
 | **selfing, inbred, or a founder mix** (F0 seed pools) | `--unit chrom` | ancestry is essentially constant along a chromosome, so using all its k-mers gives the best-determined mixture |
-| **recombinant**: a few generations of outcrossing | `--unit bp --window-bp 10000 --kmer-weight inv_mb` | ancestry is a mosaic along the chromosome and must be fitted locally |
+| **recombinant**: a few generations of outcrossing | `--unit bp --window-bp 10000` | ancestry is a mosaic along the chromosome and must be fitted locally |
 
 On a selfing benchmark, fitting per LD-block instead of per chromosome moved AF error
 from 0.0033 to 0.0080 and outliers from 0.001% to 0.625%: low-diversity regions such as

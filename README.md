@@ -89,7 +89,7 @@ kmate run \
     --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
     --var-meta   panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \
     --reads R1.fq R2.fq --sample MYSAMPLE --out MYSAMPLE.tsv \
-    --threads 8 --chroms Chr1 --kmer-weight uniform      # --unit chrom is the default
+    --threads 8 --chroms Chr1      # --unit chrom is the default
 ```
 
 (`kmate run --help` lists every flag. Existing scripts that call `python src/per_sample_per_chrom.py ...` still work via thin shims that forward to the package.)
@@ -100,7 +100,7 @@ kmate run \
 - `--unit bp` (`--window-bp N`): fixed-bp windows, for **recombinant** pools.
 - `--unit tsv` (`--blocks-tsv PATH`): explicit block partition.
 
-`--block-mode global|window` are kept as **deprecated aliases** (`global`→`--unit chrom`, `window`→`--unit bp`). Recommended weighting is `--kmer-weight uniform` — the per-founder M-step normalization (kMate's default) removes the panel-completeness imbalance at its source, so `--kmer-weight inv_mb` is redundant (superseded 2026-07-06; see [`docs/FOUNDER_NORMALIZATION_FIX.md`](docs/FOUNDER_NORMALIZATION_FIX.md)).
+`--block-mode global|window` are kept as **deprecated aliases** (`global`→`--unit chrom`, `window`→`--unit bp`).
 
 **Haploblock collapse** (all units, on by default): before each EM, kMate computes the distinct k-mer haplotypes the panel actually resolves over the unit and fits those `K_b ≤ 231` haplotypes rather than assuming all 231 founders are separately identifiable, splitting each haplotype's frequency equally back to its members. `--haploblock-eps` sets the merge tolerance (default `0` = exact k-mer-identical, an exact no-op when all founders are distinct). This is the *block → haploblock → EM* design (like HARP/hapFIRE); it chiefly matters for finer units, where a small block may carry only a handful of haplotypes. See [`ALGORITHM.md`](ALGORITHM.md) §4.4.
 

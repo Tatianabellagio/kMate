@@ -191,14 +191,12 @@ def _project_with_called_mask(var_pa_chrom, h, idx):
 
 
 def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threads,
-                         em_max_iter=200, kmer_weight="uniform", kmer_db=None,
+                         em_max_iter=200, kmer_db=None,
                          hash_size="3G", h_only=False, max_kmer_cov_mult=0.0,
                          emit_af_se=False, af_id_floor=0.0, normalize="per_founder",
                          haploblock_eps=0.0):
     """Fit --unit chrom: one founder mixture h over the whole chromosome + AF
     projection. (Also reached via the deprecated --block-mode global alias.)
-
-    kmer_weight: "uniform" (ω_k=1, MLE) or "inv_mb" (ω_k=1/m_b per-bubble
     de-replication; m_b = #k-mers sharing the k-mer's bubble_id).
     kmer_db: optional prebuilt Jellyfish DB (count-once path; see
     _count_and_load_kmer_pa_dense).
@@ -215,12 +213,7 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
     if kmer_pa_dense is None:
         return None, None, None, None, 0.0, None
 
-    # Per-k-mer weight ω_k = 1/m_b (or uniform) — computed over ALL k-mers first.
     omega_full = None
-    if kmer_weight == "inv_mb":
-        bid = np.asarray(meta["bubble_id"]).astype(np.int64)
-        m_b = np.bincount(bid)[bid].astype(np.float32)        # #k-mers per bubble
-        omega_full = (1.0 / m_b).astype(np.float32)
     # per_founder normalizer over the FULL panel (all k-mers, incl. c_k=0) — must be
     # computed BEFORE the nonzero filter so it is not conditioned on which k-mers got
     # reads this run (that survivorship bias reintroduces founder collapse). See em_solver.
@@ -246,10 +239,7 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
     del kmer_pa_dense
     gc.collect()
 
-    omega = None if omega_full is None else omega_full[nz]
-    if omega is not None:
-        print(f"  [{chrom}] ω_k=1/m_b weighting: m_b median={np.median(1.0/omega):.0f} "
-              f"max={(1.0/omega).max():.0f}", flush=True)
+    omega = None
 
     t = time.time()
     h_c = None
@@ -345,7 +335,7 @@ def _fit_unit_blocks(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threa
                          hmm_smooth_passes=5,
                          hmm_smooth_alpha=0.5,
                          hmm_smooth_recomb_rate=4e-8,
-                         kmer_weight="uniform", kmer_db=None, hash_size="3G",
+                          kmer_db=None, hash_size="3G",
                          blocks_tsv=None, min_kmers_per_block=200,
                          local_only=True, max_kmer_cov_mult=0.0, normalize="per_founder",
                          haploblock_eps=0.0):
@@ -403,13 +393,7 @@ def _fit_unit_blocks(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threa
     kmer_block = assign_kmers_to_blocks(bubble_id, bubble_chrom,
                                         bubble_start, bubble_end, blocks)
 
-    # Optional per-bubble de-replication weight ω_k = 1/m_b for window-mode EM.
     omega = None
-    if kmer_weight == "inv_mb":
-        m_b = np.bincount(bubble_id)[bubble_id].astype(np.float32)
-        omega = (1.0 / m_b).astype(np.float32)
-        print(f"  [{chrom}] window ω_k=1/m_b weighting: m_b median={np.median(m_b):.0f} "
-              f"max={m_b.max():.0f}", flush=True)
 
     t = time.time()
     h_blocks, status, global_h = solve_em_per_block(
@@ -513,10 +497,6 @@ def main():
                          "starting allocation; lower it (e.g. '100M') for small "
                          "pools or memory-capped jobs. Production: 3G.")
     ap.add_argument("--chroms", nargs="+", default=["Chr1","Chr2","Chr3","Chr4","Chr5"])
-    ap.add_argument("--kmer-weight", default="uniform", choices=["uniform", "inv_mb"],
-                    help="Per-k-mer EM weight ω_k. 'uniform' = MLE; 'inv_mb' = 1/m_b "
-                         "per-bubble de-replication (removes imbalanced-design over-credit). "
-                         "Applied in both global and window modes.")
     ap.add_argument("--normalize", default="per_founder", choices=["per_founder", "global"],
                     help="EM M-step normalization. 'per_founder' (DEFAULT) divides each founder's "
                          "update by its own observed k-mer content Kf_w (RNA-seq effective-length "
@@ -709,8 +689,7 @@ def main():
         if unit == "chrom":
             idx, freqs, info, h, _, extra = _fit_unit_chrom(
                 chrom, args.kmer_pa_prefix, var_pa, var_meta,
-                reads_input, args.threads, kmer_weight=args.kmer_weight,
-                kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only,
+                reads_input, args.threads, kmer_db=kmer_db, hash_size=args.hash_size, h_only=args.h_only,
                 max_kmer_cov_mult=args.max_kmer_cov_mult,
                 emit_af_se=args.emit_af_se, af_id_floor=args.af_id_floor,
                 normalize=args.normalize, haploblock_eps=args.haploblock_eps)
@@ -752,7 +731,6 @@ def main():
                 hmm_smooth_passes=args.hmm_smooth_passes,
                 hmm_smooth_alpha=args.hmm_smooth_alpha,
                 hmm_smooth_recomb_rate=args.hmm_smooth_recomb_rate,
-                kmer_weight=args.kmer_weight,
                 kmer_db=kmer_db, hash_size=args.hash_size,
                 blocks_tsv=blocks_tsv,
                 min_kmers_per_block=args.min_kmers_per_block,

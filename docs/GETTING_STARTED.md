@@ -73,7 +73,7 @@ kmate run \
     --reads R1.fq.gz R2.fq.gz --kmer-db pool.jf \
     --sample MYSAMPLE --out MYSAMPLE_Chr1.tsv \
     --threads 8 --chroms Chr1 \
-    --unit chrom --kmer-weight uniform --normalize per_founder
+    --unit chrom --normalize per_founder
 ```
 
 ### Choosing `--unit` — the one decision that matters most
@@ -82,8 +82,8 @@ kmate run \
 
 | your pools are… | use | why |
 |---|---|---|
-| selfing / inbred / a founder (F0) mix | `--unit chrom` + `--kmer-weight uniform` | ancestry is ~constant along a chromosome, so pooling all its k-mers gives the best-determined `h` |
-| recombinant (a few generations of outcrossing) | `--unit bp --window-bp 10000` + `--kmer-weight inv_mb` | ancestry is a mosaic; it must be fit locally |
+| selfing / inbred / a founder (F0) mix | `--unit chrom` | ancestry is ~constant along a chromosome, so pooling all its k-mers gives the best-determined `h` |
+| recombinant (a few generations of outcrossing) | `--unit bp --window-bp 10000` | ancestry is a mosaic; it must be fit locally |
 
 Getting this wrong is not subtle. On a selfing benchmark, fitting per LD-block instead of
 per chromosome moved AF-MAE from 0.0033 to 0.0080 and outliers from 0.001% to 0.625%,
