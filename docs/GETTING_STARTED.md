@@ -72,9 +72,7 @@ kmate build-kmer-db --reads R1.fq.gz R2.fq.gz --out pool.jf --threads 8
 
 kmate run \
     --kmer-pa-prefix kmer_pa/kmer_pa \
-    --var-pa     var_pa/var_pa_Chr1.var_pa.npz \
-    --var-called var_pa/var_pa_Chr1.var_called.npz \
-    --var-meta   var_pa/var_pa_Chr1.meta.npz \
+    --var-pa-prefix var_pa/var_pa \
     --reads R1.fq.gz R2.fq.gz --kmer-db pool.jf \
     --sample MYSAMPLE --out MYSAMPLE_Chr1.tsv \
     --threads 8 --chroms Chr1 \

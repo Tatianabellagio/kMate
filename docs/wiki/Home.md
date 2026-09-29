@@ -97,9 +97,7 @@ kmate build-var-pa   --vcf panel.vcf.gz --chrom Chr1 --out var_pa/var_pa_Chr1
 ```bash
 kmate run \
     --kmer-pa-prefix kmer_pa/kmer_pa \
-    --var-pa     var_pa/var_pa_Chr1.var_pa.npz \
-    --var-called var_pa/var_pa_Chr1.var_called.npz \
-    --var-meta   var_pa/var_pa_Chr1.meta.npz \
+    --var-pa-prefix  var_pa/var_pa \
     --reads R1.fq.gz R2.fq.gz \
     --sample MYPOOL --out MYPOOL_Chr1.tsv \
     --chroms Chr1 --unit chrom

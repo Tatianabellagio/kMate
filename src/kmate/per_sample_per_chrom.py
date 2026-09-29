@@ -474,9 +474,15 @@ def _fit_unit_blocks(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threa
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kmer-pa-prefix", required=True)
+    ap.add_argument("--kmer-pa-prefix", required=True,
+                    help="Prefix of the founder-haplotype x k-mer matrices; kMate appends "
+                         "_<CHROM>.kmer_pa.npz and _<CHROM>.meta.npz.")
+    ap.add_argument("--var-pa-prefix", default=None,
+                    help="Prefix of the founder-haplotype x variant matrices; kMate appends "
+                         "_<CHROM>.{var_pa,var_called,meta}.npz. Use this instead of "
+                         "--var-pa/--var-called/--var-meta, which remain for explicit paths.")
     ap.add_argument("--var-pa", required=False,
-                    help="Required unless --h-only (the AF projection target).")
+                    help="Required unless --h-only or --var-pa-prefix (the AF projection target).")
     ap.add_argument("--var-meta", required=False,
                     help="Required unless --h-only.")
     ap.add_argument("--h-only", action="store_true",
@@ -645,6 +651,19 @@ def main():
         print("  h-only mode: skipping var_pa load + AF projection "
               "(writing only the h vector)", flush=True)
     else:
+    # --var-pa-prefix expands to the three per-chrom paths (mirrors --kmer-pa-prefix).
+        if args.var_pa_prefix:
+            if len(args.chroms) != 1:
+                sys.exit("ERROR: --var-pa-prefix needs exactly one --chroms value "
+                         "(the matrices are per chromosome); got: " + " ".join(args.chroms))
+            _c = args.chroms[0]
+            for _attr, _suf in (("var_pa", "var_pa"), ("var_called", "var_called"), ("var_meta", "meta")):
+                if getattr(args, _attr):
+                    continue                      # explicit path wins
+                _p = f"{args.var_pa_prefix}_{_c}.{_suf}.npz"
+                if not os.path.exists(_p):
+                    sys.exit(f"ERROR: --var-pa-prefix expanded to a missing file: {_p}")
+                setattr(args, _attr, _p)
         if not args.var_pa or not args.var_meta:
             sys.exit("ERROR: --var-pa and --var-meta are required unless --h-only")
         var_pa = load_npz(args.var_pa)
