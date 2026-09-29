@@ -6,6 +6,7 @@ live at the project root.
 
 | File | Purpose |
 |---|---|
+| `GETTING_STARTED.md` | **Start here.** Install kMate (bioconda), what inputs it needs, building a panel from founder assemblies, running a sample, choosing `--unit` for your population, and reading the output. |
 | `PIPELINE_STATE.md` | **Single source of truth** for what is production vs in-evaluation vs deprecated (panel, projection, filters). Read before making pipeline decisions. |
 | `METHODS_TRIED_AND_RESULTS.md` | What was tried and how it scored — k-mer-filter sweep, EM weighting (ω_k=1/m_b vs uniform), projection variants. Complements `RESULTS_LOG.md`. |
 | `FOUNDER_NORMALIZATION_FIX.md` | The per-founder M-step normalization fix (`--normalize per_founder`, full-panel Kf_w) that stopped the global-mode founder-h collapse; supersedes ω_k=1/m_b for the selfing production path. |

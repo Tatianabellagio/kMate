@@ -1,5 +1,5 @@
 {% set name = "kmate" %}
-{% set version = "0.1.0" %}
+{% set version = "0.1.1" %}
 
 # Bioconda recipe for kMate. This is the version to submit to
 # bioconda/bioconda-recipes (recipes/kmate/meta.yaml). It fetches the sdist from
@@ -14,6 +14,8 @@ package:
 
 source:
   url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/{{ name }}-{{ version }}.tar.gz
+  # STALE -- this is the 0.1.0 sdist hash. Regenerate after uploading the
+  # 0.1.1 sdist to PyPI (see SUBMISSION.md 'Confirm the sha256').
   sha256: ac20fee8912f78c41f873408ef2a69c8239fbb50e914da9195b7d7f82662c045
 
 build:
@@ -35,7 +37,9 @@ requirements:
     - numpy
     - scipy
     - pysam
-    - jellyfish                        # k-mer counter (kmer_count.py)
+    - kmer-jellyfish                   # k-mer counter (kmer_count.py) -- NOT `jellyfish`,
+                                       # which on conda-forge is a Python string-similarity
+                                       # library and ships no `jellyfish` binary.
     - samtools                         # BAM read access
 
 test:
@@ -44,6 +48,9 @@ test:
   commands:
     - kmate --help
     - kmate --version
+    # End-to-end: exercises jellyfish/samtools, so a missing or wrong binary
+    # dependency fails CI instead of shipping a package that cannot count k-mers.
+    - kmate selftest
 
 about:
   home: https://github.com/Tatianabellagio/kMate

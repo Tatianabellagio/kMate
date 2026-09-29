@@ -33,17 +33,32 @@ the cold-regulated *COR413-PM2* gene, rising in cold gardens and falling in warm
 
 ## Install
 
-Create the `kmate` environment (mamba or conda) with its dependencies, then install the package:
+kMate is packaged on **bioconda** — one command gets you the `kmate` CLI and every
+tool it shells out to:
+
+```bash
+mamba create -n kmate -c conda-forge -c bioconda kmate
+mamba activate kmate
+```
+
+### From source (for development)
 
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
 cd kMate
-mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam jellyfish samtools
+mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
 mamba activate kmate
 pip install -e .          # installs the `kmate` command (no compilation step)
 ```
 
-Python deps: `numpy`, `scipy`, `pysam`. kMate also calls `jellyfish` (k-mer counting) and `samtools` (read handling), both installed by the `mamba create` above. This gives you a `kmate` command with subcommands (`kmate --help`).
+Python deps: `numpy`, `scipy`, `pysam`. kMate also shells out to **`kmer-jellyfish`**
+(k-mer counting) and `samtools` (read handling). This gives you a `kmate` command with
+subcommands (`kmate --help`).
+
+> **Use `kmer-jellyfish`, not `jellyfish`.** On conda-forge, `jellyfish` is a Python
+> string-similarity library that ships no `jellyfish` binary; installing it leaves kMate
+> unable to count k-mers (`jellyfish: command not found`). The k-mer counter is
+> `kmer-jellyfish` on bioconda.
 
 ### Verify the install
 
@@ -127,6 +142,7 @@ docs/        methods + analysis writeups
 
 | Doc | What it is |
 |---|---|
+| [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md) | **Start here** — install, inputs, building a panel, running a sample, choosing `--unit`. |
 | [`docs/PIPELINE_STATE.md`](docs/PIPELINE_STATE.md) | Production inputs, run recipe, and environment; the project source of truth. |
 | [`ALGORITHM.md`](ALGORITHM.md) | The kMate algorithm, math, and code wiring. |
 | [`BACKGROUND.md`](BACKGROUND.md) | Project framing, known biases, and design decisions. |
