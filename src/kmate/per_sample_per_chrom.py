@@ -8,7 +8,7 @@ project (see ALGORITHM.md §4.4). Two internal fit helpers back the units — th
 differ only because the whole-chromosome one-h estimand supports extra outputs:
   * `_fit_unit_chrom`   — --unit chrom: a single h over the whole chromosome
         (selfing / inbred / F0 pools, e.g. SEEDMIX). The only unit that supports
-        --h-only and --emit-af-se. (Deprecated alias: --block-mode global.)
+        --h-only. (Deprecated alias: --block-mode global.)
   * `_fit_unit_blocks`  — --unit {ld,bp,tsv}: an independent h per block, LOCAL-ONLY
         (no anchor prior, no fallback → thin/empty blocks give NaN AF, no smoothing),
         projected per block. `ld` = r²-LD CompleteLDPartition blocks (production);
@@ -530,7 +530,7 @@ def main():
                          "'chrom' (DEFAULT): one h per chromosome — the production "
                          "estimator for selfing / inbred / F0 pools (e.g. GrENE-Net); "
                          "robust on both uniform and sparse panels; supports --h-only "
-                         "and --emit-af-se. 'ld': r²-LD blocks from var_pa "
+                         "and --h-only. 'ld': r²-LD blocks from var_pa "
                          "(CompleteLDPartition, --ld-r2) — per-block resolution, but "
                          "collapses in low-diversity blocks (centromere), so it is WRONG "
                          "for selfing pools (see docs/EM_UNIT_CHOICE_AND_NONIDENTIFIABILITY.md). "
@@ -590,17 +590,6 @@ def main():
                          "panel didn't model (panel-unique ≠ genome-unique). Such k-mers "
                          "are excluded from the EM and cov is re-estimated. 0 = off "
                          "(legacy / byte-identical to pre-guard runs).")
-    ap.add_argument("--emit-af-se", action="store_true",
-                    help="GLOBAL mode only: replace the legacy binomial `se` column with "
-                         "a calibrated AF SE = sqrt(Fisher delta-method SE^2 + c^2), where "
-                         "c (--af-id-floor) is the panel identifiability floor — the per-AF "
-                         "error is bias-dominated, so the Fisher SE alone under-covers. Also "
-                         "stores an h-resolvability diagnostic (eff_rank/cond) in the h npz. "
-                         "Adds an observed-Fisher-info compute per chrom.")
-    ap.add_argument("--af-id-floor", type=float, default=AF_ID_FLOOR_DEFAULT,
-                    help=f"Identifiability floor c for --emit-af-se (default "
-                         f"{AF_ID_FLOOR_DEFAULT}, calibrated on the 231 arch3 panel; "
-                         f"recompute per panel with af_calibrate_floor.py).")
     ap.add_argument("--haploblock-eps", type=float, default=0.0,
                     help="Haplotype-merge tolerance for the block→haploblock→EM collapse, "
                          "as a FRACTION of a unit's k-mers. 0.0 (default) = exact "
@@ -609,6 +598,11 @@ def main():
                          "whose presence differs in ≤ eps·(unit k-mers) — APPROXIMATE, "
                          "merges near-indistinguishable founders (both modes).")
     args = ap.parse_args()
+
+    # `se` is the binomial SE from panel support (n_called). The calibrated
+    # Fisher-plus-floor variant is not exposed: it was never validated.
+    args.emit_af_se = False
+    args.af_id_floor = 0.0
 
     # Resolve the estimation UNIT. --unit is authoritative; --block-mode is a
     # deprecated alias (global→chrom, window→bp); default is chrom — the production
@@ -627,8 +621,6 @@ def main():
         unit = "chrom"
     args.unit = unit
 
-    if args.emit_af_se and unit != "chrom":
-        sys.exit("ERROR: --emit-af-se is implemented for --unit chrom only")
     if unit == "tsv" and not args.blocks_tsv:
         sys.exit("ERROR: --unit tsv requires --blocks-tsv <path>")
 

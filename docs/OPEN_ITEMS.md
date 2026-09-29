@@ -30,7 +30,32 @@ conventions this code does not expect (`|` vs `/` per record, partially phased
 blocks, multi-sample phase-set `PS` tags, and ploidy ≠ 2 on sex chromosomes,
 which `_gt_to_pair` does not handle).
 
-## 2. bioconda still serves the broken 0.1.0
+## 2. Calibrated per-record AF uncertainty (future work)
+
+**Status:** removed from the CLI; the idea is unfinished, not wrong.
+
+`se` is the binomial SE from panel support, `sqrt(p(1-p)/n_called)`. It says how many
+founder haplotypes had a genotype call at that record, and nothing about how well the
+founder mixture itself was resolved.
+
+An attempt at a calibrated alternative existed as `--emit-af-se`: a Fisher delta-method
+SE on the projected AF, floored by a panel identifiability constant,
+`sqrt(Fisher_SE^2 + c^2)`, on the reasoning that per-record AF error is bias-dominated so
+the Fisher term alone under-covers. It also recorded `eff_rank` and `cond` of the
+`h`-covariance as resolvability diagnostics. It was never validated against known truth,
+so it was removed rather than left as an option that looks endorsed.
+
+Worth knowing before picking this up: on evonet sample MEAJM013-38 the two are **not a
+rescaling of each other**. Over 400k records they are uncorrelated (r = -0.000), with the
+calibrated value a median 2.5x the binomial and 12.8x at the 90th percentile. So they
+measure different things, and choosing between them needs truth data rather than a
+plausibility argument.
+
+**Done when:** a calibrated SE is validated on simulated pools where the true AF is known
+(coverage of nominal intervals, across coverage and panel-support strata), and either
+replaces `se` or ships as a clearly-labelled second column.
+
+## 3. bioconda still serves the broken 0.1.0
 
 **Status:** 0.1.2 published to PyPI 2026-09-29; bioconda PR pending.
 
