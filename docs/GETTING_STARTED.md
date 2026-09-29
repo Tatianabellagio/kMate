@@ -18,6 +18,13 @@ mamba activate kmate
 kmate selftest          # must print PASS before you go further
 ```
 
+> ⚠️ **Check `kmate --version` reports 0.1.1 or newer.** The 0.1.0 build currently on
+> bioconda is a pre-July-2026 snapshot with two problems: it depends on `jellyfish`
+> instead of `kmer-jellyfish` (so it cannot count k-mers at all), and it predates the
+> per-founder normalization fix — it has no `--normalize`, `--unit` or `--emit-af-se`,
+> and would silently run the old EM in which k-mer-poor founders collapse toward zero.
+> Until 0.1.1 is published, install from source (below).
+
 `kmate selftest` runs a bundled tiny fixture end-to-end (k-mer counting → EM → AF
 projection). It needs no network and no data of yours. **If it does not pass, stop** —
 everything below depends on it.
