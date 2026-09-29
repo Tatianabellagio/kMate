@@ -2,7 +2,7 @@
 
 kMate estimates **allele frequencies for SNPs, short indels and large structural
 variants** from pooled sequencing of a population descended from a known set of
-founders.
+**founder haplotypes**.
 
 It is **alignment-free**: reads are never mapped. Everything happens in k-mer space,
 which is why structural variants are handled exactly like SNPs instead of needing
@@ -14,8 +14,12 @@ separate calling.
 
 ### Step 1 — put your founders into k-mer space
 
-Take your founders' pangenome and turn it into **two matrices**. This is done **once**
-per founder set, and reused for every pool you ever sequence.
+Take your founder haplotypes' pangenome and turn it into **two matrices**. This is done
+**once** per founder set, and reused for every pool you ever sequence.
+
+A *founder haplotype* is one continuous sequence — one allele at every variant. An inbred
+line is one haplotype; a phased outbred individual is two. See
+[Haplotypes and windows](Haplotypes-and-windows).
 
 ```
                                     ┌─ K_pa : founder × k-mer
@@ -25,26 +29,26 @@ per founder set, and reused for every pool you ever sequence.
 
 | matrix | what it says | what it is for |
 |---|---|---|
-| **K_pa** | for each k-mer, which founders contain it | the **evidence** — what the reads get compared against |
-| **V_pa** | for each variant, which founders carry the ALT allele | the **translation** — turns founder proportions into allele frequencies |
+| **K_pa** | for each k-mer, which founder haplotypes contain it | the **evidence** — what the reads get compared against |
+| **V_pa** | for each variant, which founder haplotypes carry the ALT allele | the **translation** — turns haplotype proportions into allele frequencies |
 
-A third file, `var_called`, records where each founder actually had a genotype call, so
+A third file, `var_called`, records where each founder haplotype actually had a call, so
 that missing data is excluded rather than silently counted as reference.
 
 → **[Building a panel](Building-a-panel)**
 
 ### Step 2 — run a pool against them
 
-Count the k-mers in your pooled reads. kMate asks: *what mixture of founders would
-produce these counts?* — modelling each k-mer count as Poisson with mean
-`λ · Σ h_f · K_pa[f,k]`, and solving for the founder mixture **`h`** by
+Count the k-mers in your pooled reads. kMate asks: *what mixture of founder haplotypes
+would produce these counts?* — modelling each k-mer count as Poisson with mean
+`λ · Σ h_f · K_pa[f,k]`, and solving for the founder-haplotype mixture **`h`** by
 expectation-maximisation.
 
 Then it projects that mixture through **V_pa**: a variant's frequency is the summed
-proportion of the founders that carry it. One pass gives every SNP, indel and SV.
+proportion of the founder haplotypes that carry it. One pass gives every SNP, indel and SV.
 
 ```
-   pooled reads ──▶ k-mer counts ──▶ EM ──▶ h (founder mixture) ──▶ × V_pa ──▶ allele frequencies
+   pooled reads ──▶ k-mer counts ──▶ EM ──▶ h (haplotype mixture) ──▶ × V_pa ──▶ allele frequencies
 ```
 
 → **[Running kMate](Running-kMate)**
@@ -57,13 +61,11 @@ proportion of the founders that carry it. One pass gives every SNP, indel and SV
 |---|---|
 | **[Installation](Installation)** | install kMate and check it works |
 | **[Input files](Input-files)** | what kMate needs, and what each file must satisfy |
+| **[Haplotypes and windows](Haplotypes-and-windows)** | what a founder haplotype is, and whether to run per chromosome or per window |
 | **[Building a panel](Building-a-panel)** | **step 1** — build the matrices from your founders |
 | **[Running kMate](Running-kMate)** | **step 2** — estimate frequencies for a pool |
 | **[Output](Output)** | the result table, and how to read it |
 | **[Troubleshooting](Troubleshooting)** | common errors and what they mean |
-
-If a collaborator has already built a panel for your founder set, you can skip step 1
-and go straight to **Installation → Running kMate → Output**.
 
 ---
 

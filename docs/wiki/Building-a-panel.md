@@ -1,6 +1,7 @@
 # Building a panel
 
-Do this **once** per founder set. Afterwards you reuse the matrices for every pool.
+Do this **once** per founder-haplotype set. Afterwards you reuse the matrices for every
+pool.
 
 ```
 your founders ──▶ panel VCF ──▶ k-mer index ──▶ kmer_pa
@@ -76,8 +77,9 @@ kmate decompose \
 
 ### Choosing `--het`
 
-kMate founders are haplotypes, so diploid genotypes must be reduced to one allele.
-How depends on **what your founders are**:
+A kMate panel column is a **haplotype**, so diploid genotypes must be reduced to one
+allele. How depends on **what your founders are** — see
+[Haplotypes and windows](Haplotypes-and-windows):
 
 | your founders | use | what happens |
 |---|---|---|
@@ -132,14 +134,14 @@ kmate build-kmer-pa \
 kmate build-var-pa --vcf panel.vcf.gz --chrom Chr1 --out var_pa/var_pa_Chr1
 ```
 
-### `--min-ac` depends on how many founders you have
+### `--min-ac` depends on how many founder haplotypes you have
 
 This drops uninformative k-mers. The right value is **not** the same for every panel:
 
-| founders | use | why |
+| founder haplotypes | use | why |
 |---|---|---|
-| many (≈100+) | `--min-ac 2` | a k-mer in only one founder is usually noise |
-| few (≲20) | `--min-ac 1` | founder-private k-mers are your *most* informative ones |
+| many (≈100+) | `--min-ac 2` | a k-mer in only one haplotype is usually noise |
+| few (≲20) | `--min-ac 1` | haplotype-private k-mers are your *most* informative ones |
 
 On an 8-founder panel, `--min-ac 2` threw away **~46% of all k-mers**. The default is 2,
 so **lower it for a small panel**.
@@ -154,11 +156,11 @@ K = sp.load_npz("kmer_pa/kmer_pa_Chr1.kmer_pa.npz")
 V = sp.load_npz("var_pa/var_pa_Chr1.var_pa.npz")
 C = sp.load_npz("var_pa/var_pa_Chr1.var_called.npz")
 
-assert K.shape[0] == V.shape[0] == C.shape[0]      # same founders, same order
-print("founders:", K.shape[0], "k-mers:", K.shape[1], "variants:", V.shape[1])
-print("variants with no called founder:", int((np.asarray(C.sum(0)).ravel() == 0).sum()))
+assert K.shape[0] == V.shape[0] == C.shape[0]   # same haplotypes, same order
+print("haplotypes:", K.shape[0], "k-mers:", K.shape[1], "variants:", V.shape[1])
+print("variants with no called haplotype:", int((np.asarray(C.sum(0)).ravel() == 0).sum()))
 ```
 
-- The **founder count must match** across all three files.
-- **Variants with no called founder** have undefined frequency; there should be none.
-- A founder with far fewer k-mers than the rest is usually a broken sample column.
+- The **founder-haplotype count must match** across all three files.
+- **Variants with no called haplotype** have undefined frequency; there should be none.
+- A haplotype with far fewer k-mers than the rest is usually a broken sample column.

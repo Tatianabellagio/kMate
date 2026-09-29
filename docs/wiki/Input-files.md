@@ -27,14 +27,14 @@ not after.
 
 ## The panel
 
-The panel is built **once** per founder set and reused for every pool. It is four
-files per chromosome:
+The panel is built **once** per founder-haplotype set and reused for every pool. It is
+four files per chromosome:
 
 | file | what it holds |
 |---|---|
-| `kmer_pa_<CHR>.kmer_pa.npz` | which founders carry each k-mer — the evidence for the mixture |
-| `var_pa_<CHR>.var_pa.npz` | which founders carry the ALT at each variant — the projection target |
-| `var_pa_<CHR>.var_called.npz` | which founders have a genotype call at each variant |
+| `kmer_pa_<CHR>.kmer_pa.npz` | which founder haplotypes carry each k-mer — the evidence for the mixture |
+| `var_pa_<CHR>.var_pa.npz` | which founder haplotypes carry the ALT at each variant — the projection target |
+| `var_pa_<CHR>.var_called.npz` | which founder haplotypes have a genotype call at each variant |
 | `var_pa_<CHR>.meta.npz` | the variants themselves: chromosome, position, REF, ALT |
 
 `kmer_pa` also has a small `.meta.npz` beside it.
@@ -42,9 +42,6 @@ files per chromosome:
 **You build these yourself from your founders** — see
 [Building a panel](Building-a-panel). It is a one-time job per founder set; every pool
 you sequence afterwards reuses the same matrices.
-
-Only if a collaborator has already built a panel for your founders can you skip
-straight to [Running kMate](Running-kMate).
 
 > The matrices are large (tens of GB for a few hundred founders) and are not stored in
 > the git repository. The 231-founder *Arabidopsis thaliana* panel used by GrENE-Net is
@@ -57,10 +54,11 @@ straight to [Running kMate](Running-kMate).
 Only relevant if you are **building** a panel. Both matrices are built from one VCF,
 and it must satisfy all of the following.
 
-- **Multi-sample** — one column per founder. The sample order becomes the founder
-  order and is shared by both matrices.
+- **Multi-sample** — one column per **founder haplotype**. The sample order becomes the
+  haplotype order and is shared by both matrices.
 - **Haploid** — exactly one allele per genotype (`0`, `1`, `.`), not `0/1`.
-  A kMate founder is a *haplotype*. The builders stop with an error on diploid input.
+  A panel column *is* a haplotype — see [Haplotypes and windows](Haplotypes-and-windows).
+  The builders stop with an error on diploid input.
 - **Biallelic** — one ALT per record. The builders stop with an error otherwise.
 - **Sequence-resolved** — real REF/ALT sequences. Symbolic alleles like `<DEL>` cannot
   be turned into k-mers.

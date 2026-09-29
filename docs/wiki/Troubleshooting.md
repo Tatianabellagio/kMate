@@ -20,8 +20,8 @@ This is also why `conda install kmate` currently gives you a broken install; see
 
 ### `Panel VCF must be haploid (got len(GT)=2 ...)`
 
-Your VCF has diploid genotypes. A kMate founder is a *haplotype*, so one allele per
-genotype is required:
+Your VCF has diploid genotypes. A kMate panel column is a *haplotype* — see
+[Haplotypes and windows](Haplotypes-and-windows) — so one allele per genotype is required:
 
 ```bash
 kmate decompose --haploidize --het missing ...   # inbred founders
@@ -64,8 +64,8 @@ cause is the `jellyfish` mix-up above. Check `kmate --version` is 0.1.1 or newer
 
 ### The job runs out of memory
 
-The k-mer matrix is loaded densely: roughly **20 GB** for a few hundred founders on one
-chromosome. Request ~32 GB, and run one chromosome at a time rather than the whole
+The k-mer matrix is loaded densely: roughly **20 GB** for a few hundred founder haplotypes on
+one chromosome. Request ~32 GB, and run one chromosome at a time rather than the whole
 genome at once.
 
 ---
@@ -87,8 +87,8 @@ Check these in order:
 2. **`--unit`.** Selfing/inbred pools need `--unit chrom`; recombinant pools need
    `--unit bp`. The wrong one produces plausible-looking but wrong numbers — see
    [Running kMate](Running-kMate#the-one-setting-you-must-think-about---unit).
-3. **The founder mixture** (`*.h_per_chrom.npz`). If it collapsed onto a few founders
-   when you expected many, the problem is upstream of the frequencies.
+3. **The founder-haplotype mixture** (`*.h_per_chrom.npz`). If it collapsed onto a few
+   haplotypes when you expected many, the problem is upstream of the frequencies.
 4. **How you joined samples.** Merging on `chrom`/`pos` alone matches the wrong allele
    where a position carries more than one variant. Join row-wise.
 5. **`n_called`.** Low-support variants are weak regardless of what `se` says.

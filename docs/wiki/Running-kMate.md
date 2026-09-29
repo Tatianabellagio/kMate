@@ -17,14 +17,14 @@ kmate run \
 `--kmer-pa-prefix` is a **prefix**: kMate appends `_<CHR>.kmer_pa.npz` itself.
 
 This writes the frequency table (see [Output](Output)) and a `.h_per_chrom.npz`
-holding the estimated founder mixture.
+holding the estimated founder-haplotype mixture.
 
 ---
 
 ## The one setting you must think about: `--unit`
 
-`--unit` decides **where** the founder mixture is estimated. Choose it from your
-population's biology, not from the default.
+`--unit` decides **over what span** the founder-haplotype mixture is estimated — a whole
+chromosome, or a window. Choose it from your species' biology, not from the default.
 
 | your pools are… | use | why |
 |---|---|---|
@@ -33,12 +33,16 @@ population's biology, not from the default.
 
 This matters. On a selfing benchmark, fitting per LD-block instead of per chromosome
 moved the error from 0.0033 to 0.0080 and outliers from 0.001% to 0.625%, because
-low-diversity regions such as centromeres cannot identify founders from local k-mers
-alone. In the other direction, a chromosome-wide fit on a recombinant pool averages
-away the very mosaic you are trying to measure.
+low-diversity regions such as centromeres cannot tell founder haplotypes apart from
+local k-mers alone. In the other direction, a chromosome-wide fit on a recombinant pool
+averages away the very mosaic you are trying to measure.
 
-Leave `--normalize per_founder` on. It corrects for founders differing in how many
-k-mers they contribute; without it, k-mer-poor founders collapse toward zero.
+**Window size is also limited by sequencing depth** — a window needs enough *observed*
+k-mers to be fittable at all. → **[Haplotypes and windows](Haplotypes-and-windows)**
+explains both constraints and how to check you chose well.
+
+Leave `--normalize per_founder` on. It corrects for founder haplotypes differing in how
+many k-mers they contribute; without it, k-mer-poor haplotypes collapse toward zero.
 
 ---
 
@@ -82,5 +86,5 @@ that does both; point it at any panel with environment variables.
 
 ## Memory
 
-Roughly **20 GB** for a few hundred founders on one chromosome, because the k-mer
-matrix is loaded densely. Request ~32 GB. Fewer founders need much less.
+Roughly **20 GB** for a few hundred founder haplotypes on one chromosome, because the k-mer
+matrix is loaded densely. Request ~32 GB. Fewer haplotypes need much less.

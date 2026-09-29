@@ -12,12 +12,12 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 | `chrom`, `pos` | position, 1-based |
 | `ref_len`, `alt_len` | length of the REF and ALT alleles |
 | `alt_freq` | **the estimate** — frequency of the ALT allele in the pool, 0–1 |
-| `info` | how much founder mass had a genotype call here |
-| `n_called` | how many founders had a genotype call here |
+| `info` | how much haplotype mass had a genotype call here |
+| `n_called` | how many founder haplotypes had a genotype call here |
 | `se` | standard error of `alt_freq` |
 
-Alongside it, `*.h_per_chrom.npz` holds the estimated **founder mixture** — one value
-per founder, summing to 1.
+Alongside it, `*.h_per_chrom.npz` holds the estimated **founder-haplotype mixture** —
+one value per haplotype, summing to 1.
 
 ---
 
@@ -61,10 +61,10 @@ delta = b.alt_freq - a.alt_freq          # row-wise, no merge needed
 
 ## Judging an estimate
 
-- **`n_called`** is the honest support: a frequency derived from few founders is
+- **`n_called`** is the honest support: a frequency derived from few haplotypes is
   weaker, whatever `se` says. Filtering on it is usually wise.
-- **`alt_freq` is a frequency among *called* founders.** Founders that were missing at
+- **`alt_freq` is a frequency among *called* haplotypes.** Founder haplotypes missing at
   a variant are excluded rather than counted as reference.
-- **Check the founder mixture** before trusting per-variant numbers. If it has
-  collapsed onto a handful of founders when you expected many, something upstream is
+- **Check the founder-haplotype mixture** before trusting per-variant numbers. If it has
+  collapsed onto a handful of haplotypes when you expected many, something upstream is
   wrong — coverage, the panel, or the wrong `--unit`.
