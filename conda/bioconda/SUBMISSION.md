@@ -1,15 +1,13 @@
 # Submitting kMate to bioconda
 
-> **STATUS (2026-09-29): ready, deliberately NOT submitted.** PyPI 0.1.1 is published and
-> the recipe below is complete and verified (its `sha256` matches what PyPI serves,
-> byte-for-byte). The bioconda PR is being held because kMate is still under active
-> change — submitting now would mean asking bioconda reviewers to re-review on every
-> iteration. Submit when the API settles; everything here stays valid, only `version:`
-> and `sha256:` need bumping for a later release.
+> **STATUS (2026-09-29): ready to submit.** kMate 0.1.2 is on PyPI and the recipe below
+> is verified against it: the `sha256` matches what PyPI serves, and installing that sdist
+> into a pristine conda env holding only the recipe's declared run deps gives
+> `kmate selftest` PASS (R^2=0.996, RMSE=0.0032).
 >
-> Meanwhile bioconda keeps serving the broken **0.1.0**, so the README and
-> `docs/GETTING_STARTED.md` tell users to install 0.1.1 from PyPI and explicitly warn
-> against `conda install kmate`.
+> bioconda currently serves **0.1.0**, which cannot count k-mers (wrong `jellyfish`
+> dependency) and predates the per-founder normalization fix. This is an **update** to
+> `recipes/kmate/meta.yaml`, not a new recipe.
 
 The recipe in [`meta.yaml`](meta.yaml) is ready to submit. It fetches the **PyPI
 sdist** (~122 KB), not the GitHub auto-tarball (which archives the whole ~185 MB
@@ -17,11 +15,11 @@ repo and would be rejected). Do the two steps below in order.
 
 ## Step 1 — publish the sdist to PyPI
 
-The 0.1.1 sdist is **already built** at `dist/kmate-0.1.1.tar.gz`, and the `sha256`
-in [`meta.yaml`](meta.yaml) is the hash of *that exact file*:
+0.1.2 is **already uploaded**. The `sha256` in [`meta.yaml`](meta.yaml) is the hash PyPI
+serves, confirmed by download:
 
 ```
-11ec193178131d2c51b9790430e0871d377b617cedc3bc203922b9617a499752
+1a509f24e71026eb0cc99350bbfc245f98bf7d83f73650f9d543e6f4934f5d13
 ```
 
 > ⚠️ **Upload that artifact, do not rebuild it.** Rebuilding produces a different
@@ -33,22 +31,22 @@ in [`meta.yaml`](meta.yaml) is the hash of *that exact file*:
 mamba activate kmate
 cd <kMate checkout>
 
-python -m twine check dist/kmate-0.1.1.tar.gz     # already PASSES
-python -m twine upload dist/kmate-0.1.1.tar.gz    # needs a PyPI API token
+python -m twine check dist/kmate-0.1.2.tar.gz     # already PASSES
+python -m twine upload dist/kmate-0.1.2.tar.gz    # needs a PyPI API token
 ```
 
-After upload, `pip install kmate==0.1.1` works and the `url:` in `meta.yaml` resolves.
+After upload, `pip install kmate==0.1.2` works and the `url:` in `meta.yaml` resolves.
 
 ### Confirm the hash PyPI actually serves
 
 ```bash
-curl -sL https://pypi.org/pypi/kmate/0.1.1/json \
+curl -sL https://pypi.org/pypi/kmate/0.1.2/json \
   | python -c "import sys,json; d=json.load(sys.stdin); print([f['digests']['sha256'] for f in d['urls'] if f['packagetype']=='sdist'][0])"
 ```
 
 It must equal the value above. If not, paste what PyPI reports into `meta.yaml`.
 
-### What 0.1.1 fixes (say this in the PR)
+### What 0.1.2 fixes (say this in the PR)
 
 The published 0.1.0 is broken in two independent ways, both verified against a clean
 `mamba create -c conda-forge -c bioconda kmate`:
@@ -76,14 +74,14 @@ submission.
 gh repo fork bioconda/bioconda-recipes --clone --remote
 cd bioconda-recipes
 git checkout master && git pull upstream master
-git checkout -b kmate-0.1.1
+git checkout -b kmate-0.1.2
 
 # overwrite the existing recipe with ours
 cp <kMate checkout>/conda/bioconda/meta.yaml recipes/kmate/meta.yaml
 
 git add recipes/kmate/meta.yaml
 git commit -m "Update kmate to 0.1.1"
-git push -u origin kmate-0.1.1
+git push -u origin kmate-0.1.2
 
 gh pr create --repo bioconda/bioconda-recipes --base master \
   --title "Update kmate to 0.1.1" \
@@ -102,7 +100,7 @@ clean \\`mamba create -c conda-forge -c bioconda kmate\\`:
 The \\`test:\\` block now also runs \\`kmate selftest\\`, a bundled offline end-to-end
 fixture that exercises jellyfish and samtools. The previous test ran only
 \\`--help\\`/\\`--version\\`/\\`import\\`, which is why a package that could not count
-k-mers passed CI. Verified locally: selftest passes from the 0.1.1 sdist in a clean
+k-mers passed CI. Verified locally: selftest passes from the 0.1.2 sdist in a clean
 environment."
 ```
 

@@ -30,30 +30,17 @@ conventions this code does not expect (`|` vs `/` per record, partially phased
 blocks, multi-sample phase-set `PS` tags, and ploidy ≠ 2 on sex chromosomes,
 which `_gt_to_pair` does not handle).
 
-## 2. Release 0.1.2 is not published
+## 2. bioconda still serves the broken 0.1.0
 
-**Status:** version bumped in the repo; nothing uploaded.
+**Status:** 0.1.2 published to PyPI 2026-09-29; bioconda PR pending.
 
-PyPI serves **0.1.1**; bioconda serves **0.1.0**, which is broken (wrong
-`jellyfish` dependency, and a pre-July-2026 estimator with no `--normalize` /
-`--unit` / `--emit-af-se`). The install docs route around this by telling users
-to take 0.1.1 from PyPI and warning them off `conda install kmate`.
+PyPI serves 0.1.2 (verified: the hash matches the built artifact byte-for-byte, and it
+passes `selftest` in a pristine env). bioconda still serves **0.1.0**, which cannot count
+k-mers and predates the per-founder normalization fix, so the install docs route users to
+PyPI and warn against `conda install kmate`.
 
-**Done when:** a 0.1.2 sdist is built and uploaded to PyPI, and the bioconda
-recipe's `sha256` — currently flagged stale in `conda/bioconda/meta.yaml`, since
-it is the 0.1.1 hash — is regenerated from what PyPI serves.
-
-## 3. The bioconda PR is held on purpose
-
-**Status:** recipe ready and verified; not submitted.
-
-Deliberate: kMate is still changing, and submitting now means asking bioconda
-reviewers to re-review each iteration. See the status banner in
-`conda/bioconda/SUBMISSION.md`. Note this is an **update** to an existing recipe,
-not a new submission.
-
-**Done when:** the API has settled, 0.1.2 (or later) is on PyPI, and the PR is
-opened per `SUBMISSION.md`.
+**Done when:** the bioconda recipe update is merged, and the install docs collapse back to
+a single `mamba create ... kmate` line with the warning removed.
 
 ## 4. Inherited gap in the decomposition catalog
 
