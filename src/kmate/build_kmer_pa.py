@@ -209,8 +209,9 @@ def build_kmer_pa_for_chrom(
                 if len(gt) != 1:
                     raise ValueError(
                         f"Panel VCF must be haploid (got len(GT)={len(gt)} for "
-                        f"{founder} at {rec.chrom}:{rec.pos}). Haploidize the "
-                        f"VCF before building kmer_pa."
+                        f"{founder} at {rec.chrom}:{rec.pos}). Haploidize first: "
+                        f"`kmate decompose --haploidize --het missing` for inbred "
+                        f"founders, `--het split` for outbred phased ones."
                     )
                 if gt[0] is None:
                     # Missing GT. Behavior depends on treat_missing_as_n flag.

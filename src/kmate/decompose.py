@@ -105,8 +105,13 @@ def main(argv=None) -> None:
     ap.add_argument("--convert-to-biallelic", default=None,
                     help="path to eblerjana's convert-to-biallelic.py (third-party, not bundled)")
     ap.add_argument("--haploidize", action="store_true",
-                    help="emit haploid GTs (0/0->0, 1/1->1, het->., ./.->.) as kMate's "
-                         "panel builders require")
+                    help="emit haploid GTs, as kMate's panel builders require "
+                         "(see --het for how heterozygotes are handled)")
+    ap.add_argument("--het", choices=("missing", "split"), default="missing",
+                    help="with --haploidize: 'missing' (default) for INBRED founders -- a "
+                         "het call is treated as an artefact and set missing; 'split' for "
+                         "OUTBRED, PHASED founders -- each sample becomes two haplotype "
+                         "columns (sample.h1/.h2) and the founder axis doubles.")
     ap.add_argument("--threads", type=int, default=4)
     ap.add_argument("--keep-temp", action="store_true")
     ap.add_argument("--citation", action="store_true", help="print attribution and exit")
@@ -161,7 +166,8 @@ def main(argv=None) -> None:
 
         if args.haploidize:
             from .haploidize import haploidize_vcf
-            haploidize_vcf(filled, args.out, bcftools=bcftools, threads=args.threads)
+            haploidize_vcf(filled, args.out, bcftools=bcftools,
+                           threads=args.threads, het=args.het)
         else:
             shutil.move(filled, args.out)
 

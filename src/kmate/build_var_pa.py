@@ -80,7 +80,8 @@ def build_var_pa(vcf_path: str, out_prefix: str, chrom_filter: str | None = None
                 raise ValueError(
                     f"Panel VCF must be haploid (got len(GT)={len(gt)} for "
                     f"{sname} at {rec.chrom}:{rec.pos}). Haploidize the VCF "
-                    f"before building var_pa."
+                    f"before building var_pa: `kmate decompose --haploidize --het missing` "
+                    f"for inbred founders, `--het split` for outbred phased ones."
                 )
             # any None allele in GT marks the genotype as missing
             is_missing = all(a is None for a in gt)

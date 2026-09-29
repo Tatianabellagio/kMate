@@ -146,11 +146,28 @@ kmate decompose \
     --out panel.vcf.gz
 ```
 
-`--haploidize` also emits one allele per GT (`0/0`→`0`, `1/1`→`1`, het→`.`, `./.`→`.`),
-which the builders require. Heterozygous calls become **missing**, not a guessed allele:
-the panel represents inbred founders, so a het call is more likely an artefact, and
-marking it missing lets the AF projection exclude that founder at that record rather than
-inventing a call. The command reports the het→missing rate — check it is small.
+`--haploidize` also makes genotypes haploid, which the builders require — **a kMate panel
+column is a haplotype**, because `build_kmer_pa` reconstructs exactly one sequence per
+founder. That is a property of the model, not of any particular species. How to get there
+depends on what your founders are:
+
+| your founders are | use | what happens |
+|---|---|---|
+| **inbred lines** (*Arabidopsis* accessions, MAGIC/RIL founders, NAM parents) | `--het missing` (default) | `0/0`→`0`, `1/1`→`1`, **het→`.`**, `./.`→`.` |
+| **outbred and phased** (HPRC-style assemblies, phased diploids) | `--het split` | each sample becomes two haplotype columns `sample.h1`/`sample.h2`; the founder axis doubles |
+
+With inbred founders a heterozygous call is more likely a genotyping artefact than real
+diploidy, so marking it missing lets the AF projection *exclude* that founder at that
+record rather than invent a REF or ALT call (precedent for inbred *Arabidopsis* panels:
+Arouisse et al. 2020, Plant J 102:872–882). The command reports the het→missing rate and
+**warns if it exceeds 10%**, which usually means your founders are not what this policy
+assumes.
+
+With outbred founders that rule would discard half your data and bias AF, so `--het split`
+keeps both haplotypes and kMate estimates a frequency per haplotype — which is what a
+founder-mixture model means for an outbred panel. It requires **phased** genotypes; an
+unphased heterozygote is an error rather than a coin flip, because guessing phase would
+fabricate haplotypes that were never observed.
 
 ### ⚠️ Attribution — this method is not kMate's
 
