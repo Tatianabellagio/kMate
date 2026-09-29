@@ -4,15 +4,50 @@ kMate estimates **allele frequencies for SNPs, short indels and large structural
 variants** from pooled sequencing of a population descended from a known set of
 founders.
 
-It works in two steps:
+It is **alignment-free**: reads are never mapped. Everything happens in k-mer space,
+which is why structural variants are handled exactly like SNPs instead of needing
+separate calling.
 
-1. From the k-mers in your pooled reads, estimate the **founder mixture** `h` —
-   how much of the pool each founder contributes.
-2. Project `h` through a founder × variant matrix to get an **allele frequency for
-   every variant**, in one pass.
+---
 
-Because the evidence is k-mers rather than aligned bases, SNPs and structural
-variants are handled the same way.
+## How it works, in two steps
+
+### Step 1 — put your founders into k-mer space
+
+Take your founders' pangenome and turn it into **two matrices**. This is done **once**
+per founder set, and reused for every pool you ever sequence.
+
+```
+                                    ┌─ K_pa : founder × k-mer
+   founders' pangenome (a VCF) ─────┤
+                                    └─ V_pa : founder × variant
+```
+
+| matrix | what it says | what it is for |
+|---|---|---|
+| **K_pa** | for each k-mer, which founders contain it | the **evidence** — what the reads get compared against |
+| **V_pa** | for each variant, which founders carry the ALT allele | the **translation** — turns founder proportions into allele frequencies |
+
+A third file, `var_called`, records where each founder actually had a genotype call, so
+that missing data is excluded rather than silently counted as reference.
+
+→ **[Building a panel](Building-a-panel)**
+
+### Step 2 — run a pool against them
+
+Count the k-mers in your pooled reads. kMate asks: *what mixture of founders would
+produce these counts?* — modelling each k-mer count as Poisson with mean
+`λ · Σ h_f · K_pa[f,k]`, and solving for the founder mixture **`h`** by
+expectation-maximisation.
+
+Then it projects that mixture through **V_pa**: a variant's frequency is the summed
+proportion of the founders that carry it. One pass gives every SNP, indel and SV.
+
+```
+   pooled reads ──▶ k-mer counts ──▶ EM ──▶ h (founder mixture) ──▶ × V_pa ──▶ allele frequencies
+```
+
+→ **[Running kMate](Running-kMate)**
 
 ---
 
@@ -22,13 +57,13 @@ variants are handled the same way.
 |---|---|
 | **[Installation](Installation)** | install kMate and check it works |
 | **[Input files](Input-files)** | what kMate needs, and what each file must satisfy |
-| **[Building a panel](Building-a-panel)** | make the matrices from your own founders |
-| **[Running kMate](Running-kMate)** | estimate frequencies for a pool |
+| **[Building a panel](Building-a-panel)** | **step 1** — build the matrices from your founders |
+| **[Running kMate](Running-kMate)** | **step 2** — estimate frequencies for a pool |
 | **[Output](Output)** | the result table, and how to read it |
 | **[Troubleshooting](Troubleshooting)** | common errors and what they mean |
 
-If someone has already given you a panel, you only need
-**Installation → Running kMate → Output**.
+If a collaborator has already built a panel for your founder set, you can skip step 1
+and go straight to **Installation → Running kMate → Output**.
 
 ---
 
@@ -39,18 +74,38 @@ If someone has already given you a panel, you only need
 mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
 mamba activate kmate
 pip install kmate
-kmate selftest          # must print PASS
+kmate selftest                      # must print PASS
+```
 
-# run one pool against an existing panel
+**Step 1 — build the panel from your founders' VCF** (once):
+
+```bash
+kmate build-index    --vcf panel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
+
+kmate build-kmer-pa  --kmers index/ours_Chr1_kmers.tsv.gz \
+                     --vcf panel.vcf.gz --ref REF.fa --chrom Chr1 \
+                     --out kmer_pa/kmer_pa_Chr1 \
+                     --treat-missing-as-n --filter-production
+
+kmate build-var-pa   --vcf panel.vcf.gz --chrom Chr1 --out var_pa/var_pa_Chr1
+```
+
+**Step 2 — run each pool against them** (per sample):
+
+```bash
 kmate run \
-    --kmer-pa-prefix panel/kmer_pa/kmer_pa \
-    --var-pa     panel/var_pa/var_pa_Chr1.var_pa.npz \
-    --var-called panel/var_pa/var_pa_Chr1.var_called.npz \
-    --var-meta   panel/var_pa/var_pa_Chr1.meta.npz \
+    --kmer-pa-prefix kmer_pa/kmer_pa \
+    --var-pa     var_pa/var_pa_Chr1.var_pa.npz \
+    --var-called var_pa/var_pa_Chr1.var_called.npz \
+    --var-meta   var_pa/var_pa_Chr1.meta.npz \
     --reads R1.fq.gz R2.fq.gz \
     --sample MYPOOL --out MYPOOL_Chr1.tsv \
     --chroms Chr1 --unit chrom
 ```
+
+Your VCF has to satisfy a few requirements before step 1 (haploid, biallelic,
+sequence-resolved) — [Building a panel](Building-a-panel) covers how to get there,
+including from raw assemblies.
 
 ---
 

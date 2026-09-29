@@ -39,8 +39,12 @@ files per chromosome:
 
 `kmer_pa` also has a small `.meta.npz` beside it.
 
-**If you already have these, go to [Running kMate](Running-kMate).**
-To make them, see [Building a panel](Building-a-panel).
+**You build these yourself from your founders** — see
+[Building a panel](Building-a-panel). It is a one-time job per founder set; every pool
+you sequence afterwards reuses the same matrices.
+
+Only if a collaborator has already built a panel for your founders can you skip
+straight to [Running kMate](Running-kMate).
 
 > The matrices are large (tens of GB for a few hundred founders) and are not stored in
 > the git repository. The 231-founder *Arabidopsis thaliana* panel used by GrENE-Net is
