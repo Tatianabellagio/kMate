@@ -56,7 +56,7 @@ average away by construction. That is fine here — the question is about `sv_CD
 code_load = r"""
 import numpy as np
 from scipy import linalg
-GG=f"{G}/final_models_pooled_all"; SUF="_x_obio1cobio1cbio1c"
+GG=f"{G}/final_models_pooled_all"; SUF="_x_obio1cobio1cbio1c_re0obio1cgarden_refid"
 CTX=["CDS","TE","promoter","intergenic"]
 TERMS=["snp_CDS","sv_CDS","sv_TE","sv_promoter","sv_intergenic","cactus","obio1c"]
 J=TERMS.index("sv_CDS")+1                                  # +1 for the intercept column
@@ -79,9 +79,12 @@ D=P.merge(L.groupby("founder").y.mean().rename("ybar").reset_index(),on="founder
 n_g=L.garden.nunique(); fo=D.index.to_list()
 
 vc=pd.read_csv(f"{GG}/varcomp_M2p_reml{SUF}.csv")
-gv=lambda g: float(vc[vc.grp==g].vcov.iloc[0])
+gv=lambda g: float(vc[vc.grp==g].vcov.iloc[0]) if (vc.grp==g).any() else 0.0
 # variance of a founder MEAN over n_g gardens: the kinship term is unchanged, the independent founder
-# term is unchanged, and the residual is divided by the number of gardens averaged over
+# term is unchanged (0 here -- the reported fit prunes it), and the residual is divided by the number of
+# gardens averaged over. The random garden slopes, local adaptation's included, contribute rank-1 terms
+# proportional to columns of X; GLS is invariant to variance components lying in the column space of X
+# (Zyskind's condition), so they drop out and the reduction stays exact -- the validation below checks it.
 V=gv("kin")*K.loc[fo,fo].to_numpy()+(gv("fid")+gv("Residual")/n_g)*np.eye(len(D))
 Vi=np.linalg.inv(V)
 X=np.column_stack([np.ones(len(D))]+[D[c].to_numpy(float) for c in TERMS])

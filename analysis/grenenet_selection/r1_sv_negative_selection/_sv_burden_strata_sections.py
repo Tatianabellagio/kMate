@@ -20,7 +20,7 @@ because n = 80, the fit is singular, and the private bin still behaves like a de
 difference in significance, not a significant difference."""
 
 code_freq = r'''
-FQ=f"{PA}/coef_M2p_reml_x_obio1cobio1cbio1ccallratesv_freqCDSrarecommon.csv"
+FQ=f"{PA}/coef_M2p_reml_x_obio1cobio1cbio1ccallratesv_re0obio1cgarden_refid_freqCDSrarecommon.csv"
 def fload(coefp,scalep,vcovp):
     co=pd.read_csv(coefp).set_index("term"); sc=pd.read_csv(scalep).set_index("context")
     pv={f"sv_{c}":100/(sc.loc[c,"sd_rate"]*sc.loc[c,"med_called"]) for c in sc.index}
@@ -96,7 +96,7 @@ cell therefore reports an **omnibus test** of whether the bins differ at all, an
 both needed to read "only the large bin is significant" correctly."""
 
 code_size = r'''
-SZ=f"{PA}/coef_M2p_reml_x_obio1cobio1cbio1c_freqCDSsmallmediumlarge.csv"
+SZ=f"{PA}/coef_M2p_reml_x_obio1cobio1cbio1c_re0obio1cgarden_refid_freqCDSsmallmediumlarge.csv"
 co,pv,sc,V=fload(SZ,f"{PA}/pooled_rate_scale_x_obio1cobio1cbio1c_freqCDSsmallmediumlarge.csv",
                  SZ.replace("coef_","vcov_"))
 BINS=["small","medium","large"]; SC3={"small":"#C6BCD8","medium":"#6B5A8E","large":"#4A3B6B"}

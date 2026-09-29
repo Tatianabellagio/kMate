@@ -8,7 +8,7 @@ are in `archive/burden_superseded_2026-09-29/`.
   y ~ snp_CDS + sv_CDS + sv_TE + sv_promoter + sv_intergenic + cactus
       + sv_CDS:bio1c + sv_TE:bio1c + sv_promoter:bio1c
       + obio1c + obio1c:bio1c
-      + (1 | garden) + (1 | kin)
+      + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
       + (0 + sv_CDS | garden) + (0 + sv_TE | garden) + (0 + sv_promoter | garden)
 
 SVs pooled over insertions and deletions (that split is defined against Col-0, not biology), no origin
@@ -44,7 +44,7 @@ to read, not easier.
 y ~ snp_CDS + sv_CDS + sv_TE + sv_promoter + sv_intergenic + cactus
     + sv_CDS:bio1c + sv_TE:bio1c + sv_promoter:bio1c
     + obio1c + obio1c:bio1c
-    + (1 | garden) + (1 | kin)
+    + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
     + (0 + sv_CDS | garden) + (0 + sv_TE | garden) + (0 + sv_promoter | garden)
 ```
 
@@ -68,6 +68,7 @@ sv_<ctx>  =  z( (ins carried + del carried) / (ins called + del called) )
 | `snp_CDS` | matching SNP coding burden · `cactus` = assembly route (0/1) |
 | `kin` | founder random effect with covariance σ²K, K = SNP kinship |
 | `(0 + sv_ctx \\| garden)` | independent random garden slope per modelled burden |
+| `(0 + obio1c \\| garden)` | local adaptation gets its own strength in each garden |
 
 Insertions and deletions are **pooled** because which label a variant receives depends on the Col-0
 reference and is not a biological distinction — the same reason the site-frequency spectra in Figure 1 are
@@ -93,7 +94,7 @@ the `sv_ctx:bio1c` terms hard and the `sv_ctx` terms only mildly. §13 returns t
 
 code_load = r"""
 PA=f"{G}/final_models_pooled_all"
-SUF="_x_obio1cobio1cbio1c_refid"                           # the reported fit: + local adaptation, fid pruned
+SUF="_x_obio1cobio1cbio1c_re0obio1cgarden_refid"           # THE model: + local adaptation per garden, fid pruned
 SCS="_x_obio1cobio1cbio1c"                                 # RE_DROP does not change the burdens, so the
                                                            # per-variant scale file carries no _refid tag
 SVT=["sv_CDS","sv_TE","sv_promoter"]                       # burdens carrying a temperature interaction
@@ -303,6 +304,43 @@ print(f"coding-SV effect per garden: {b.min():+.2f}% .. {b.max():+.2f}%, "
       f"negative in {(b<0).sum()}/{len(g)} gardens")
 """
 
+md_garden2 = """### Every burden, garden by garden
+
+The same quantity for each burden that carries a temperature interaction, so the coding result can be read
+against the others. Each point is one garden's **total** effect from the full model — fixed part + its
+temperature term + that garden's random slope — with every covariate held in: kinship, the SNP coding
+burden, assembly route, origin climate, local adaptation fitted per garden, and the other burdens
+simultaneously. **Red** marks gardens where the effect is positive. The line is the model's fitted
+temperature trend with its 95 % CI."""
+
+code_garden2 = r'''
+fig,axs=plt.subplots(1,len(SVT),figsize=(4.2*len(SVT),3.5))
+for a,T in zip(np.atleast_1d(axs),SVT):
+    style(a,axis="both"); a.axhline(0,color="0.4",lw=0.9,ls="--")
+    sc=PV(T); g=GD[GD.term==T]; b=sc*g.total.to_numpy(); xg=g.bio1.to_numpy()
+    er=1.96*sc*g.cond_sd.to_numpy(); pos=b>0
+    a.errorbar(xg,b,yerr=er,fmt="none",ecolor="0.85",elinewidth=0.8,zorder=1)
+    a.scatter(xg[~pos],b[~pos],s=34,color=PC2(T),edgecolor="0.25",linewidth=0.4,zorder=3)
+    a.scatter(xg[pos],b[pos],s=34,color="#C0392B",edgecolor="0.25",linewidth=0.4,zorder=3)
+    xx=np.linspace(xg.min(),xg.max(),60); xc=xx-xg.mean(); i1=f"{T}:bio1c"
+    fit=CO.loc[T,"estimate"]+CO.loc[i1,"estimate"]*xc
+    v=VV.loc[T,T]+xc**2*VV.loc[i1,i1]+2*xc*VV.loc[T,i1]
+    a.fill_between(xx,sc*(fit-1.96*np.sqrt(v)),sc*(fit+1.96*np.sqrt(v)),color=PC2(T),alpha=0.15,lw=0)
+    a.plot(xx,sc*fit,color=PC2(T),lw=1.8,zorder=2)
+    a.annotate(f"{LAB2(T)}\n{(b>0).sum()}/{len(g)} gardens positive\n"
+               f"slope {pct(sc*CO.loc[i1,'estimate'])}/degC, LRT p = {LRT[T]:.2g}",
+               xy=(0.03,0.97),xycoords="axes fraction",va="top",ha="left",fontsize=7.2,color="0.25")
+    y0,y1=a.get_ylim(); a.set_ylim(y0,y1+0.30*(y1-y0))
+    a.set_xlabel("garden temperature  bio1 (degC)",fontsize=8)
+    a.set_ylabel("% per carried variant, per garden",fontsize=7.5)
+fig.subplots_adjust(wspace=0.32)
+save(fig,"model_by_garden_all",nb=True); plt.show()
+for T in SVT:
+    g=GD[GD.term==T]; b=PV(T)*g.total.to_numpy()
+    print(f"{LAB2(T):20s} per garden {b.min():+.3f}% .. {b.max():+.3f}%   "
+          f"positive in {(b>0).sum():2d}/{len(g)} gardens")
+'''
+
 md_freq = _ns["md_freq"].replace("## 7 ·", "## 6 ·")
 md_size = _ns["md_size"].replace("## 8 ·", "## 7 ·")
 code_freq, code_size = _ns["code_freq"], _ns["code_size"]
@@ -313,22 +351,22 @@ md_deld = _K["md_deld"].replace("## 3 ·", "## 10 ·")
 code_load_diag, code_avp, code_infl, code_deld = (_K["code_load"], _K["code_avp"],
                                                   _K["code_infl"], _K["code_deld"])
 
-md_lare = """## 11 · The full model, with local adaptation fitted per garden
+md_lare = """## 11 · Every term of the model, in one figure
 
-The one change under test: local adaptation was a **single** coefficient (`obio1c:bio1c`), forcing it to
-scale linearly with garden temperature. It now also gets a **random garden slope**, `(0 + obio1c | garden)`,
-so every garden has its own strength of local adaptation. Nothing else about the model changes.
+The whole fit in one place: every fixed effect with its 95 % confidence interval. Filled markers are
+p < 0.05. Three panels because the scales differ by more than an order of magnitude — on a shared axis the
+interaction intervals collapse onto the zero line and you cannot see whether they cross it.
 
-That is a large improvement in fit — **401 log-likelihood points on one parameter** — and it is the right
-specification: the per-garden slopes run from −0.15 to +0.19, so one linear term was never going to capture
-them.
+**(a)** burden effects at an average-temperature garden. **(b)** how each changes per °C of garden
+temperature, tested by likelihood ratio. **(c)** the two local-adaptation terms, on the model's own scale —
+these have no per-carried-variant conversion.
 
-Below is that model, every term, with 95 % confidence intervals. Filled markers are p < 0.05. Burdens and
-their interactions are on the per-carried-variant scale; the local-adaptation terms have no per-variant
-scale and are shown on the model's own scale in the table."""
+Local adaptation is fitted **per garden** here, `(0 + obio1c | garden)`: the single `obio1c:bio1c`
+coefficient forces it to scale linearly with garden temperature, and the per-garden slopes run from −0.15
+to +0.19, so it does not. Everything above is fitted this way too."""
 
 code_lare = r'''
-LRS="_x_obio1cobio1cbio1c_re0obio1cgarden_refid"
+LRS=SUF
 CO2=pd.read_csv(f"{PA}/coef_M2p_reml{LRS}.csv").set_index("term")
 VC2=pd.read_csv(f"{PA}/varcomp_M2p_reml{LRS}.csv")
 LL2=pd.read_csv(f"{PA}/loglik_M2p_reml{LRS}.csv").iloc[0]
@@ -499,6 +537,7 @@ if __name__ == "__main__":
         new_markdown_cell(md_inter),  new_code_cell(code_inter),
         new_markdown_cell(md_scale),  new_code_cell(code_scale),
         new_markdown_cell(md_garden), new_code_cell(code_garden),
+        new_markdown_cell(md_garden2), new_code_cell(code_garden2),
         new_markdown_cell(md_freq),   new_code_cell(code_freq),
         new_markdown_cell(md_size),   new_code_cell(code_size),
         new_markdown_cell(md_avp),    new_code_cell(code_load_diag), new_code_cell(code_avp),

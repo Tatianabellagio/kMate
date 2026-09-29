@@ -39,20 +39,22 @@ instead of being read off four collinear coefficients.
 
 Both are the main model with only the burden terms changed. Every covariate is retained: the matched SNP
 coding burden, assembly route, founder origin climate **and its interaction with garden climate**, SNP
-kinship, a garden intercept, and random garden slopes.
+kinship, a garden intercept, random garden slopes, and local adaptation fitted **per garden**.
 
 ```r
 # all6 -- every genomic context its own term (closes the UTR/intron gap)
 y ~ snp_CDS + sv_CDS + sv_UTR + sv_intron + sv_TE + sv_promoter + sv_intergenic + cactus
     + sv_CDS:bio1c + sv_TE:bio1c + sv_promoter:bio1c
     + obio1c + obio1c:bio1c
-    + (1 | garden) + (1 | kin) + (0 + sv_CDS | garden) + (0 + sv_TE | garden) + (0 + sv_promoter | garden)
+    + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
+    + (0 + sv_CDS | garden) + (0 + sv_TE | garden) + (0 + sv_promoter | garden)
 
 # cds2 -- coding against everything else
 y ~ snp_CDS + sv_CDS + sv_nonCDS + cactus
     + sv_CDS:bio1c + sv_nonCDS:bio1c
     + obio1c + obio1c:bio1c
-    + (1 | garden) + (1 | kin) + (0 + sv_CDS | garden) + (0 + sv_nonCDS | garden)
+    + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
+    + (0 + sv_CDS | garden) + (0 + sv_nonCDS | garden)
 ```
 
 `sv_nonCDS` pools UTR + intron + TE + promoter + intergenic into one carried/called rate, so **every
@@ -67,11 +69,12 @@ CT6=["CDS","UTR","intron","TE","promoter","intergenic"]
 CC={"CDS":"#4A3B6B","nonCDS":"#C46A10","UTR":"#6B5A8E","intron":"#7E9B6B","TE":"#6B5A8E",
     "promoter":"#9084AE","intergenic":"#C6BCD8","snp_CDS":"0.25"}
 def arm(tag):
-    S=f"_x_obio1cobio1cbio1c{tag}_refid"
+    S=f"_x_obio1cobio1cbio1c_re0obio1cgarden{tag}_refid"   # THE model: LA fitted per garden
     o={"co":pd.read_csv(f"{PA}/coef_M2p_reml{S}.csv").set_index("term"),
        "sc":pd.read_csv(f"{PA}/pooled_rate_scale_x_obio1cobio1cbio1c{tag}.csv").set_index("context"),
        "V":pd.read_csv(f"{PA}/vcov_M2p_reml{S}.csv",index_col=0),
        "vc":pd.read_csv(f"{PA}/varcomp_M2p_reml{S}.csv"),
+       "gd":pd.read_csv(f"{PA}/garden_M2p_reml{S}.csv"),
        "ll":pd.read_csv(f"{PA}/loglik_M2p_reml{S}.csv").iloc[0],"suf":S}
     o["pv"]={f"sv_{c}":100/(o["sc"].loc[c,"sd_rate"]*o["sc"].loc[c,"med_called"]) for c in o["sc"].index}
     return o
@@ -210,7 +213,7 @@ temperature` is 0.026 here and 0.043 in `all6`; the separate TE and promoter int
 
 Read the non-coding one cautiously. Pooling five contexts into one term concentrates them: the very same
 variants, fitted as separate contexts in `all6`, give 0.093 and 0.095. And it is an interaction on a main
-effect whose own interpretation is unresolved (§6)."""
+effect whose own interpretation is unresolved (§7)."""
 
 code_int = r'''
 fig,axs=plt.subplots(1,2,figsize=(11.4,2.7),gridspec_kw=dict(width_ratios=[1,1.25],wspace=0.46))
@@ -339,7 +342,53 @@ for t in ("sv_CDS","sv_nonCDS"):
     print()
 """
 
-md_lare = """## 5 · The full model, with local adaptation fitted per garden
+md_gard = """## 5 · Coding and non-coding, garden by garden
+
+Each garden's own effect of the two burdens, **from the full model**: the fixed part, plus its temperature
+term, plus that garden's random slope. Every covariate is in simultaneously — kinship, the SNP coding
+burden, assembly route, origin climate, local adaptation fitted per garden, and the other burden. These
+are not separate per-garden regressions of fitness on burden; the whole point of the covariates is that
+the per-garden number is the conditional effect, not a marginal correlation.
+
+**Red** marks gardens where the effect is positive. The line is the model's fitted temperature trend with
+its 95 % CI; grey bars are ± 1.96 conditional SD of each garden's slope."""
+
+code_gard = r'''
+GDC=M2["gd"]; TT=["sv_CDS","sv_nonCDS"]
+LBC={"sv_CDS":"coding","sv_nonCDS":"everything else"}
+fig,axs=plt.subplots(1,2,figsize=(9.6,3.6))
+for a,T in zip(axs,TT):
+    style(a,axis="both"); a.axhline(0,color="0.4",lw=0.9,ls="--")
+    sc=M2["pv"][T]; g=GDC[GDC.term==T]; b=sc*g.total.to_numpy(); xg=g.bio1.to_numpy()
+    er=1.96*sc*g.cond_sd.to_numpy(); pos=b>0
+    a.errorbar(xg,b,yerr=er,fmt="none",ecolor="0.85",elinewidth=0.8,zorder=1)
+    a.scatter(xg[~pos],b[~pos],s=36,color=CC[T.split("_")[1]],edgecolor="0.25",linewidth=0.4,zorder=3)
+    a.scatter(xg[pos],b[pos],s=36,color="#C0392B",edgecolor="0.25",linewidth=0.4,zorder=3)
+    xx=np.linspace(xg.min(),xg.max(),60); xc=xx-xg.mean(); i1=f"{T}:bio1c"
+    co,VV2=M2["co"],M2["V"]
+    fit=co.loc[T,"estimate"]+co.loc[i1,"estimate"]*xc
+    v=VV2.loc[T,T]+xc**2*VV2.loc[i1,i1]+2*xc*VV2.loc[T,i1]
+    a.fill_between(xx,sc*(fit-1.96*np.sqrt(v)),sc*(fit+1.96*np.sqrt(v)),
+                   color=CC[T.split("_")[1]],alpha=0.15,lw=0)
+    a.plot(xx,sc*fit,color=CC[T.split("_")[1]],lw=1.8,zorder=2)
+    a.annotate(f"{LBC[T]}\n{(b>0).sum()}/{len(g)} gardens positive\n"
+               f"slope {sc*co.loc[i1,'estimate']:+.3f}%/degC, LRT p = {M2['LRT'][T]:.2g}",
+               xy=(0.03,0.97),xycoords="axes fraction",va="top",ha="left",fontsize=7.4,color="0.25")
+    y0,y1=a.get_ylim(); a.set_ylim(y0,y1+0.30*(y1-y0))
+    a.set_xlabel("garden temperature  bio1 (degC)",fontsize=8)
+    a.set_ylabel("% per carried variant, per garden",fontsize=7.5)
+fig.subplots_adjust(wspace=0.30)
+save(fig,"cdsrest_by_garden",nb=True); plt.show()
+for T in TT:
+    g=GDC[GDC.term==T]; b=M2["pv"][T]*g.total.to_numpy()
+    print(f"{LBC[T]:16s} per garden {b.min():+.3f}% .. {b.max():+.3f}%   "
+          f"positive in {(b>0).sum():2d}/{len(g)} gardens")
+r=np.corrcoef(GDC[GDC.term=="sv_nonCDS"].slope_blup,GDC[GDC.term=="obio1c"].slope_blup)[0,1]
+print(f"\ncorrelation of the per-garden non-coding slope with the per-garden local-adaptation slope "
+      f"(random parts only): r = {r:+.3f}")
+'''
+
+md_lare = """## 6 · The full model, with local adaptation fitted per garden
 
 The one change under test: local adaptation was a **single** coefficient (`obio1c:bio1c`), forcing it to
 scale linearly with garden temperature. It now also gets a **random garden slope**, `(0 + obio1c | garden)`,
@@ -354,7 +403,7 @@ their interactions are on the per-carried-variant scale; the local-adaptation te
 scale and are shown on the model's own scale in the table."""
 
 code_lare = r'''
-LRS="_x_obio1cobio1cbio1c_re0obio1cgarden_cds2_refid"
+LRS=M2["suf"]
 CO2=pd.read_csv(f"{PA}/coef_M2p_reml{LRS}.csv").set_index("term")
 VC2=pd.read_csv(f"{PA}/varcomp_M2p_reml{LRS}.csv")
 LL2=pd.read_csv(f"{PA}/loglik_M2p_reml{LRS}.csv").iloc[0]
@@ -407,7 +456,7 @@ print("\nRANDOM EFFECTS"); print(VC2.to_string(index=False))
 print(f"\nlogLik {LL2.logLik:.4f}   df {int(LL2.df)}   singular {LL2.singular}")
 '''
 
-md_read = """## 6 · Reading it
+md_read = """## 7 · Reading it
 
 **Nothing important was missing, but the gap was real.** UTR and intron variants — 20 % of passing events —
 had entered no burden term. Given their own terms they are individually null (UTR p = 0.37, intron
@@ -470,6 +519,7 @@ if __name__ == "__main__":
         new_markdown_cell(md_cds2), new_code_cell(code_cds2),
         new_markdown_cell(md_int),  new_code_cell(code_int),
         new_markdown_cell(md_jack), new_code_cell(code_jack),
+        new_markdown_cell(md_gard), new_code_cell(code_gard),
         new_markdown_cell(md_lare), new_code_cell(code_lare),
         new_markdown_cell(md_read), new_markdown_cell(md_methods),
     ])
