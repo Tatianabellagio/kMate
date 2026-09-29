@@ -7,7 +7,7 @@ Real errors kMate produces, and what they mean.
 ### `jellyfish: command not found`
 
 The k-mer counter is missing. On conda-forge, `jellyfish` is an unrelated Python
-library — the program you need is **`kmer-jellyfish`**:
+library. The program you need is **`kmer-jellyfish`**:
 
 ```bash
 mamba install -c conda-forge -c bioconda kmer-jellyfish
@@ -20,8 +20,8 @@ This is also why `conda install kmate` currently gives you a broken install; see
 
 ### `Panel VCF must be haploid (got len(GT)=2 ...)`
 
-Your VCF has diploid genotypes. A kMate panel column is a *haplotype* — see
-[Haplotypes and windows](Haplotypes-and-windows) — so one allele per genotype is required:
+Your VCF has diploid genotypes. A kMate panel column is a *haplotype* (see
+[Haplotypes and windows](Haplotypes-and-windows)), so one allele per genotype is required:
 
 ```bash
 kmate decompose --haploidize --het missing ...   # inbred founders
@@ -34,8 +34,8 @@ See [Building a panel](Building-a-panel#choosing---het).
 
 ### `Panel VCF must be biallelic (one ALT per record)`
 
-Your VCF has records with several ALTs. Decompose with `kmate decompose` — **not**
-with `bcftools norm -m -any`, which silently loses carriers on a pangenome graph.
+Your VCF has records with several ALTs. Decompose with `kmate decompose`. Do **not** use
+`bcftools norm -m -any`, which silently loses carriers on a pangenome graph.
 
 ---
 
@@ -57,7 +57,7 @@ path with `--convert-to-biallelic`.
 
 ### `kmate selftest` fails
 
-Something is wrong with the install itself — fix this before anything else. The usual
+Something is wrong with the install itself; fix this before anything else. The usual
 cause is the `jellyfish` mix-up above. Check `kmate --version` is 0.1.1 or newer.
 
 ---
@@ -85,7 +85,7 @@ Check these in order:
 1. **Coverage.** Below ~1× the estimates are mostly noise. QC and drop failed
    libraries before estimating.
 2. **`--unit`.** Selfing/inbred pools need `--unit chrom`; recombinant pools need
-   `--unit bp`. The wrong one produces plausible-looking but wrong numbers — see
+   `--unit bp`. The wrong one produces plausible-looking but wrong numbers; see
    [Running kMate](Running-kMate#--unit).
 3. **The founder-haplotype mixture** (`*.h_per_chrom.npz`). If it collapsed onto a few
    haplotypes when you expected many, the problem is upstream of the frequencies.

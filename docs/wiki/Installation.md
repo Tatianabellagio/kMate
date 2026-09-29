@@ -29,13 +29,13 @@ pip install kmate
 kmate selftest
 ```
 
-This runs a tiny bundled example end to end — k-mer counting, the EM, and the
+This runs a tiny bundled example end to end: k-mer counting, the EM, and the
 frequency projection. It needs no network and none of your data.
 
 It should end with:
 
 ```
-PASS — kMate is correctly installed and working.
+PASS: kMate is correctly installed and working.
 ```
 
 **If it does not print PASS, stop and fix that first.** Everything else depends on it.

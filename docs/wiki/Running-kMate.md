@@ -32,13 +32,13 @@ founder-haplotype mixture.
 
 ## `--unit`
 
-`--unit` decides **over what span** the founder-haplotype mixture is estimated — a whole
+`--unit` decides **over what span** the founder-haplotype mixture is estimated: a whole
 chromosome, or a window. Choose it from your species' biology.
 
 | your pools are… | use | why |
 |---|---|---|
 | **selfing, inbred, or a founder mix** (F0 seed pools) | `--unit chrom` | ancestry is essentially constant along a chromosome, so using all its k-mers gives the best-determined mixture |
-| **recombinant** — a few generations of outcrossing | `--unit bp --window-bp 10000 --kmer-weight inv_mb` | ancestry is a mosaic along the chromosome and must be fitted locally |
+| **recombinant**: a few generations of outcrossing | `--unit bp --window-bp 10000 --kmer-weight inv_mb` | ancestry is a mosaic along the chromosome and must be fitted locally |
 
 On a selfing benchmark, fitting per LD-block instead of per chromosome moved AF error
 from 0.0033 to 0.0080 and outliers from 0.001% to 0.625%: low-diversity regions such as
@@ -76,7 +76,7 @@ Identical results to re-scanning, ~2× faster.
 
 ## Many samples
 
-One job per sample. A complete SLURM array script — adapt the header to your cluster:
+One job per sample. A complete SLURM array script; adapt the header to your cluster:
 
 ```bash
 #!/bin/bash
@@ -118,8 +118,8 @@ Submit with `sbatch --array=1-<N> runner.sh`.
 
 > ### Put the k-mer database on node-local storage
 > Use `$SLURM_TMPDIR` or `/dev/shm`. With many jobs reading databases off one shared
-> filesystem, we measured queries up to **48× slower** — the largest performance factor
-> at scale.
+> filesystem, we measured queries up to **48× slower**, the largest performance factor at
+> scale.
 >
 > On `/dev/shm` the database counts against job memory; request ~32 GB. The `trap`
 > frees it if the job is killed.

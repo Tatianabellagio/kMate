@@ -69,7 +69,7 @@ def main(argv=None) -> None:
     ]
     try:
         driver.main()
-    except Exception as e:  # noqa: BLE001 — turn any failure into a clear FAIL
+    except Exception as e:  # noqa: BLE001: turn any failure into a clear FAIL
         sys.argv = saved_argv
         sys.exit(f"\nFAIL: pipeline raised {type(e).__name__}: {e}")
     sys.argv = saved_argv
@@ -101,7 +101,7 @@ def main(argv=None) -> None:
         shutil.rmtree(workdir, ignore_errors=True)
 
     if ok:
-        print("\nPASS — kMate is correctly installed and working.")
+        print("\nPASS: kMate is correctly installed and working.")
         sys.exit(0)
     print(f"\nFAIL — recovery below threshold (R^2>={R2_PASS}, AF finite>99%).")
     sys.exit(1)

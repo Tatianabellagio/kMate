@@ -1,8 +1,8 @@
-# `docs/wiki/` — source for the GitHub wiki
+# `docs/wiki/`: source for the GitHub wiki
 
 These pages are the **user-facing front door**: install, inputs, build a panel, run,
 read the output, troubleshoot. They are kept here, in the repo, so they are versioned
-and reviewed with the code — the wiki is a copy, not the original.
+and reviewed with the code. The wiki is a published copy.
 
 Deeper technical material stays in `docs/` and is linked from the wiki rather than
 duplicated: `ALGORITHM.md` (the math), `PIPELINE_STATE.md` (production recipe),
@@ -14,7 +14,7 @@ A GitHub wiki only becomes a git repository **after its first page is created in
 web UI**. One-time setup:
 
 1. Go to <https://github.com/Tatianabellagio/kMate/wiki> and click **Create the first
-   page** — any content, it gets overwritten.
+   page** (any content; it gets overwritten).
 2. Then push these pages:
 
 ```bash

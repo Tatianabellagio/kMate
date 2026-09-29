@@ -12,15 +12,15 @@ All four steps are `kmate` commands. Run them **per chromosome**.
 
 ---
 
-## Step 1 — get a panel VCF
+## Step 1: get a panel VCF
 
 The VCF must meet the requirements in [Input files](Input-files#input-variants-the-panel-vcf).
 Pick whichever starting point matches what you have.
 
 ### A. You have founder assemblies
 
-Build a pangenome graph. This gives the full variant spectrum — SNPs, indels **and**
-structural variants — with real genotypes.
+Build a pangenome graph. This gives the full variant spectrum (SNPs, indels **and**
+structural variants) with real genotypes.
 
 ```bash
 cactus-pangenome <jobstore> panel.seqfile \
@@ -45,12 +45,12 @@ bcftools index -t panel.vcf.gz
 
 ### C. You have a phased multi-sample callset
 
-This works, but you only get what the callset contains — usually SNPs and short
+This works, but you only get what the callset contains: usually SNPs and short
 indels, no structural variants.
 
 ---
 
-## Step 2 — make it biallelic and haploid
+## Step 2: make it biallelic and haploid
 
 Graph VCFs are usually multi-allelic. kMate needs one ALT per record and one allele
 per genotype.
@@ -59,7 +59,7 @@ per genotype.
 > On a pangenome graph, splitting records by realignment **scatters carriers across
 > shifted positions and silently drops them** where ALT paths converge on the same
 > variant. Measured on our panel: up to **~99% carrier loss** at one site. Nothing
-> errors — you just get wrong frequencies.
+> errors; you get wrong frequencies.
 
 Use symbolic-ID propagation instead, which matches variants by identity rather than by
 alignment:
@@ -77,17 +77,17 @@ kmate decompose \
 ### Choosing `--het`
 
 A kMate panel column is a **haplotype**, so diploid genotypes must be reduced to one
-allele. How depends on **what your founders are** — see
+allele. How depends on **what your founders are**; see
 [Haplotypes and windows](Haplotypes-and-windows):
 
 | your founders | use | what happens |
 |---|---|---|
-| **inbred lines** — *Arabidopsis* accessions, MAGIC/RIL founders, NAM parents | `--het missing` | `0/0`→`0`, `1/1`→`1`, heterozygous→missing |
-| **outbred and phased** — e.g. HPRC assemblies | `--het split` | each sample becomes two haplotype columns, `sample.h1` and `sample.h2` |
+| **inbred lines**: *Arabidopsis* accessions, MAGIC/RIL founders, NAM parents | `--het missing` | `0/0`→`0`, `1/1`→`1`, heterozygous→missing |
+| **outbred and phased**: e.g. HPRC assemblies | `--het split` | each sample becomes two haplotype columns, `sample.h1` and `sample.h2` |
 
 For inbred founders a heterozygous call is usually an error, so marking it missing lets
 kMate skip that founder at that variant instead of guessing. kMate reports the rate and
-warns if more than 10% of calls are heterozygous — that usually means your founders are
+warns if more than 10% of calls are heterozygous, which usually means your founders are
 **not** inbred and you want `--het split` instead.
 
 `--het split` needs **phased** genotypes. An unphased heterozygote is an error, not a
@@ -95,7 +95,7 @@ coin flip, because guessing the phase would invent haplotypes.
 
 ### Acknowledgement
 
-The decomposition method is not kMate's — it is **HPRC symbolic-ID propagation**, run
+The decomposition method is not kMate's. It is **HPRC symbolic-ID propagation**, run
 here via [`annotate_vcf.py`](https://github.com/human-pangenomics/hpp_pangenome_resources)
 (HPRC) and [`convert-to-biallelic.py`](https://github.com/eblerjana/pangenie-tools)
 (eblerjana). Neither is bundled; you install them yourself. Only the `INFO/ID` transfer
@@ -107,7 +107,7 @@ Liao et al. (2023) *Nature* 617:312–324.
 
 ---
 
-## Step 3 — build the k-mer index
+## Step 3: build the k-mer index
 
 ```bash
 kmate build-index --vcf panel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
@@ -117,7 +117,7 @@ Produces `index/ours_<CHR>_kmers.tsv.gz`: the k-mers that identify each bubble.
 
 ---
 
-## Step 4 — build the two matrices
+## Step 4: build the two matrices
 
 ```bash
 # founder x k-mer

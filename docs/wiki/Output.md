@@ -11,13 +11,13 @@ chrom  pos  ref_len  alt_len  alt_freq  info  n_called  se
 |---|---|
 | `chrom`, `pos` | position, 1-based |
 | `ref_len`, `alt_len` | length of the REF and ALT alleles |
-| `alt_freq` | **the estimate** — frequency of the ALT allele in the pool, 0–1 |
+| `alt_freq` | **the estimate**: frequency of the ALT allele in the pool, 0-1 |
 | `info` | how much haplotype mass had a genotype call here |
 | `n_called` | how many founder haplotypes had a genotype call here |
 | `se` | standard error of `alt_freq` |
 
-Alongside it, `*.h_per_chrom.npz` holds the estimated **founder-haplotype mixture** —
-one value per haplotype, summing to 1.
+Alongside it, `*.h_per_chrom.npz` holds the estimated **founder-haplotype mixture**: one
+value per haplotype, summing to 1.
 
 ---
 

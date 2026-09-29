@@ -2,8 +2,8 @@
 
 Two choices determine how kMate is run, both set by your species' biology:
 
-1. What a **founder haplotype** is — one column of the panel.
-2. Over what **span** their mixture is estimated — a chromosome, or a window.
+1. What a **founder haplotype** is: one column of the panel.
+2. Over what **span** their mixture is estimated: a chromosome, or a window.
 
 ---
 
@@ -20,8 +20,8 @@ How many haplotypes a sample yields depends on the organism:
 
 | your founders | haplotypes per sample | how |
 |---|---|---|
-| **inbred lines** — *Arabidopsis* accessions, MAGIC/RIL founders, NAM parents | 1 | the two copies are near-identical, so the line *is* a haplotype (`--het missing`) |
-| **outbred, phased individuals** — HPRC-style assemblies | 2 | split the sample into `sample.h1` and `sample.h2` (`--het split`) |
+| **inbred lines**: *Arabidopsis* accessions, MAGIC/RIL founders, NAM parents | 1 | the two copies are near-identical, so the line *is* a haplotype (`--het missing`) |
+| **outbred, phased individuals**: HPRC-style assemblies | 2 | split the sample into `sample.h1` and `sample.h2` (`--het split`) |
 
 100 inbred accessions give 100 haplotypes; 100 phased outbred individuals give 200.
 kMate estimates a frequency for each. See
@@ -44,12 +44,12 @@ constant?**
 
 ### It depends on recombination
 
-- **Little or no recombination** — selfing species, inbred lines, or an uncrossed founder
+- **Little or no recombination**: selfing species, inbred lines, or an uncrossed founder
   (F0) mixture. Pool members carry whole founder chromosomes, so ancestry is constant
   along a chromosome and one mixture fitted from **all** its k-mers is best determined.
   → `--unit chrom`
 
-- **Recombination** — outcrossing species, or several generations of crossing. Each
+- **Recombination**: outcrossing species, or several generations of crossing. Each
   chromosome is a **mosaic** of founder segments, which a chromosome-wide mixture would
   average away.
   → `--unit bp --window-bp 10000`
@@ -76,10 +76,10 @@ chromosome-wide mixture.
 
 So depth sets how fine you can go. At high coverage small windows are viable; at low
 coverage the same windows are mostly floor-outs and you are better off with a larger
-unit. **Check the fallback rate** — on a real 8-founder MAGIC run at 10 kb windows,
+unit. **Check the fallback rate**: on a real 8-founder MAGIC run at 10 kb windows,
 94.3% of windows were fitted locally and 5.7% fell back, and those were concentrated
 15.8× at centromeres, where the panel simply has no distinguishing k-mers. That is
-structural, not a depth problem — but a fallback rate that is high *everywhere* means
+structural, not a depth problem. A fallback rate that is high *everywhere* means
 your windows are too small for your coverage.
 
 ---
@@ -103,7 +103,7 @@ what produced the 625× outlier rate above. Use it only on genuinely recombinant
 1. **Ask how much recombination separates your pool from the founders.** None or
    almost none → `chrom`. Several generations of outcrossing → `bp`.
 2. **If windowed, start at `--window-bp 10000`** and look at the fallback rate.
-   Widespread fallback means the windows are too small for your depth — widen them.
+   Widespread fallback means the windows are too small for your depth; widen them.
 3. **Check the founder-haplotype mixture.** Collapse onto a handful of haplotypes where
    many were expected means the unit is too small, or coverage too low, for the local fit
    to be identifiable.
