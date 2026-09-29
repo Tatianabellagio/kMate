@@ -29,7 +29,9 @@ requirements:
     - numpy
     - scipy
     - pysam
-    - jellyfish                        # k-mer counter (kmer_count.py)
+    - kmer-jellyfish                   # k-mer counter (kmer_count.py) -- NOT `jellyfish`,
+                                       # which on conda-forge is a Python string-similarity
+                                       # library and ships no `jellyfish` binary.
     - samtools                         # BAM read access
 
 test:
@@ -38,6 +40,9 @@ test:
   commands:
     - kmate --help
     - kmate --version
+    # End-to-end: exercises jellyfish/samtools, so a missing or wrong binary
+    # dependency fails CI instead of shipping a package that cannot count k-mers.
+    - kmate selftest
 
 about:
   home: https://github.com/Tatianabellagio/kMate

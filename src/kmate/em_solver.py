@@ -29,6 +29,76 @@ from __future__ import annotations
 import numpy as np
 
 
+def haploblock_collapse_indices(kmer_pa_sig, eps: float = 0.0):
+    """Collapse founders into DISTINCT HAPLOTYPES over a unit's k-mers.
+
+    The kMate design: before running the EM over a unit (a block, or the whole
+    chromosome in global mode), *compute* how many distinct haplotypes the panel
+    actually resolves there — founders whose k-mer presence pattern over the unit
+    matches (see `eps`) are one haplotype — rather than *assuming* the full founder
+    count. The EM is then fit over the K_b ≤ F distinct haplotypes and each class
+    frequency split equally back to its members. K_b == F is an exact no-op vs
+    fitting F.
+
+    Args:
+        kmer_pa_sig: F × M presence matrix over the unit's panel k-mers (M can be
+            the full panel of the unit; c_k=0 k-mers included — the signature is a
+            panel property, not conditioned on which k-mers got reads).
+        eps: haplotype-merge tolerance, as a FRACTION of the unit's M k-mers.
+            eps=0 (default) → EXACT byte-identical presence patterns are one
+            haplotype (an equivalence relation; the representative row is exact for
+            every member, so the collapse is lossless). eps>0 → APPROXIMATE: greedy
+            single-representative clustering — a founder joins an existing class iff
+            its presence pattern differs from that class's representative in ≤ eps·M
+            k-mers, else it starts a new class. Membership is thus "within eps of the
+            row actually used as your stand-in in the EM," which is the exact quantity
+            the collapse approximates. Order-dependent (founders scanned 0..F-1) and
+            lossy by construction — use only to merge founders the data cannot
+            distinguish; eps=0 is the production default.
+    Returns:
+        lab   (F,)   int  — haploblock class of each founder (0-based)
+        reps  (K_b,) int  — a representative founder index per class (first member)
+        csize (K_b,) float32 — number of founders in each class
+        Kb    int         — number of distinct haplotypes
+    """
+    F = kmer_pa_sig.shape[0]
+    packed = np.packbits(kmer_pa_sig > 0, axis=1)          # F × ceil(M/8) uint8 signature
+    if eps <= 0:
+        # exact identity: byte-equal signatures are one haplotype (fast, via np.unique).
+        _, lab = np.unique([packed[f].tobytes() for f in range(F)], return_inverse=True)
+        Kb = int(lab.max()) + 1
+        reps = np.zeros(Kb, dtype=np.int64)
+        reps[lab[::-1]] = np.arange(F)[::-1]                # first founder in each class
+        csize = np.bincount(lab, minlength=Kb).astype(np.float32)
+        return lab, reps, csize, Kb
+
+    # eps>0: greedy representative-based clustering. A founder joins the first
+    # existing class whose representative it is within eps of (Hamming over the
+    # presence signature), else opens a new class. The representative row is exactly
+    # the row substituted for the class in the EM, so this bounds the substitution
+    # error at eps·M differing k-mers per member.
+    M = kmer_pa_sig.shape[1]
+    thresh = eps * M
+    popcount = np.array([bin(i).count("1") for i in range(256)], dtype=np.int64)
+    lab = np.full(F, -1, dtype=np.int64)
+    rep_list = []
+    for f in range(F):
+        assigned = -1
+        for c, r in enumerate(rep_list):
+            ham = int(popcount[np.bitwise_xor(packed[f], packed[r])].sum())
+            if ham <= thresh:
+                assigned = c
+                break
+        if assigned < 0:
+            assigned = len(rep_list)
+            rep_list.append(f)
+        lab[f] = assigned
+    reps = np.asarray(rep_list, dtype=np.int64)
+    Kb = len(rep_list)
+    csize = np.bincount(lab, minlength=Kb).astype(np.float32)
+    return lab, reps, csize, Kb
+
+
 def solve_em(
     counts: np.ndarray,            # K-vector of observed counts
     kmer_pa: np.ndarray,                # F × K binary presence/absence matrix (K_pa)
@@ -41,6 +111,12 @@ def solve_em(
     prior_h: np.ndarray | None = None,    # NEW: anchor h to prior (per-window EM)
     prior_weight: float = 0.0,            # NEW: λ — strength of anchor toward prior_h
     omega: np.ndarray | None = None,      # NEW: per-k-mer weight ω_k (e.g. 1/m_b)
+    normalize: str = "per_founder",       # "per_founder" (default, Kf_w fix) | "global" (legacy)
+    kfw: np.ndarray | None = None,        # per_founder normalizer Σ_k ω_k·kmer_pa[f,k] over the FULL
+                                          # estimation unit (ALL k-mers, incl. c_k=0). MUST be passed
+                                          # when the caller pre-slices kmer_pa to observed k-mers,
+                                          # else the normalizer is (wrongly) conditioned on which
+                                          # k-mers happened to get reads (survivorship bias → collapse).
 ) -> tuple[np.ndarray, dict]:
     """Run EM until h converges.
 
@@ -67,6 +143,25 @@ def solve_em(
     turns "h ∝ k-mer count" into "h ∝ locus count" and removes the imbalanced-
     design over-credit. omega=None reproduces the unweighted MLE exactly.
 
+    normalize:
+      "per_founder" (DEFAULT — the fix; see below) is recommended everywhere.
+      "global" (LEGACY) — the M-step numerator raw_f = h_f·Σ_k kmer_pa[f,k]·ω_k·c_k/μ_k
+        is normalized by the GLOBAL scalar total_c = Σ_k ω_k·c_k. At the noiseless
+        fixed point raw_f = h_f·Kf_w_f, where Kf_w_f = Σ_{k:c_k>0} ω_k·kmer_pa[f,k] is
+        founder f's own (weighted) content over OBSERVED k-mers. So the global
+        normalization converges to ĥ_f ∝ h_true_f·Kf_w_f — founders with more k-mers
+        (cactus/long-read) are over-credited, k-mer-poor founders collapse to ~0.
+      "per_founder" (the fix) — divide raw_f by Kf_w_f (each founder's OWN observed
+        content) before renormalizing to the simplex:
+            B_f = total_c · (raw_f/Kf_w_f) / Σ_f'(raw_f'/Kf_w_f')
+        (scaled so Σ_f B_f = total_c, keeping the Dirichlet/anchor denominators
+        below unchanged). This makes h_true an EXACT fixed point for ANY Kf_w
+        heterogeneity — the RNA-seq effective-length correction (RSEM/kallisto/salmon:
+        τ_i = (θ_i/ℓ_i)/Σ_j(θ_j/ℓ_j)) that "global" omits. The Dirichlet (α) and
+        prior_h anchor pseudocounts stay OUTSIDE the /Kf_w division (they must pull
+        toward prior_h with a strength set by prior_weight, independent of Kf_w).
+        Reduces byte-for-byte to "global" when Kf_w is constant across founders.
+
     Returns (h, info_dict).
     """
     K = counts.shape[0]
@@ -92,11 +187,35 @@ def solve_em(
     else:
         anchor_term = None
 
+    # Per-founder normalization (the Kf_w fix): each founder's own weighted marker
+    # content Kf_w_f = Σ_k ω_k·kmer_pa[f,k] over the FULL estimation unit — ALL
+    # k-mers, INCLUDING those with c_k=0 this run. This is the correct (unbiased)
+    # normalizer: since E[c_k/μ_k]=λ for every carried k-mer regardless of whether it
+    # realizes zero, E[raw_f] = λ·h_f·Kf_full, so raw_f/Kf_full is unbiased for h_f.
+    # Conditioning Kf_w on the OBSERVED set (Σ_{c_k>0}) is a survivorship bias — it
+    # shrinks specifically for founders with a bad-luck run of zero-count (low-μ,
+    # discriminative) markers, reintroducing the founder collapse the fix targets.
+    # Callers that pre-slice kmer_pa to observed k-mers MUST pass `kfw` (computed over
+    # the full panel/window); otherwise Kf_w is taken over the columns received, which
+    # is correct only when the full matrix (with zero-count columns) is passed in.
+    per_founder = (normalize == "per_founder")
+    if per_founder:
+        if kfw is not None:
+            Kf_w = np.maximum(kfw.astype(np.float32), np.float32(1e-12))
+        else:
+            w = np.ones(kmer_pa.shape[1], np.float32) if omega is None else omega.astype(np.float32)
+            Kf_w = np.maximum((kmer_pa @ w).astype(np.float32), np.float32(1e-12))
+
     history = []
     for it in range(max_iter):
         denom = np.maximum(h @ kmer_pa, np.float32(1e-7))
         cw = wc / denom
         em_term = h * (kmer_pa @ cw)
+        if per_founder:
+            t = em_term / Kf_w
+            t_sum = t.sum()
+            if t_sum > 0:
+                em_term = np.float32(total_c) * t / t_sum   # B_f, Σ_f B_f = total_c
         if anchor_term is not None:
             em_term = em_term + anchor_term
         if prior_pseudo > 0:

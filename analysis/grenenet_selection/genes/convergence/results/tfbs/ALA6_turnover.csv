@@ -1,0 +1,2 @@
+symbol,gene,motif,family,strand,gstart,span_variant,in_alt_allele,ref_len_bp,alt_len_bp,ref_score,alt_score,effect,best_q
+ALA6,AT1G54280,AT3G48160,E2F/DP,+,20268328,True,False,21,,14.0,,LOST,0.0045

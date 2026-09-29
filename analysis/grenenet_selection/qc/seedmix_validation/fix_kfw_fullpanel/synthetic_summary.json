@@ -1,0 +1,58 @@
+{
+  "1x_noiseless__old_observed_only": {
+    "rmse": 0.0007746528761096102,
+    "n_abs": 0,
+    "iters": 400,
+    "conv": false,
+    "secs": 253.9
+  },
+  "1x_noiseless__new_full_panel": {
+    "rmse": 0.0007746528761096102,
+    "n_abs": 0,
+    "iters": 400,
+    "conv": false,
+    "secs": 257.1
+  },
+  "1x_noisy__old_observed_only": {
+    "rmse": 0.0008919756888048533,
+    "n_abs": 1,
+    "iters": 400,
+    "conv": false,
+    "secs": 208.2
+  },
+  "1x_noisy__new_full_panel": {
+    "rmse": 4.044112311148218e-05,
+    "n_abs": 0,
+    "iters": 400,
+    "conv": false,
+    "secs": 209.1
+  },
+  "0.3x_noiseless__old_observed_only": {
+    "rmse": 0.0009162511700028933,
+    "n_abs": 0,
+    "iters": 400,
+    "conv": false,
+    "secs": 258.5
+  },
+  "0.3x_noiseless__new_full_panel": {
+    "rmse": 0.0009162511700028933,
+    "n_abs": 0,
+    "iters": 400,
+    "conv": false,
+    "secs": 257.0
+  },
+  "0.3x_noisy__old_observed_only": {
+    "rmse": 0.0020445052663862857,
+    "n_abs": 10,
+    "iters": 400,
+    "conv": false,
+    "secs": 142.8
+  },
+  "0.3x_noisy__new_full_panel": {
+    "rmse": 0.0001078686319606717,
+    "n_abs": 0,
+    "iters": 400,
+    "conv": false,
+    "secs": 143.9
+  }
+}

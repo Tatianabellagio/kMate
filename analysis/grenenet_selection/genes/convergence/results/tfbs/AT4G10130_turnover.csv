@@ -1,0 +1,2 @@
+symbol,gene,motif,family,strand,gstart,span_variant,in_alt_allele,ref_len_bp,alt_len_bp,ref_score,alt_score,effect,best_q
+AT4G10130,AT4G10130,AT4G14770,CPP,-,6321746,True,False,15,,15.6,,LOST,0.0034

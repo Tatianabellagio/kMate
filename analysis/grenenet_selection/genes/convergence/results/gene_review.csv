@@ -1,0 +1,24 @@
+gene,symbol,verdict,reason,themes,found_by,r2_gene_max,r2_gene_med,r2_local_max,lead_carriers,ld_ambiguous,n_independent,gea_n_clusters,gwas_n_gardens,best_ftier,lead_variant,locus,locus_n_genes,block_gene_mismatch
+AT3G26280,CYP71B4,ROBUST,"recurrent, common (73 carriers), direct placement (F4_promoter)",climate_temp,GWAS,0.606,0.077,0.889,73,False,1,0,3,F4_promoter,Chr3:9632650,L0097,36,True
+AT3G22820,EPFL5,ROBUST,"recurrent, common (22 carriers), direct placement (F4_promoter)",stress,GEA+GWAS,0.391,0.023,0.7,22,False,2,1,4,F4_promoter,Chr3:8074451,L0096,20,False
+AT4G10030,ABHD11,ROBUST,"recurrent, common (20 carriers), direct placement (F4_promoter)",climate_temp,GEA+GWAS,0.253,0.01,1.0,20,True,1,1,1,F4_promoter,Chr4:6273895,L0123,7,False
+AT4G11600,GPX6,ROBUST,"recurrent, common (27 carriers), direct placement (F4_promoter)",stress,GEA,0.236,0.104,0.96,27,True,1,5,0,F4_promoter,Chr4:7011705,L0124,65,False
+AT5G57270,MJB24.8,ROBUST,"recurrent, common (69 carriers), direct placement (F4_promoter)",climate_temp,GEA,0.224,0.182,0.224,69,False,1,3,0,F4_promoter,Chr5:23204156,L0173,35,False
+AT2G29210,AT2G29210,ROBUST,"recurrent, common (70 carriers), direct placement (F2_CDS_inframe)",stress,GEA+GWAS,0.156,0.067,1.0,70,True,1,1,1,F2_CDS_inframe,Chr2:12557749,L0067,4,False
+AT1G13440,GAPC2,MODERATE,"not recurrent, common (40 carriers), direct placement (F4_promoter)","climate_temp,stress",GEA,1.0,0.521,1.0,40,False,1,2,0,F4_promoter,Chr1:4609984,L0008,28,False
+AT1G65790,SD17,MODERATE,"recurrent, common (40 carriers), indirect placement (F6_intron)",stress,GEA,0.97,0.22,0.97,40,False,1,3,0,F6_intron,Chr1:24470448,L0038,7,False
+AT5G17710,EMB1241,MODERATE,"not recurrent, common (27 carriers), direct placement (F3_UTR)",climate_temp,GEA,0.918,0.016,0.922,27,False,1,2,0,F3_UTR,Chr5:5839507,L0151,20,False
+AT4G23260,CRK18,MODERATE,"recurrent, rare (15 carriers), direct placement (F1_CDS_frameshift)",stress,GEA+GWAS,0.874,0.064,0.933,15,False,2,2,1,F1_CDS_frameshift,Chr4:12170418,L0128,19,False
+AT1G52570,PLDALPHA2,MODERATE,"not recurrent, common (38 carriers), direct placement (F4_promoter)",stress,GEA,0.846,0.076,0.876,38,False,1,2,0,F4_promoter,Chr1:19587156,L0032,31,True
+AT4G11510,RALFL28,MODERATE,"recurrent, rare (12 carriers), direct placement (F1_CDS_frameshift)",stress,GEA,0.736,0.095,1.0,12,False,1,4,0,F1_CDS_frameshift,Chr4:6984627,L0124,65,True
+AT1G52180,AT1G52180,MODERATE,"not recurrent, common (28 carriers), direct placement (F4_promoter)",stress,GEA,0.626,0.1,1.0,28,False,1,2,0,F4_promoter,Chr1:19426362,L0032,31,False
+AT4G11560,AIPP3,MODERATE,"recurrent, rare (11 carriers), direct placement (F4_promoter)","circadian_light,flowering",GEA,0.428,0.004,0.775,11,False,1,4,0,F4_promoter,Chr4:7003757,L0124,65,False
+AT4G25670,DOB1,MODERATE,"recurrent, rare (6 carriers), direct placement (F4_promoter)",stress,GWAS,0.074,0.005,0.074,6,False,1,0,3,F4_promoter,Chr4:13087216,L0130,1,False
+AT5G67480,BT4,MODERATE,"recurrent, rare (11 carriers), direct placement (F3_UTR)",stress,GEA+GWAS,0.069,0.019,0.163,11,False,2,1,2,F3_UTR,Chr5:26933736,L0178,12,False
+AT5G18600,GRXS2,MODERATE,"recurrent, rare (6 carriers), direct placement (F4_promoter)",stress,GWAS,0.004,0.004,0.303,6,False,1,0,6,F4_promoter,Chr5:6184898,L0151,20,False
+AT4G19030,NIP1-1,WEAK,"not recurrent, common (90 carriers), indirect placement (nan)",stress,GEA,0.982,0.566,0.982,90,False,1,2,0,,Chr4:10422792,L0127,16,False
+AT4G23100,GSH1,WEAK,"not recurrent, rare (11 carriers), direct placement (F3_UTR)","climate_temp,flowering,stress",GEA,0.452,0.005,0.463,11,False,1,2,0,F3_UTR,Chr4:12103235,L0128,19,False
+AT5G48410,GLR1.3,WEAK,"not recurrent, rare (5 carriers), direct placement (F3_UTR)",circadian_light,GWAS,0.251,0.007,0.319,5,False,1,0,2,F3_UTR,Chr5:19623282,L0169,7,True
+AT1G62180,APR2,WEAK,"not recurrent, rare (7 carriers), direct placement (F4_promoter)",stress,GEA,0.122,0.007,0.27,7,False,1,2,0,F4_promoter,Chr1:22978065,L0036,10,False
+AT5G40850,UPM1,FRAGILE,"not recurrent, rare (11 carriers), indirect placement (F6_intron)","circadian_light,climate_temp",GEA,0.596,0.007,0.746,11,False,1,2,0,F6_intron,Chr5:16367086,L0166,14,False
+AT5G02310,PRT6,FRAGILE,"not recurrent, rare (5 carriers), indirect placement (F6_intron)","climate_temp,stress",GWAS,0.12,0.007,0.251,5,False,1,0,2,F6_intron,Chr5:482054,L0140,9,False

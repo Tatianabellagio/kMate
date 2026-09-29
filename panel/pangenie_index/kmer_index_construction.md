@@ -229,12 +229,17 @@ bubble, never a wrong k-mer).
 swap is live: `scripts/build_kmer_pa_arch3.sh` defaults to the in-house
 `ours_${CHR}_kmers.tsv.gz` (`INDEX=ours` → `data/kmer_pa_231_arch3_filt2inv`).
 The pang_135 superset guarantees every k-mer the panel needs is present, so the
-in-house index is a safe drop-in. The PanGenie-built index is kept only as a
-**reference comparator** — `INDEX=pg sbatch scripts/build_kmer_pa_arch3.sh`
-rebuilds the same matrix off the PG index into `data/kmer_pa_231_arch3_pgidx_filt2inv`.
-The retired exploration (diploid byte-check, cap2x, the 2 Mb `pg_reference`
-panel, the comparison test scripts, and the original `INDEX_SWAP_STATE.md`
-working note) lives under `panel/pangenie_index/archive/`.
+in-house index is a safe drop-in. The PanGenie-built index was kept only as a
+**reference comparator** (`scripts/compare_index_pg_vs_ours.py`, the Level-B
+downstream matrix check — parity confirmed) — `INDEX=pg sbatch
+scripts/build_kmer_pa_arch3.sh` rebuilds the same matrix off the PG index into
+`data/kmer_pa_231_arch3_pgidx_filt2inv` if ever needed again. With the swap
+settled, that 7.6 GB comparator matrix has been moved to
+`panel/pangenie_index/archive/kmer_pa_231_arch3_pgidx_filt2inv` (archived
+2026-07-07). The retired exploration (diploid byte-check, cap2x, the 2 Mb
+`pg_reference` panel, the comparison test scripts, and the original
+`INDEX_SWAP_STATE.md` working note) also lives under
+`panel/pangenie_index/archive/`.
 
 **Known issue (carried from the index swap, not yet fixed):** `build_kmers_tsv.py`
 writes the literal `nan` for empty bubbles; `src/build_kmer_pa.py` parses a

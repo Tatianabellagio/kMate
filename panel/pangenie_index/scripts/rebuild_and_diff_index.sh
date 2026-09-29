@@ -50,13 +50,13 @@ echo
 echo "[$(date)] === STAGE 2a: diff FRESH-REBUILD vs PanGenie (Level A) ==="
 $PY -u $WORK/scripts/diff_index_vs_pg.py \
     --pg "$PG_PREFIX" --ours "$OUT_PREFIX" --chroms Chr1,Chr2,Chr3,Chr4,Chr5 \
-    | tee $BASE/results/index_levelA_freshrebuild_vs_pg.txt
+    | tee $BASE/analysis/panel_qc/index_levelA_freshrebuild_vs_pg.txt
 
 echo
 echo "[$(date)] === STAGE 2b: diff FRESH-REBUILD vs EXISTING ours_* (reproducibility) ==="
 $PY -u $WORK/scripts/diff_index_vs_pg.py \
     --pg "$EXISTING_OURS" --ours "$OUT_PREFIX" --chroms Chr1,Chr2,Chr3,Chr4,Chr5 \
-    | tee $BASE/results/index_levelA_freshrebuild_vs_existingours.txt
+    | tee $BASE/analysis/panel_qc/index_levelA_freshrebuild_vs_existingours.txt
 
 echo
-echo "[$(date)] DONE — Level-A fresh rebuild + diffs in results/index_levelA_*.txt"
+echo "[$(date)] DONE — Level-A fresh rebuild + diffs in analysis/panel_qc/index_levelA_*.txt"

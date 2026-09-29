@@ -1,0 +1,219 @@
+{
+  "n_founders": 231,
+  "n_present_in_truth": 50,
+  "rmse": 0.004127051290109956,
+  "mae": 0.0025574907353848467,
+  "pearson_linear": 0.8768776850652007,
+  "spearman_linear": 0.6827262585292995,
+  "pearson_log": 0.7708237131882504,
+  "spearman_log": 0.6827262585292995,
+  "absorb_thr": 0.001,
+  "present_thr": 0.001,
+  "n_absorbed": 1,
+  "absorbed_founders": [
+    {
+      "founder": "9507",
+      "truth": 0.01999999999999999,
+      "est": 0.0006095946234720847
+    }
+  ],
+  "worst_undercalled": [
+    {
+      "founder": "9507",
+      "truth": 0.01999999999999999,
+      "est": 0.0006095946234720847,
+      "class": "PG"
+    },
+    {
+      "founder": "10013",
+      "truth": 0.01999999999999999,
+      "est": 0.004294886672897264,
+      "class": "PG"
+    },
+    {
+      "founder": "9699",
+      "truth": 0.01999999999999999,
+      "est": 0.006466137640893463,
+      "class": "PG"
+    },
+    {
+      "founder": "9966",
+      "truth": 0.01999999999999999,
+      "est": 0.007225692659551985,
+      "class": "PG"
+    },
+    {
+      "founder": "9716",
+      "truth": 0.01999999999999999,
+      "est": 0.007413414226608969,
+      "class": "PG"
+    },
+    {
+      "founder": "9649",
+      "truth": 0.01999999999999999,
+      "est": 0.008835532606766233,
+      "class": "PG"
+    },
+    {
+      "founder": "9739",
+      "truth": 0.01999999999999999,
+      "est": 0.009145689097784506,
+      "class": "PG"
+    },
+    {
+      "founder": "9713",
+      "truth": 0.01999999999999999,
+      "est": 0.009517907061857527,
+      "class": "PG"
+    },
+    {
+      "founder": "9527",
+      "truth": 0.01999999999999999,
+      "est": 0.010023836869164377,
+      "class": "PG"
+    },
+    {
+      "founder": "6040",
+      "truth": 0.01999999999999999,
+      "est": 0.010866519877287175,
+      "class": "PG"
+    },
+    {
+      "founder": "9965",
+      "truth": 0.01999999999999999,
+      "est": 0.01163177179607289,
+      "class": "PG"
+    },
+    {
+      "founder": "9517",
+      "truth": 0.01999999999999999,
+      "est": 0.011706273875944546,
+      "class": "PG"
+    },
+    {
+      "founder": "9774",
+      "truth": 0.01999999999999999,
+      "est": 0.012090862597642138,
+      "class": "PG"
+    },
+    {
+      "founder": "9813",
+      "truth": 0.01999999999999999,
+      "est": 0.012170629443971048,
+      "class": "PG"
+    },
+    {
+      "founder": "9619",
+      "truth": 0.01999999999999999,
+      "est": 0.01224626494340373,
+      "class": "PG"
+    }
+  ],
+  "worst_overcalled": [
+    {
+      "founder": "9761",
+      "truth": 0.0,
+      "est": 0.021187228852409458,
+      "class": "PG"
+    },
+    {
+      "founder": "9643",
+      "truth": 0.0,
+      "est": 0.009595717199478373,
+      "class": "PG"
+    },
+    {
+      "founder": "9764",
+      "truth": 0.01999999999999999,
+      "est": 0.029542540811262525,
+      "class": "cactus"
+    },
+    {
+      "founder": "9598",
+      "truth": 0.01999999999999999,
+      "est": 0.02626625233739457,
+      "class": "PG"
+    },
+    {
+      "founder": "6979",
+      "truth": 0.0,
+      "est": 0.00614799179925542,
+      "class": "cactus"
+    },
+    {
+      "founder": "9640",
+      "truth": 0.0,
+      "est": 0.005369756778258959,
+      "class": "PG"
+    },
+    {
+      "founder": "7203",
+      "truth": 0.0,
+      "est": 0.0051481881552394824,
+      "class": "PG"
+    },
+    {
+      "founder": "9537",
+      "truth": 0.0,
+      "est": 0.005091766305974212,
+      "class": "cactus"
+    },
+    {
+      "founder": "9057",
+      "truth": 0.0,
+      "est": 0.005080273785527987,
+      "class": "PG"
+    },
+    {
+      "founder": "9637",
+      "truth": 0.0,
+      "est": 0.004839317355021533,
+      "class": "cactus"
+    },
+    {
+      "founder": "9549",
+      "truth": 0.0,
+      "est": 0.004743288219732189,
+      "class": "cactus"
+    },
+    {
+      "founder": "9737",
+      "truth": 0.0,
+      "est": 0.004554132881587121,
+      "class": "PG"
+    },
+    {
+      "founder": "9481",
+      "truth": 0.0,
+      "est": 0.004441310603475563,
+      "class": "PG"
+    },
+    {
+      "founder": "10014",
+      "truth": 0.0,
+      "est": 0.004426865324838515,
+      "class": "PG"
+    },
+    {
+      "founder": "9947",
+      "truth": 0.0,
+      "est": 0.003821237436999379,
+      "class": "cactus"
+    }
+  ],
+  "mass_balance": {
+    "cactus_longread": {
+      "truth": 0.29999999999999993,
+      "est": 0.38782409995061573,
+      "est_minus_truth": 0.0878240999506158
+    },
+    "PG_shortread": {
+      "truth": 0.7000000000000003,
+      "est": 0.612175900049384,
+      "est_minus_truth": -0.08782409995061624
+    }
+  },
+  "label": "n50_g0_filt2mb",
+  "est_path": "/global/scratch/users/tbellg/kmate/benchmarks/p231/results/kmate_global_filt2mb_raw/n50_g0/p231_filt2mb_raw_n50_g0_cov10_s42.h_per_chrom.npz",
+  "truth_path": "/global/scratch/users/tbellg/kmate/benchmarks/p231/sims/cov10_n50_g0_s42_hotspots_p231_chr1/pool_weights.tsv"
+}

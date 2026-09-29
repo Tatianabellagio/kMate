@@ -1,0 +1,4 @@
+symbol,gene,motif,family,strand,gstart,span_variant,in_alt_allele,ref_len_bp,alt_len_bp,ref_score,alt_score,effect,best_q
+MTERF24,AT1G62085,AT3G10500,NAC,-,22953362,True,False,17,,19.6,,LOST,0.0034
+MTERF24,AT1G62085,AT2G18060,NAC,+,22953363,True,False,13,,14.6,,LOST,0.0047
+MTERF24,AT1G62085,AT3G45170,GATA,+,22953390,True,False,15,,17.0,,LOST,0.0021

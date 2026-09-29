@@ -10,34 +10,46 @@ from the repo root), exposing a `kmate` command — `kmate run` is the estimator
 files are back-compat shims so existing `python src/<script>.py ...` callers
 still work. Module roles below are unchanged by the packaging.
 
-There are exactly **two estimators**: `global` and `window`. Nothing else.
+There is **one estimator**, selected by the unit it fits: `--unit {chrom,ld,bp,tsv}`.
+Each unit is fit locally (haploblock collapse → EM → project). The default is
+**`--unit chrom`** — one founder mixture per chromosome — which is the production
+estimator for selfing / inbred / F0 pools (e.g. GrENE-Net). `--block-mode {global,window}`
+remain as deprecated aliases (`global`→`--unit chrom`, `window`→`--unit bp`).
 
 ## Active — the estimator (h estimation + AF projection)
 
 | file | role |
 |---|---|
-| `em_solver.py` | EM core. `solve_em()` — the founder-mixture estimator (E/M multiplicative update; supports the Dirichlet anchor used by window mode). |
+| `em_solver.py` | EM core. `solve_em()` — the founder-mixture estimator (E/M multiplicative update; supports the Dirichlet anchor used by the legacy window recipe). M-step normalization defaults to `normalize="per_founder"` (each founder divided by its own full-panel k-mer content `Kf_w`). |
 | `kmer_count.py` | Jellyfish wrapper. Counts canonical k=31 k-mers in the reads → the count vector fed to the EM. |
-| `block_em.py` | Window-mode pieces: `define_windows`, `assign_kmers_to_blocks`, `assign_records_to_blocks`, `solve_em_per_block` (per-window EM + global anchor), `project_blocks_to_records` (per-window → per-record AF, missing-aware). |
-| `block_haplotype_em.py` | `smooth_h_across_blocks` — Li–Stephens-style smoothing of per-window `h` (window mode). |
-| `per_sample_per_chrom.py` | Production driver. FASTQ/BAM → counts → EM (per chromosome) → AF projection → output TSV. Dispatches `--block-mode {global, window}`. |
+| `ld_partition.py` | `CompleteLDPartition` — r²-LD blocks from the panel's own `var_pa` (the `--unit ld` partition; blocks are a panel property, computed once and cached). |
+| `h_uncertainty.py` | Collapse-aware uncertainty on the `K_b` haplotype classes (Fisher info + bootstrap) for `--emit-af-se`. |
+| `block_em.py` | Per-unit pieces (bp/tsv/ld units): `define_windows`, `assign_kmers_to_blocks`, `assign_records_to_blocks`, `solve_em_per_block` (per-unit EM), `project_blocks_to_records` (per-unit → per-record AF, missing-aware). |
+| `block_haplotype_em.py` | `smooth_h_across_blocks` — Li–Stephens-style smoothing of per-window `h` (legacy `--no-local-only` window recipe only). |
+| `per_sample_per_chrom.py` | Production driver. FASTQ/BAM → counts → EM (per unit) → AF projection → output TSV. Dispatches `--unit {chrom,ld,bp,tsv}` (default `chrom`); `--block-mode {global,window}` are deprecated aliases. |
 
 ### Production recipes
 
 ```bash
-# global — selfing / inbred / F0 pools (e.g. SEEDMIX)
+# --unit chrom (DEFAULT) — selfing / inbred / F0 pools (e.g. SEEDMIX), the
+# GrENE-Net production estimator; one founder mixture per chromosome. Uses the
+# defaults --normalize per_founder + --kmer-weight uniform (2026-07-06;
+# see docs/FOUNDER_NORMALIZATION_FIX.md), so no weight/unit flags needed.
 kmate run \
   --kmer-pa-prefix <kmer_pa>/kmer_pa \
   --var-pa <panel>.var_pa.npz --var-called <panel>.var_called.npz \
   --var-meta <panel>.meta.npz \
   --reads R1.fq R2.fq --sample <name> --out <name>.tsv \
-  --threads 8 --chroms Chr1 --block-mode global
+  --threads 8 --chroms Chr1        # --unit chrom is the default
 
-# window ("star2") — recombinant pools. The window defaults ARE this recipe,
-# so `--block-mode window` alone reproduces it:
-#   --window-bp 10000 --global-anchor-weight 0.3 --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5
-kmate run [same inputs] --block-mode window
+# --unit bp / legacy "star2" window — recombinant pools. Fixed-bp windows, fit
+# local-only by default. The anchored+smoothed star2 recipe is now opt-in behind
+# --no-local-only (--window-bp 10000 --global-anchor-weight 0.3
+#  --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5), and keeps the inv_mb weighting:
+kmate run [same inputs] --unit bp --window-bp 10000 --no-local-only --kmer-weight inv_mb
 ```
+(`--unit ld --ld-r2 0.1` fits r²-LD blocks; note it collapses in low-diversity
+blocks (centromere) so it is not appropriate for selfing pools.)
 (`python src/per_sample_per_chrom.py ...` still works via the shim.)
 (Recipe source: `benchmarks/p80/scripts/07_run_cactus_em_p80.sh`, method `star2`.)
 

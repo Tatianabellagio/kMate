@@ -13,7 +13,7 @@ Computes, per chrom and genome-wide:
   - allele-count / frequency spectrum (carriers among called founders)
   - missingness (per-record call rate; overall genotype missing rate)
   - K_pa: n k-mers, n bubbles, k-mers/bubble, founders/k-mer (density), AC range
-Writes a markdown report to results/panel_stats/PANEL_STATS.md
+Writes a markdown report to analysis/panel_qc/panel_stats/PANEL_STATS.md
 """
 import os, gc, glob
 import numpy as np
@@ -22,7 +22,7 @@ PROJ = "/global/scratch/users/tbellg/kmate"
 NF = 231                      # founders
 SV_BP = 50                    # SV threshold (length, bp)
 CHROMS = [1, 2, 3, 4, 5]
-OUTDIR = f"{PROJ}/results/panel_stats"
+OUTDIR = f"{PROJ}/analysis/panel_qc/panel_stats"
 os.makedirs(OUTDIR, exist_ok=True)
 
 

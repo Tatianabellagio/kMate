@@ -33,17 +33,39 @@ the cold-regulated *COR413-PM2* gene, rising in cold gardens and falling in warm
 
 ## Install
 
-Create the `kmate` environment (mamba or conda) with its dependencies, then install the package:
+kMate is packaged on **bioconda** — one command gets you the `kmate` CLI and every
+tool it shells out to:
+
+```bash
+mamba create -n kmate -c conda-forge -c bioconda kmate
+mamba activate kmate
+```
+
+> ⚠️ **Check `kmate --version` reports 0.1.1 or newer.** The 0.1.0 build currently on
+> bioconda is a pre-July-2026 snapshot with two problems: it depends on `jellyfish`
+> instead of `kmer-jellyfish` (so it cannot count k-mers at all), and it predates the
+> per-founder normalization fix — it has no `--normalize`, `--unit` or `--emit-af-se`,
+> and would silently run the old EM in which k-mer-poor founders collapse toward zero.
+> Until 0.1.1 is published, install from source (below).
+
+### From source (for development)
 
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
 cd kMate
-mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam jellyfish samtools
+mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
 mamba activate kmate
 pip install -e .          # installs the `kmate` command (no compilation step)
 ```
 
-Python deps: `numpy`, `scipy`, `pysam`. kMate also calls `jellyfish` (k-mer counting) and `samtools` (read handling), both installed by the `mamba create` above. This gives you a `kmate` command with subcommands (`kmate --help`).
+Python deps: `numpy`, `scipy`, `pysam`. kMate also shells out to **`kmer-jellyfish`**
+(k-mer counting) and `samtools` (read handling). This gives you a `kmate` command with
+subcommands (`kmate --help`).
+
+> **Use `kmer-jellyfish`, not `jellyfish`.** On conda-forge, `jellyfish` is a Python
+> string-similarity library that ships no `jellyfish` binary; installing it leaves kMate
+> unable to count k-mers (`jellyfish: command not found`). The k-mer counter is
+> `kmer-jellyfish` on bioconda.
 
 ### Verify the install
 
@@ -70,14 +92,22 @@ kmate run \
     --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
     --var-meta   panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \
     --reads R1.fq R2.fq --sample MYSAMPLE --out MYSAMPLE.tsv \
-    --threads 8 --chroms Chr1 --kmer-weight inv_mb --block-mode global
+    --threads 8 --chroms Chr1 --kmer-weight uniform      # --unit chrom is the default
 ```
 
 (`kmate run --help` lists every flag. Existing scripts that call `python src/per_sample_per_chrom.py ...` still work via thin shims that forward to the package.)
 
-**Estimator mode** (`--block-mode`)
-- `global`: one founder mixture per chromosome. Use for **selfing / inbred / founder (F0)** pools.
-- `window`: per-window mixture with HMM smoothing, for **recombinant** pools. `--block-mode window` alone reproduces the production "star2" recipe (10 kb windows, 5 smoothing passes).
+**Estimation unit** (`--unit`) — there is **one estimator**; the "mode" is just the unit it fits. Each unit is fit locally: *haploblock-collapse → EM → project*, with no anchor prior, no cross-window smoothing, and no fallback.
+- `--unit chrom` (**default**): one founder mixture per chromosome. The default and the **selfing / inbred / F0** (GrENE-Net) production estimator — robust on uniform and sparse panels; also the only unit that supports `--h-only` and `--emit-af-se`.
+- `--unit ld` (`--ld-r2 0.1`): r²-LD blocks derived from the panel's own `var_pa` (CompleteLDPartition). A per-block option — it **collapses in low-diversity blocks** (e.g. the centromere), so it is **wrong for selfing pools**; use it only for recombinant pools where fine per-block resolution helps.
+- `--unit bp` (`--window-bp N`): fixed-bp windows, for **recombinant** pools.
+- `--unit tsv` (`--blocks-tsv PATH`): explicit block partition.
+
+`--block-mode global|window` are kept as **deprecated aliases** (`global`→`--unit chrom`, `window`→`--unit bp`). Recommended weighting is `--kmer-weight uniform` — the per-founder M-step normalization (kMate's default) removes the panel-completeness imbalance at its source, so `--kmer-weight inv_mb` is redundant (superseded 2026-07-06; see [`docs/FOUNDER_NORMALIZATION_FIX.md`](docs/FOUNDER_NORMALIZATION_FIX.md)).
+
+**Haploblock collapse** (all units, on by default): before each EM, kMate computes the distinct k-mer haplotypes the panel actually resolves over the unit and fits those `K_b ≤ 231` haplotypes rather than assuming all 231 founders are separately identifiable, splitting each haplotype's frequency equally back to its members. `--haploblock-eps` sets the merge tolerance (default `0` = exact k-mer-identical, an exact no-op when all founders are distinct). This is the *block → haploblock → EM* design (like HARP/hapFIRE); it chiefly matters for finer units, where a small block may carry only a handful of haplotypes. See [`ALGORITHM.md`](ALGORITHM.md) §4.4.
+
+The M-step normalization defaults to `--normalize per_founder`; pass `--normalize global` only to reproduce legacy (pre-2026-07-06) runs.
 
 **Output**: a per-record TSV, one row per panel variant (SNP / indel / SV):
 
@@ -119,6 +149,7 @@ docs/        methods + analysis writeups
 
 | Doc | What it is |
 |---|---|
+| [`docs/GETTING_STARTED.md`](docs/GETTING_STARTED.md) | **Start here** — install, inputs, building a panel, running a sample, choosing `--unit`. |
 | [`docs/PIPELINE_STATE.md`](docs/PIPELINE_STATE.md) | Production inputs, run recipe, and environment; the project source of truth. |
 | [`ALGORITHM.md`](ALGORITHM.md) | The kMate algorithm, math, and code wiring. |
 | [`BACKGROUND.md`](BACKGROUND.md) | Project framing, known biases, and design decisions. |

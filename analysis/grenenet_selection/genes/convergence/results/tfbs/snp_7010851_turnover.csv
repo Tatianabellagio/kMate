@@ -1,0 +1,2 @@
+symbol,gene,motif,family,strand,gstart,span_variant,in_alt_allele,ref_len_bp,alt_len_bp,ref_score,alt_score,effect,best_q
+snp_7010851,AT4G11600,AT4G18770,MYB,-,7010850,True,False,15,,15.9,,LOST,0.0046

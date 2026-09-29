@@ -1,0 +1,2 @@
+tool	pool	panel	true_n	seed	eff_n	n_detected	recall	precision	mass_on_true	top_n_jaccard	h_rmse
+kMate	cov10_n80_g0_s42_hotspots_p80_chr1	p80	80	42	76.886	79	0.988	1.0	1.0	1.0	0.00252

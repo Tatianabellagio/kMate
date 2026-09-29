@@ -1,0 +1,8 @@
+symbol,gene,set,ftier,chrom,pos,size,kind,window,n_ref_hits,n_alt_hits,n_lost,n_gained,n_weakened,n_strengthened,families_lost,families_gained,n_repeat_tract_hits
+AT2G30000,AT2G30000,GEA_ownaxis,F4_promoter,Chr2,12805666,1,insertion,12805266-12806067,65,65,0,0,0,0,,,16.0
+AT4G13200,AT4G13200,GEA_ownaxis,F3_UTR,Chr4,7669175,2,insertion,7668775-7669576,51,52,2,3,17,8,BBR-BPC,BBR-BPC,25.0
+CRK14,AT4G23220,GEA_ownaxis,F4_promoter,Chr4,12157244,63,deletion,12156844-12157708,3,3,0,0,0,0,,,0.0
+FUS3,AT3G26790,GEA_ownaxis,F4_promoter,Chr3,9856500,2,deletion,9856100-9856903,15,15,0,0,0,0,,,8.0
+GPX6,AT4G11600,GEA_ownaxis,F4_promoter,Chr4,7011705,1164,deletion,7011305-7013330,23,16,15,6,0,0,"AP2,B3,Dof,MIKC_MADS","AP2,Dof",0.0
+OHP1,AT5G02120,round1,F4_promoter,Chr5,418936,1,deletion,418536-419338,9,9,0,0,0,0,,,0.0
+SEC10a,AT5G12370,round1,F3_UTR,Chr5,4002967,4,deletion,4002567-4003372,33,33,0,0,0,0,,,0.0

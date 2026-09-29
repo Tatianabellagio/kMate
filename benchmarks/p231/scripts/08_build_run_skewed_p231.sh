@@ -94,11 +94,7 @@ CN_VAR_META=$ROOT/panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz
 
 DB=${TMPDIR:-/tmp}/skew_${SKEW}.jf
 echo "[$(date)] build_kmer_db -> $DB"
-$PY - "$READS/r1.fq" "$READS/r2.fq" "$DB" <<'PY'
-import sys; sys.path.insert(0, "/global/scratch/users/tbellg/kmate/src")
-from kmer_count import build_kmer_db
-build_kmer_db([sys.argv[1], sys.argv[2]], sys.argv[3], k=31, threads=4)
-PY
+$(dirname "$PY")/kmate build-kmer-db --reads "$READS/r1.fq" "$READS/r2.fq" --out "$DB" --threads 4
 
 run_arm () {  # arm_tag  prefix  weight
     local TAG=$1 PREFIX=$2 WEIGHT=$3

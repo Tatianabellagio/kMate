@@ -1,0 +1,4 @@
+element,n,cand_present,null_present,p_presence,cand_mean_bp,null_mean_bp,p_mean,cand_max_bp,null_max_bp_med,p_max
+ABRE_Gbox,193,15,17.7,0.8274,1.59,1.76,0.6807,44,24,0.093
+Wbox,193,59,49.3,0.0265,5.73,4.96,0.066,29,40,1.0
+DRE_CRT,193,21,18.6,0.2854,2.49,2.27,0.3072,61,35,0.1713

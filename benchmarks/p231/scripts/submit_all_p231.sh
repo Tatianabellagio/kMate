@@ -26,17 +26,23 @@ B_n231g1=$(sbatch --dependency=afterok:$A5 --parsable $S/06_run_sim_p231.sh 231 
 B_n50g3=$(sbatch  --dependency=afterok:$A5 --parsable $S/06_run_sim_p231.sh 50  3)
 B_dom=$(sbatch    --dependency=afterok:$A5 --parsable $S/06b_run_sim_p231_skewed.sh 50 3 42 50.0)
 
-# Phase C: front-runner EM (filt2 + 1/m_b global), both var_pa arms, per regime.
+# Phase C: front-runner EM (filt2 + per_founder normalization, GLOBAL mode
+# drops omega=1/m_b -- PIPELINE_STATE.md Sec.0, 2026-07-06), both var_pa arms,
+# per regime. Also submits the legacy 1/m_b arm as an A/B baseline (kept for
+# the grid comparison in score_p231.py).
 declare -A BJOB=( [n50_g0]=$B_n50g0 [n231_g0]=$B_n231g0 [n50_g1]=$B_n50g1
                   [n231_g1]=$B_n231g1 [n50_g3]=$B_n50g3 [n50_g3_dom500]=$B_dom )
 CJOBS=""
 for reg in n50_g0 n231_g0 n50_g1 n231_g1 n50_g3 n50_g3_dom500; do
   for cnvar in atomized raw; do
     cj=$(sbatch --dependency=afterok:${BJOB[$reg]}:$A3B --parsable \
-         $S/07c_run_kmate_filt2_mb_p231.sh $reg $cnvar inv_mb)
+         $S/07c_run_kmate_filt2_mb_p231.sh $reg $cnvar uniform)
     CJOBS="$CJOBS:$cj"
-    # Optional A/B baseline (uniform): uncomment to also run plain filt2.
-    # sbatch --dependency=afterok:${BJOB[$reg]}:$A3B $S/07c_run_kmate_filt2_mb_p231.sh $reg $cnvar uniform
+    # A/B baseline (legacy 1/m_b weighting, global mode): kept so score_p231.py's
+    # grid has both arms.
+    cj2=$(sbatch --dependency=afterok:${BJOB[$reg]}:$A3B --parsable \
+         $S/07c_run_kmate_filt2_mb_p231.sh $reg $cnvar inv_mb)
+    CJOBS="$CJOBS:$cj2"
   done
 done
 

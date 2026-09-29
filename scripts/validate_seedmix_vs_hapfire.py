@@ -16,10 +16,10 @@ which would mean the truth is REF- rather than ALT-frequency.
 
 Usage:
   python scripts/validate_seedmix_vs_hapfire.py \
-      [--kmate-dir results/seedmix_kmate_arch3] \
+      [--kmate-dir analysis/grenenet_selection/common/rerun_kfw_hb/seedmix] \
       [--truth-dir <hapFIRE seed_mix dir>] \
       [--samples 1 2 3 4 5 6 7 8] \
-      [--min-called 0] [--out results/seedmix_validation_vs_hapfire.tsv]
+      [--min-called 0] [--out analysis/panel_qc/seedmix_validation_vs_hapfire.tsv]
 """
 import argparse, os, sys
 import numpy as np
@@ -71,13 +71,13 @@ def metrics(a, b):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--kmate-dir", default="results/seedmix_kmate_arch3")
+    ap.add_argument("--kmate-dir", default="analysis/grenenet_selection/common/rerun_kfw_hb/seedmix")
     ap.add_argument("--truth-dir", default=DEF_TRUTH)
     ap.add_argument("--samples", nargs="+", type=int,
                     default=[1, 2, 3, 4, 5, 6, 7, 8])
     ap.add_argument("--min-called", type=int, default=0,
                     help="only keep SNPs with n_called >= this (panel QC filter)")
-    ap.add_argument("--out", default="results/seedmix_validation_vs_hapfire.tsv")
+    ap.add_argument("--out", default="analysis/panel_qc/seedmix_validation_vs_hapfire.tsv")
     args = ap.parse_args()
 
     rows = []

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# pre-commit hook — block files GitHub will refuse.
+#
+# GitHub hard-rejects any object over 100 MB at push time (pre-receive hook).
+# Catching it here matters because by the time a push fails, the blob is already
+# baked into history and only a history rewrite gets it out. That has cost this
+# repo two rewrites: a 104 MB CSV under analysis/.../archive_gea/ blocked every
+# push until 66 commits were rewritten to purge it.
+#
+# Override for a deliberate large commit:  KMATE_ALLOW_BIG=1 git commit ...
+set -euo pipefail
+
+LIMIT_MB=${KMATE_MAX_FILE_MB:-90}          # under GitHub's 100 MB, leaves headroom
+[ "${KMATE_ALLOW_BIG:-0}" = "1" ] && exit 0
+
+limit=$(( LIMIT_MB * 1024 * 1024 ))
+big=""
+while IFS= read -r -d '' f; do
+    [ -f "$f" ] || continue
+    sz=$(stat -c %s -- "$f" 2>/dev/null || echo 0)
+    if [ "$sz" -gt "$limit" ]; then
+        big+=$(printf '\n  %6.1f MB  %s' "$(echo "$sz" | awk '{print $1/1048576}')" "$f")
+    fi
+done < <(git diff --cached --name-only -z --diff-filter=ACMR)
+
+if [ -n "$big" ]; then
+    cat >&2 <<MSG
+[pre-commit] BLOCKED: staged file(s) exceed ${LIMIT_MB} MB — GitHub rejects >100 MB:$big
+
+Options:
+  * keep it out of git (add a .gitignore rule), or
+  * store it outside the repo, or
+  * KMATE_ALLOW_BIG=1 git commit ...   (only if you are certain)
+MSG
+    exit 1
+fi
+exit 0

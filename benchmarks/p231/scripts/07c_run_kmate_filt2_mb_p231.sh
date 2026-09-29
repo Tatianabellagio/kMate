@@ -10,20 +10,24 @@
 #SBATCH --error=logs/07c_mb_%j.err
 
 # =============================================================================
-# benchmarks/p231 front-runner: filt2 kmer_pa + GLOBAL EM + ω_k=1/m_b, projected
-# through ONE arch3 var_pa arm (atomized | raw). The EM h is identical across
-# arms (same reads, same kmer_pa); only the projection var_pa differs.
+# benchmarks/p231 front-runner: filt2 kmer_pa + GLOBAL EM (normalize=per_founder,
+# the 2026-07-06 Kf_w fix), projected through ONE arch3 var_pa arm (atomized |
+# raw). The EM h is identical across arms (same reads, same kmer_pa); only the
+# projection var_pa differs.
 #
 # Usage: sbatch 07c_run_kmate_filt2_mb_p231.sh REGIME CNVAR [WEIGHT]
 #   REGIME = n50_g0 n231_g0 n50_g1 n231_g1 n50_g3 n50_g3_dom500
 #   CNVAR  = atomized | raw
-#   WEIGHT = inv_mb (default, front-runner) | uniform (filt2 baseline for A/B)
+#   WEIGHT = uniform (default, front-runner) | inv_mb (legacy A/B baseline)
+#   GLOBAL mode drops omega=1/m_b (superseded per PIPELINE_STATE.md Sec.0,
+#   2026-07-06): per_founder+uniform beats per_founder+1/m_b on AF-MAE.
+#   --normalize is left at its per_sample_per_chrom.py default (per_founder).
 # =============================================================================
 mkdir -p logs
 set -euo pipefail
 REGIME=${1:?Usage: REGIME CNVAR [WEIGHT]}
 CNVAR=${2:?Usage: REGIME CNVAR [WEIGHT]}
-WEIGHT=${3:-inv_mb}
+WEIGHT=${3:-uniform}
 [[ "$CNVAR" == "atomized" || "$CNVAR" == "raw" ]] || { echo "ERROR: CNVAR must be atomized|raw" >&2; exit 1; }
 [[ "$WEIGHT" == "inv_mb" || "$WEIGHT" == "uniform" ]] || { echo "ERROR: WEIGHT must be inv_mb|uniform" >&2; exit 1; }
 

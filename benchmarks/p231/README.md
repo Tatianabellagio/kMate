@@ -3,7 +3,9 @@
 The main kMate accuracy benchmark on the **full 231-founder heterogeneous panel**
 (78 cactus long-read + 153 PanGenie short-read founders). Companion to
 `benchmarks/p80/` (the all-long-read homogeneous control that isolates the panel-
-imbalance effect). Method under test: **filt2 + ω_k=1/m_b global** (the front-runner).
+imbalance effect). Method under test: **filt2 + `--kmer-weight uniform` + `--normalize per_founder`, `--unit chrom`** (the corrected front-runner).
+`inv_mb` (ω_k=1/m_b) is retained only as a clearly-LABELED legacy A/B column; it is
+SUPERSEDED for global by per-founder normalization + uniform weighting.
 
 ## Provenance / audit (verified 2026-05-27)
 
@@ -62,7 +64,7 @@ individual at 50% of pool reads). g0 = perfect founder mix (no recombination).
 03c_compare_kmer_pa.py          validate rebuilt vs production kmer_pa
 06_run_sim_p231.sh N G          mosaics (RANDOM crossovers) + VISOR reads + truth x2
 06b_run_sim_p231_skewed.sh      dom500 variant
-07c_run_kmate_filt2_mb_p231.sh REGIME CNVAR [WEIGHT]   EM (global, inv_mb) + project
+07c_run_kmate_filt2_mb_p231.sh REGIME CNVAR [WEIGHT]   EM (--unit chrom, uniform + --normalize per_founder; inv_mb = legacy A/B only) + project
 score_p231.py                   MAE/RMSE/R2/outlier by regime x cnvar x weight x class
 submit_all_p231.sh              the full DAG
 ```

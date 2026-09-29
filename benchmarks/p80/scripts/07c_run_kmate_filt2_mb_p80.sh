@@ -10,21 +10,22 @@
 #SBATCH --error=logs/07c_mb_%j.err
 
 # =============================================================================
-# Front-runner test: filt2 kmer_pa + GLOBAL EM + ω_k=1/m_b weighting.
-# Mirrors 07b (filt2) but adds --kmer-weight inv_mb. GLOBAL mode only.
+# Front-runner test: filt2 kmer_pa + GLOBAL EM (normalize=per_founder, the
+# 2026-07-06 Kf_w fix) + kmer weighting A/B. GLOBAL mode only.
 #   --kmer-pa-prefix .../kmer_pa_p80_filt2/kmer_pa
-#   --kmer-weight inv_mb
-#   outputs to results/cactus_em_global_filt2_mb/<REGIME>/p80_filt2mb_*.tsv
+#   outputs to results/cactus_em_global_filt2_{mb,uniform}/<REGIME>/p80_*_*.tsv
 #
 # Usage: sbatch 07c_run_kmate_filt2_mb_p80.sh REGIME [WEIGHT]
 #   REGIME = n50_g0 n200_g0 n231_g0 n50_g1 n200_g1 n231_g1 n50_g3 n50_g3_dom500
-#   WEIGHT = inv_mb (default, front-runner) | uniform (filt2 baseline for A/B)
+#   WEIGHT = uniform (default, front-runner -- GLOBAL mode drops omega=1/m_b per
+#            PIPELINE_STATE.md Sec.0, 2026-07-06; matches this panel's own
+#            balanced-panel caveat) | inv_mb (legacy A/B baseline)
 # =============================================================================
 mkdir -p logs
 set -euo pipefail
 
 REGIME=${1:?Usage: sbatch 07c_run_kmate_filt2_mb_p80.sh REGIME [WEIGHT]}
-WEIGHT=${2:-inv_mb}
+WEIGHT=${2:-uniform}
 if [[ "$WEIGHT" != "inv_mb" && "$WEIGHT" != "uniform" ]]; then
     echo "ERROR: WEIGHT must be 'inv_mb' or 'uniform'; got '$WEIGHT'" >&2; exit 1
 fi

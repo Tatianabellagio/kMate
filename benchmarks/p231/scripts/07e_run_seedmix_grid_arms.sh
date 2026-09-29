@@ -41,14 +41,7 @@ mkdir -p "$OUTBASE"
 # ---- count-once: one Jellyfish DB from the read pool ----
 DB=${TMPDIR:-/tmp}/seedmix_${S}_grid.jf
 echo "[$(date)] build_kmer_db $S -> $DB"
-$PYTHON - "$R1" "$R2" "$DB" <<'PY'
-import sys
-sys.path.insert(0, "/global/scratch/users/tbellg/kmate/src")
-from kmer_count import build_kmer_db
-r1, r2, db = sys.argv[1], sys.argv[2], sys.argv[3]
-build_kmer_db([r1, r2], db, k=31, threads=4)
-print("DB built:", db)
-PY
+$(dirname "$PYTHON")/kmate build-kmer-db --reads "$R1" "$R2" --out "$DB" --threads 4
 
 run_arm () {  # arm_tag  kmer_prefix  weight
     local TAG=$1 PREFIX=$2 WEIGHT=$3

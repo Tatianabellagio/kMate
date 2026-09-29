@@ -31,13 +31,14 @@ if [[ "$METHOD" != "global" && "$METHOD" != "star2" ]]; then
 fi
 
 CTRL=/global/scratch/users/tbellg/kmate/benchmarks/p80
-PYTHON=/global/home/users/tbellg/miniforge3/envs/hapfm/bin/python
+PYTHON=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 DRIVER=/global/scratch/users/tbellg/kmate/src/per_sample_per_chrom.py
 
 # Sim work dir (built by 06_run_sim_p80.sh). Seed 42 by convention.
 COV=10
 SEED=42
 
+SELF=""
 case "$REGIME" in
     n50_g0)         N_INDIV=50;  N_GEN=0; SUBDIR_TAG="hotspots_p80_chr1" ;;
     n80_g0)         N_INDIV=80;  N_GEN=0; SUBDIR_TAG="hotspots_p80_chr1" ;;
@@ -49,10 +50,14 @@ case "$REGIME" in
     n200_g1)        N_INDIV=200; N_GEN=1; SUBDIR_TAG="hotspots_p80_chr1" ;;
     n231_g1)        N_INDIV=231; N_GEN=1; SUBDIR_TAG="hotspots_p80_chr1" ;;
     n50_g3_dom500)  N_INDIV=50;  N_GEN=3; SUBDIR_TAG="hotspots_dom500_p80_chr1" ;;
+    n50_g1_self97)  N_INDIV=50;  N_GEN=1; SELF="_self97"; SUBDIR_TAG="hotspots_p80_chr1" ;;
+    n231_g1_self97) N_INDIV=231; N_GEN=1; SELF="_self97"; SUBDIR_TAG="hotspots_p80_chr1" ;;
+    n50_g3_self97)  N_INDIV=50;  N_GEN=3; SELF="_self97"; SUBDIR_TAG="hotspots_p80_chr1" ;;
+    n50_g3_dom500_self97) N_INDIV=50; N_GEN=3; SELF="_self97"; SUBDIR_TAG="hotspots_dom500_p80_chr1" ;;
     *) echo "ERROR: unknown REGIME '$REGIME'" >&2; exit 1 ;;
 esac
 
-WORK=$CTRL/sims/cov${COV}_n${N_INDIV}_g${N_GEN}_s${SEED}_${SUBDIR_TAG}
+WORK=$CTRL/sims/cov${COV}_n${N_INDIV}_g${N_GEN}_s${SEED}${SELF}_${SUBDIR_TAG}
 READS_DIR=$WORK/reads
 for f in $READS_DIR/r1.fq $READS_DIR/r2.fq $WORK/recomb_truth.tsv.gz; do
     [ -s "$f" ] || { echo "ERROR: missing $f -- run 06_run_sim_p80.sh first" >&2; exit 1; }
