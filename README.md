@@ -63,44 +63,76 @@ This runs the bundled tiny fixture (a real Chr1 panel slice + a simulated 5-foun
 
 ## Usage
 
-kMate processes **one pooled sample at a time, per chromosome**.
+Two steps: turn your founder haplotypes into matrices once, then run each pool against
+them.
 
-**You need**
-- **Pooled reads**: paired FASTQ (`R1.fq R2.fq`) of one pool/sample.
-- **A reference panel** encoded as per-chromosome matrices: `kmer_pa` (k-mer × founder presence/absence), `var_pa` (founder × variant alt-allele), and record `meta`. Built once from your founders' VCF — see **[`docs/BUILDING_A_PANEL.md`](docs/BUILDING_A_PANEL.md)**. The 231-founder *Arabidopsis thaliana* panel used by GrENE-Net is available on request; the matrix files are large and are not stored in the Git repo.
+### 1. Build the panel
 
-**Run**
+One VCF of your founder haplotypes becomes two matrices, reused for every pool:
+
+```bash
+kmate build-index   --vcf panel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
+
+kmate build-kmer-pa --kmers index/ours_Chr1_kmers.tsv.gz \
+                    --vcf panel.vcf.gz --ref REF.fa --chrom Chr1 \
+                    --out kmer_pa/kmer_pa_Chr1 \
+                    --treat-missing-as-n --filter-production
+
+kmate build-var-pa  --vcf panel.vcf.gz --chrom Chr1 --out var_pa/var_pa_Chr1
+```
+
+`kmer_pa` is the founder-haplotype × k-mer matrix, the evidence the reads are compared
+against; `var_pa` is the founder-haplotype × variant matrix the mixture is projected
+through, written alongside `var_called` and `meta`.
+
+The panel VCF must be **haploid, biallelic and sequence-resolved**.
+**[`docs/BUILDING_A_PANEL.md`](docs/BUILDING_A_PANEL.md)** covers how to get there,
+including building one from assemblies with `cactus-pangenome`, and `kmate decompose`
+for multi-allelic input.
+
+The 231-founder *Arabidopsis thaliana* panel used by GrENE-Net is available on request.
+
+### 2. Run a pool
 
 ```bash
 kmate run \
-    --kmer-pa-prefix data/kmer_pa_231_arch3_filt2inv/kmer_pa \
-    --var-pa     panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz \
-    --var-called panel/arch3/chr1/var_pa_231_arch3_chr1.var_called.npz \
-    --var-meta   panel/arch3/chr1/var_pa_231_arch3_chr1.meta.npz \
-    --reads R1.fq R2.fq --sample MYSAMPLE --out MYSAMPLE.tsv \
-    --threads 8 --chroms Chr1      # --unit chrom is the default
+    --kmer-pa-prefix kmer_pa/kmer_pa \
+    --var-pa-prefix  var_pa/var_pa \
+    --reads R1.fq.gz R2.fq.gz \
+    --sample MYSAMPLE --out MYSAMPLE_Chr1.tsv \
+    --threads 8 --chroms Chr1
 ```
 
-(`kmate run --help` lists every flag. Existing scripts that call `python src/per_sample_per_chrom.py ...` still work via thin shims that forward to the package.)
+Both `--*-prefix` options are prefixes: kMate appends `_<CHROM>.kmer_pa.npz` and
+`_<CHROM>.{var_pa,var_called,meta}.npz`. `kmate build-kmer-db` counts a pool's k-mers
+once so `--kmer-db` can query them per chromosome.
 
-**Estimation unit** (`--unit`) — there is **one estimator**; the "mode" is just the unit it fits. Each unit is fit locally: *haploblock-collapse → EM → project*, with no anchor prior, no cross-window smoothing, and no fallback.
-- `--unit chrom` (**default**): one founder mixture per chromosome. The default and the **selfing / inbred / F0** (GrENE-Net) production estimator — robust on uniform and sparse panels; also the only unit that supports `--h-only` and `--emit-af-se`.
-- `--unit ld` (`--ld-r2 0.1`): r²-LD blocks derived from the panel's own `var_pa` (CompleteLDPartition). A per-block option — it **collapses in low-diversity blocks** (e.g. the centromere), so it is **wrong for selfing pools**; use it only for recombinant pools where fine per-block resolution helps.
-- `--unit bp` (`--window-bp N`): fixed-bp windows, for **recombinant** pools.
-- `--unit tsv` (`--blocks-tsv PATH`): explicit block partition.
+### Choosing `--unit`
 
-`--block-mode global|window` are kept as **deprecated aliases** (`global`→`--unit chrom`, `window`→`--unit bp`).
+`--unit` sets the span over which one founder-haplotype mixture is estimated. Pick it
+from your population's biology:
 
-**Haploblock collapse** (all units, on by default): before each EM, kMate computes the distinct k-mer haplotypes the panel actually resolves over the unit and fits those `K_b ≤ 231` haplotypes rather than assuming all 231 founders are separately identifiable, splitting each haplotype's frequency equally back to its members. `--haploblock-eps` sets the merge tolerance (default `0` = exact k-mer-identical, an exact no-op when all founders are distinct). This is the *block → haploblock → EM* design (like HARP/hapFIRE); it chiefly matters for finer units, where a small block may carry only a handful of haplotypes. See [`ALGORITHM.md`](ALGORITHM.md) §4.4.
+| your pools are | use | why |
+|---|---|---|
+| selfing, inbred, or a founder (F0) mix | `--unit chrom` (default) | ancestry is constant along a chromosome, so pooling all its k-mers determines the mixture best |
+| recombinant | `--unit bp --window-bp 10000` | ancestry is a mosaic and must be fitted locally |
 
-The M-step normalization defaults to `--normalize per_founder`; pass `--normalize global` only to reproduce legacy (pre-2026-07-06) runs.
+Fitting per LD block on a selfing pool moved AF error from 0.0033 to 0.0080 and outliers
+from 0.001% to 0.625%, because low-diversity regions cannot distinguish founder
+haplotypes from local k-mers alone. Windows are fitted independently by default;
+`--smooth-windows` enables the anchor and cross-window smoothing.
+
+`kmate run --help` lists every flag, and the
+[Command reference](https://github.com/Tatianabellagio/kMate/wiki/Command-reference)
+gives every default.
 
 **Output**: a per-record TSV, one row per panel variant (SNP / indel / SV):
 
 | chrom | pos | ref_len | alt_len | alt_freq | info | n_called | se |
 |---|---|---|---|---|---|---|---|
 
-`alt_freq` is the estimated alternate-allele frequency in the pool; `n_called` and `se` carry support/uncertainty. (`--var-called` adds a per-record called-mask; `--kmer-db` lets you count k-mers once and query per-chrom instead of re-scanning reads; `--hash-size` tunes the Jellyfish hash, e.g. lower it to `100M` on memory-capped jobs.)
+`alt_freq` is the estimated alternate-allele frequency in the pool; `n_called` is how many
+founder haplotypes had a genotype call there, and `se` is the binomial SE from it.
 
 ## How it works
 
