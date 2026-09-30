@@ -192,6 +192,61 @@ print("\n  coding size grows 11x across the bands; every other context is flat o
 print(f"  Spearman(size, n_called) among coding events: "
       f"rho = {stats.spearmanr(D.size_bp,D.n_called).correlation:+.3f}")
 '''
+md_stack = """### The same size distribution, stacked by what the events are
+
+Panel (b) above shows coding events only, and as densities — so it says how the two tiers differ in shape
+but not what they are made of. These are the same size axis as counts, stacked.
+
+**Top row: every context.** The size axis is dominated by different things at different scales, and the two
+tiers are made of different mixtures.
+
+**Bottom row: coding events only, stacked by sequence class** — the classification that would carry a
+"these are really TEs" explanation. It does not: `te_derived` is a similar share of both tiers, and the
+tiers separate on size, not on class."""
+
+code_stack = r'''
+SQC={"te_derived":"#B04A00","gene_dup":"#2F4A1F","dispersed_dup":"#4E6B3A",
+     "local_dup":"#7E9B6B","novel":"#4A6B8A"}
+SQ=[k for k in SQC if k in set(AP.seq_class.dropna())]
+AP2=AP[AP.n_called>=116].copy()
+AP2["tier"]=np.where(AP2.n_called>=208,"highcall","lowcall")
+EDG=np.linspace(np.log10(50),np.log10(AP2.size_bp.max()),40)
+ctr=0.5*(EDG[1:]+EDG[:-1]); wid=np.diff(EDG)
+fig,axs=plt.subplots(2,2,figsize=(11.6,6.2),sharex=True,
+                     gridspec_kw=dict(hspace=0.30,wspace=0.20))
+for j,tier in enumerate(("highcall","lowcall")):
+    T=AP2[AP2.tier==tier]
+    a=axs[0,j]; style(a,axis="both"); panel(a,"ab"[j],x=-0.10)
+    bot=np.zeros(len(ctr))
+    for c in CTX6:
+        h,_=np.histogram(np.log10(T.size_bp[T.context==c]),bins=EDG)
+        a.bar(ctr,h,width=wid,bottom=bot,color=CTXC[c],lw=0,label=c); bot+=h
+    a.annotate(f"{tier}  ({len(T):,} events)",xy=(0.97,0.95),xycoords="axes fraction",
+               ha="right",va="top",fontsize=8,color="0.25")
+    a.set_ylabel("events",fontsize=8.5)
+    if j==0: a.legend(fontsize=7,ncol=2,loc="upper left")
+    a=axs[1,j]; style(a,axis="both"); panel(a,"cd"[j],x=-0.10)
+    Tc=T[T.context=="CDS"]; bot=np.zeros(len(ctr))
+    for k in SQ:
+        h,_=np.histogram(np.log10(Tc.size_bp[Tc.seq_class==k]),bins=EDG)
+        a.bar(ctr,h,width=wid,bottom=bot,color=SQC[k],lw=0,label=k); bot+=h
+    a.annotate(f"coding only, {tier}  ({len(Tc):,})",xy=(0.97,0.95),xycoords="axes fraction",
+               ha="right",va="top",fontsize=8,color="0.25")
+    a.set_ylabel("coding events",fontsize=8.5)
+    a.set_xlabel("event size (bp), log$_{10}$",fontsize=8.5)
+    a.set_xticks([2,3,4,5]); a.set_xticklabels(["100","1k","10k","100k"],fontsize=8)
+    if j==0: a.legend(fontsize=7,loc="upper left")
+save(fig,"callrate_size_stacked",nb=True); plt.show()
+print("COMPOSITION BY CONTEXT, within each call tier (% of that tier's events)\n")
+print(pd.crosstab(AP2.context,AP2.tier,normalize="columns").mul(100).round(1)
+        .reindex(CTX6).to_string())
+print("\n\nCODING EVENTS ONLY -- composition by sequence class (%)\n")
+CC_=AP2[AP2.context=="CDS"]
+print(pd.crosstab(CC_.seq_class,CC_.tier,normalize="columns").mul(100).round(1).to_string())
+print("\n\nMEDIAN SIZE (bp) by context and tier -- where the tiers actually separate\n")
+print(pd.DataFrame({t:[g[g.context==c].size_bp.median() for c in CTX6]
+                    for t,g in AP2.groupby("tier")},index=CTX6).round(0).to_string())
+'''
 md_pooled = """## 3 · The model at each floor
 
 Every fixed effect of the reported model, refit on each burden table. **(a)** burden main effects,
@@ -499,6 +554,7 @@ if __name__ == "__main__":
         new_markdown_cell(md_title), new_code_cell(code_setup), new_code_cell(code_load),
         new_markdown_cell(md_counts), new_code_cell(code_counts),
         new_markdown_cell(md_dist),   new_code_cell(code_dist),
+        new_markdown_cell(md_stack),  new_code_cell(code_stack),
         new_markdown_cell(md_pooled), new_code_cell(code_pooled),
         new_markdown_cell(md_tier),   new_code_cell(code_tier),
         new_markdown_cell(md_what),   new_code_cell(code_what),
