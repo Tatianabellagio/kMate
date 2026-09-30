@@ -540,7 +540,75 @@ for t in ("highcall","lowcall"):
           f"range {cal.min():.0f}-{cal.max():.0f}  CV {cal.std()/cal.mean():.3f}   "
           f"corr(called, carried) r = {np.corrcoef(cal,car)[0,1]:+.3f}")
 '''
-md_read = """## 6 · Reading it
+md_count = """## 6 · Dropping the denominator — burden as a raw count
+
+§5 located the problem in the denominator: below the 0.9 floor, how many events a founder is genotyped at
+varies 2.6-fold and correlates with how many they carry at r = 0.89. So the obvious thing to try is to
+**stop dividing** — fit the raw carried count, z-scored, instead of carried/called.
+
+It works, and it changes the conclusion of §3.
+
+On the model's own scale the count-mode coding coefficient is **stable across all three floors**
+(−0.35 / −0.31 / −0.29) where the rate-mode one collapses (−0.29 / −0.06 / −0.05). And the two
+normalisations **agree at the 0.9 floor** (−1.59 vs −1.49 %/variant) — which is the check that matters,
+because that is exactly where the denominator is nearly constant across founders (CV 0.038) and so cannot
+be doing any harm. They diverge only where the denominator starts varying.
+
+⚠ **This is not a free lunch, and the count is not simply the better variable.** Dropping the denominator
+also drops the correction for how much of the genome a founder can be genotyped in — a founder callable at
+more events will carry more, for no biological reason. The last two columns therefore put `callrate_sv`
+back as an explicit covariate. That attenuates the effect (p = 0.17 / 0.20), so the count-mode result at
+relaxed floors is **not significant** once callability is controlled the honest way.
+
+**What this does and does not establish.** It does not rescue significance at a relaxed floor. What it
+does is show that the §3 collapse is a property of the *rate normalisation*, not of the underlying data:
+under a normalisation whose denominator cannot vary per founder, the point estimate is stable everywhere.
+That is a stronger argument for the reported effect being real than the tier analysis alone."""
+
+code_count = r'''
+EXR="obio1c + obio1c:bio1c"; EXC=EXR+" + callrate_sv"
+def carm(ex,mode,cr):
+    exs="_x_"+"".join(ch for ch in ex if ch.isalnum()); cm="_count" if mode=="count" else ""
+    S=f"{exs}_re0obio1cgarden_refid{cm}{cr}"
+    co=pd.read_csv(f"{PA}/coef_M2p_reml{S}.csv").set_index("term")
+    s_=pd.read_csv(f"{PA}/pooled_rate_scale{exs}{cm}{cr}.csv").set_index("context")
+    pv={f"sv_{c}":100/(s_.loc[c,"sd_rate"]*s_.loc[c,"med_called"]) for c in s_.index}; pv["snp_CDS"]=1.0
+    g=lambda n: pd.read_csv(f"{PA}/loglik_{n}{S}.csv").logLik[0]
+    return co,pv,{t: stats.chi2.sf(2*(g("M2p_ml")-g(f"M2p_ml_drop_{t}")),1) for t in SVT}
+CC=[("rate",EXR,"","rate 0.9"),("rate",EXR,"_cr70","rate 0.7"),("rate",EXR,"_cr50","rate 0.5"),
+    ("count",EXR,"","count 0.9"),("count",EXR,"_cr70","count 0.7"),("count",EXR,"_cr50","count 0.5"),
+    ("count",EXC,"_cr70","count 0.7\n+callrate"),("count",EXC,"_cr50","count 0.5\n+callrate")]
+AA={lab:carm(ex,m,cr) for m,ex,cr,lab in CC}
+MC={"rate":"#4A3B6B","count":"#C46A10","countc":"#8C6D1F"}
+fig,axs=plt.subplots(1,2,figsize=(12.6,3.8),gridspec_kw=dict(width_ratios=[1,1],wspace=0.42))
+for a,scale,pl in zip(axs,("SD","variant"),"ab"):
+    style(a,axis="both"); panel(a,pl,x=-0.12); a.axhline(0,color="0.35",lw=1,ls="--")
+    for i,(m,ex,cr,lab) in enumerate(CC):
+        co,pv,_=AA[lab]; k=pv["sv_CDS"] if scale=="variant" else 1.0
+        e,s2=co.loc["sv_CDS","estimate"]*k,co.loc["sv_CDS","se"]*k; p=co.loc["sv_CDS","p"]
+        c=MC["countc" if "callrate" in lab else m]
+        a.errorbar(i,e,yerr=1.96*s2,fmt="o",color=c,mfc=c if p<0.05 else "white",
+                   mew=1.3,ms=7.5,capsize=2.5,zorder=3)
+        a.annotate(f"{p:.2g}",xy=(i,e),xytext=(0,-13 if e<0 else 11),textcoords="offset points",
+                   ha="center",fontsize=6.5,color="0.35")
+    a.axvline(2.5,color="0.85",lw=0.9); a.axvline(5.5,color="0.85",lw=0.9)
+    a.set_xticks(range(len(CC))); a.set_xticklabels([l for _,_,_,l in CC],fontsize=6.8,rotation=30,ha="right")
+    a.set_ylabel(("coding effect per SD of burden" if scale=="SD"
+                  else "coding effect, % per carried variant"),fontsize=8.5)
+save(fig,"callrate_count_mode",nb=True); plt.show()
+print("sv_CDS UNDER EACH NORMALISATION AND FLOOR\n")
+print(pd.DataFrame([{"arm":l.replace("\n"," "),
+    "per SD":f"{AA[l][0].loc['sv_CDS','estimate']:+.4f} +- {AA[l][0].loc['sv_CDS','se']:.4f}",
+    "%/variant":f"{AA[l][0].loc['sv_CDS','estimate']*AA[l][1]['sv_CDS']:+.4f}",
+    "Wald p":f"{AA[l][0].loc['sv_CDS','p']:.4g}",
+    "x temp LRT p":f"{AA[l][2]['sv_CDS']:.3g}"} for _,_,_,l in CC]).to_string(index=False))
+print("\nALL BURDENS, %/carried variant (p)\n")
+print(pd.DataFrame([{"term":t,**{l.replace(chr(10)," "):f"{AA[l][0].loc[t,'estimate']*AA[l][1].get(t,1.0):+.3f} ({AA[l][0].loc[t,'p']:.2g})"
+                     for _,_,_,l in CC}} for t in BURD]).to_string(index=False))
+print("\n  The rate and count agree at the 0.9 floor, where the denominator is nearly constant")
+print("  across founders, and diverge only once it starts varying -- which is the point.")
+'''
+md_read = """## 7 · Reading it
 
 **The stringent filter is not propping up the result.** Held beside the events it excludes, the reported
 coding effect is unchanged: −0.3048 per SD here against −0.2865 in the reported fit, p = 1.7e-04. Its
@@ -592,5 +660,6 @@ if __name__ == "__main__":
         new_markdown_cell(md_pooled), new_code_cell(code_pooled),
         new_markdown_cell(md_tier),   new_code_cell(code_tier),
         new_markdown_cell(md_what),   new_code_cell(code_what),
+        new_markdown_cell(md_count),  new_code_cell(code_count),
         new_markdown_cell(md_read),   new_markdown_cell(md_methods),
     ])

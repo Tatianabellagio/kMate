@@ -34,6 +34,10 @@ IN <- file.path(here, "results", "sv_adaptive", Sys.getenv("ONESTAGE_DIR", "ones
 # _sv_burden_build.py). It only swaps the burden file: fitness, kinship and every covariate are
 # unchanged, so the arms are comparable. It enters SUF so the relaxed fits never clobber the reported one.
 CRTAG <- Sys.getenv("CRTAG", "")
+# BURDEN_MODE: "rate" (default) fits carried/called; "count" fits the raw carried count. The rate divides
+# out how many events a founder is genotyped at; the count does not, which is the point of the comparison.
+BMODE <- Sys.getenv("BURDEN_MODE", "rate")
+stopifnot(BMODE %in% c("rate", "count"))
 RAW <- file.path(here, "results", "sv_adaptive", sprintf("founder_burden_event%s.csv", CRTAG))
 OUT <- file.path(here, "results", "sv_adaptive", Sys.getenv("FINAL_OUT", "final_models_pooled"))
 ORIGIN <- Sys.getenv("BURDEN_ORIGIN", "shared")
@@ -105,9 +109,10 @@ for (ctx in CTX) {
       called  <- FR[[paste0("called_ins_", ctx, "_", fb)]] + FR[[paste0("called_del_", ctx, "_", fb)]]
       stopifnot(all(called > 0))
       rate <- carried / called
-      P[[paste0("sv_", ctx, "_", fb)]] <- z(rate)
-      cnt[[paste0(ctx, "_", fb)]] <- c(sd_rate = sd(rate), med_called = median(called),
-                                       med_carried = median(carried))
+      v <- if (BMODE == "count") carried else rate
+      P[[paste0("sv_", ctx, "_", fb)]] <- z(v)
+      cnt[[paste0(ctx, "_", fb)]] <- c(sd_rate = if (BMODE == "count") sd(v) / median(called) else sd(rate),
+                                       med_called = median(called), med_carried = median(carried))
     }
     next
   }
@@ -118,9 +123,12 @@ for (ctx in CTX) {
                          B[[paste0("called_del_", ORIGIN, "_", cc, "_all")]]
   }
   rate <- carried / called
-  P[[paste0("sv_", ctx)]] <- z(rate)
-  # kept for the per-variant conversion: SD of the raw rate and the median called count
-  cnt[[ctx]] <- c(sd_rate = sd(rate), med_called = median(called), med_carried = median(carried))
+  v <- if (BMODE == "count") carried else rate
+  P[[paste0("sv_", ctx)]] <- z(v)
+  # kept for the per-variant conversion: with counts, sd(count)/med_called reproduces the same
+  # "per one carried event" scale that sd(rate) gives in rate mode, so the two are directly comparable
+  cnt[[ctx]] <- c(sd_rate = if (BMODE == "count") sd(v) / median(called) else sd(rate),
+                  med_called = median(called), med_carried = median(carried))
 }
 # The per-variant scale must be tagged with everything that changes what the burdens ARE: a stratified run
 # redefines the contexts (sv_CDS -> sv_CDS_rare etc.), so sharing one filename let each arm silently clobber
@@ -131,7 +139,8 @@ SCALESUF <- paste0(if (nzchar(EXFIX)) paste0("_x_", gsub("[^A-Za-z0-9]+", "", EX
                    if (nzchar(SUBSET)) paste0("_", SUBSET) else "",
                    if (nzchar(STRATIFY)) paste0("_freq", gsub("[^A-Za-z0-9]+", "",
                                                 paste(c(SCTX, FBINS), collapse = ""))) else "",
-                   CRTAG)
+                   if (BMODE == "count") "_count" else "",
+              CRTAG)
 write.csv(do.call(rbind, lapply(names(cnt), function(x) data.frame(context = x, t(cnt[[x]])))),
           file.path(OUT, paste0("pooled_rate_scale", SCALESUF, ".csv")), row.names = FALSE)
 
@@ -200,6 +209,7 @@ SUF <- paste0(if (nzchar(EXTRA)) paste0("_x_", gsub("[^A-Za-z0-9]+", "", EXTRA))
               if (nzchar(SUBSET)) paste0("_", SUBSET) else "",
               if (length(RE_DROP)) paste0("_re", gsub("[^A-Za-z0-9]+", "", paste(RE_DROP, collapse = ""))) else "",
               if (nzchar(STRATIFY)) paste0("_freq", gsub("[^A-Za-z0-9]+", "", paste(c(SCTX, FBINS), collapse = ""))) else "",
+              if (BMODE == "count") "_count" else "",
               CRTAG)
 
 TASKS <- list(list(name = "M1p_reml", inter = character(0), REML = TRUE),
