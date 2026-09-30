@@ -679,7 +679,105 @@ print("  is unchanged (0.0401 -> 0.0414) and the estimate itself grows, so that 
 print("  Note this also touches the reported rate-0.9 model, where garden:sv_TE sits at the")
 print("  boundary, so sv_TE:bio1c's p = 0.066 carries the same caveat.")
 '''
-md_read = """## 7 · Reading it
+md_tech = """## 7 · Why the two normalisations disagree — and a term the model is missing
+
+Your question was the right one: at the 0.9 floor `z(rate)` and `z(count)` correlate at **0.972–0.994**, so
+how can swapping them move an interaction p-value by two orders of magnitude, in both directions?
+
+The answer is what the 1–5 % of differing variance *is*. The difference between the two predictors is the
+denominator, and the denominator is not neutral:
+
+| the difference (z_count − z_rate) correlates with | CDS | TE | promoter | intergenic |
+|---|---|---|---|---|
+| founder SV call rate | +0.840 | +0.801 | +0.788 | +0.793 |
+| assembly route (cactus) | +0.544 | +0.388 | +0.517 | +0.474 |
+| **founder origin climate (obio1c)** | −0.200 | −0.326 | −0.270 | −0.297 |
+
+Founder call rate is itself correlated with origin climate (r = −0.225, p = 5.7e-04) and with assembly
+route (r = +0.704). So the count carries a technology-and-origin component that the rate divides out. A
+burden × garden-temperature term built on a contaminated predictor can pick up
+*technology × temperature* or *origin climate × temperature* instead — and the interactions carry little
+signal and are near-orthogonal to the main effects, which is why a few percent of shifted variance moves
+them so much more than it moves the main effects.
+
+**Testing that turned up a real omission.** The model fits `obio1c:bio1c` but has **no `cactus:bio1c`** —
+it assumes assembly route has the same effect in every garden. It does not: fitted explicitly,
+**`cactus:bio1c` = −0.0286 ± 0.0089, p = 0.0013**. Since assembly route correlates with the burdens at
+0.45–0.70, leaving it out lets the burden × temperature terms absorb it.
+
+Adding it **strengthens every burden interaction in the reported model**:
+
+| interaction (rate, 0.9 floor) | without `cactus:bio1c` | with it |
+|---|---|---|
+| coding × temp | 0.0292 | **0.0038** |
+| reference TE × temp | 0.0655 | **0.0068** |
+| promoter × temp | 0.0692 | **0.0259** |
+
+⚠ It does **not** reconcile rate with count — they still disagree on TE and promoter with the term in. So
+the missing interaction is a separate problem the rate/count comparison happened to expose, not the
+explanation for the divergence.
+
+⚠ And `cactus:bio1c` needs its own scrutiny before it is adopted. Raw, the per-garden
+cactus-minus-short-read fitness difference *rises* with temperature (r = +0.225, p = 0.22); conditioned in
+the model the coefficient is **negative**. A term that changes sign between the marginal and conditional
+view is exactly the pattern §5 of the cds-vs-rest notebook flags for the non-coding burden, and it should
+be understood before the main model is changed. `callrate_sv:bio1c`, by contrast, is not significant
+(−0.0368 ± 0.0235, p = 0.12) and changes nothing."""
+
+code_tech = r'''
+E0="obio1c + obio1c:bio1c"; EC=E0+" + cactus:bio1c"; EK=E0+" + callrate_sv + callrate_sv:bio1c"
+def tarm(ex,mode):
+    exs="_x_"+"".join(ch for ch in ex if ch.isalnum()); cm="_count" if mode=="count" else ""
+    S=f"{exs}_re0obio1cgarden_refid{cm}"
+    co=pd.read_csv(f"{PA}/coef_M2p_reml{S}.csv").set_index("term")
+    sc=pd.read_csv(f"{PA}/pooled_rate_scale{exs}{cm}.csv").set_index("context")
+    pv={f"sv_{c}":100/(sc.loc[c,"sd_rate"]*sc.loc[c,"med_called"]) for c in sc.index}
+    g=lambda n: pd.read_csv(f"{PA}/loglik_{n}{S}.csv").logLik[0]
+    v=pd.read_csv(f"{PA}/varcomp_M2p_reml{S}.csv")
+    vg={str(r.var1): r.vcov for r in v.itertuples() if str(r.grp).startswith("garden")}
+    return co,pv,{t: stats.chi2.sf(2*(g("M2p_ml")-g(f"M2p_ml_drop_{t}")),1) for t in SVT},vg
+TA=[(E0,"rate","rate, as reported"),(EC,"rate","rate + cactus:bio1c"),
+    (EK,"rate","rate + callrate:bio1c"),(E0,"count","count, base"),
+    (EC,"count","count + cactus:bio1c"),(EK,"count","count + callrate:bio1c")]
+TT={lab:tarm(ex,m) for ex,m,lab in TA}
+fig,axs=plt.subplots(1,len(SVT),figsize=(4.7*len(SVT),3.4),gridspec_kw=dict(wspace=1.05))
+for a,T in zip(np.atleast_1d(axs),SVT):
+    style(a); a.axvline(0,color="0.35",lw=1,ls="--")
+    for i,(ex,m,lab) in enumerate(TA):
+        co,pv,lrt,vg=TT[lab]; k=pv[T]
+        e,s2=co.loc[f"{T}:bio1c","estimate"]*k,co.loc[f"{T}:bio1c","se"]*k
+        c=MC["count" if m=="count" else "rate"]
+        a.errorbar(e,i,xerr=1.96*s2,fmt="o",color=c,mfc=c if lrt[T]<0.05 else "white",
+                   mew=1.3,ms=7,capsize=2.5,zorder=3)
+        a.annotate(f"{lrt[T]:.2g}"+("  *" if vg.get(T,1)<1e-6 else ""),
+                   xy=(1.03,i),xycoords=("axes fraction","data"),ha="left",va="center",
+                   fontsize=6.6,color="0.35",annotation_clip=False)
+        if i<len(TA)-1: a.axhline(i+0.5,color="0.93",lw=0.8)
+    a.axhline(2.5,color="0.6",lw=1.0,ls="--")
+    a.set_yticks(range(len(TA))); a.set_yticklabels([l for _,_,l in TA],fontsize=7.2)
+    a.set_ylim(len(TA)-0.5,-0.5)
+    a.annotate(LAB[T]+" x temperature",xy=(0.0,1.06),xycoords="axes fraction",fontsize=8.5,color="0.2")
+    a.set_xlabel("% per carried variant per degC\n(95% CI; label = LRT p, * = slope at boundary)",fontsize=7.3)
+save(fig,"callrate_missing_interaction",nb=True); plt.show()
+print("INTERACTION LRT p -- adding the interactions the model does not currently fit\n")
+print(f"  {'arm':24s}"+"".join(f"{t:>18s}" for t in SVT))
+for ex,m,lab in TA:
+    co,pv,lrt,vg=TT[lab]
+    print(f"  {lab:24s}"+"".join(f"{lrt[t]:>15.3g}{'  *' if vg.get(t,1)<1e-6 else '   '}" for t in SVT))
+print("\n   * = that garden random slope is at the boundary; its SE is anti-conservative\n")
+print("\nTHE OMITTED TERMS, FITTED\n")
+for ex,m,lab in TA:
+    co=TT[lab][0]
+    for t in co.index:
+        if set(t.split(":"))=={"cactus","bio1c"} or set(t.split(":"))=={"callrate_sv","bio1c"}:
+            print(f"  {lab:24s} {t:20s} {co.loc[t,'estimate']:+.5f} +- {co.loc[t,'se']:.5f}   "
+                  f"p {co.loc[t,'p']:.4g}")
+print("\n  cactus:bio1c is significant and the reported model does not fit it. Omitting a real")
+print("  temperature-varying effect of a covariate that correlates with the burdens at 0.45-0.70")
+print("  lets the burden x temperature terms absorb it -- which is why they all strengthen when")
+print("  it is added. It is NOT, however, what makes rate and count disagree: they still do.")
+'''
+md_read = """## 8 · Reading it
 
 **The stringent filter is not propping up the result.** Held beside the events it excludes, the reported
 coding effect is unchanged: −0.3048 per SD here against −0.2865 in the reported fit, p = 1.7e-04. Its
@@ -732,5 +830,6 @@ if __name__ == "__main__":
         new_markdown_cell(md_tier),   new_code_cell(code_tier),
         new_markdown_cell(md_what),   new_code_cell(code_what),
         new_markdown_cell(md_count),  new_code_cell(code_count),
+        new_markdown_cell(md_tech),   new_code_cell(code_tech),
         new_markdown_cell(md_read),   new_markdown_cell(md_methods),
     ])
