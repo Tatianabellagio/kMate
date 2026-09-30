@@ -53,7 +53,7 @@ OUT = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive"
 SV_BP = 50
 CALL_MIN = float(os.environ.get("SV_CALL_MIN", 0.9))
 STRATUM = os.environ.get("STRATUM", "freq")
-assert STRATUM in ("freq", "size")
+assert STRATUM in ("freq", "size", "callrate")
 # Carrier floor. STRATUM=freq defaults to 1 so the `private` bin exists at all; STRATUM=size defaults to 2,
 # matching the main model's `all` class -- otherwise the size burdens silently absorb the singleton class,
 # which is an assembly-detection artifact (cactus founders carry 17x more private events) and would
@@ -63,9 +63,16 @@ MIN_CAR = int(os.environ.get("MIN_CAR", 1 if STRATUM == "freq" else 2))
 if STRATUM == "freq":
     EDGES = os.environ.get("FREQ_EDGES", "1:1,2:12,13:231")
     NAMES = os.environ.get("FREQ_NAMES", "private,rare,common").split(",")
-else:
+elif STRATUM == "size":
     EDGES = os.environ.get("SIZE_EDGES", "50:99,100:499,500:1000000000")
     NAMES = os.environ.get("SIZE_NAMES", "small,medium,large").split(",")
+else:
+    # CALL-RATE tiers, cut on the number of founders the event is genotyped in. Run this with
+    # SV_CALL_MIN=0.5 so the relaxed events exist at all: the `high` bin is then exactly the set the
+    # reported 0.9 model uses, and `low` is what relaxing the floor newly admits. Putting both in one
+    # model asks whether the reported effect survives when the newly admitted events are held beside it.
+    EDGES = os.environ.get("CALL_EDGES", "116:207,208:231")
+    NAMES = os.environ.get("CALL_NAMES", "lowcall,highcall").split(",")
 BINS = [(int(a), int(b), n) for (a, b), n in
         zip((e.split(":") for e in EDGES.split(",")), NAMES)]
 
@@ -83,7 +90,7 @@ def main():
     # arithmetic downstream would silently double-count
     for (a1, b1, n1), (a2, b2, n2) in zip(BINS, BINS[1:]):
         assert b1 < a2, f"bins {n1} and {n2} overlap"
-    unit = "MAC" if STRATUM == "freq" else "bp"
+    unit = {"freq": "MAC", "size": "bp", "callrate": "founders called"}[STRATUM]
     print(f"STRATUM={STRATUM}  MIN_CAR={MIN_CAR}  bins: "
           + ", ".join(f"{n} {unit} {a}-{b}" for a, b, n in BINS))
     print(f"call-rate floor: {CALL_MIN:.0%} of {N} founders\n")
@@ -122,7 +129,7 @@ def main():
                     w = bsize[s_].astype(np.float64)
                     add(f"bp_{kind}_{x}", np.asarray(Pf[s_].T.dot(w)).ravel())
                     add(f"called_bp_{kind}_{x}", np.asarray(Qf[s_].T.dot(w)).ravel())
-            BV = c if STRATUM == "freq" else bsize       # the variable the bins are cut on
+            BV = {"freq": c, "size": bsize, "callrate": k}[STRATUM]   # the variable the bins are cut on
             for lo, hi, nm in BINS:
                 fm = okc & (BV >= lo) & (BV <= hi)
                 n_ev[nm] += int(fm.sum())

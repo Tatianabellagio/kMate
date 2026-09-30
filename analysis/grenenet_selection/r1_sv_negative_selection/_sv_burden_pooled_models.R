@@ -30,7 +30,11 @@ here <- dirname(normalizePath(sub("--file=", "", args[grep("--file=", args)])))
 # invocations are unchanged. BURDEN_ORIGIN=all pools the no-origin-filter burdens instead, to mirror
 # `_sv_burden_final_models.R`'s BURDEN_ORIGIN arm (see sv_burden_origin_sensitivity.ipynb).
 IN <- file.path(here, "results", "sv_adaptive", Sys.getenv("ONESTAGE_DIR", "onestage"))
-RAW <- file.path(here, "results", "sv_adaptive", "founder_burden_event.csv")
+# CRTAG selects a burden table built at a relaxed founder call-rate floor (SV_CALL_MIN in
+# _sv_burden_build.py). It only swaps the burden file: fitness, kinship and every covariate are
+# unchanged, so the arms are comparable. It enters SUF so the relaxed fits never clobber the reported one.
+CRTAG <- Sys.getenv("CRTAG", "")
+RAW <- file.path(here, "results", "sv_adaptive", sprintf("founder_burden_event%s.csv", CRTAG))
 OUT <- file.path(here, "results", "sv_adaptive", Sys.getenv("FINAL_OUT", "final_models_pooled"))
 ORIGIN <- Sys.getenv("BURDEN_ORIGIN", "shared")
 stopifnot(ORIGIN %in% c("shared", "all"))
@@ -80,7 +84,7 @@ cnt <- list()
 # NOTE `private` (MAC 1) is only interpretable within the cactus panel -- see the header of
 # _sv_burden_freq_bins.py. Fitting it on all 231 founders measures assembly route, not biology.
 STRATIFY <- Sys.getenv("BURDEN_STRATIFY", "")
-stopifnot(STRATIFY %in% c("", "freq", "size"))
+stopifnot(STRATIFY %in% c("", "freq", "size", "callrate"))
 DEFBINS <- if (identical(STRATIFY, "size")) "small,medium,large" else "rare,common"
 FBINS <- setdiff(strsplit(Sys.getenv("FREQ_BINS", DEFBINS), "[,: ]+")[[1]], "")
 SCTX  <- setdiff(strsplit(Sys.getenv("STRATIFY_CTX", "CDS"), "[,: ]+")[[1]], "")
@@ -126,7 +130,8 @@ SCALESUF <- paste0(if (nzchar(EXFIX)) paste0("_x_", gsub("[^A-Za-z0-9]+", "", EX
                    if (!(POOL_SET0 %in% c("sv4", "sv6"))) paste0("_", POOL_SET0) else "",
                    if (nzchar(SUBSET)) paste0("_", SUBSET) else "",
                    if (nzchar(STRATIFY)) paste0("_freq", gsub("[^A-Za-z0-9]+", "",
-                                                paste(c(SCTX, FBINS), collapse = ""))) else "")
+                                                paste(c(SCTX, FBINS), collapse = ""))) else "",
+                   CRTAG)
 write.csv(do.call(rbind, lapply(names(cnt), function(x) data.frame(context = x, t(cnt[[x]])))),
           file.path(OUT, paste0("pooled_rate_scale", SCALESUF, ".csv")), row.names = FALSE)
 
@@ -194,7 +199,8 @@ SUF <- paste0(if (nzchar(EXTRA)) paste0("_x_", gsub("[^A-Za-z0-9]+", "", EXTRA))
               if (!(POOL_SET %in% c("sv4", "sv6"))) paste0("_", POOL_SET) else "",
               if (nzchar(SUBSET)) paste0("_", SUBSET) else "",
               if (length(RE_DROP)) paste0("_re", gsub("[^A-Za-z0-9]+", "", paste(RE_DROP, collapse = ""))) else "",
-              if (nzchar(STRATIFY)) paste0("_freq", gsub("[^A-Za-z0-9]+", "", paste(c(SCTX, FBINS), collapse = ""))) else "")
+              if (nzchar(STRATIFY)) paste0("_freq", gsub("[^A-Za-z0-9]+", "", paste(c(SCTX, FBINS), collapse = ""))) else "",
+              CRTAG)
 
 TASKS <- list(list(name = "M1p_reml", inter = character(0), REML = TRUE),
               list(name = "M2p_reml", inter = SV3, REML = TRUE),
