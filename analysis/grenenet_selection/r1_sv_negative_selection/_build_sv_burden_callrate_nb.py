@@ -607,6 +607,35 @@ print(pd.DataFrame([{"term":t,**{l.replace(chr(10)," "):f"{AA[l][0].loc[t,'estim
                      for _,_,_,l in CC}} for t in BURD]).to_string(index=False))
 print("\n  The rate and count agree at the 0.9 floor, where the denominator is nearly constant")
 print("  across founders, and diverge only once it starts varying -- which is the point.")
+
+# --- the interaction terms, same eight arms, classic forest ---
+fig,axs=plt.subplots(1,len(SVT),figsize=(4.6*len(SVT),3.9),gridspec_kw=dict(wspace=1.05))
+for a,T in zip(np.atleast_1d(axs),SVT):
+    style(a); a.axvline(0,color="0.35",lw=1,ls="--")
+    for i,(m,ex,cr,lab) in enumerate(CC):
+        co,pv,lrt=AA[lab]; k=pv[T]
+        e,s2=co.loc[f"{T}:bio1c","estimate"]*k,co.loc[f"{T}:bio1c","se"]*k
+        c=MC["countc" if "callrate" in lab else m]
+        a.errorbar(e,i,xerr=1.96*s2,fmt="o",color=c,mfc=c if lrt[T]<0.05 else "white",
+                   mew=1.3,ms=7,capsize=2.5,zorder=3)
+        a.annotate(f"{lrt[T]:.2g}",xy=(1.03,i),xycoords=("axes fraction","data"),ha="left",
+                   va="center",fontsize=6.6,color="0.35",annotation_clip=False)
+        if i<len(CC)-1: a.axhline(i+0.5,color="0.93",lw=0.8)
+    for b_ in (2.5,5.5): a.axhline(b_,color="0.6",lw=1.0,ls="--")
+    a.set_yticks(range(len(CC)))
+    a.set_yticklabels([l.replace("\n"," ") for _,_,_,l in CC],fontsize=7.2)
+    a.set_ylim(len(CC)-0.5,-0.5)
+    a.annotate(LAB[T]+" x temperature",xy=(0.0,1.06),xycoords="axes fraction",fontsize=8.5,color="0.2")
+    a.set_xlabel("% per carried variant per degC\n(95% CI; label = LRT p)",fontsize=7.5)
+save(fig,"callrate_count_interactions",nb=True); plt.show()
+print("\nINTERACTIONS ACROSS NORMALISATION AND FLOOR -- %/carried variant/degC (LRT p)\n")
+print(pd.DataFrame([{"term":t+":bio1c",**{l.replace(chr(10)," "):
+    f"{AA[l][0].loc[t+':bio1c','estimate']*AA[l][1][t]:+.4f} ({AA[l][2][t]:.2g})"
+    for _,_,_,l in CC}} for t in SVT]).to_string(index=False))
+print("\n  NOTE. The interaction p-values strengthen by several orders of magnitude in count mode")
+print("  (sv_CDS 0.029 -> 8e-07, sv_promoter 0.069 -> 3e-06). The per-variant EFFECT SIZES do not")
+print("  move nearly as much, so this is mostly a precision change, not a change in the fitted")
+print("  slope. Treat it as unexplained until it is understood -- it is not reported as a result.")
 '''
 md_read = """## 7 · Reading it
 
