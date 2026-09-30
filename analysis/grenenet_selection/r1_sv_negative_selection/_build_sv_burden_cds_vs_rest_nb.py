@@ -388,7 +388,7 @@ print(f"\ncorrelation of the per-garden non-coding slope with the per-garden loc
       f"(random parts only): r = {r:+.3f}")
 '''
 
-md_lare = """## 6 · The full model, with local adaptation fitted per garden
+md_lare = """## 6 · Every term of the model, in one figure
 
 The one change under test: local adaptation was a **single** coefficient (`obio1c:bio1c`), forcing it to
 scale linearly with garden temperature. It now also gets a **random garden slope**, `(0 + obio1c | garden)`,
