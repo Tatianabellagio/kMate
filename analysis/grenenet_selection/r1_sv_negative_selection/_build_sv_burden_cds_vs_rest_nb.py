@@ -213,7 +213,7 @@ temperature` is 0.026 here and 0.043 in `all6`; the separate TE and promoter int
 
 Read the non-coding one cautiously. Pooling five contexts into one term concentrates them: the very same
 variants, fitted as separate contexts in `all6`, give 0.093 and 0.095. And it is an interaction on a main
-effect whose own interpretation is unresolved (§7)."""
+effect whose own interpretation is unresolved (§8)."""
 
 code_int = r'''
 fig,axs=plt.subplots(1,2,figsize=(11.4,2.7),gridspec_kw=dict(width_ratios=[1,1.25],wspace=0.46))
@@ -451,7 +451,92 @@ for T in TT:
           f"   |   raw {rw.min():+.2f}..{rw.max():+.2f}, positive in {(rw>0).sum():2d}/{len(order)}"
           f"   |   r(raw, conditional) = {np.corrcoef(rw,cd)[0,1]:+.2f}")
 '''
-md_lare = """## 6 · Every term of the model, in one figure
+md_ladder = """## 6 · Why the non-coding coefficient is positive
+
+The non-coding burden does **not** start out positively associated with fitness. On its own, with nothing
+controlled, more non-coding SVs go with **lower** fitness. The positive coefficient in the reported model is
+built up by the covariates, one at a time — and this panel shows exactly which ones do it.
+
+Each row adds one covariate to the row above, cumulatively; the bottom row **is** the reported model's main
+effect (the founder-mean GLS reproduces it to ~1e-13, checked below). Red is a positive estimate, navy
+negative; filled markers are p < 0.05.
+
+The reason kinship moves it so much: **74 % of the non-coding burden's variance is explained by the top 10
+kinship PCs**, against 61 % for the coding burden. The non-coding burden is largely an ancestry variable, so
+what survives after conditioning on kinship is a small slice of its original variation.
+
+⚠ Read this as an explanation of the parametrisation, not as a menu to choose from. The bottom row is the
+model; the rows above it exist to show where its value comes from."""
+
+code_ladder = r'''
+CTX6L=["CDS","UTR","intron","TE","promoter","intergenic"]
+LL=pd.read_csv(f"{G}/onestage_all/long.csv",dtype={"founder":str})
+KK=pd.read_csv(f"{G}/onestage_all/kinship.csv",index_col=0)
+KK.index=KK.index.astype(str); KK.columns=KK.columns.astype(str)
+BB=pd.read_csv(f"{G}/founder_burden_event.csv",dtype={"founder":str})
+zzl=lambda v:(v-v.mean())/v.std(ddof=1)
+carl={c:BB[f"ins_all_{c}_all"]+BB[f"del_all_{c}_all"] for c in CTX6L}
+call={c:BB[f"called_ins_all_{c}_all"]+BB[f"called_del_all_{c}_all"] for c in CTX6L}
+PP=pd.DataFrame({"founder":BB.founder})
+PP["sv_CDS"]=zzl(carl["CDS"]/call["CDS"])
+PP["sv_nonCDS"]=zzl(sum(carl[c] for c in CTX6L if c!="CDS")/sum(call[c] for c in CTX6L if c!="CDS"))
+PP["obio1c"]=BB.bio1-BB.bio1.mean()
+PP=PP.merge(LL.drop_duplicates("founder")[["founder","snp_CDS","cactus"]],on="founder")
+DD=PP.merge(LL.groupby("founder").y.mean().rename("ybar").reset_index(),on="founder").set_index("founder")
+fol=DD.index.to_list(); ngl=LL.garden.nunique(); yy=DD.ybar.to_numpy(float)
+vcl=pd.read_csv(f"{PA}/varcomp_M2p_reml{MSUF}.csv")
+gvl=lambda g: float(vcl[vcl.grp==g].vcov.iloc[0]) if (vcl.grp==g).any() else 0.0
+Ik=np.eye(len(DD))
+VK=gvl("kin")*KK.loc[fol,fol].to_numpy()+(gvl("Residual")/ngl)*Ik      # kinship structure retained
+VN=(gvl("kin")+gvl("Residual")/ngl)*Ik                                # same total variance, no structure
+def glsl(cols,Vm):
+    X=np.column_stack([np.ones(len(DD))]+[DD[c].to_numpy(float) for c in cols])
+    Vi=np.linalg.inv(Vm); A=X.T@Vi@X; bb=np.linalg.solve(A,X.T@Vi@yy)
+    se=np.sqrt(np.diag(np.linalg.inv(A)))
+    return {c:(bb[i+1],se[i+1]) for i,c in enumerate(cols)}
+LAD=[("the burden on its own",              [],                             VN),
+     ("+ SNP kinship",                      [],                             VK),
+     ("+ SNP coding burden",                ["snp_CDS"],                    VK),
+     ("+ assembly route",                   ["snp_CDS","cactus"],           VK),
+     ("+ founder origin climate",           ["snp_CDS","cactus","obio1c"],  VK),
+     ("+ the other SV burden = THE MODEL",  ["snp_CDS","cactus","obio1c"],  VK)]
+fig,axs=plt.subplots(1,2,figsize=(12.8,3.6),gridspec_kw=dict(wspace=1.15))
+res={}
+for a,T in zip(axs,["sv_nonCDS","sv_CDS"]):
+    style(a); a.axvline(0,color="0.35",lw=1,ls="--")
+    other="sv_CDS" if T=="sv_nonCDS" else "sv_nonCDS"; k=M2["pv"][T]; rows=[]
+    for i,(lab,nui,Vm) in enumerate(LAD):
+        cols=[T]+nui+([other] if i==len(LAD)-1 else [])
+        e,s=glsl(cols,Vm)[T]; e,s=e*k,s*k
+        p=2*stats.norm.sf(abs(e/s)); c=POSC if e>0 else NEGC
+        a.errorbar(e,i,xerr=1.96*s,fmt="o",color=c,mfc=c if p<0.05 else "white",
+                   mew=1.3,ms=7.5,capsize=2.5,zorder=3)
+        if i<len(LAD)-1: a.axhline(i+0.5,color="0.93",lw=0.8)
+        rows.append({"step":lab,"%/carried variant":f"{e:+.4f}",
+                     "95% CI":f"[{e-1.96*s:+.3f}, {e+1.96*s:+.3f}]","p":f"{p:.4g}"})
+        a.annotate(f"p = {p:.3g}",xy=(1.03,i),xycoords=("axes fraction","data"),ha="left",
+                   va="center",fontsize=7,color="0.35",annotation_clip=False)
+    a.axhline(len(LAD)-1.5,color="0.6",lw=1.0,ls="--")
+    a.set_yticks(range(len(LAD))); a.set_yticklabels([l for l,_,_ in LAD],fontsize=8)
+    a.set_ylim(len(LAD)-0.5,-0.5)
+    a.set_xlabel(f"{'non-coding' if T=='sv_nonCDS' else 'coding'} burden, "
+                 "% fitness per carried variant  (95% CI)",fontsize=8)
+    res[T]=pd.DataFrame(rows)
+save(fig,"cdsrest_covariate_ladder",nb=True); plt.show()
+for T in ("sv_nonCDS","sv_CDS"):
+    print(f"\n{'NON-CODING' if T=='sv_nonCDS' else 'CODING'} burden, covariates added cumulatively:")
+    print(res[T].to_string(index=False))
+    lm=M2["co"].loc[T,"estimate"]*M2["pv"][T]
+    print(f"  bottom row vs the fitted LMM: {float(res[T]['%/carried variant'].iloc[-1]):+.4f} "
+          f"vs {lm:+.4f}   diff {abs(float(res[T]['%/carried variant'].iloc[-1])-lm):.2e}")
+ev,EV=np.linalg.eigh(KK.loc[fol,fol].to_numpy()); pcs=EV[:,::-1][:,:10]
+print()
+for nm in ("sv_nonCDS","sv_CDS"):
+    v=DD[nm].to_numpy(float)
+    print(f"  variance of the {'non-coding' if nm=='sv_nonCDS' else 'coding':10s} burden explained by the "
+          f"top 10 kinship PCs: {100*(1-np.var(v-pcs@np.linalg.lstsq(pcs,v,rcond=None)[0])/np.var(v)):.1f}%")
+'''
+md_lare = """## 7 · Every term of the model, in one figure
 
 The one change under test: local adaptation was a **single** coefficient (`obio1c:bio1c`), forcing it to
 scale linearly with garden temperature. It now also gets a **random garden slope**, `(0 + obio1c | garden)`,
@@ -519,7 +604,7 @@ print("\nRANDOM EFFECTS"); print(VC2.to_string(index=False))
 print(f"\nlogLik {LL2.logLik:.4f}   df {int(LL2.df)}   singular {LL2.singular}")
 '''
 
-md_read = """## 7 · Reading it
+md_read = """## 8 · Reading it
 
 **Nothing important was missing, but the gap was real.** UTR and intron variants — 20 % of passing events —
 had entered no burden term. Given their own terms they are individually null (UTR p = 0.37, intron
@@ -584,6 +669,7 @@ if __name__ == "__main__":
         new_markdown_cell(md_jack), new_code_cell(code_jack),
         new_markdown_cell(md_gard), new_code_cell(code_gard),
         new_markdown_cell(md_pergarden), new_code_cell(code_pergarden),
+        new_markdown_cell(md_ladder), new_code_cell(code_ladder),
         new_markdown_cell(md_lare), new_code_cell(code_lare),
         new_markdown_cell(md_read), new_markdown_cell(md_methods),
     ])
