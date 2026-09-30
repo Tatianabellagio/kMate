@@ -6,22 +6,24 @@ kMate is a Python package. It also calls two external programs: **jellyfish**
 ## Install
 
 ```bash
-mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
+mamba create -n kmate -c conda-forge -c bioconda kmate
 mamba activate kmate
-pip install kmate
 ```
 
-`conda`/`micromamba` work the same way.
+`conda`/`micromamba` work the same way. This pulls kMate and the programs it calls,
+`kmer-jellyfish` and `samtools`.
 
-> ### Do not use `conda install kmate` yet
-> The bioconda package is currently stuck at an old, broken 0.1.0: it pulls in the
-> wrong `jellyfish` and cannot count k-mers at all. The fix is in review:
-> [bioconda-recipes#69722](https://github.com/bioconda/bioconda-recipes/pull/69722). Install as shown above until it merges.
+### From source
 
-> ### The k-mer counter is `kmer-jellyfish`, not `jellyfish`
-> On conda-forge, `jellyfish` is an unrelated Python string-similarity library that
-> installs no `jellyfish` program. If you install that by mistake you will get
-> `jellyfish: command not found` when you run kMate.
+To track the latest changes:
+
+```bash
+git clone https://github.com/Tatianabellagio/kMate.git
+cd kMate
+mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
+mamba activate kmate
+pip install -e .
+```
 
 ## Check it works
 
@@ -46,8 +48,7 @@ PASS: kMate is correctly installed and working.
 kmate --version
 ```
 
-Use **0.1.2 or newer**. Older builds lack `--normalize`, `--unit` and `--emit-af-se`
-and silently use a superseded estimator.
+Use **0.1.2 or newer**. Older builds cannot count k-mers.
 
 ## From source
 

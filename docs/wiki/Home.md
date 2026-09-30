@@ -72,9 +72,8 @@ haplotypes carrying it. One pass covers every SNP, indel and SV.
 
 ```bash
 # install
-mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
+mamba create -n kmate -c conda-forge -c bioconda kmate
 mamba activate kmate
-pip install kmate
 kmate selftest                      # must print PASS
 ```
 

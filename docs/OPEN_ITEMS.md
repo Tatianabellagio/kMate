@@ -55,17 +55,24 @@ plausibility argument.
 (coverage of nominal intervals, across coverage and panel-support strata), and either
 replaces `se` or ships as a clearly-labelled second column.
 
-## 3. bioconda still serves the broken 0.1.0
+## 3. The released package trails the source
 
-**Status:** 0.1.2 published to PyPI 2026-09-29; bioconda PR pending.
+**Status:** bioconda serves a working 0.1.2 (merged 2026-09-30); the CLI has moved since.
 
-PyPI serves 0.1.2 (verified: the hash matches the built artifact byte-for-byte, and it
-passes `selftest` in a pristine env). bioconda still serves **0.1.0**, which cannot count
-k-mers and predates the per-founder normalization fix, so the install docs route users to
-PyPI and warn against `conda install kmate`.
+`mamba create -c conda-forge -c bioconda kmate` installs 0.1.2, pulls `kmer-jellyfish`,
+and passes `selftest`. The 0.1.2 sdist was built before three CLI changes, so the
+released package and this repository differ:
 
-**Done when:** the bioconda recipe update is merged, and the install docs collapse back to
-a single `mamba create ... kmate` line with the warning removed.
+| flag | released 0.1.2 | source |
+|---|---|---|
+| `--kmer-weight` | present | removed |
+| `--emit-af-se` | present | removed |
+| `--smooth-windows` | absent (`--no-local-only`) | present |
+
+Accepted deliberately rather than opening another bioconda PR per change.
+
+**Done when:** the next release ships, at which point the wiki's Command reference
+matches what `pip`/`conda` install.
 
 ## 4. Inherited gap in the decomposition catalog
 

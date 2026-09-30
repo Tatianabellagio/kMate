@@ -33,23 +33,16 @@ the cold-regulated *COR413-PM2* gene, rising in cold gardens and falling in warm
 
 ## Install
 
-> ⚠️ **Do not `conda install kmate` yet.** bioconda currently serves **0.1.0**, which is
-> broken two ways: it depends on `jellyfish` (a Python string-similarity library that
-> ships no `jellyfish` binary, so kMate cannot count k-mers), and it was built from a
-> pre-July-2026 snapshot lacking `--normalize`, `--unit` and `--emit-af-se` — it would
-> silently run an older estimator. The fix is in review:
-> [bioconda-recipes#69722](https://github.com/bioconda/bioconda-recipes/pull/69722). Until it merges, use one of the two routes below.
-
-**Current release (0.1.1), from PyPI into a conda environment:**
-
 ```bash
-mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
+mamba create -n kmate -c conda-forge -c bioconda kmate
 mamba activate kmate
-pip install kmate               # bioconda's 0.1.0 is broken; see above
-kmate selftest                  # must print PASS
+kmate selftest
 ```
 
-**From source (for development, and to track `master`):**
+This installs kMate and the programs it calls, **`kmer-jellyfish`** (the k-mer counter)
+and `samtools`.
+
+### From source
 
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
@@ -59,10 +52,6 @@ mamba activate kmate
 pip install -e .
 kmate selftest
 ```
-
-The conda step installs the non-Python tools kMate shells out to: **`kmer-jellyfish`**
-(the k-mer counter — *not* `jellyfish`) and `samtools`. The Python deps are `numpy`,
-`scipy`, `pysam`.
 
 ### Verify the install
 
