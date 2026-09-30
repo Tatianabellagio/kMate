@@ -554,6 +554,13 @@ normalisations **agree at the 0.9 floor** (−1.59 vs −1.49 %/variant) — whi
 because that is exactly where the denominator is nearly constant across founders (CV 0.038) and so cannot
 be doing any harm. They diverge only where the denominator starts varying.
 
+⚠ **The count-mode interaction p-values are partly an artifact — see the boundary table in the output.**
+In count mode the garden random slope for the coding burden collapses to exactly zero, which makes the
+fixed interaction's standard error anti-conservative (the fit then asserts one identical slope across all
+31 gardens). The headline `p = 8e-07` for coding × temperature at the 0.7 floor sits in that situation and
+should not be believed. Promoter × temperature at the 0.9 floor does not — its slope variance is unchanged
+and the estimate itself grows — so that one is a real change.
+
 ⚠ **This is not a free lunch, and the count is not simply the better variable.** Dropping the denominator
 also drops the correction for how much of the genome a founder can be genotyped in — a founder callable at
 more events will carry more, for no biological reason. The last two columns therefore put `callrate_sv`
@@ -632,10 +639,45 @@ print("\nINTERACTIONS ACROSS NORMALISATION AND FLOOR -- %/carried variant/degC (
 print(pd.DataFrame([{"term":t+":bio1c",**{l.replace(chr(10)," "):
     f"{AA[l][0].loc[t+':bio1c','estimate']*AA[l][1][t]:+.4f} ({AA[l][2][t]:.2g})"
     for _,_,_,l in CC}} for t in SVT]).to_string(index=False))
-print("\n  NOTE. The interaction p-values strengthen by several orders of magnitude in count mode")
-print("  (sv_CDS 0.029 -> 8e-07, sv_promoter 0.069 -> 3e-06). The per-variant EFFECT SIZES do not")
-print("  move nearly as much, so this is mostly a precision change, not a change in the fitted")
-print("  slope. Treat it as unexplained until it is understood -- it is not reported as a result.")
+print("\n  WHY THE TWO NORMALISATIONS DIVERGE, AND WHY SOME OF IT IS NOT TRUSTWORTHY\n")
+zz2=lambda v:(v-v.mean())/v.std(ddof=1)
+tech2=LONG.drop_duplicates("founder").set_index("founder").cactus
+B9=pd.read_csv(f"{G}/founder_burden_event.csv",dtype={"founder":str}).set_index("founder")
+tc2=tech2.loc[B9.index].to_numpy(float)
+print("  At the 0.9 floor the rate and the count are nearly the same variable -- but the sliver")
+print("  where they differ is assembly route, not noise:\n")
+print(f"    {'context':12s} {'r(z_rate,z_count)':>18s} {'r(called, cactus)':>19s} {'r(difference, cactus)':>23s}")
+for c in ["CDS","TE","promoter","intergenic"]:
+    car=(B9[f"ins_all_{c}_all"]+B9[f"del_all_{c}_all"]).astype(float)
+    cal=(B9[f"called_ins_all_{c}_all"]+B9[f"called_del_all_{c}_all"]).astype(float)
+    zr,zc=zz2(car/cal),zz2(car); d=zc-zr
+    print(f"    {c:12s} {np.corrcoef(zr,zc)[0,1]:18.4f} {np.corrcoef(cal,tc2)[0,1]:19.3f}"
+          f" {np.corrcoef(d,tc2)[0,1]:+23.3f}")
+print("\n  So dividing by `called` removes a technology-linked component. The interactions carry")
+print("  little signal and are near-orthogonal to the main effects, so a systematic few-percent")
+print("  shift in the predictor moves them far more than it moves the main effects.\n")
+print("\n  BOUNDARY WARNING -- read before using any count-mode interaction p-value:\n")
+print(f"    {'arm':14s} {'term':20s} {'z':>7s} {'Wald p':>11s} {'LRT p':>11s} {'garden slope var':>18s}")
+for m,ex,cr,lab in CC:
+    if "callrate" in lab: continue
+    exs="_x_"+"".join(ch for ch in ex if ch.isalnum()); cm="_count" if m=="count" else ""
+    S3=f"{exs}_re0obio1cgarden_refid{cm}{cr}"
+    co3=pd.read_csv(f"{PA}/coef_M2p_reml{S3}.csv").set_index("term")
+    v3=pd.read_csv(f"{PA}/varcomp_M2p_reml{S3}.csv")
+    vg={str(r.var1): r.vcov for r in v3.itertuples() if str(r.grp).startswith("garden")}
+    for t in SVT:
+        z3=co3.loc[f"{t}:bio1c","estimate"]/co3.loc[f"{t}:bio1c","se"]
+        flag=" <-- AT BOUNDARY" if vg.get(t,1)<1e-6 else ""
+        print(f"    {lab:14s} {t+':bio1c':20s} {z3:7.2f} {2*stats.norm.sf(abs(z3)):11.4g}"
+              f" {AA[lab][2][t]:11.4g} {vg.get(t,float('nan')):18.6f}{flag}")
+print("\n  Wald and LRT agree everywhere, so the TEST is fine. The problem is the model: where a")
+print("  garden random slope collapses to exactly zero, the fit asserts the burden effect is")
+print("  identical in all 31 gardens, so the fixed interaction's SE stops carrying between-garden")
+print("  uncertainty and is anti-conservative. count 0.7 sv_CDS:bio1c (p = 8e-07) is exactly that")
+print("  case and should NOT be believed. sv_promoter at the 0.9 floor is NOT -- its slope variance")
+print("  is unchanged (0.0401 -> 0.0414) and the estimate itself grows, so that one is real.")
+print("  Note this also touches the reported rate-0.9 model, where garden:sv_TE sits at the")
+print("  boundary, so sv_TE:bio1c's p = 0.066 carries the same caveat.")
 '''
 md_read = """## 7 · Reading it
 
