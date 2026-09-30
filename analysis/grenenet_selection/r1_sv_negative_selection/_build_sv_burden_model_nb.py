@@ -341,6 +341,68 @@ for T in SVT:
           f"positive in {(b>0).sum():2d}/{len(g)} gardens")
 '''
 
+md_pergarden = """### Garden by garden, as the model fits it
+
+The panel you asked for, one per garden, ordered by garden temperature — but the y axis is **not** raw
+ecotype fitness and the line is **not** a per-garden regression of fitness on burden.
+
+Each point is a **partial residual** from the full model: that founder's fitness in that garden with every
+other covariate already removed — kinship, the SNP coding burden, assembly route, origin climate, local
+adaptation fitted per garden, and the other burden. The coloured line is that garden's **conditional**
+effect from the model, fixed part + temperature term + its random slope; by construction it is the slope
+through those points. The grey dashed line is the raw within-garden regression of fitness on burden, with
+nothing controlled, so the two can be read against each other.
+
+The number in each panel is the model's slope for that garden, in % per carried variant, printed **red**
+where it is positive."""
+
+code_pergarden = r'''
+RS=pd.read_csv(f"{PA}/resid_M2p_reml{SUF}.csv",dtype={"founder":str,"garden":str})
+GDX=GD; TT=SVT; LBP={t:LAB2(t) for t in SVT}
+gb=GDX.drop_duplicates("garden")[["garden","bio1"]].copy(); gb["garden"]=gb.garden.astype(str)
+order=gb.sort_values("bio1").garden.to_list(); bio=dict(zip(gb.garden,gb.bio1))
+NORM=mpl.colors.Normalize(min(bio.values()),max(bio.values())); CM=plt.get_cmap("coolwarm")
+NEGC,POSC="#1F4E79","#C0392B"                      # negative slope / positive slope
+fig,axs=plt.subplots(len(TT),len(order),figsize=(0.80*len(order),2.0*len(TT)),
+                     sharex=True,sharey="row",gridspec_kw=dict(hspace=0.34,wspace=0.05))
+axs=np.atleast_2d(axs)
+for ri,T in enumerate(TT):
+    sc=PV(T); tot={str(r.garden):r.total for r in GDX[GDX.term==T].itertuples()}
+    pr=RS.resid+RS.garden.map(tot).to_numpy()*RS[T].to_numpy()      # component + residual
+    ylo,yhi=np.percentile(pr,[1,99]); xlo,xhi=RS[T].min(),RS[T].max()
+    for ci,gname in enumerate(order):
+        a=axs[ri,ci]; m=(RS.garden==gname).to_numpy()
+        x=RS[T].to_numpy()[m]; yv=pr.to_numpy()[m]
+        lc=NEGC if tot[gname]<0 else POSC                # the line is coloured by the SIGN of the slope
+        a.scatter(x,yv,s=2.2,color="0.45",alpha=0.13,linewidth=0,rasterized=True)
+        xx=np.array([x.min(),x.max()])
+        a.plot(xx,tot[gname]*(xx-x.mean())+yv.mean(),color=lc,lw=1.8,zorder=3)
+        rw=np.polyfit(x,RS.y.to_numpy()[m],1)[0]                    # raw, nothing controlled
+        a.plot(xx,rw*(xx-x.mean())+yv.mean(),color="0.45",lw=0.9,ls="--",zorder=2)
+        b=sc*tot[gname]
+        a.annotate(f"{b:+.2f}",xy=(0.5,-0.02),xycoords="axes fraction",ha="center",va="top",
+                   fontsize=5.8,color=lc)
+        a.set_ylim(ylo,yhi); a.set_xlim(xlo-0.15,xhi+0.15)
+        a.set_xticks([]); a.set_yticks([]); [sp.set_linewidth(0.4) for sp in a.spines.values()]
+        if ri==0: a.annotate(gname,xy=(0.5,1.04),xycoords="axes fraction",ha="center",fontsize=5.8,
+                             color=tuple(0.80*np.array(CM(NORM(bio[gname]))[:3])),weight="bold")
+        if ci==0: a.set_ylabel(f"partial residual\n{LBP[T]}",fontsize=7)
+fig.supxlabel("burden (z-scored rate) -- one panel per garden, ordered by garden temperature",
+              fontsize=8.5,y=0.02)
+cb=fig.colorbar(mpl.cm.ScalarMappable(norm=NORM,cmap=CM),ax=axs,pad=0.006,fraction=0.012,aspect=34)
+cb.set_label("garden bio1 (degC) -- colour of the garden number",fontsize=7.5)
+cb.ax.tick_params(labelsize=6)
+save(fig,"model_per_garden_panels",nb=True); plt.show()
+print("per-garden CONDITIONAL slope (full model) vs RAW within-garden slope, % per carried variant\n")
+for T in TT:
+    sc=PV(T); tot={str(r.garden):r.total for r in GDX[GDX.term==T].itertuples()}
+    rw=np.array([sc*np.polyfit(RS[T].to_numpy()[(RS.garden==g).to_numpy()],
+                               RS.y.to_numpy()[(RS.garden==g).to_numpy()],1)[0] for g in order])
+    cd=np.array([sc*tot[g] for g in order])
+    print(f"{LBP[T]:18s} conditional {cd.min():+.2f}..{cd.max():+.2f}, positive in {(cd>0).sum():2d}/{len(order)}"
+          f"   |   raw {rw.min():+.2f}..{rw.max():+.2f}, positive in {(rw>0).sum():2d}/{len(order)}"
+          f"   |   r(raw, conditional) = {np.corrcoef(rw,cd)[0,1]:+.2f}")
+'''
 md_freq = _ns["md_freq"].replace("## 7 ·", "## 6 ·")
 md_size = _ns["md_size"].replace("## 8 ·", "## 7 ·")
 code_freq, code_size = _ns["code_freq"], _ns["code_size"]
@@ -538,6 +600,7 @@ if __name__ == "__main__":
         new_markdown_cell(md_scale),  new_code_cell(code_scale),
         new_markdown_cell(md_garden), new_code_cell(code_garden),
         new_markdown_cell(md_garden2), new_code_cell(code_garden2),
+        new_markdown_cell(md_pergarden), new_code_cell(code_pergarden),
         new_markdown_cell(md_freq),   new_code_cell(code_freq),
         new_markdown_cell(md_size),   new_code_cell(code_size),
         new_markdown_cell(md_avp),    new_code_cell(code_load_diag), new_code_cell(code_avp),

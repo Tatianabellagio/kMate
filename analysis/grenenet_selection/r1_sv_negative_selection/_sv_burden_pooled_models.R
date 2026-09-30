@@ -255,5 +255,15 @@ if (T$REML) {
                                  fixed_part = fixed_part, slope_blup = rg[[t]], cond_sd = sdv, total = fixed_part + rg[[t]]))
   }
   write.csv(out, file.path(OUT, sprintf("garden_%s%s.csv", T$name, SUF)), row.names = FALSE)
+  # per-observation partial residuals, so a per-garden "fitness against burden" figure can be drawn from
+  # THIS fit instead of from raw per-garden regressions. The component-plus-residual for term t is
+  #   resid + (that garden's TOTAL slope for t) * x_t
+  # which has every other covariate -- kinship, the SNP burden, assembly route, origin climate, local
+  # adaptation, the other burdens -- already removed, and whose within-garden slope is exactly the
+  # model's conditional effect in that garden.
+  rs <- data.frame(founder = as.character(L$founder), garden = as.character(L$garden),
+                   y = L$y, fitted = fitted(m), resid = residuals(m))
+  for (t in setdiff(names(rg), "(Intercept)")) if (t %in% names(L)) rs[[t]] <- L[[t]]
+  write.csv(rs, file.path(OUT, sprintf("resid_%s%s.csv", T$name, SUF)), row.names = FALSE)
 }
 cat("done\n")
