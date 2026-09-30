@@ -428,7 +428,33 @@ location both differ strongly and, importantly, *independently of each other* (t
 That makes both testable. Below, the coding burden is split **2 × 2** — call tier × gene density, and call
 tier × size — with all four bins in one model each time. If either axis were the real variable, the
 matching low-call bin would behave like the high-call events. Neither does: **the call-rate contrast is
-significant inside every stratum, and neither size nor density does anything inside a tier.**
+significant inside every stratum**, while neither axis moves the sign inside a tier.
+
+**Size is not null, though, and the detail matters.** Among well-genotyped coding events, bigger SVs are
+more deleterious per carried variant — −2.59 %/variant at ≥ 500 bp against −1.17 below it, the direction
+basic biology predicts, and matching the independent size strata (−1.03 / −1.28 / −2.21 across
+50–99 / 100–499 / 500+ bp). That contrast is p = 0.11: consistent, underpowered, not significant. On the
+per-SD scale it vanishes entirely (p = 0.93), because big events are rarer, so one variant is a much
+larger share of the rate. The per-variant scale is the one the biological question is asked on, and both
+are printed below.
+
+The four bins are best read as a table:
+
+| | well genotyped | poorly genotyped |
+|---|---|---|
+| **small (< 500 bp)** | −1.17 | +0.77 |
+| **big (≥ 500 bp)** | **−2.59** | +0.35 |
+
+Down the columns, size behaves as expected. Across the rows, the same size class changes sign. And note
+what that means: the size gradient — real biology — is **present** in the well-genotyped tier and
+**absent** in the poorly-genotyped one. If the low-call burden were measuring variant effects, the
+gradient should appear there too. That it does not is evidence the low-call measurement is
+noise-dominated, independent of any argument about technology or ancestry.
+
+⚠ Nothing here is removed for being large. The filter drops events it cannot genotype, and large events
+are likelier to be un-genotypeable (86 % of coding events ≥ 2 kb fall below the 0.9 floor, against 50 % of
+50–99 bp events), so they dominate the discarded set. The large events that survive the filter are the
+most deleterious of all.
 
 ⚠ Both 2 × 2 fits report `singular = TRUE` — with four coding terms plus their garden slopes a variance
 component collapses to zero. The fixed effects and their contrasts are still usable, but treat these as
@@ -493,11 +519,19 @@ for nm,(co,V2,pv2,bins,labs,cut) in (("GENE DENSITY",GD_),("EVENT SIZE",SZ_)):
         d=co.loc[a_,"estimate"]-co.loc[b_,"estimate"]
         v=V2.loc[a_,a_]+V2.loc[b_,b_]-2*V2.loc[a_,b_]; z=d/np.sqrt(v)
         return f"{d:+.4f} +- {np.sqrt(v):.4f}   z {z:+6.2f}   p {2*stats.norm.sf(abs(z)):.4g}"
-    print("  contrasts:")
+    def cv(a_,b_):
+        ka,kb=pv2[a_],pv2[b_]
+        d=co.loc[a_,"estimate"]*ka-co.loc[b_,"estimate"]*kb
+        v=V2.loc[a_,a_]*ka**2+V2.loc[b_,b_]*kb**2-2*V2.loc[a_,b_]*ka*kb; z=d/np.sqrt(v)
+        return f"{d:+.4f} +- {np.sqrt(v):.4f}   z {z:+6.2f}   p {2*stats.norm.sf(abs(z)):.4g}"
+    print("  contrasts (per SD):")
     print(f"    call tier, within {labs[0]:10s} {cc(bins[0],bins[2])}")
     print(f"    call tier, within {labs[1]:10s} {cc(bins[1],bins[3])}")
     print(f"    {cut}, within highcall        {cc(bins[0],bins[1])}")
     print(f"    {cut}, within lowcall         {cc(bins[2],bins[3])}")
+    print("  contrasts (per CARRIED VARIANT -- the biological scale):")
+    print(f"    {cut}, within highcall        {cv(bins[1],bins[0])}   (second minus first)")
+    print(f"    {cut}, within lowcall         {cv(bins[3],bins[2])}   (second minus first)")
 print("\n\nTHE DENOMINATOR (why 'carried/called' is not the same measurement in the two tiers)\n")
 for t in ("highcall","lowcall"):
     cal=(BT2[f"called_ins_CDS_{t}"]+BT2[f"called_del_CDS_{t}"]).astype(float)
