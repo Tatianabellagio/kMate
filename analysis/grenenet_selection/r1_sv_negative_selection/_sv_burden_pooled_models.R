@@ -84,7 +84,7 @@ cnt <- list()
 # NOTE `private` (MAC 1) is only interpretable within the cactus panel -- see the header of
 # _sv_burden_freq_bins.py. Fitting it on all 231 founders measures assembly route, not biology.
 STRATIFY <- Sys.getenv("BURDEN_STRATIFY", "")
-stopifnot(STRATIFY %in% c("", "freq", "size", "callrate"))
+stopifnot(STRATIFY %in% c("", "freq", "size", "callrate", "tierdens", "tiersize"))
 DEFBINS <- if (identical(STRATIFY, "size")) "small,medium,large" else "rare,common"
 FBINS <- setdiff(strsplit(Sys.getenv("FREQ_BINS", DEFBINS), "[,: ]+")[[1]], "")
 SCTX  <- setdiff(strsplit(Sys.getenv("STRATIFY_CTX", "CDS"), "[,: ]+")[[1]], "")

@@ -126,7 +126,73 @@ for nm,cs in (("coding",["CDS"]),("non-coding",[c for c in CTX6 if c!="CDS"])):
           f"0.7 vs 0.5 r = {np.corrcoef(r7,r5)[0,1]:+.3f}")
 """
 
-md_pooled = """## 2 · The model at each floor
+md_dist = """## 2 · How genotyping success varies across the panel
+
+Two distributions, because they turn out to explain most of what follows.
+
+**(a)** The fraction of events that clear each floor, by context. Coding and reference-TE events are by
+far the hardest to genotype — only **19.5 %** of coding events are called in ≥ 90 % of founders, against
+55.8 % of intron events. The 0.9 filter is therefore not a mild trim in CDS; it keeps a fifth of them.
+
+**(b, c)** Event size against genotyping success. Larger events are called in fewer founders, and in
+**coding sequence this coupling is far steeper than anywhere else**: median coding event size rises
+232 → 1,070 → 2,550 bp as the floor drops, while TE, promoter and intergenic sizes barely move. So the
+events a relaxed floor newly admits in CDS are not a random sample of coding SVs — they are systematically
+the big ones."""
+
+code_dist = r'''
+CAT=pd.read_csv(f"{G}/sv_event_catalog.csv")
+AP=CAT[CAT.n_carriers>=2].copy()
+CTXC={"CDS":"#2F4A1F","UTR":"#4E6B3A","intron":"#7E9B6B","TE":"#B04A00",
+      "promoter":"#4A6B8A","intergenic":"#9A9A9A"}
+FLOORS=[(208,"0.9"),(162,"0.7"),(116,"0.5")]
+fig=plt.figure(figsize=(13.4,3.6))
+gs=fig.add_gridspec(1,3,width_ratios=[1.05,1,1.05],wspace=0.42)
+a=fig.add_subplot(gs[0,0]); style(a); panel(a,"a",x=-0.30)
+w=0.26
+for j,(thr,lab) in enumerate(FLOORS):
+    vals=[100*(AP[AP.context==c].n_called>=thr).mean() for c in CTX6]
+    a.barh(np.arange(len(CTX6))+(j-1)*w,vals,height=w,lw=0,
+           color=[CTXC[c] for c in CTX6],alpha=1.0-0.30*j)
+    if j==0:
+        for i,v in enumerate(vals):
+            a.annotate(f"{v:.1f}%",xy=(v,i-w),xytext=(3,0),textcoords="offset points",
+                       va="center",fontsize=6.5,color="0.3")
+a.set_yticks(range(len(CTX6))); a.set_yticklabels(CTX6,fontsize=8.5); a.invert_yaxis()
+a.set_xlabel("% of SV events called in >= X of founders\n(dark to light: 0.9, 0.7, 0.5)",fontsize=8)
+a=fig.add_subplot(gs[0,1]); style(a,axis="both"); panel(a,"b",x=-0.22)
+D=AP[(AP.context=="CDS")&(AP.n_called>=116)].copy()
+D["tier"]=np.where(D.n_called>=208,"highcall","lowcall")
+for t,c in (("highcall","#4A3B6B"),("lowcall","#C46A10")):
+    v=np.log10(D.size_bp[D.tier==t].to_numpy())
+    a.hist(v,bins=44,density=True,histtype="step",lw=1.7,color=c,label=f"coding, {t}")
+    a.axvline(np.median(v),color=c,lw=1.0,ls=":")
+a.set_xlabel("event size (bp), log$_{10}$",fontsize=8.5); a.set_ylabel("density",fontsize=8.5)
+a.legend(fontsize=7.5,loc="upper right")
+a.set_xticks([2,3,4,5]); a.set_xticklabels(["100","1k","10k","100k"],fontsize=8)
+a=fig.add_subplot(gs[0,2]); style(a,axis="both"); panel(a,"c",x=-0.22)
+BANDS=[(208,231,"called >=0.9"),(162,207,"0.7-0.9"),(116,161,"0.5-0.7")]
+for c in CTX6:
+    g=AP[AP.context==c]
+    med=[g[(g.n_called>=lo)&(g.n_called<=hi)].size_bp.median() for lo,hi,_ in BANDS]
+    a.plot(range(len(BANDS)),med,"o-",color=CTXC[c],lw=1.6,ms=5,label=c)
+a.set_xticks(range(len(BANDS))); a.set_xticklabels([l for _,_,l in BANDS],fontsize=7.5)
+a.set_yscale("log"); a.set_ylabel("median event size (bp)",fontsize=8.5)
+a.set_xlabel("how well the event is genotyped",fontsize=8.5)
+a.legend(fontsize=7,ncol=2,loc="upper left")
+save(fig,"callrate_distributions",nb=True); plt.show()
+print("% OF SV EVENTS CALLED IN >= X OF THE 231 FOUNDERS\n")
+print(pd.DataFrame([{"context":c,**{f">={l}":f"{100*(AP[AP.context==c].n_called>=t).mean():.1f}%"
+                     for t,l in FLOORS},"events":f"{int((AP.context==c).sum()):,}"}
+                    for c in CTX6]).to_string(index=False))
+print("\n\nMEDIAN EVENT SIZE (bp) BY CONTEXT AND GENOTYPING BAND\n")
+print(pd.DataFrame([{"context":c,**{l:f"{AP[(AP.context==c)&(AP.n_called>=lo)&(AP.n_called<=hi)].size_bp.median():,.0f}"
+                     for lo,hi,l in BANDS}} for c in CTX6]).to_string(index=False))
+print("\n  coding size grows 11x across the bands; every other context is flat or shrinks.")
+print(f"  Spearman(size, n_called) among coding events: "
+      f"rho = {stats.spearmanr(D.size_bp,D.n_called).correlation:+.3f}")
+'''
+md_pooled = """## 3 · The model at each floor
 
 Every fixed effect of the reported model, refit on each burden table. **(a)** burden main effects,
 **(b)** the garden-temperature interactions (likelihood-ratio tested). Filled markers are p < 0.05.
@@ -195,7 +261,7 @@ for t in ["sv_CDS","sv_nonCDS"]:
 print(pd.DataFrame(rows).to_string(index=False))
 """
 
-md_tier = """## 3 · The decisive test — both tiers in one model
+md_tier = """## 4 · The decisive test — both tiers in one model
 
 Relaxing the floor could attenuate the estimate two ways, and they have opposite meanings:
 
@@ -286,7 +352,106 @@ print("  over a DIFFERENT, founder-specific subset of events -- which is what a 
 print("  to prevent, and why the two tiers are not interchangeable measurements.")
 """
 
-md_read = """## 4 · Reading it
+md_what = """## 5 · So what *are* the low-call coding events?
+
+If well-genotyped coding SVs are deleterious and poorly-genotyped ones are not, the obvious suspicion is
+that the two groups are different *kinds of variant* — that the low-call set is really TEs, or
+pericentromeric junk, or huge rearrangements. They do differ, on two axes at once:
+
+| | highcall | lowcall |
+|---|---|---|
+| median size | 232 bp | 1,100 bp |
+| ≥ 2 kb | 18.6 % | 39.1 % |
+| within 5 Mb of a centromere | 30.8 % | 53.2 % |
+| local gene density (median) | 268 /Mb | 244 /Mb |
+| **TE family assigned** | **18.9 %** | **17.8 %** |
+
+So it is **not** a TE story — TE content is the one thing that is essentially identical. But size and
+location both differ strongly and, importantly, *independently of each other* (they correlate at only
+ρ = −0.10, and each predicts tier on its own).
+
+That makes both testable. Below, the coding burden is split **2 × 2** — call tier × gene density, and call
+tier × size — with all four bins in one model each time. If either axis were the real variable, the
+matching low-call bin would behave like the high-call events. Neither does: **the call-rate contrast is
+significant inside every stratum, and neither size nor density does anything inside a tier.**
+
+⚠ Both 2 × 2 fits report `singular = TRUE` — with four coding terms plus their garden slopes a variance
+component collapses to zero. The fixed effects and their contrasts are still usable, but treat these as
+tests of the contrast, not as a new reported parameterisation."""
+
+code_what = r'''
+ANN=pd.read_csv(f"{G}/cds_event_tier_annot.csv")
+def grid(tag,bins,labs,cut):
+    S2=f"{BASE}_refid_freqCDS{tag}"
+    co=pd.read_csv(f"{PA}/coef_M2p_reml{S2}.csv").set_index("term")
+    V2=pd.read_csv(f"{PA}/vcov_M2p_reml{S2}.csv",index_col=0)
+    s2=pd.read_csv(f"{PA}/pooled_rate_scale_x_obio1cobio1cbio1c_freqCDS{tag}.csv").set_index("context")
+    pv2={f"sv_{c}":100/(s2.loc[c,"sd_rate"]*s2.loc[c,"med_called"]) for c in s2.index}
+    return co,V2,pv2,bins,labs,cut
+GD_=grid("hirichhipoorlorichlopoor",["sv_CDS_hi_rich","sv_CDS_hi_poor","sv_CDS_lo_rich","sv_CDS_lo_poor"],
+         ["gene-rich","gene-poor"],"local gene density")
+SZ_=grid("hismallhibiglosmalllobig",["sv_CDS_hi_small","sv_CDS_hi_big","sv_CDS_lo_small","sv_CDS_lo_big"],
+         ["< 500 bp",">= 500 bp"],"event size")
+TCOL2={"hi":"#4A3B6B","lo":"#C46A10"}
+fig,axs=plt.subplots(1,3,figsize=(13.6,3.4),gridspec_kw=dict(width_ratios=[1,1,1],wspace=0.75))
+for a,(co,V2,pv2,bins,labs,cut),pl in zip(axs[:2],(GD_,SZ_),"ab"):
+    style(a); panel(a,pl,x=-0.36); a.axvline(0,color="0.35",lw=1,ls="--")
+    yl=[]
+    for i,t in enumerate(bins):
+        k=pv2[t]; e,s_=co.loc[t,"estimate"]*k,co.loc[t,"se"]*k; p=co.loc[t,"p"]
+        c=TCOL2["hi" if "_hi_" in t else "lo"]
+        a.errorbar(e,i,xerr=1.96*s_,fmt="o",color=c,mfc=c if p<0.05 else "white",
+                   mew=1.3,ms=7.5,capsize=2.5,zorder=3)
+        a.annotate(f"p = {p:.2g}",xy=(1.03,i),xycoords=("axes fraction","data"),ha="left",
+                   va="center",fontsize=6.8,color="0.35",annotation_clip=False)
+        yl.append(("highcall" if "_hi_" in t else "lowcall")+"\n"+labs[i%2])
+        if i<len(bins)-1: a.axhline(i+0.5,color="0.93",lw=0.8)
+    a.axhline(1.5,color="0.6",lw=1.0,ls="--")
+    a.set_yticks(range(len(bins))); a.set_yticklabels(yl,fontsize=7.5); a.set_ylim(len(bins)-0.5,-0.5)
+    a.set_xlabel(f"% per carried variant  (95% CI)\nsplit by call tier x {cut}",fontsize=7.5)
+a=axs[2]; style(a,axis="both"); panel(a,"c",x=-0.26)
+BT2=pd.read_csv(f"{G}/founder_burden_event_callrate.csv",dtype={"founder":str})
+for t,c in (("highcall","#4A3B6B"),("lowcall","#C46A10")):
+    cal=(BT2[f"called_ins_CDS_{t}"]+BT2[f"called_del_CDS_{t}"]).astype(float)
+    a.hist(cal/cal.max(),bins=34,histtype="step",lw=1.7,color=c,
+           label=f"{t}  (CV {cal.std()/cal.mean():.3f})")
+a.set_xlabel("coding events a founder is genotyped at\n(as a fraction of the maximum)",fontsize=8)
+a.set_ylabel("founders",fontsize=8.5); a.legend(fontsize=7.5,loc="upper left")
+save(fig,"callrate_what_are_they",nb=True); plt.show()
+print("WHAT DIFFERS BETWEEN THE TIERS (coding events, >= 2 carriers)\n")
+rows=[]
+for t,g in ANN.groupby("tier"):
+    rows.append({"tier":t,"events":f"{len(g):,}","median size":f"{g.size_bp.median():,.0f} bp",
+                 ">= 2 kb":f"{100*(g.size_bp>=2000).mean():.1f}%",
+                 "TE family":f"{100*g.te_family.notna().mean():.1f}%",
+                 "te_derived":f"{100*(g.seq_class=='te_derived').mean():.1f}%",
+                 "median gene density":f"{g.gene_density.median():.0f}/Mb",
+                 "median MAC":f"{g.n_carriers.median():.0f}"})
+print(pd.DataFrame(rows).to_string(index=False))
+for nm,(co,V2,pv2,bins,labs,cut) in (("GENE DENSITY",GD_),("EVENT SIZE",SZ_)):
+    print(f"\n\n2x2: CALL TIER x {nm}\n")
+    print(pd.DataFrame([{"bin":t.replace("sv_CDS_",""),
+        "per SD":f"{co.loc[t,'estimate']:+.4f} +- {co.loc[t,'se']:.4f}",
+        "%/variant":f"{co.loc[t,'estimate']*pv2[t]:+.4f}",
+        "p":f"{co.loc[t,'p']:.4g}"} for t in bins]).to_string(index=False))
+    def cc(a_,b_):
+        d=co.loc[a_,"estimate"]-co.loc[b_,"estimate"]
+        v=V2.loc[a_,a_]+V2.loc[b_,b_]-2*V2.loc[a_,b_]; z=d/np.sqrt(v)
+        return f"{d:+.4f} +- {np.sqrt(v):.4f}   z {z:+6.2f}   p {2*stats.norm.sf(abs(z)):.4g}"
+    print("  contrasts:")
+    print(f"    call tier, within {labs[0]:10s} {cc(bins[0],bins[2])}")
+    print(f"    call tier, within {labs[1]:10s} {cc(bins[1],bins[3])}")
+    print(f"    {cut}, within highcall        {cc(bins[0],bins[1])}")
+    print(f"    {cut}, within lowcall         {cc(bins[2],bins[3])}")
+print("\n\nTHE DENOMINATOR (why 'carried/called' is not the same measurement in the two tiers)\n")
+for t in ("highcall","lowcall"):
+    cal=(BT2[f"called_ins_CDS_{t}"]+BT2[f"called_del_CDS_{t}"]).astype(float)
+    car=(BT2[f"ins_CDS_{t}"]+BT2[f"del_CDS_{t}"]).astype(float)
+    print(f"  {t:9s} events called per founder: median {cal.median():6.0f}  "
+          f"range {cal.min():.0f}-{cal.max():.0f}  CV {cal.std()/cal.mean():.3f}   "
+          f"corr(called, carried) r = {np.corrcoef(cal,car)[0,1]:+.3f}")
+'''
+md_read = """## 6 · Reading it
 
 **The stringent filter is not propping up the result.** Held beside the events it excludes, the reported
 coding effect is unchanged: −0.3048 per SD here against −0.2865 in the reported fit, p = 1.7e-04. Its
@@ -333,7 +498,9 @@ if __name__ == "__main__":
     build("sv_burden_callrate.ipynb", [
         new_markdown_cell(md_title), new_code_cell(code_setup), new_code_cell(code_load),
         new_markdown_cell(md_counts), new_code_cell(code_counts),
+        new_markdown_cell(md_dist),   new_code_cell(code_dist),
         new_markdown_cell(md_pooled), new_code_cell(code_pooled),
         new_markdown_cell(md_tier),   new_code_cell(code_tier),
+        new_markdown_cell(md_what),   new_code_cell(code_what),
         new_markdown_cell(md_read),   new_markdown_cell(md_methods),
     ])

@@ -53,7 +53,7 @@ OUT = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive"
 SV_BP = 50
 CALL_MIN = float(os.environ.get("SV_CALL_MIN", 0.9))
 STRATUM = os.environ.get("STRATUM", "freq")
-assert STRATUM in ("freq", "size", "callrate")
+assert STRATUM in ("freq", "size", "callrate", "tierdens", "tiersize")
 # Carrier floor. STRATUM=freq defaults to 1 so the `private` bin exists at all; STRATUM=size defaults to 2,
 # matching the main model's `all` class -- otherwise the size burdens silently absorb the singleton class,
 # which is an assembly-detection artifact (cactus founders carry 17x more private events) and would
@@ -66,6 +66,24 @@ if STRATUM == "freq":
 elif STRATUM == "size":
     EDGES = os.environ.get("SIZE_EDGES", "50:99,100:499,500:1000000000")
     NAMES = os.environ.get("SIZE_NAMES", "small,medium,large").split(",")
+elif STRATUM == "tiersize":
+    # 2x2: call-rate tier x event SIZE. Low-call coding events are ~5x larger than high-call ones, so
+    # size is the other candidate axis. If size carried the sign flip, hi_big would look like the
+    # low-call events -- but at the 0.9 floor the LARGEST coding events are the most deleterious.
+    #   code 1 hi_small   2 hi_big   3 lo_small   4 lo_big
+    EDGES = os.environ.get("TS_EDGES", "1:1,2:2,3:3,4:4")
+    NAMES = os.environ.get("TS_NAMES", "hi_small,hi_big,lo_small,lo_big").split(",")
+    SIZE_CUT = int(os.environ.get("SIZE_CUT", 500))     # bp
+    HICALL = int(os.environ.get("HICALL", 208))
+elif STRATUM == "tierdens":
+    # 2x2: call-rate tier x local chromatin context. The low-call events differ from the high-call ones
+    # in two independent ways (bigger, and in gene-poorer regions), so this asks which axis carries the
+    # sign flip: if it is location, lo_rich should behave like the high-call events, not like lo_poor.
+    #   code 1 hi_rich   2 hi_poor   3 lo_rich   4 lo_poor
+    EDGES = os.environ.get("TD_EDGES", "1:1,2:2,3:3,4:4")
+    NAMES = os.environ.get("TD_NAMES", "hi_rich,hi_poor,lo_rich,lo_poor").split(",")
+    DENS_MIN = float(os.environ.get("DENS_MIN", 212))   # genes/Mb; bottom quartile of coding SV events
+    HICALL = int(os.environ.get("HICALL", 208))         # >= 208/231 is the reported 0.9 set
 else:
     # CALL-RATE tiers, cut on the number of founders the event is genotyped in. Run this with
     # SV_CALL_MIN=0.5 so the relaxed events exist at all: the `high` bin is then exactly the set the
@@ -90,11 +108,16 @@ def main():
     # arithmetic downstream would silently double-count
     for (a1, b1, n1), (a2, b2, n2) in zip(BINS, BINS[1:]):
         assert b1 < a2, f"bins {n1} and {n2} overlap"
-    unit = {"freq": "MAC", "size": "bp", "callrate": "founders called"}[STRATUM]
+    unit = {"freq": "MAC", "size": "bp", "callrate": "founders called",
+            "tierdens": "code", "tiersize": "code"}[STRATUM]
     print(f"STRATUM={STRATUM}  MIN_CAR={MIN_CAR}  bins: "
           + ", ".join(f"{n} {unit} {a}-{b}" for a, b, n in BINS))
     print(f"call-rate floor: {CALL_MIN:.0%} of {N} founders\n")
 
+    if STRATUM == "tierdens":
+        GN = lib.load_genes()
+        GST = {c: np.sort(g.start.to_numpy()) for c, g in GN.groupby("chrom")}
+        WIN = 500_000          # +-500 kb -> genes per Mb
     n_ev = {n: 0 for _, _, n in BINS}
     for C in lib.CHROMS:
         base = f"{lib.PROJ}/panel/arch3/{C.lower()}/var_pa_231_arch3_{C.lower()}"
@@ -129,7 +152,15 @@ def main():
                     w = bsize[s_].astype(np.float64)
                     add(f"bp_{kind}_{x}", np.asarray(Pf[s_].T.dot(w)).ravel())
                     add(f"called_bp_{kind}_{x}", np.asarray(Qf[s_].T.dot(w)).ravel())
-            BV = {"freq": c, "size": bsize, "callrate": k}[STRATUM]   # the variable the bins are cut on
+            if STRATUM == "tierdens":
+                epos = pos[cols[first]]
+                st = GST[C]
+                dens = (np.searchsorted(st, epos + WIN) - np.searchsorted(st, epos - WIN)) / (2 * WIN / 1e6)
+                BV = np.where(k >= HICALL, 1, 3) + np.where(dens < DENS_MIN, 1, 0)
+            elif STRATUM == "tiersize":
+                BV = np.where(k >= HICALL, 1, 3) + np.where(bsize >= SIZE_CUT, 1, 0)
+            else:
+                BV = {"freq": c, "size": bsize, "callrate": k}[STRATUM]   # the variable the bins are cut on
             for lo, hi, nm in BINS:
                 fm = okc & (BV >= lo) & (BV <= hi)
                 n_ev[nm] += int(fm.sum())
