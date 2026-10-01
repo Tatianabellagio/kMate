@@ -700,7 +700,8 @@ burden × garden-temperature term built on a contaminated predictor can pick up
 signal and are near-orthogonal to the main effects, which is why a few percent of shifted variance moves
 them so much more than it moves the main effects.
 
-**Testing that turned up a real omission.** The model fits `obio1c:bio1c` but has **no `cactus:bio1c`** —
+**Testing that turned up a real omission — one we decided not to act on, for reasons below.** The model
+fits `obio1c:bio1c` but has **no `cactus:bio1c`** —
 it assumes assembly route has the same effect in every garden. It does not: fitted explicitly,
 **`cactus:bio1c` = −0.0286 ± 0.0089, p = 0.0013**. Since assembly route correlates with the burdens at
 0.45–0.70, leaving it out lets the burden × temperature terms absorb it.
@@ -717,12 +718,36 @@ Adding it **strengthens every burden interaction in the reported model**:
 the missing interaction is a separate problem the rate/count comparison happened to expose, not the
 explanation for the divergence.
 
-⚠ And `cactus:bio1c` needs its own scrutiny before it is adopted. Raw, the per-garden
-cactus-minus-short-read fitness difference *rises* with temperature (r = +0.225, p = 0.22); conditioned in
-the model the coefficient is **negative**. A term that changes sign between the marginal and conditional
-view is exactly the pattern §5 of the cds-vs-rest notebook flags for the non-coding burden, and it should
-be understood before the main model is changed. `callrate_sv:bio1c`, by contrast, is not significant
-(−0.0368 ± 0.0235, p = 0.12) and changes nothing."""
+### Decision: `cactus:bio1c` is NOT added to the main model
+
+It is significant, and it would make every headline interaction look better. It is still not going in.
+
+**It is not origin-climate biology.** `cactus` is near-orthogonal to founder origin climate — r = −0.078,
+p = 0.24; mean origin bio1 9.13 °C for cactus founders against 9.82 °C for short-read, Welch p = 0.28. The
+"warmer origins carry more SVs" relationship is `obio1c`, and its temperature interaction `obio1c:bio1c`
+is already fitted. What `cactus` tracks is detection: r = +0.704 with founder SV call rate, and cactus
+founders are genotyped at only 4 % more events (18,348 vs 17,632) while being called as carriers of 23 %
+more (2,249 vs 1,827). Having your own assembly makes you likelier to be called a carrier.
+
+**And it cannot be a biological effect in its own right.** How a founder was *sequenced* cannot change how
+it performs across garden temperatures — the sequencing postdates the plants. So a nonzero `cactus:bio1c`
+is either absorbing a real burden × temperature effect through collinearity (`cactus` correlates with the
+burdens at 0.45–0.70), or standing in for something unmeasured about which accessions were chosen for
+assembly. The latter is live: **`cactus` explains 21 % of the variance in the top 10 kinship PCs**, so the
+80 assembled accessions are a non-random genetic subset.
+
+With r = 0.65 between `cactus` and the burdens, `cactus:bio1c` and `sv_X:bio1c` compete for the same
+variance, and that they *mutually* strengthen when both are fitted is a suppression signature rather than
+evidence that both are real. Adding an uninterpretable term that improves the headline is a bad trade.
+
+**What this does mean.** The reported interaction p-values (coding × temp 0.029, TE 0.066, promoter 0.069)
+are conditional on a model that assumes assembly route has the same effect in every garden, and that
+assumption is measurably false. Treat them as approximate, and if the burden × temperature interactions
+become central to a claim, this needs resolving properly — most likely by a design that breaks the
+cactus/burden correlation rather than by adding the term. The 80-founder cactus-only panel does that by
+construction, at the cost of n.
+
+`callrate_sv:bio1c` is not significant (−0.0368 ± 0.0235, p = 0.12) and changes nothing."""
 
 code_tech = r'''
 E0="obio1c + obio1c:bio1c"; EC=E0+" + cactus:bio1c"; EK=E0+" + callrate_sv + callrate_sv:bio1c"
