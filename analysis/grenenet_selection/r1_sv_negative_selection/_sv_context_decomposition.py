@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-"""Record-level SV table carrying BOTH context rules, for the context-cascade decomposition.
+"""SV tables carrying BOTH context rules, for the context-cascade decomposition.
+
+UPDATED 2026-09-30: the GEA arm is now EVENT-level. The GEA re-run tests truvari events, the
+same unit the burden model uses, so the cascade's two arms finally start from the same unit and
+the remaining differences are only the call-rate bar (burden 0.90 vs GEA 0.50), the carrier /
+shared filters, and the context rule itself. The GEA arm starts from the MAF-passing SV events
+BEFORE the call-rate floor, so the floor remains a visible step.
 
 The burden model and the GEA report different context compositions for the same panel. Three things
 differ between the two tracks, and this table holds all three on one set of rows so they can be varied
@@ -46,6 +52,9 @@ sc = importlib.util.module_from_spec(_s); _s.loader.exec_module(sc)
 OUT = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive"
 GEA_LANDSCAPE = f"{lib.GEA}/genes/convergence/results/gea_hit_landscape.csv.gz"
 CMDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices"
+EV_UNITS = f"{lib.GEA}/genes/convergence/event_gea/sv_gen9_units.csv"        # MAF only
+CR50_UNITS = f"{lib.GEA}/genes/convergence/event_gea/cr50/sv_gen9_units.csv"  # MAF + call rate
+EVENT_UNITS_NPZ = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/nonsnp_event_units.npz"
 SV_BP = 50
 KEY = ["chrom", "pos", "ref_len", "alt_len"]
 
@@ -90,10 +99,16 @@ def main():
     print(f"\n[panel] {len(D):,} SV records | {D.event.nunique():,} truvari events")
     print(f"[wrote] {OUT}/sv_context_decomposition_panel.csv.gz")
 
-    # the GEA's tested SV records, with the BURDEN rule recomputed on the same rows (no join:
-    # see the module docstring -- the 4-tuple is not a record key)
-    G = pd.read_csv(GEA_LANDSCAPE, usecols=KEY + ["cls", "kind", "MAF", "tier_1kb", "tier_2kb"])
-    G = G[G.cls == "sv"].drop(columns="cls").reset_index(drop=True)
+    # ---- the GEA arm, EVENT-level since the 2026-09-30 re-run ------------------------------
+    # The GEA now tests truvari events, the same unit as the burden model, so arm B starts from
+    # the SV EVENT units that clear MAF 0.05 (event_gea/sv_gen9_units.csv) rather than from the
+    # allele records. Starting before the call-rate floor is deliberate: the cascade's point is
+    # to show what the floor does, and the landscape carries only the post-floor set.
+    G = pd.read_csv(EV_UNITS)
+    G["kind"] = np.where(G.dlen < 0, "deletion", "insertion")
+
+    # burden rule, recomputed on each event's representative record (no join -- both rules are
+    # pure functions of (chrom, pos, ref_len), and the 4-tuple is not a record key)
     gctx = np.empty(len(G), dtype=object)
     for C, idx in G.groupby("chrom").groups.items():
         i = np.asarray(idx)
@@ -101,18 +116,38 @@ def main():
         gctx[i] = np.array(sc.CTX)[sc.context(IV, np.full(i.size, C, dtype=object),
                                               p, p + np.maximum(r - 1, 0))]
     G["context"] = gctx
-    # founder call rate, attached POSITIONALLY: the landscape's SV rows are the sv-class
-    # records.csv row for row (asserted below). A join on the 4-tuple would be wrong --
-    # 21.7% of SV records share one.
-    rec = pd.read_csv(f"{CMDIR}/sv_gen9.records.csv",
-                      usecols=["chrom", "pos", "ref_len", "alt_len", "n_called"])
-    assert len(rec) == len(G) and np.array_equal(rec.pos.to_numpy(), G.pos.to_numpy()) \
-        and np.array_equal(rec.ref_len.to_numpy(), G.ref_len.to_numpy()), \
-        "landscape SV rows are not row-aligned with sv_gen9.records.csv"
-    G["n_called"] = rec.n_called.to_numpy()
+
+    # GEA rule, both promoter windows, same call as annotate_gea_universe.py
+    sys.path.insert(0, f"{lib.GEA}/genes/dissection")
+    import screen_sig_blocks as S
+    base = G[["chrom", "pos", "ref_len"]].copy()
+    base["alt_len"] = base.ref_len                 # classify reads only the REF span
+    for prom in (1000, 2000):
+        S.PROM_BP = prom
+        G[f"tier_{prom // 1000}kb"] = S.classify(base.copy())[0]["tier"].to_numpy()
+
+    # founder call rate, from the burden model's OWN catalogue, so both arms of the cascade use
+    # one definition (union of the event's member records -- _sv_event_catalog.py:49, which is
+    # also what build_event_matrix.unit_n_called computes). Mapped on the integer unit id.
+    U = np.load(EVENT_UNITS_NPZ)
+    sv_units = np.where(np.abs(U["dlen"]) > SV_BP)[0]
+    cat = pd.read_csv(f"{OUT}/sv_event_catalog.csv", usecols=["n_called"])
+    assert len(cat) == len(sv_units), "sv_event_catalog is not row-aligned with the SV event units"
+    G["n_called"] = pd.Series(np.arange(len(sv_units)), index=sv_units).reindex(G.unit)\
+                      .pipe(lambda i: cat.n_called.to_numpy()[i.to_numpy().astype(int)])
+
+    # which events clear the GEA's 0.50 founder call-rate floor -- matched on unit id, and
+    # cross-checked against the floor the event matrix actually applied
+    keep = set(pd.read_csv(CR50_UNITS, usecols=["unit"]).unit.tolist())
+    G["passes_cr50"] = G.unit.isin(keep)
+    bar = int(np.ceil(0.50 * 231))
+    assert ((G.n_called >= bar) == G.passes_cr50).all(), \
+        "catalogue n_called disagrees with the floor build_event_matrix.py applied"
+
     G.to_csv(f"{OUT}/sv_context_decomposition_gea.csv.gz", index=False)
-    print(f"\n[gea] {len(G):,} tested SV records ({G[KEY].drop_duplicates().shape[0]:,} distinct "
-          f"{'/'.join(KEY)} tuples -- not a record key)")
+    print(f"\n[gea] {len(G):,} SV EVENT units at MAF >= 0.05; "
+          f"{int(G.passes_cr50.sum()):,} also clear call rate >= 0.50 "
+          f"({100 * G.passes_cr50.mean():.1f}%)")
     print(f"[wrote] {OUT}/sv_context_decomposition_gea.csv.gz")
 
 

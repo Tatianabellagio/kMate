@@ -86,6 +86,26 @@ def lrts(o,terms):
     ll=lambda n: pd.read_csv(f"{PA}/loglik_{n}{o['suf']}.csv").logLik[0]
     return {t: stats.chi2.sf(2*(ll("M2p_ml")-ll(f"M2p_ml_drop_{t}")),1) for t in terms}
 M2["LRT"]=lrts(M2,["sv_CDS","sv_nonCDS"])
+# PERMUTATION NULL for the interactions, one per arm. Each replicate shuffles which temperature belongs
+# to which garden and refits: founders keep their burdens and kinship, gardens keep their own mean
+# fitness, and only the garden-identity/temperature pairing is destroyed. Needed because these terms
+# carry only 31 gardens of information and their garden random slopes sit at the variance boundary, so
+# the Wald/LRT p-values are anti-conservative. Main effects are reported as fitted -- there permutation
+# and bootstrap agree with Wald to three decimals.
+import glob as _glob
+def perm_p(o, terms):
+    fs=_glob.glob(f"{PA}/perm/perm_M2p_reml{o['suf']}_*.csv")
+    if not fs: return {}, {}, 0
+    PR=pd.concat([pd.read_csv(f) for f in fs],ignore_index=True)
+    pp,sd={},{}
+    for t in terms:
+        nm=f"{t}:bio1c"; nz=PR[PR.term==nm].z.to_numpy()
+        if not len(nz): continue
+        pp[t]=(np.sum(np.abs(nz)>=abs(o["co"].loc[nm,"z"]))+1)/(len(nz)+1); sd[t]=nz.std(ddof=1)
+    return pp, sd, int(PR.seed.nunique())
+M2["PP"],M2["PSD"],NPERM2=perm_p(M2,["sv_CDS","sv_nonCDS"])
+M6["PP"],M6["PSD"],NPERM6=perm_p(M6,[f"sv_{c}" for c in CT6])
+print(f"permutation replicates -- cds2 {NPERM2}, all6 {NPERM6}")
 M6["LRT"]=lrts(M6,[f"sv_{c}" for c in CT6])
 CAT=pd.read_csv(f"{G}/sv_event_catalog.csv"); AP=CAT[CAT.passes]
 B=pd.read_csv(f"{G}/founder_burden_event.csv",dtype={"founder":str})
@@ -219,16 +239,16 @@ effect whose own interpretation is unresolved (§8)."""
 code_int = r'''
 fig,axs=plt.subplots(1,2,figsize=(11.4,2.7),gridspec_kw=dict(width_ratios=[1,1.25],wspace=0.46))
 for k,(ax,o,terms,lab) in enumerate(zip(axs,(M2,M6),
-        (["sv_CDS","sv_nonCDS"],["sv_CDS","sv_TE","sv_promoter"]),
+        (["sv_CDS","sv_nonCDS"],[f"sv_{c}" for c in CT6]),
         ("coding vs everything else (cds2)","every context (all6)"))):
     style(ax); panel(ax,"ab"[k],x=-0.30); ax.axvline(0,color="0.35",lw=1,ls="--")
     for i,t in enumerate(terms):
         n=f"{t}:bio1c"; kk=o["pv"][t]
         e,se=o["co"].loc[n,"estimate"]*kk, o["co"].loc[n,"se"]*kk
         col=CC.get(t[3:],"#4A3B6B")
-        ax.errorbar(e,i,xerr=1.96*se,fmt="o",color=col,mfc=col if o["LRT"][t]<0.05 else "white",
+        ax.errorbar(e,i,xerr=1.96*se,fmt="o",color=col,mfc=col if o["PP"].get(t,o["LRT"][t])<0.05 else "white",
                     mew=1.2,ms=7,capsize=2.5,zorder=3)
-        ax.annotate(f"LRT p = {o['LRT'][t]:.2g}",xy=(0.985,i),xycoords=("axes fraction","data"),
+        ax.annotate(f"perm p = {o['PP'].get(t,o['LRT'][t]):.2g}",xy=(0.985,i),xycoords=("axes fraction","data"),
                     ha="right",va="center",fontsize=7,color="0.35")
         if i<len(terms)-1: ax.axhline(i+0.5,color="0.93",lw=0.8)
     ax.set_yticks(range(len(terms))); ax.set_yticklabels([t.replace("sv_","") for t in terms],fontsize=8.5)
@@ -373,7 +393,7 @@ for a,T in zip(axs,TT):
                    color=CC[T.split("_")[1]],alpha=0.15,lw=0)
     a.plot(xx,sc*fit,color=CC[T.split("_")[1]],lw=1.8,zorder=2)
     a.annotate(f"{LBC[T]}\n{(b>0).sum()}/{len(g)} gardens positive\n"
-               f"slope {sc*co.loc[i1,'estimate']:+.3f}%/degC, LRT p = {M2['LRT'][T]:.2g}",
+               f"slope {sc*co.loc[i1,'estimate']:+.3f}%/degC, perm p = {M2['PP'].get(T,M2['LRT'][T]):.2g}",
                xy=(0.03,0.97),xycoords="axes fraction",va="top",ha="left",fontsize=7.4,color="0.25")
     y0,y1=a.get_ylim(); a.set_ylim(y0,y1+0.30*(y1-y0))
     a.set_xlabel("garden temperature  bio1 (degC)",fontsize=8)
@@ -563,7 +583,7 @@ PVX=M2['pv']; CLX={"sv_CDS":CC["CDS"],"sv_nonCDS":CC["nonCDS"]}
 LBL={**{"sv_CDS":"coding","sv_nonCDS":"everything else"},"obio1c":"origin climate","bio1c:obio1c":"origin x garden climate"}
 BT=["sv_CDS","sv_nonCDS"]; IT=["sv_CDS","sv_nonCDS"]
 BLK=[[(t,t,CO2.loc[t,"p"],PVX[t],CLX[t],LBL[t]) for t in BT],
-     [(f"{t}:bio1c",t,LRT2[t],PVX[t],CLX[t],LBL[t]+" x temp.") for t in IT],
+     [(f"{t}:bio1c",t,M2["PP"].get(t,LRT2[t]),PVX[t],CLX[t],LBL[t]+" x temp.") for t in IT],
      [("obio1c","obio1c",CO2.loc["obio1c","p"],1.0,"#8C6D1F",LBL["obio1c"]),
       (OB2,OB2,CO2.loc[OB2,"p"],1.0,"#8C6D1F",LBL["bio1c:obio1c"])]]
 XL=["% fitness per carried variant\nat an average-temperature garden",
@@ -582,7 +602,7 @@ for a,rows,xl,pl in zip(axs,BLK,XL,"abc"):
     a.set_yticks(range(len(rows))); a.set_yticklabels([r[5] for r in rows],fontsize=8.5)
     pad=(NR-len(rows))/2.0; a.set_ylim(len(rows)-0.5+pad,-0.5-pad)
     for i,(term,base,pv,k,c,lb) in enumerate(rows):
-        tag=("LRT p = " if term.endswith(":bio1c") else "p = ")+f"{pv:.3g}"
+        tag=("perm p = " if term.endswith(":bio1c") else "p = ")+f"{pv:.3g}"
         a.annotate(tag,xy=(1.03,i),xycoords=("axes fraction","data"),ha="left",va="center",
                    fontsize=7.0,color="0.35",annotation_clip=False)
     a.set_xlabel(xl,fontsize=8)
@@ -596,11 +616,17 @@ for t in CO2.index:
                          f"{CO2.loc[t,'estimate']+1.96*CO2.loc[t,'se']:+.4f}]",
                 "Wald p":f"{CO2.loc[t,'p']:.4g}",
                 "LRT p":(f"{LRT2[base]:.4g}" if t.endswith(":bio1c") and base in LRT2 else ""),
+                "PERM p":(f"{M2['PP'][base]:.4g}" if t.endswith(":bio1c") and base in M2["PP"] else ""),
                 "%/carried variant":(f"{CO2.loc[t,'estimate']*k:+.4f}" if k else "")})
 print(pd.DataFrame(out).to_string(index=False))
 print("\nINTERACTIONS -- are they significant?")
 print(pd.DataFrame([{"interaction":f"{t}:bio1c","%/variant/degC":f"{CO2.loc[t+':bio1c','estimate']*PVX[t]:+.5f}",
-                     "LRT p":f"{LRT2[t]:.4g}","p < 0.05":LRT2[t]<0.05} for t in IT]).to_string(index=False))
+                     "LRT p":f"{LRT2[t]:.4g}","PERMUTATION p":f"{M2['PP'].get(t,float('nan')):.4g}",
+                     "p < 0.05":M2["PP"].get(t,LRT2[t])<0.05} for t in IT]).to_string(index=False))
+print(f"\n  Interactions are judged on the PERMUTATION null ({NPERM2} replicates for cds2): their")
+print( "  Wald/LRT p-values are anti-conservative, because these terms carry only 31 gardens of")
+print( "  information and their garden random slopes sit at the variance boundary. Main effects are")
+print( "  reported as fitted -- permutation and bootstrap agree with Wald there to three decimals.")
 print("\nRANDOM EFFECTS"); print(VC2.to_string(index=False))
 print(f"\nlogLik {LL2.logLik:.4f}   df {int(LL2.df)}   singular {LL2.singular}")
 '''

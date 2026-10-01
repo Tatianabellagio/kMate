@@ -59,7 +59,7 @@ STAGES=[("no filter\n(every SV event)",np.ones(len(E),bool)),
         ("+ shared\n(reported burden model)",_c&_m&_f&_s)]
 GEA=pd.read_csv(f"{GS}/genes/convergence/results/gea_hit_landscape.csv.gz")
 SV=GEA[GEA.cls=="sv"]
-print(f"event catalog {len(E):,} SV events   |   GEA tested SV records {len(SV):,} (MAF ≥ {SV.MAF.min():.3f})")
+print(f"event catalog {len(E):,} SV events   |   GEA tested SV events {len(SV):,} (MAF ≥ {SV.MAF.min():.3f})")
 """
 
 md_casc = """## 1 · Composition at every filter stage
@@ -108,9 +108,9 @@ print("\ncall rate by context — share of events clearing each bar:")
 print(pd.DataFrame({">=50%":cr50.round(1),">=90%":cr.round(1)}).to_string())
 """
 
-md_rule = """## 2 · The context rule, measured on the same records
+md_rule = """## 2 · The context rule, measured on the same events
 
-The GEA table carries **both** promoter windows on every tested record, so the window effect can be read
+The GEA table carries **both** promoter windows on every tested event, so the window effect can be read
 off directly: widening the promoter from 1 kb to 2 kb moves variants out of TE and intergenic and into
 promoter, with no change of data or filter. The precedence difference acts the same way — the burden rule
 resolves a TE∩promoter variant to TE, the GEA rule to promoter."""
@@ -126,7 +126,7 @@ a.barh(y-h/2,t2,height=h,color="#5B7A99",lw=0,label="GEA rule, promoter ≤ 2 kb
 for yy,v in zip(y+h/2,t1): a.annotate(f"{v:.1f}",xy=(v,yy),xytext=(3,0),textcoords="offset points",va="center",fontsize=6.8,color="0.35")
 for yy,v in zip(y-h/2,t2): a.annotate(f"{v:.1f}",xy=(v,yy),xytext=(3,0),textcoords="offset points",va="center",fontsize=6.8,color="#5B7A99")
 a.set_yticks(y); a.set_yticklabels([t.split("_",1)[1] for t in TIER],fontsize=8); a.invert_yaxis()
-a.set_xlabel("% of the GEA's tested SV records",fontsize=8.5); a.legend(frameon=False,fontsize=7.5,loc="lower right")
+a.set_xlabel("% of the GEA's tested SV events",fontsize=8.5); a.legend(frameon=False,fontsize=7.5,loc="lower right")
 save(fig,"sv_context_rule",nb=True); plt.show()
 print("GEA tested SVs under its own rule, two promoter windows (%):")
 print(pd.DataFrame({"promoter ≤1 kb":t1.round(1),"promoter ≤2 kb":t2.round(1),"shift":(t2-t1).round(1)}).to_string())
@@ -141,8 +141,11 @@ way to each reported figure.
 
 **Arm A** is the burden track: record \u2192 event (unit), then its filters. The italic tag beside
 each `n` names the single thing that step changed.
-**Arm B** is the GEA track: the same records under the GEA's frequency filter, **then its own
-call-rate floor of ≥ 50%**, then its rule, then its promoter window.
+**Arm B** is the GEA track, and since the 2026-09-30 re-run it starts from the same unit arm A does:
+SV **events** clearing the GEA's frequency filter, **then its own call-rate floor of ≥ 50%**, then its
+rule, then its promoter window. With the unit no longer differing, what separates the two reported
+figures is exactly three things — the call-rate bar (0.90 vs 0.50), the burden's carrier/`shared`
+filters, and the context rule.
 
 `exon(nc)` exists only under the GEA rule. The burden rule has no branch for it \u2014 a non-coding exon is
 neither CDS nor UTR, and `gene & ~exon` excludes it from intron \u2014 so those variants fall through to
@@ -153,7 +156,7 @@ rules cannot be made to agree by relabelling alone."""
 code_full = """
 PN=pd.read_csv(f"{G}/sv_context_decomposition_panel.csv.gz")
 GD=pd.read_csv(f"{G}/sv_context_decomposition_gea.csv.gz")
-_g50 = GD.n_called >= 0.50*231          # the GEA's founder call-rate floor (added 2026-09-30)
+_g50 = GD.passes_cr50                   # the floor the event GEA actually applied, by unit id
 CTX2=["CDS","UTR","exon(nc)","intron","TE","promoter","intergenic"]
 CC2=dict(CC); CC2["exon(nc)"]="#A8BE99"
 TMAP={"1_CDS":"CDS","2_UTR":"UTR","3_promoter":"promoter","4_exon_noncoding":"exon(nc)",
@@ -166,7 +169,7 @@ ARM=[("A","all SV records\\n(burden rule)",cmp_(PN.context),len(PN),None),
      ("A","\u2192 + \u22652 carriers  [burden pool]",cmp_(E[_c&_m].context),int((_c&_m).sum()),"MAC"),
      ("A","\u2192 + founder AF > 0.05",cmp_(E[_c&_m&_f].context),int((_c&_m&_f).sum()),"frequency"),
      ("A","\u2192 + shared  [reported burden]",cmp_(E[_c&_m&_f&_s].context),int((_c&_m&_f&_s).sum()),"origin"),
-     ("B","GEA-tested records, burden rule",cmp_(GD.context),len(GD),"frequency"),
+     ("B","GEA-tested SV events, burden rule",cmp_(GD.context),len(GD),"frequency"),
      ("B","\u2192 called in \u226550% of founders",cmp_(GD[_g50].context),int(_g50.sum()),"call rate"),
      ("B","\u2192 GEA rule, promoter 2 kb",cmp_(GD[_g50].tier_2kb.map(TMAP)),int(_g50.sum()),"precedence"),
      ("B","\u2192 GEA rule, promoter 1 kb  [reported GEA]",cmp_(GD[_g50].tier_1kb.map(TMAP)),
@@ -234,9 +237,9 @@ genotypes worst, so a call-rate floor removes TEs preferentially — *at that ba
 **Where the bar sits decides whether it is a context filter at all.** At **≥ 50%**, the floor the GEA now
 applies, TE events clear at **74.7%** — in line with every other context (CDS 71.0%, intergenic 79.2%,
 UTR 81.5%, promoter 83.1%, intron 84.5%). At **≥ 90%** TE collapses to **14.5%** while intron and UTR
-stay near half. On the GEA's own tested SV records the composition shift is correspondingly small: the
-0.50 floor moves TE from 36.6% to **34.2%** (−2.4 points) and promoter from 24.1% to 26.0%, against the
-0.90 bar which would take TE to **15.7%** (−21 points).
+stay near half. On the GEA's own tested SV events the composition shift is correspondingly small: the
+0.50 floor moves TE from 35.3% to **33.3%** (−2.0 points) and promoter from 25.2% to 27.1%, against the
+0.90 bar which would take TE to **15.9%** (−19.4 points) and promoter to 37.7%.
 
 That is the quantitative reason the GEA floor was set at 0.50 rather than 0.90: 0.50 removes the
 miscalibrated stratum (λ 2.15–2.27 against 1.67–1.80 for well-called records — see
@@ -247,9 +250,10 @@ it the variation this project exists to test.
 The later filters barely move composition: MAC and MAF cost events roughly evenly across contexts, and
 the `shared` filter changes composition by well under a percentage point.
 
-**The context rule then moves a second slice, in the opposite direction.** On the GEA's own tested SVs,
-widening the promoter window from 1 kb to 2 kb takes TE from 27.4% to 22.3% and promoter from 26.3% to
-38.4% — the same records, reclassified. The burden rule uses the 2 kb window *and* ranks TE above
+**The context rule then moves a second slice, in the opposite direction.** On the GEA's own tested SV
+events, widening the promoter window from 1 kb to 2 kb takes TE from 24.0% to 18.9%, intergenic from
+23.5% to 15.8%, and promoter from 28.7% to 41.4% — the same events, reclassified. The burden rule uses
+the 2 kb window *and* ranks TE above
 promoter, which pushes back the other way. So the two rules are not a small annotation difference: they
 disagree about roughly a sixth of all tested SVs.
 
@@ -271,17 +275,20 @@ md_methods = """## As run
   burden context rule (`_sv_sfs_context.CTX`), `n_called`, `n_carriers`, `origin`. AF is
   `n_carriers / n_called`, so the "MAF > 0.05" stage is that ratio, not the pool frequency the GEA uses;
   it is included to show the filter's *size*, not to reproduce the GEA exactly.
-- **GEA side:** `genes/convergence/results/gea_hit_landscape.csv.gz` — every record the GEA tested
-  (676,203 small indels + 27,586 SVs, MAF > 0.05 already applied), carrying `tier_1kb` and `tier_2kb`
-  from `annotate_gea_universe.py`, which reuses `screen_sig_blocks.classify`.
-- Unit differs between the two tracks (events vs records): the 226,468 SV records of the arch3 panel
-  (`|alt_len - ref_len| > 50`) are truvari-collapsed to the 89,940 events here — all of them, the
-  `n_carriers >= 1` filter in `_sv_event_catalog.py` drops nothing. **Measured, this is not a third term.**
-  The collapse ratio is nearly flat across contexts (intron 2.08, CDS 2.31, UTR 2.43, TE 2.47,
-  intergenic 2.66, promoter 2.74 alleles/event), so the TE share is 33.3% of events and 32.7% of records
-  — a 0.6-point move, in the *opposite* direction to the one an allele-splitting bias would predict.
-  With the unit term ruled out and the rule difference pushing the wrong way, the call-rate filter is
-  effectively the whole of the gap."""
+- **GEA side (arm B):** `results/sv_adaptive/sv_context_decomposition_gea.csv.gz`, built by
+  `_sv_context_decomposition.py` from `genes/convergence/event_gea/sv_gen9_units.csv` — the **27,009 SV
+  events** clearing MAF > 0.05 in the re-run GEA, carrying the burden rule (`_sv_sfs_context.context`,
+  recomputed on each event's representative record) and both GEA windows (`tier_1kb` / `tier_2kb`, via
+  `screen_sig_blocks.classify`). `passes_cr50` marks the 20,134 that also clear the call-rate floor,
+  matched on the integer `unit` id; their `n_called` is the burden catalogue's own, asserted equal to
+  the value `build_event_matrix.py` filtered on, so both arms use one definition of "called".
+  Section 2 reads the post-filter set from `gea_hit_landscape.csv.gz`.
+- **The unit is no longer a difference.** Until 2026-09-30 the GEA tested allele records while the
+  burden model used events, and this notebook had to argue the unit was not driving the gap. It now
+  measures it instead: both arms are truvari events, so the remaining terms are the call-rate bar, the
+  burden's carrier/`shared` filters, and the context rule. For the record, the earlier measurement
+  stands — collapsing is nearly flat across contexts (intron 2.08, CDS 2.31, UTR 2.43, TE 2.47,
+  intergenic 2.66, promoter 2.74 alleles/event), which is why removing the term changes so little."""
 
 if __name__ == "__main__":
     build("sv_context_cascade.ipynb", [
