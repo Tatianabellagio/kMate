@@ -45,6 +45,7 @@ sc = importlib.util.module_from_spec(_s); _s.loader.exec_module(sc)
 
 OUT = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive"
 GEA_LANDSCAPE = f"{lib.GEA}/genes/convergence/results/gea_hit_landscape.csv.gz"
+CMDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices"
 SV_BP = 50
 KEY = ["chrom", "pos", "ref_len", "alt_len"]
 
@@ -100,6 +101,15 @@ def main():
         gctx[i] = np.array(sc.CTX)[sc.context(IV, np.full(i.size, C, dtype=object),
                                               p, p + np.maximum(r - 1, 0))]
     G["context"] = gctx
+    # founder call rate, attached POSITIONALLY: the landscape's SV rows are the sv-class
+    # records.csv row for row (asserted below). A join on the 4-tuple would be wrong --
+    # 21.7% of SV records share one.
+    rec = pd.read_csv(f"{CMDIR}/sv_gen9.records.csv",
+                      usecols=["chrom", "pos", "ref_len", "alt_len", "n_called"])
+    assert len(rec) == len(G) and np.array_equal(rec.pos.to_numpy(), G.pos.to_numpy()) \
+        and np.array_equal(rec.ref_len.to_numpy(), G.ref_len.to_numpy()), \
+        "landscape SV rows are not row-aligned with sv_gen9.records.csv"
+    G["n_called"] = rec.n_called.to_numpy()
     G.to_csv(f"{OUT}/sv_context_decomposition_gea.csv.gz", index=False)
     print(f"\n[gea] {len(G):,} tested SV records ({G[KEY].drop_duplicates().shape[0]:,} distinct "
           f"{'/'.join(KEY)} tuples -- not a record key)")

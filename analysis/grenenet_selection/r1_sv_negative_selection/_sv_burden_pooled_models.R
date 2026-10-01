@@ -93,7 +93,7 @@ DEFBINS <- if (identical(STRATIFY, "size")) "small,medium,large" else "rare,comm
 FBINS <- setdiff(strsplit(Sys.getenv("FREQ_BINS", DEFBINS), "[,: ]+")[[1]], "")
 SCTX  <- setdiff(strsplit(Sys.getenv("STRATIFY_CTX", "CDS"), "[,: ]+")[[1]], "")
 if (nzchar(STRATIFY)) {
-  stopifnot(ORIGIN == "all", all(SCTX %in% CTX), POOL_SET0 %in% c("sv4", "sv6"))
+  stopifnot(ORIGIN == "all", all(SCTX %in% CTX), POOL_SET0 %in% c("sv4", "sv6", "all6", "cds2"))
   FR <- read.csv(file.path(here, "results", "sv_adaptive",
                            sprintf("founder_burden_event_%s.csv", STRATIFY)),
                  colClasses = c(founder = "character"))
@@ -171,6 +171,13 @@ SV3 <- expand(switch(POOL_SET,
   sv6  = c("sv_CDS", "sv_TE", "sv_promoter"),
   all6 = c("sv_CDS", "sv_TE", "sv_promoter"),
   cds2 = c("sv_CDS", "sv_nonCDS")))
+# INTER_SET overrides which burdens get an interaction + random garden slope, e.g. "all" to give every
+# modelled context one. It enters SUF so these fits never overwrite the default parameterisation.
+INTER_SET <- Sys.getenv("INTER_SET", "")
+if (nzchar(INTER_SET)) {
+  SV3 <- if (INTER_SET == "all") expand(paste0("sv_", CTX)) else expand(strsplit(INTER_SET, "[,:]")[[1]])
+  stopifnot(all(SV3 %in% expand(paste0("sv_", CTX))))
+}
 ALLB <- expand(paste0("sv_", CTX))
 fixed <- paste(c("snp_CDS", ALLB, "cactus"), collapse = " + ")
 # `cactus` is constant within a technology panel -> unidentifiable, drop it
@@ -210,6 +217,7 @@ SUF <- paste0(if (nzchar(EXTRA)) paste0("_x_", gsub("[^A-Za-z0-9]+", "", EXTRA))
               if (length(RE_DROP)) paste0("_re", gsub("[^A-Za-z0-9]+", "", paste(RE_DROP, collapse = ""))) else "",
               if (nzchar(STRATIFY)) paste0("_freq", gsub("[^A-Za-z0-9]+", "", paste(c(SCTX, FBINS), collapse = ""))) else "",
               if (BMODE == "count") "_count" else "",
+              if (nzchar(INTER_SET)) paste0("_int", gsub("[^A-Za-z0-9]+", "", INTER_SET)) else "",
               CRTAG)
 
 TASKS <- list(list(name = "M1p_reml", inter = character(0), REML = TRUE),

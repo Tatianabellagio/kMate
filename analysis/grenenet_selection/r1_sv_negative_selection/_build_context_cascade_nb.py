@@ -20,8 +20,10 @@ tests (and ~30–36% of its SV hits). Those are the same variants in the same pa
 by the analyses, not by biology. Two things differ, and they act in opposite directions:
 
 **1. The filters.** The burden model requires an event to be **called in ≥ 90% of the 231 founders** and
-carried by **≥ 2**; the GEA requires **MAF > 0.05** and applies no call-rate floor. Callability is not
-uniform across the genome, so a call-rate filter is also a *context* filter.
+carried by **≥ 2**; the GEA requires **MAF > 0.05** and, **since 2026-09-30, a call-rate floor of
+**≥ 50%** (it previously had none). Callability is not uniform across the genome, so a call-rate filter
+is also a *context* filter — and how much of one depends sharply on where the bar sits, which is the
+main thing this notebook now shows.
 
 **2. The context rule.** The two classifiers disagree on precedence, and on the promoter window:
 
@@ -82,20 +84,28 @@ a.annotate("a",xy=(-0.30,1.05),xycoords="axes fraction",fontsize=13)
 h_=[a.barh([],[],color=CC[c])[0] if False else a.plot([],[],"s",color=CC[c],ms=7)[0] for c in CTX]
 a.legend(h_,CTX,frameon=False,fontsize=7.5,ncol=3,loc="upper center",bbox_to_anchor=(0.5,-0.18))
 a=ax[1]; style(a)
-cr=(E.assign(_ok=(E.n_called>=0.9*231)).groupby("context")._ok.mean()*100).reindex(CTX)
+cr =(E.assign(_ok=(E.n_called>=0.9*231)).groupby("context")._ok.mean()*100).reindex(CTX)
+cr50=(E.assign(_ok=(E.n_called>=0.5*231)).groupby("context")._ok.mean()*100).reindex(CTX)
 for i,c in enumerate(CTX):
-    a.barh(i,cr[c],height=0.62,color=CC[c],lw=0)
-    a.annotate(f"{cr[c]:.1f}%",xy=(cr[c],i),xytext=(4,0),textcoords="offset points",va="center",fontsize=7.5)
-a.set_yticks(range(len(CTX))); a.set_yticklabels(CTX,fontsize=8); a.invert_yaxis(); a.set_xlim(0,70)
-a.set_xlabel("% of SV events called in ≥90% of founders",fontsize=8.5)
+    a.barh(i-0.19,cr50[c],height=0.34,color=CC[c],lw=0,alpha=0.45)
+    a.barh(i+0.19,cr[c],  height=0.34,color=CC[c],lw=0)
+    a.annotate(f"{cr50[c]:.0f}%",xy=(cr50[c],i-0.19),xytext=(3,0),textcoords="offset points",
+               va="center",fontsize=7,color="0.35")
+    a.annotate(f"{cr[c]:.1f}%",xy=(cr[c],i+0.19),xytext=(3,0),textcoords="offset points",
+               va="center",fontsize=7.5)
+a.set_yticks(range(len(CTX))); a.set_yticklabels(CTX,fontsize=8); a.invert_yaxis(); a.set_xlim(0,100)
+a.set_xlabel("% of SV events clearing the call-rate bar",fontsize=8.5)
+a.plot([],[],"s",color="0.45",ms=6,alpha=0.45); a.plot([],[],"s",color="0.2",ms=6)
+a.legend(["≥50% of founders (the GEA floor)","≥90% (the burden filter)"],frameon=False,
+         fontsize=7,loc="upper right")
 a.annotate("b",xy=(-0.24,1.05),xycoords="axes fraction",fontsize=13)
 save(fig,"sv_context_cascade",nb=True); plt.show()
 T=pd.DataFrame({lab.replace(chr(10)," "):(E[m].context.value_counts(normalize=True).reindex(CTX)*100).round(1)
                 for lab,m in STAGES})
 T.loc["n events"]=[int(m.sum()) for _,m in STAGES]
 print("context composition (%) by filter stage, burden context rule:"); print(T.to_string())
-print("\ncall rate by context — share of events called in ≥90% of the 231 founders:")
-print(cr.round(1).to_string())
+print("\ncall rate by context — share of events clearing each bar:")
+print(pd.DataFrame({">=50%":cr50.round(1),">=90%":cr.round(1)}).to_string())
 """
 
 md_rule = """## 2 · The context rule, measured on the same records
@@ -131,8 +141,8 @@ way to each reported figure.
 
 **Arm A** is the burden track: record \u2192 event (unit), then its filters. The italic tag beside
 each `n` names the single thing that step changed.
-**Arm B** is the GEA track: the same records under the GEA's frequency filter (no call-rate floor), then
-its rule, then its promoter window.
+**Arm B** is the GEA track: the same records under the GEA's frequency filter, **then its own
+call-rate floor of ≥ 50%**, then its rule, then its promoter window.
 
 `exon(nc)` exists only under the GEA rule. The burden rule has no branch for it \u2014 a non-coding exon is
 neither CDS nor UTR, and `gene & ~exon` excludes it from intron \u2014 so those variants fall through to
@@ -143,6 +153,7 @@ rules cannot be made to agree by relabelling alone."""
 code_full = """
 PN=pd.read_csv(f"{G}/sv_context_decomposition_panel.csv.gz")
 GD=pd.read_csv(f"{G}/sv_context_decomposition_gea.csv.gz")
+_g50 = GD.n_called >= 0.50*231          # the GEA's founder call-rate floor (added 2026-09-30)
 CTX2=["CDS","UTR","exon(nc)","intron","TE","promoter","intergenic"]
 CC2=dict(CC); CC2["exon(nc)"]="#A8BE99"
 TMAP={"1_CDS":"CDS","2_UTR":"UTR","3_promoter":"promoter","4_exon_noncoding":"exon(nc)",
@@ -156,9 +167,11 @@ ARM=[("A","all SV records\\n(burden rule)",cmp_(PN.context),len(PN),None),
      ("A","\u2192 + founder AF > 0.05",cmp_(E[_c&_m&_f].context),int((_c&_m&_f).sum()),"frequency"),
      ("A","\u2192 + shared  [reported burden]",cmp_(E[_c&_m&_f&_s].context),int((_c&_m&_f&_s).sum()),"origin"),
      ("B","GEA-tested records, burden rule",cmp_(GD.context),len(GD),"frequency"),
-     ("B","\u2192 GEA rule, promoter 2 kb",cmp_(GD.tier_2kb.map(TMAP)),len(GD),"precedence"),
-     ("B","\u2192 GEA rule, promoter 1 kb  [reported GEA]",cmp_(GD.tier_1kb.map(TMAP)),len(GD),"window")]
-YS=[0,1,2,3,4,5,6.9,7.9,8.9]                                  # gap between the arms
+     ("B","\u2192 called in \u226550% of founders",cmp_(GD[_g50].context),int(_g50.sum()),"call rate"),
+     ("B","\u2192 GEA rule, promoter 2 kb",cmp_(GD[_g50].tier_2kb.map(TMAP)),int(_g50.sum()),"precedence"),
+     ("B","\u2192 GEA rule, promoter 1 kb  [reported GEA]",cmp_(GD[_g50].tier_1kb.map(TMAP)),
+      int(_g50.sum()),"window")]
+YS=[0,1,2,3,4,5,6.9,7.9,8.9,9.9]                              # gap between the arms
 fig,ax=plt.subplots(1,2,figsize=(14.4,4.6),gridspec_kw=dict(width_ratios=[1.75,1],wspace=0.30))
 a=ax[0]; style(a)
 for (arm,lab,c,n,ch),yy in zip(ARM,YS):
@@ -216,8 +229,20 @@ md_read = """## 4 · Reading it
 **33.3%** of all SV events but **15.6%** after requiring calls in ≥ 90% of founders — because only
 **14.5%** of TE events clear that bar, the lowest of any context by a wide margin (intron 54.9%, UTR
 48.1%, promoter 45.7%, intergenic 34.2%, CDS 20.1%). Repetitive sequence is where the pangenome
-genotypes worst, so a call-rate floor removes TEs preferentially. The GEA applies **no call-rate floor**,
-so it keeps them.
+genotypes worst, so a call-rate floor removes TEs preferentially — *at that bar*.
+
+**Where the bar sits decides whether it is a context filter at all.** At **≥ 50%**, the floor the GEA now
+applies, TE events clear at **74.7%** — in line with every other context (CDS 71.0%, intergenic 79.2%,
+UTR 81.5%, promoter 83.1%, intron 84.5%). At **≥ 90%** TE collapses to **14.5%** while intron and UTR
+stay near half. On the GEA's own tested SV records the composition shift is correspondingly small: the
+0.50 floor moves TE from 36.6% to **34.2%** (−2.4 points) and promoter from 24.1% to 26.0%, against the
+0.90 bar which would take TE to **15.7%** (−21 points).
+
+That is the quantitative reason the GEA floor was set at 0.50 rather than 0.90: 0.50 removes the
+miscalibrated stratum (λ 2.15–2.27 against 1.67–1.80 for well-called records — see
+`r2_gea_nonsnp/phase1_replication/multiaxis/callrate_calibration.py`) while leaving the context
+composition of the SV layer essentially intact, whereas 0.90 would delete most of the TE class and with
+it the variation this project exists to test.
 
 The later filters barely move composition: MAC and MAF cost events roughly evenly across contexts, and
 the `shared` filter changes composition by well under a percentage point.

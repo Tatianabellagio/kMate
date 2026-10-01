@@ -69,7 +69,8 @@ CT6=["CDS","UTR","intron","TE","promoter","intergenic"]
 CC={"CDS":"#4A3B6B","nonCDS":"#C46A10","UTR":"#6B5A8E","intron":"#7E9B6B","TE":"#6B5A8E",
     "promoter":"#9084AE","intergenic":"#C6BCD8","snp_CDS":"0.25"}
 def arm(tag):
-    S=f"_x_obio1cobio1cbio1c_re0obio1cgarden{tag}_refid"   # THE model: LA fitted per garden
+    # all6 now carries an interaction on EVERY context (INTER_SET=all); cds2 already did, with two
+    S=f"_x_obio1cobio1cbio1c_re0obio1cgarden{tag}_refid" + ("_intall" if tag == "_all6" else "")
     o={"co":pd.read_csv(f"{PA}/coef_M2p_reml{S}.csv").set_index("term"),
        "sc":pd.read_csv(f"{PA}/pooled_rate_scale_x_obio1cobio1cbio1c{tag}.csv").set_index("context"),
        "V":pd.read_csv(f"{PA}/vcov_M2p_reml{S}.csv",index_col=0),
@@ -85,7 +86,7 @@ def lrts(o,terms):
     ll=lambda n: pd.read_csv(f"{PA}/loglik_{n}{o['suf']}.csv").logLik[0]
     return {t: stats.chi2.sf(2*(ll("M2p_ml")-ll(f"M2p_ml_drop_{t}")),1) for t in terms}
 M2["LRT"]=lrts(M2,["sv_CDS","sv_nonCDS"])
-M6["LRT"]=lrts(M6,["sv_CDS","sv_TE","sv_promoter"])
+M6["LRT"]=lrts(M6,[f"sv_{c}" for c in CT6])
 CAT=pd.read_csv(f"{G}/sv_event_catalog.csv"); AP=CAT[CAT.passes]
 B=pd.read_csv(f"{G}/founder_burden_event.csv",dtype={"founder":str})
 car={c:B[f"ins_all_{c}_all"]+B[f"del_all_{c}_all"] for c in CT6}

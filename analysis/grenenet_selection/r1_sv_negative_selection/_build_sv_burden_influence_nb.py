@@ -56,9 +56,9 @@ average away by construction. That is fine here — the question is about `sv_CD
 code_load = r"""
 import numpy as np
 from scipy import linalg
-GG=f"{G}/final_models_pooled_all"; SUF="_x_obio1cobio1cbio1c_re0obio1cgarden_refid"
-CTX=["CDS","TE","promoter","intergenic"]
-TERMS=["snp_CDS","sv_CDS","sv_TE","sv_promoter","sv_intergenic","cactus","obio1c"]
+GG=f"{G}/final_models_pooled_all"; SUF="_x_obio1cobio1cbio1c_re0obio1cgarden_all6_refid_intall"
+CTX=["CDS","UTR","intron","TE","promoter","intergenic"]
+TERMS=["snp_CDS","sv_CDS","sv_UTR","sv_intron","sv_TE","sv_promoter","sv_intergenic","cactus","obio1c"]
 J=TERMS.index("sv_CDS")+1                                  # +1 for the intercept column
 CC="#4A3B6B"                                               # sv_CDS keeps its colour from the pooled figures
 

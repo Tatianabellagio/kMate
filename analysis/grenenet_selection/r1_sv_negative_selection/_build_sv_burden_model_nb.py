@@ -6,10 +6,10 @@ ONE model, reported on its own. No specification comparisons: every alternative 
 are in `archive/burden_superseded_2026-09-29/`.
 
   y ~ snp_CDS + sv_CDS + sv_TE + sv_promoter + sv_intergenic + cactus
-      + sv_CDS:bio1c + sv_TE:bio1c + sv_promoter:bio1c
+      + sv_ctx:bio1c   for each of the six contexts
       + obio1c + obio1c:bio1c
       + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
-      + (0 + sv_CDS | garden) + (0 + sv_TE | garden) + (0 + sv_promoter | garden)
+      + (0 + sv_ctx | garden)   for each of the six contexts
 
 SVs pooled over insertions and deletions (that split is defined against Col-0, not biology), no origin
 filter, reference TE kept as its own context, founder origin climate and its garden-climate interaction
@@ -42,10 +42,10 @@ to read, not easier.
 
 ```r
 y ~ snp_CDS + sv_CDS + sv_TE + sv_promoter + sv_intergenic + cactus
-    + sv_CDS:bio1c + sv_TE:bio1c + sv_promoter:bio1c
+    + sv_ctx:bio1c   for each of the six contexts
     + obio1c + obio1c:bio1c
     + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
-    + (0 + sv_CDS | garden) + (0 + sv_TE | garden) + (0 + sv_promoter | garden)
+    + (0 + sv_ctx | garden)   for each of the six contexts
 ```
 
 Fitted with `lme4qtl::relmatLmer`, kinship passed as `relmat`, on **all 231 founders × 31 gardens =
@@ -94,16 +94,20 @@ the `sv_ctx:bio1c` terms hard and the `sv_ctx` terms only mildly. §13 returns t
 
 code_load = r"""
 PA=f"{G}/final_models_pooled_all"
-SUF="_x_obio1cobio1cbio1c_re0obio1cgarden_refid"           # THE model: + local adaptation per garden, fid pruned
-SCS="_x_obio1cobio1cbio1c"                                 # RE_DROP does not change the burdens, so the
-                                                           # per-variant scale file carries no _refid tag
-SVT=["sv_CDS","sv_TE","sv_promoter"]                       # burdens carrying a temperature interaction
-BURD=["snp_CDS","sv_CDS","sv_TE","sv_promoter","sv_intergenic"]
-PAL2={"snp_CDS":"0.25","sv_CDS":"#4A3B6B","sv_TE":"#6B5A8E","sv_promoter":"#9084AE",
-      "sv_intergenic":"#C6BCD8","cactus":"0.6","obio1c":"#8C6D1F"}
+SUF="_x_obio1cobio1cbio1c_re0obio1cgarden_all6_refid_intall"   # THE model: all six contexts, each
+                                                           # with its own temperature interaction
+SCS="_x_obio1cobio1cbio1c_all6"                            # RE_DROP and INTER_SET do not change the
+                                                           # burdens, so the scale file carries neither
+SVT=["sv_CDS","sv_UTR","sv_intron","sv_TE","sv_promoter","sv_intergenic"]   # every context now carries
+                                                           # its own temperature interaction
+BURD=["snp_CDS","sv_CDS","sv_UTR","sv_intron","sv_TE","sv_promoter","sv_intergenic"]
+PAL2={"snp_CDS":"0.25","sv_CDS":"#4A3B6B","sv_UTR":"#5A4A7E","sv_intron":"#6B5A8E",
+      "sv_TE":"#B04A00","sv_promoter":"#9084AE","sv_intergenic":"#C6BCD8",
+      "cactus":"0.6","obio1c":"#8C6D1F"}
 PC2=lambda t: PAL2[("obio1c" if "obio1c" in t else t.split(":")[0])]
-LAB2=lambda t: {"snp_CDS":"SNPs, coding","sv_CDS":"SVs, coding","sv_TE":"SVs, reference TE",
-                "sv_promoter":"SVs, promoter","sv_intergenic":"SVs, intergenic","cactus":"assembly route",
+LAB2=lambda t: {"snp_CDS":"SNPs, coding","sv_CDS":"SVs, coding","sv_UTR":"SVs, UTR",
+                "sv_intron":"SVs, intron","sv_TE":"SVs, reference TE","sv_promoter":"SVs, promoter",
+                "sv_intergenic":"SVs, intergenic","cactus":"assembly route",
                 "obio1c":"founder origin climate"}[("obio1c" if "obio1c" in t else t.split(":")[0])]
 CO=pd.read_csv(f"{PA}/coef_M2p_reml{SUF}.csv").set_index("term")
 VC=pd.read_csv(f"{PA}/varcomp_M2p_reml{SUF}.csv")
@@ -139,11 +143,12 @@ md_counts = """## 1 · What enters the model
 Every truvari-collapsed SV event passing call rate ≥ 90 % and ≥ 2 carriers, split by class so the quantity
 the pooling merges is visible: the burden for a context is the green plus the orange segment.
 
-`UTR` and `intron` carry no term in this model; they are shown so the context accounting is complete."""
+All six contexts carry their own burden term and their own garden-temperature interaction, so every
+passing event is in exactly one burden."""
 
 code_counts = r"""
 CAT=pd.read_csv(f"{G}/sv_event_catalog.csv"); AP=CAT[CAT.passes]
-CTX6=["CDS","UTR","intron","TE","promoter","intergenic"]; MODC={"CDS","TE","promoter","intergenic"}
+CTX6=["CDS","UTR","intron","TE","promoter","intergenic"]; MODC=set(CTX6)
 CI,CD="#2F4A1F","#B04A00"
 fig,a=plt.subplots(figsize=(7.6,3.4)); style(a)
 for i,c in enumerate(CTX6):
@@ -433,11 +438,11 @@ CO2=pd.read_csv(f"{PA}/coef_M2p_reml{LRS}.csv").set_index("term")
 VC2=pd.read_csv(f"{PA}/varcomp_M2p_reml{LRS}.csv")
 LL2=pd.read_csv(f"{PA}/loglik_M2p_reml{LRS}.csv").iloc[0]
 ll2=lambda n: pd.read_csv(f"{PA}/loglik_{n}{LRS}.csv").logLik[0]
-LRT2={t: stats.chi2.sf(2*(ll2("M2p_ml")-ll2(f"M2p_ml_drop_{t}")),1) for t in ["sv_CDS","sv_TE","sv_promoter"]}
+LRT2={t: stats.chi2.sf(2*(ll2("M2p_ml")-ll2(f"M2p_ml_drop_{t}")),1) for t in SVT}
 OB2=next(t for t in CO2.index if set(t.split(":"))=={"obio1c","bio1c"})
 PVX={t:PV(t) for t in VPS}; CLX=PAL2
 LBL={**{t:LAB2(t) for t in VPS},"obio1c":"origin climate","bio1c:obio1c":"origin x garden climate"}
-BT=["snp_CDS","sv_CDS","sv_TE","sv_promoter","sv_intergenic"]; IT=["sv_CDS","sv_TE","sv_promoter"]
+BT=BURD; IT=SVT
 BLK=[[(t,t,CO2.loc[t,"p"],PVX[t],CLX[t],LBL[t]) for t in BT],
      [(f"{t}:bio1c",t,LRT2[t],PVX[t],CLX[t],LBL[t]+" x temp.") for t in IT],
      [("obio1c","obio1c",CO2.loc["obio1c","p"],1.0,"#8C6D1F",LBL["obio1c"]),
