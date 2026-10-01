@@ -257,22 +257,28 @@ for k,(ax,o,terms,lab) in enumerate(zip(axs,(M2,M6),
     ax.set_xlabel("change in % fitness per carried variant,\nper °C of garden temperature  (± 95% CI)",fontsize=7.5)
     ax.annotate(lab,xy=(0,1.05),xycoords="axes fraction",fontsize=8.5,color="0.3",va="bottom")
 save(fig,"cdsrest_interactions",nb=True); plt.show()
-for o,terms,lab in ((M2,["sv_CDS","sv_nonCDS"],"cds2 -- coding vs everything else"),
-                    (M6,["sv_CDS","sv_TE","sv_promoter"],"all6 -- every context")):
-    print("="*74); print(f"{lab}   ({len(terms)} interactions fitted)")
+for o,terms,lab,npm in ((M2,["sv_CDS","sv_nonCDS"],"cds2 -- coding vs everything else",NPERM2),
+                        (M6,[f"sv_{c}" for c in CT6],"all6 -- every context",NPERM6)):
+    print("="*86); print(f"{lab}   ({len(terms)} interactions fitted; {npm} permutation replicates)")
     print(pd.DataFrame([{"interaction":f"{t}:bio1c",
         "%/variant/degC":f"{o['co'].loc[t+':bio1c','estimate']*o['pv'][t]:+.5f}",
         "Wald p":f"{o['co'].loc[t+':bio1c','p']:.3g}","LRT p":f"{o['LRT'][t]:.3g}",
-        "p < 0.05":o["LRT"][t]<0.05} for t in terms]).to_string(index=False))
+        "PERMUTATION p":f"{o['PP'].get(t,float('nan')):.3g}",
+        "null SD of z":f"{o['PSD'].get(t,float('nan')):.2f}",
+        "p < 0.05":o["PP"].get(t,o["LRT"][t])<0.05} for t in terms]).to_string(index=False))
     print()
 surv=[(nm,t) for nm,o,ts in (("cds2",M2,["sv_CDS","sv_nonCDS"]),
-                              ("all6",M6,["sv_CDS","sv_TE","sv_promoter"]))
-       for t in ts if o["LRT"][t]<0.05]
-print("interactions reaching p < 0.05: " + (", ".join(f"{t}:bio1c ({nm})" for nm,t in surv) or "none"))
-print("\n  sv_nonCDS:bio1c is much the strongest (p = 0.003). It pools five contexts into one term:")
-print("  the same variants fitted as separate contexts in all6 give 0.093 and 0.095. sv_CDS:bio1c sits")
-print("  at 0.026 here and 0.043 in all6. And sv_nonCDS is an interaction on a main effect whose own")
-print("  interpretation is unresolved -- see the reading section.")
+                              ("all6",M6,[f"sv_{c}" for c in CT6]))
+       for t in ts if o["PP"].get(t,o["LRT"][t])<0.05]
+print("reaching PERMUTATION p < 0.05: " + (", ".join(f"{t}:bio1c ({nm})" for nm,t in surv) or "none"))
+print("\n  Judged on the permutation null, not the model's own: these terms carry only 31 gardens of")
+print("  information and their garden random slopes sit at the variance boundary, so the null SD of z")
+print("  runs ~1.03-1.26 instead of 1 and the Wald/LRT values are anti-conservative. Main effects are")
+print("  reported as fitted -- there permutation and bootstrap agree with Wald to three decimals.")
+print("\n  sv_nonCDS:bio1c remains the strongest interaction after correction (perm p = 0.0023), but it")
+print("  pools five contexts into one term. Fitted separately in all6 none of those five is significant,")
+print("  so the pooled term is not evidence that any particular non-coding context drives it -- and its")
+print("  main effect's interpretation is itself unresolved (see the reading section).")
 '''
 
 md_jack = """## 4 · Jackknife — is either coefficient driven by particular ecotypes?
