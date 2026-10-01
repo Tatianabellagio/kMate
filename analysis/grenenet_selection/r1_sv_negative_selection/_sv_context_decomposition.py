@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""SV tables carrying BOTH context rules, for the context-cascade decomposition.
+"""SV tables for the context-cascade decomposition.
 
 UPDATED 2026-09-30: the GEA arm is now EVENT-level. The GEA re-run tests truvari events, the
 same unit the burden model uses, so the cascade's two arms finally start from the same unit and
@@ -17,9 +17,10 @@ one at a time:
                in the panel table, and `MAF` (the GEA's pool frequency -- a different denominator, not
                the founder frequency) in the GEA table.
   * rule    -- `context` is the burden rule (`_sv_sfs_context.context`: CDS > UTR > intron > TE >
-               promoter <=2kb > intergenic); `tier_1kb` / `tier_2kb` are the GEA rule
-               (`screen_sig_blocks.classify` via `annotate_gea_universe.py`: gene body > promoter > TE),
-               carried by `gea_hit_landscape.csv.gz`.
+               promoter <=1kb > intergenic); `tier` is the GEA rule
+               (`screen_sig_blocks.classify`). Since the 1 kb / TE-above-promoter standardisation the
+               two agree on precedence and window; `tier` differs only by carrying an `exon_noncoding`
+               tier and splitting intergenic into proximal / gene desert.
 
 SV records are `|alt_len - ref_len| > 50`, matching PANEL_STATS and `_sv_sfs_context.SV_BP`, so the row
 count reconciles with the panel-stats variant-class figure (226,468).
@@ -117,14 +118,17 @@ def main():
                                               p, p + np.maximum(r - 1, 0))]
     G["context"] = gctx
 
-    # GEA rule, both promoter windows, same call as annotate_gea_universe.py
+    # GEA rule, same call as annotate_gea_universe.py. Since the project standardised on ONE rule
+    # (promoter <= 1 kb, TE above promoter) the GEA and burden classifiers now agree on precedence and
+    # on the window; what remains are the GEA's extra `4_exon_noncoding` tier and its split of
+    # intergenic into proximal / gene desert, which are finer labels, not a different ordering.
+    # The second promoter window is gone -- there is nothing left to vary.
     sys.path.insert(0, f"{lib.GEA}/genes/dissection")
     import screen_sig_blocks as S
     base = G[["chrom", "pos", "ref_len"]].copy()
     base["alt_len"] = base.ref_len                 # classify reads only the REF span
-    for prom in (1000, 2000):
-        S.PROM_BP = prom
-        G[f"tier_{prom // 1000}kb"] = S.classify(base.copy())[0]["tier"].to_numpy()
+    assert S.PROM_BP == 1000, "screen_sig_blocks.PROM_BP must be the project-wide 1 kb"
+    G["tier"] = S.classify(base.copy())[0]["tier"].to_numpy()
 
     # founder call rate, from the burden model's OWN catalogue, so both arms of the cascade use
     # one definition (union of the event's member records -- _sv_event_catalog.py:49, which is

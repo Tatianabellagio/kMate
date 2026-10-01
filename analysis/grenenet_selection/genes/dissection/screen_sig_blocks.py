@@ -40,11 +40,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(HERE)),
                                 "r2_gea_nonsnp", "phase1_replication", "multiaxis"))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "blocks"))
 
-WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+# 2026-10-01: the re-run GEA (MAF 0.05 + founder call rate 0.50; SV/non-SNP on
+# truvari events). The pre-filter dir was wza_in_clq09_tile.
+WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 CLASSES = ["sv", "smallindel", "nonsnp"]
 GFF = lib.TAIR10_GENES_TE                      # full hierarchy incl. TEs
-PROM_BP = 1000                                 # promoter window upstream of TSS
+PROM_BP = 1000                                 # promoter window upstream of TSS (project-wide;
+                                               # matches _sv_sfs_context.PROM_BP)
 PROXIMAL_BP = 5000                             # "near a gene" cutoff
 
 
@@ -154,6 +157,13 @@ def classify(C):
         gene = subr = strand = ""
         tier = None
         st = en = sd = gn = None
+        # TE overlap is needed BEFORE the promoter branch: project-wide precedence puts TE above
+        # promoter, so a variant inside a reference TE that also lies upstream of a gene is a TE.
+        # (A gene BODY still outranks TE -- CDS/UTR/exon/intron are decided first, as before.)
+        te_hit = False
+        if ch in tenp:
+            tst, ten = tenp[ch]
+            te_hit = bool(((tst <= ve) & (ten >= vs)).any())
         if ch in gnp:
             st, en, sd, gn = gnp[ch]
             body = (st <= ve) & (en >= vs)
@@ -170,7 +180,7 @@ def classify(C):
                     tier, subr = "4_exon_noncoding", "exon(noncoding)"
                 else:
                     tier, subr = "5_intron", "intron"
-            elif True:                                          # promoter (vectorized)
+            elif not te_hit:                                    # promoter (vectorized); TE wins
                 lo = np.where(sd == "+", st - PROM_BP, en + 1)
                 hi = np.where(sd == "+", st - 1, en + PROM_BP)
                 pm = (vs <= hi) & (ve >= lo)
@@ -189,11 +199,6 @@ def classify(C):
                     order = idx[np.argsort(d2t, kind="stable")]
                     prom_all.append(",".join(gn[order]))
                     prom_tss.append(gn[order[0]])
-        # TE overlap
-        te_hit = False
-        if ch in tenp:
-            tst, ten = tenp[ch]
-            te_hit = bool(((tst <= ve) & (ten >= vs)).any())
         # nearest gene + distance
         ngene, ndist = "", np.nan
         if st is not None:

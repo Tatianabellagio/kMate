@@ -30,6 +30,11 @@ ann = importlib.util.module_from_spec(_s); _s.loader.exec_module(ann)
 
 OUT = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive"
 SV_BP, KEEP, CALL_MIN, SEED = 50, 0.05, 0.9, 0
+# PROJECT-WIDE promoter window, upstream of the TSS. 1 kb, not 2 kb: the median Arabidopsis gene sits
+# only 863 bp from its nearest upstream neighbour, so a 2 kb window lies inside another gene's body for
+# 73.4% of genes against 54.2% at 1 kb. 1 kb is also what TAIR distributes as its standard upstream set.
+# The GEA classifier (genes/dissection/screen_sig_blocks.py, PROM_BP) uses the same value.
+PROM_BP = 1000
 CTX = ["CDS", "UTR", "intron", "TE", "promoter", "intergenic"]
 CLASSES = ["snp", "indel", "ins_allele", "ins_bubble", "del_allele", "del_bubble"]
 
@@ -40,8 +45,8 @@ def layers():
     g = g[g.chrom.isin(lib.CHROMS)]
     genes = g[g.feat == "gene"]
     prom = genes.copy()
-    prom["start"] = np.where(genes.strand == "+", genes.start - 2000, genes.end + 1)
-    prom["end"] = np.where(genes.strand == "+", genes.start - 1, genes.end + 2000)
+    prom["start"] = np.where(genes.strand == "+", genes.start - PROM_BP, genes.end + 1)
+    prom["end"] = np.where(genes.strand == "+", genes.start - 1, genes.end + PROM_BP)
     return {"CDS": ann.merged(g[g.feat == "CDS"]),
             "UTR": ann.merged(g[g.feat.isin(["five_prime_UTR", "three_prime_UTR"])]),
             "exon": ann.merged(g[g.feat == "exon"]), "gene": ann.merged(genes),
