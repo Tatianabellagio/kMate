@@ -154,7 +154,20 @@ L <- merge(L, P, by = "founder")
 stopifnot(nrow(L) == length(unique(L$founder)) * length(unique(L$garden)))
 cat(sprintf("fitting on %d founders x %d gardens = %d rows\n", length(unique(L$founder)), length(unique(L$garden)), nrow(L)))
 L$kin <- L$founder; L$fid <- factor(L$founder); L$garden <- factor(L$garden)
-b1 <- unique(L[, c("garden", "bio1")]); L$bio1c <- L$bio1 - mean(b1$bio1); b1$bio1c <- b1$bio1 - mean(b1$bio1)
+b1 <- unique(L[, c("garden", "bio1")])
+# PERM_SEED: shuffle which temperature belongs to which GARDEN, then refit. This is the null for every
+# burden x bio1c term: founders keep their burdens and their kinship, gardens keep their own mean fitness
+# and their own random effects, and the ONLY thing destroyed is the pairing between a garden's identity
+# and its temperature. obio1c:bio1c is nulled by the same shuffle, so the burden interactions are tested
+# against a null in which no term may track real garden temperature.
+PERM_SEED <- Sys.getenv("PERM_SEED", "")
+if (nzchar(PERM_SEED)) {
+  set.seed(as.integer(PERM_SEED))
+  b1$bio1 <- b1$bio1[sample.int(nrow(b1))]
+  L$bio1 <- b1$bio1[match(L$garden, b1$garden)]
+  cat(sprintf("PERMUTED garden temperature, seed %s\n", PERM_SEED))
+}
+L$bio1c <- L$bio1 - mean(b1$bio1); b1$bio1c <- b1$bio1 - mean(b1$bio1)
 
 # POOL_SET: sv6 (default) keeps the reference-TE context term; sv4 drops it entirely, so TE-context
 # variants contribute to NO burden -- the pooled analogue of _sv_burden_final_models.R's SV_SET=sv4 arm.
@@ -233,6 +246,14 @@ m <- relmatLmer(form(T$inter), data = L, relmat = list(kin = K), REML = T$REML)
 cat(sprintf("fitted in %.1f s  singular = %s\n", as.numeric(difftime(Sys.time(), t0, units = "secs")), isSingular(m)))
 
 s <- summary(m)$coefficients
+# A permuted fit must never touch the reported model's files: write only to perm/ and stop here.
+if (nzchar(PERM_SEED)) {
+  PO <- file.path(OUT, "perm"); dir.create(PO, showWarnings = FALSE)
+  write.csv(data.frame(seed = as.integer(PERM_SEED), term = rownames(s), estimate = s[, 1],
+                       se = s[, 2], z = s[, 3]),
+            file.path(PO, sprintf("perm_%s%s_%s.csv", T$name, SUF, PERM_SEED)), row.names = FALSE)
+  cat("done (permutation)\n"); quit(save = "no")
+}
 write.csv(data.frame(term = rownames(s), estimate = s[, 1], se = s[, 2], z = s[, 3], p = 2 * pnorm(-abs(s[, 3]))),
           file.path(OUT, sprintf("coef_%s%s.csv", T$name, SUF)), row.names = FALSE)
 vc <- as.data.frame(VarCorr(m))
