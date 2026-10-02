@@ -94,7 +94,7 @@ This is why §3 judges the interactions on a permutation null rather than on the
 Both come out of this one fit; no separate main-effects model is needed or used.
 
 ⚠ `obio1c:bio1c` is itself an interaction, so it is near-orthogonal to the burden main effects: it tests
-the `sv_ctx:bio1c` terms hard and the `sv_ctx` terms only mildly. §14 returns to this."""
+the `sv_ctx:bio1c` terms hard and the `sv_ctx` terms only mildly. §15 returns to this."""
 
 code_load = r"""
 PA=f"{G}/final_models_pooled_all"
@@ -226,7 +226,107 @@ print(f"\nnuisance terms: intercept {CO.loc['(Intercept)','estimate']:+.4f}, "
       f"cactus {CO.loc['cactus','estimate']:+.4f} (p = {CO.loc['cactus','p']:.3g})")
 """
 
-md_inter = """## 3 · The garden-temperature interactions
+md_cascade = """## 3 · How the context label is actually assigned
+
+The six contexts are not six annotations — they are one annotation plus five residuals, produced by a
+**first-match cascade**: `CDS > UTR > intron > TE > promoter ≤ 1 kb > intergenic`. A variant that hits
+several layers gets the highest-ranked one, and the rest of its membership is discarded.
+
+Everything below is the **18,418 events that enter the model** (call rate ≥ 90 %, ≥ 2 carriers), not the
+whole panel. **13.8 % of them hit more than one layer**, so for one in seven the label is the rule's
+choice rather than the annotation's. The left column is what each event *actually overlaps*; the right
+column is what it gets *called*. Ribbon width is events.
+
+Two things to look for:
+
+**`promoter` and `intergenic` are 100 % single-layer by construction.** Anything also in a gene or a TE
+was claimed upstream, so "promoter" means *promoter and nothing else* — a residual, not a category.
+
+**`CDS` is among the least clean classes, not the non-coding ones** — see the table printed below for the
+exact shares on this event set. That is not a TAIR error: the promoter window is synthetic (1 kb upstream,
+strand-aware) and **40.7 % of TAIR10 gene bodies lie inside some other gene's window**, so a point variant
+in a real CDS is routinely "also promoter". Event span adds to it, and the printed size breakdown
+separates the two — a pure span effect would vanish for 1 bp insertions, a pure window effect would be
+flat across sizes. Neither is."""
+
+code_cascade = r'''
+# THE MODEL INPUT, not the whole panel: the catalogue carries the layer columns aligned with
+# `passes` by construction, so this is exactly the 18,418 events the burdens are built from.
+LM=pd.read_csv(f"{G}/sv_event_catalog.csv")
+LM=LM[LM.passes.astype(bool)].rename(columns={"context":"assigned"}).reset_index(drop=True)
+LM["refspan"]=np.where(LM.kind.eq("del"),LM.size_bp+1,1)
+LAY=["CDS","UTR","intron","TE","promoter"]
+CTX6=["CDS","UTR","intron","TE","promoter","intergenic"]
+CCX={"CDS":"#2F4A1F","UTR":"#4E6B3A","intron":"#7E9B6B","TE":"#C46A10",
+     "promoter":"#5B7A99","intergenic":"#B9B9B9"}
+def combo(r):
+    k=[l for l in LAY if r[f"L_{l}"]]
+    return " + ".join(k) if k else "(no layer)"
+LM["combo"]=LM.apply(combo,axis=1)
+CT=pd.crosstab(LM.combo,LM.assigned).reindex(columns=CTX6).fillna(0).astype(int)
+CT=CT.loc[CT.sum(axis=1).sort_values(ascending=False).index]
+TOP=CT.head(10)                                    # the rest are long-tail combinations
+oth=CT.iloc[10:].sum()
+if oth.sum()>0: TOP=pd.concat([TOP,pd.DataFrame([oth],index=["other combinations"])])
+N=TOP.values.sum()
+fig,a=plt.subplots(figsize=(11.6,6.4)); a.set_axis_off()
+GAP=0.012*N; XL,XR,W=0.0,1.0,0.055
+ly=list(TOP.index); ry=[c for c in CTX6 if TOP[c].sum()>0]
+lh={k:TOP.loc[k].sum() for k in ly}; rh={c:TOP[c].sum() for c in ry}
+def stack(h,keys):
+    tot=sum(h[k] for k in keys)+GAP*(len(keys)-1); y=tot; out={}
+    for k in keys: out[k]=(y-h[k],y); y-=h[k]+GAP
+    return out,tot
+LP,tl=stack(lh,ly); RP,tr=stack(rh,ry)
+off=(tl-tr)/2
+RP={k:(v[0]+off,v[1]+off) for k,v in RP.items()}
+for k in ly:
+    a.add_patch(mpl.patches.Rectangle((XL,LP[k][0]),W,lh[k],color="0.55",lw=0))
+    a.annotate(f"{k}  ({lh[k]:,})",xy=(XL-0.012,(LP[k][0]+LP[k][1])/2),ha="right",va="center",fontsize=7.5)
+for c in ry:
+    a.add_patch(mpl.patches.Rectangle((XR-W,RP[c][0]),W,rh[c],color=CCX[c],lw=0))
+    a.annotate(f"{c}  ({rh[c]:,})",xy=(XR+0.012,(RP[c][0]+RP[c][1])/2),ha="left",va="center",
+               fontsize=8.5,color=CCX[c],fontweight="bold")
+lcur={k:LP[k][1] for k in ly}; rcur={c:RP[c][1] for c in ry}
+for k in ly:
+    for c in ry:
+        v=TOP.loc[k,c]
+        if v<=0: continue
+        y0a,y0b=lcur[k]-v,lcur[k]; y1a,y1b=rcur[c]-v,rcur[c]
+        lcur[k]-=v; rcur[c]-=v
+        t=np.linspace(0,1,80); sm=t*t*(3-2*t)
+        xs=XL+W+(XR-W-XL-W)*t
+        a.fill_between(xs,y0b+(y1b-y0b)*sm,y0a+(y1a-y0a)*sm,color=CCX[c],alpha=0.42,lw=0)
+a.set_xlim(-0.30,1.26); a.set_ylim(-GAP,max(tl,tr)+GAP)
+a.annotate("what the event OVERLAPS",xy=(XL+W/2,max(tl,tr)+GAP*2.2),ha="center",fontsize=9,
+           color="0.3",fontweight="bold")
+a.annotate("what it is CALLED",xy=(XR-W/2,max(tl,tr)+GAP*2.2),ha="center",fontsize=9,
+           color="0.3",fontweight="bold")
+save(fig,"context_assignment_cascade",nb=True); plt.show()
+print(f"ASSIGNMENT CASCADE -- the {len(LM):,} events ENTERING THE MODEL "
+      f"(call rate >= 90%, >= 2 carriers)\n")
+print(f"  events hitting >1 annotation layer: {100*(LM[[f'L_{l}' for l in LAY]].sum(axis=1)>1).mean():.1f}%\n")
+print(CT.to_string())
+print("\n\nPER ASSIGNED CLASS: what else it overlaps\n")
+LM["nlayer"]=LM[[f"L_{l}" for l in LAY]].sum(axis=1)
+rows=[]
+for c in CTX6:
+    g=LM[LM.assigned==c]
+    r={"assigned":c,"n":f"{len(g):,}","one layer only":f"{100*(g.nlayer<=1).mean():.0f}%"}
+    for l in LAY: r[f"also {l}"]="--" if l==c else f"{100*g[f'L_{l}'].mean():.0f}%"
+    rows.append(r)
+print(pd.DataFrame(rows).to_string(index=False))
+print("\n\nIS THE CDS/promoter OVERLAP EVENT SPAN, OR THE WINDOW ITSELF?")
+print("  (reference span reconstructed from kind + size_bp: 1 bp for insertions, size+1 for deletions)\n")
+C=LM[LM.assigned=="CDS"]
+for lo_,hi_,lab in ((1,1,"1 bp (pure insertion)"),(2,10,"2-10 bp"),(11,100,"11-100 bp"),
+                    (101,1000,"101-1000 bp"),(1001,10**9,"> 1 kb")):
+    g=C[(C.refspan>=lo_)&(C.refspan<=hi_)]
+    if len(g): print(f"  ref span {lab:22s} n {len(g):6,}   also promoter {100*g.L_promoter.mean():5.0f}%")
+print("\n  A pure span effect would give ~0% in the 1 bp row; a pure window effect would be flat.")
+print("  Both are operating: the window puts a floor under it, span drives the rise.")
+'''
+md_inter = """## 4 · The garden-temperature interactions
 
 How each burden's effect **changes per °C** of garden temperature, in % per carried variant per °C
 (± 95 % CI).
@@ -274,7 +374,7 @@ print("\n  null SD of z would be 1.00 for a calibrated Wald test; every interact
 print("  so the asymptotic p-values are anti-conservative and the permutation ones are reported.")
 '''
 
-md_scale = (_K["md_scale"].replace("## 4 ·", "## 4 ·")
+md_scale = (_K["md_scale"].replace("## 4 ·", "## 5 ·")
             .replace("All values are from the FULL fit.", "All values are from the fitted model."))
 
 code_scale = r"""
@@ -301,7 +401,7 @@ for n,k in TT:
     print(f"  {LAB2(n)+' x garden temp.':<42} {e:+.5f}   ({abs(e/ob):.2f}x the local-adaptation term)")
 """
 
-md_garden = """## 5 · The fitted effect in each garden
+md_garden = """## 6 · The fitted effect in each garden
 
 Each garden's own total effect of the coding-SV burden, **from the fitted model** — the fixed part, plus
 the temperature term, plus that garden's random slope — in % per carried variant. Every covariate is in:
@@ -449,11 +549,11 @@ for T in TT:
           f"   |   raw {rw.min():+.2f}..{rw.max():+.2f}, positive in {(rw>0).sum():2d}/{len(order)}"
           f"   |   r(raw, conditional) = {np.corrcoef(rw,cd)[0,1]:+.2f}")
 '''
-md_freq = _ns["md_freq"].replace("## 7 ·", "## 6 ·")
-md_size = _ns["md_size"].replace("## 8 ·", "## 7 ·")
+md_freq = _ns["md_freq"].replace("## 7 ·", "## 7 ·")
+md_size = _ns["md_size"].replace("## 8 ·", "## 8 ·")
 code_freq, code_size = _ns["code_freq"], _ns["code_size"]
 
-md_tech = """## 8 · Sequencing technology — does either panel carry the result on its own?
+md_tech = """## 9 · Sequencing technology — does either panel carry the result on its own?
 
 The 231 founders come from two sources: **80** with their own long-read cactus assembly and **151**
 genotyped from short reads with PanGenie. SV detection differs sharply between them — a founder with its
@@ -518,13 +618,13 @@ print(f"\n  cactus vs short-read, per SD: {d:+.4f} +- {sd:.4f}   z = {d/sd:+.2f}
       f"p = {2*stats.norm.sf(abs(d/sd)):.3g}")
 print("  (independent panels, so the difference SE is the root-sum-square of the two)")
 '''
-md_avp  = _K["md_avp"].replace("## 1 ·", "## 9 ·")
-md_infl = _K["md_infl"].replace("## 2 ·", "## 10 ·")
-md_deld = _K["md_deld"].replace("## 3 ·", "## 11 ·")
+md_avp  = _K["md_avp"].replace("## 1 ·", "## 10 ·")
+md_infl = _K["md_infl"].replace("## 2 ·", "## 11 ·")
+md_deld = _K["md_deld"].replace("## 3 ·", "## 12 ·")
 code_load_diag, code_avp, code_infl, code_deld = (_K["code_load"], _K["code_avp"],
                                                   _K["code_infl"], _K["code_deld"])
 
-md_lare = """## 12 · Every term of the model, in one figure
+md_lare = """## 13 · Every term of the model, in one figure
 
 The whole fit in one place: every fixed effect with its 95 % confidence interval. Filled markers are
 p < 0.05. Three panels because the scales differ by more than an order of magnitude — on a shared axis the
@@ -598,7 +698,7 @@ print("\nRANDOM EFFECTS"); print(VC2.to_string(index=False))
 print(f"\nlogLik {LL2.logLik:.4f}   df {int(LL2.df)}   singular {LL2.singular}")
 '''
 
-md_tab = """## 13 · The complete coefficient table
+md_tab = """## 14 · The complete coefficient table
 
 Every fixed effect on the model's own scale — per SD of the standardised rate, which is what R reports —
 rather than the per-variant display scale used in the figures. Nothing is omitted."""
@@ -618,7 +718,7 @@ print(pd.DataFrame([{"context":c,"sd_rate":f"{SCL.loc[c,'sd_rate']:.6f}",
                      "variants per SD":f"{VPS['sv_'+c]:.1f}"} for c in SCL.index]).to_string(index=False))
 """
 
-md_read = """## 14 · Reading it
+md_read = """## 15 · Reading it
 
 ### The result
 
@@ -735,6 +835,7 @@ if __name__ == "__main__":
         new_markdown_cell(md_title), new_code_cell(code_setup), new_code_cell(code_load),
         new_markdown_cell(md_counts), new_code_cell(code_counts),
         new_markdown_cell(md_model),  new_code_cell(code_model),
+        new_markdown_cell(md_cascade), new_code_cell(code_cascade),
         new_markdown_cell(md_inter),  new_code_cell(code_inter),
         new_markdown_cell(md_scale),  new_code_cell(code_scale),
         new_markdown_cell(md_garden), new_code_cell(code_garden),

@@ -7,7 +7,7 @@ whether insertions show a larger rare-variant excess over SNPs in coding sequenc
 
 Built on the full 231-founder panel:
   * context: same rules as `_sv_purging_annotate.py`, first match wins
-             CDS > UTR > intron > TE > promoter (<= 2 kb upstream, strand-aware) > intergenic
+             CDS > UTR > intron > TE > promoter (<= 1 kb upstream, strand-aware) > intergenic
   * classes: SNP and short indel (1-50 bp) -- random 5% of records as references; every insertion
              and deletion record (> 50 bp), as ALLELES and as BUBBLES (alleles of one graph bubble
              merged, carriers = union; `_build_bubble_map.py`). Bubbles are the unit to read --
@@ -35,6 +35,8 @@ SV_BP, KEEP, CALL_MIN, SEED = 50, 0.05, 0.9, 0
 # 73.4% of genes against 54.2% at 1 kb. 1 kb is also what TAIR distributes as its standard upstream set.
 # The GEA classifier (genes/dissection/screen_sig_blocks.py, PROM_BP) uses the same value.
 PROM_BP = 1000
+PRECEDENCE = os.environ.get("CTX_PRECEDENCE", "te_first")
+assert PRECEDENCE in ("te_first", "promoter_first")
 CTX = ["CDS", "UTR", "intron", "TE", "promoter", "intergenic"]
 CLASSES = ["snp", "indel", "ins_allele", "ins_bubble", "del_allele", "del_bubble"]
 
@@ -56,7 +58,15 @@ def layers():
 def context(IV, ch, lo, hi):
     H = {k: ann.hit(v, ch, lo, hi) for k, v in IV.items()}
     cat = np.full(lo.size, 5, np.int8)
-    cat[H["promoter"]] = 4; cat[H["TE"]] = 3
+    # Later assignment wins. CTX_PRECEDENCE flips the ONE ordering choice with no biological
+    # justification: 26% of events called TE also sit in a promoter window, and nothing says TE should
+    # outrank promoter. "te_first" (default, the project rule) assigns promoter then lets TE overwrite;
+    # "promoter_first" does the reverse. Gene body still outranks both either way -- that ordering IS
+    # justified, since disrupting coding sequence outranks sitting upstream of a neighbour.
+    if PRECEDENCE == "promoter_first":
+        cat[H["TE"]] = 3; cat[H["promoter"]] = 4
+    else:
+        cat[H["promoter"]] = 4; cat[H["TE"]] = 3
     cat[H["gene"] & ~H["exon"]] = 2; cat[H["UTR"]] = 1; cat[H["CDS"]] = 0
     return cat
 

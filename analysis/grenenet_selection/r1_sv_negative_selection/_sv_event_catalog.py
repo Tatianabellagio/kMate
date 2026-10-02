@@ -17,6 +17,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 import importlib.util
 _H = os.path.dirname(os.path.abspath(__file__))
+_sa = importlib.util.spec_from_file_location("ann", os.path.join(_H, "_sv_purging_annotate.py"))
+ann = importlib.util.module_from_spec(_sa); _sa.loader.exec_module(ann)
 _s = importlib.util.spec_from_file_location("sfsctx", os.path.join(_H, "_sv_sfs_context.py"))
 sc = importlib.util.module_from_spec(_s); _s.loader.exec_module(sc)
 
@@ -41,7 +43,14 @@ def main():
         meta = np.load(f"{base}.meta.npz", allow_pickle=True)
         pos = meta["pos"].astype(np.int64); rl = meta["ref_len"].astype(np.int64); al = meta["alt_len"].astype(np.int64)
         vp = sp.load_npz(f"{base}.var_pa.npz").tocsc(); vc = sp.load_npz(f"{base}.var_called.npz").tocsc()
-        ctx = sc.context(IV, np.full(pos.size, C, dtype=object), pos, pos + np.maximum(rl - 1, 0))
+        _ch = np.full(pos.size, C, dtype=object); _hi = pos + np.maximum(rl - 1, 0)
+        ctx = sc.context(IV, _ch, pos, _hi)
+        # EVERY layer the record overlaps, not only the cascade winner. `context` keeps one label; these
+        # keep the rest, so the arbitrariness of the precedence rule is measurable on the model's own
+        # event set instead of having to be reconstructed from a different table.
+        _H = {k: ann.hit(v, _ch, pos, _hi) for k, v in IV.items()}
+        LYR = {"L_CDS": _H["CDS"], "L_UTR": _H["UTR"], "L_intron": _H["gene"] & ~_H["exon"],
+               "L_TE": _H["TE"], "L_promoter": _H["promoter"]}
         rec, ev = EM[f"{C}_rec"], EM[f"{C}_bubble"]
         ue, li = np.unique(ev, return_inverse=True); li = li.ravel()
         M = sp.csr_matrix((np.ones(rec.size), (li, np.arange(rec.size))), shape=(ue.size, rec.size))
@@ -72,7 +81,8 @@ def main():
             chrom=C, pos=lo, kind=np.where(dl > 0, "ins", "del"), size_bp=np.abs(dl), n_alleles=np.bincount(li),
             n_carriers=n.astype(int), n_called=k.astype(int), n_cold=nc.astype(int), n_warm=nw.astype(int),
             carrier_bio1=np.asarray(UP @ B1).ravel() / np.maximum(n, 1),
-            context=np.array(sc.CTX)[ctx[fr]], gene=gene, key=[f"{C}|{r}" for r in fr])))
+            context=np.array(sc.CTX)[ctx[fr]], gene=gene, key=[f"{C}|{r}" for r in fr],
+            **{k: v[fr] for k, v in LYR.items()})))
         PP.append(p.astype(np.float32))
         print(f"[{C}] {ue.size:,} events", flush=True)
     D = pd.concat(rows, ignore_index=True); P = np.vstack(PP)

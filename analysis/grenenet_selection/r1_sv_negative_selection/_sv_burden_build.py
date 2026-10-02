@@ -31,6 +31,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import lib
 import importlib.util
 _H = os.path.dirname(os.path.abspath(__file__))
+_sa = importlib.util.spec_from_file_location("ann", os.path.join(_H, "_sv_purging_annotate.py"))
+ann = importlib.util.module_from_spec(_sa); _sa.loader.exec_module(ann)
 _s = importlib.util.spec_from_file_location("sfsctx", os.path.join(_H, "_sv_sfs_context.py"))
 sc = importlib.util.module_from_spec(_s); _s.loader.exec_module(sc)
 
@@ -38,6 +40,17 @@ OUT = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive"
 SV_BP, MIN_CAR, RARE, NK, SEED = 50, 2, 10, 60000, 0
 CALL_MIN = float(os.environ.get("SV_CALL_MIN", 0.9))   # founder call-rate floor; != 0.9 -> outputs tagged _cr{pct}
 CRTAG = "" if CALL_MIN == 0.9 else f"_cr{int(round(CALL_MIN * 100))}"
+# a precedence-flipped build must not overwrite the reported burdens
+if os.environ.get("CTX_PRECEDENCE", "te_first") == "promoter_first": CRTAG += "_promfirst"
+# CTX_MODE: "cascade" (default) assigns each event ONE context by first match, so the burdens are
+# disjoint. "overcount" drops the precedence entirely -- an event contributes to EVERY layer it
+# overlaps, so a deletion hitting CDS and UTR counts once in each. The burdens then overlap, which
+# raises their correlation, but no arbitrary ordering decides anything and each burden answers
+# "how many SVs touch this class" rather than "touch it and nothing else".
+# `intergenic` stays well-defined under both: events overlapping NO annotation layer.
+CTX_MODE = os.environ.get("CTX_MODE", "cascade")
+assert CTX_MODE in ("cascade", "overcount")
+if CTX_MODE == "overcount": CRTAG += "_overcount"
 CTX = sc.CTX
 UNIT = os.environ.get("SV_UNIT", "bubble")          # bubble | allele | event
 TAG = {"bubble": "", "allele": "_allele", "event": "_event"}[UNIT]
@@ -73,7 +86,14 @@ def main():
         al = meta["alt_len"].astype(np.int64); dl = al - rl
         vp = sp.load_npz(f"{base}.var_pa.npz").tocsc(); vc = sp.load_npz(f"{base}.var_called.npz").tocsc()
         assert vp.shape[0] == N
-        ctx = sc.context(IV, np.full(pos.size, C, dtype=object), pos, pos + np.maximum(rl - 1, 0))
+        _ch = np.full(pos.size, C, dtype=object); _hi = pos + np.maximum(rl - 1, 0)
+        ctx = sc.context(IV, _ch, pos, _hi)
+        if CTX_MODE == "overcount":
+            _H2 = {k: ann.hit(v, _ch, pos, _hi) for k, v in IV.items()}
+            _L = {"CDS": _H2["CDS"], "UTR": _H2["UTR"], "intron": _H2["gene"] & ~_H2["exon"],
+                  "TE": _H2["TE"], "promoter": _H2["promoter"]}
+            _L["intergenic"] = ~(_L["CDS"] | _L["UTR"] | _L["intron"] | _L["TE"] | _L["promoter"])
+            LMASK = np.vstack([_L[x] for x in CTX])          # len(CTX) x n_records
         # record-level: SNPs and indels
         for kind, m in (("snp", (rl == 1) & (al == 1)),
                         ("indel", (np.abs(dl) >= 1) & (np.abs(dl) <= SV_BP) & ~((rl == 1) & (al == 1)))):
@@ -86,7 +106,8 @@ def main():
             for o in ORIG:
                 for fq, fm in (("all", ok), ("rare", ok & (c <= RARE))):
                     for i, x in enumerate(CTX):
-                        s = np.where(fm & OM[o] & (ctx[cols] == i))[0]
+                        sel = LMASK[i][cols] if CTX_MODE == "overcount" else (ctx[cols] == i)
+                        s = np.where(fm & OM[o] & sel)[0]
                         add(f"{kind}_{o}_{x}_{fq}", np.asarray(P[:, s].sum(1)).ravel())
                         add(f"called_{kind}_{o}_{x}_{fq}", np.asarray(Q[:, s].sum(1)).ravel())
             if kind == "snp":
@@ -107,7 +128,8 @@ def main():
                 for o in ORIG:
                     for fq, fm in (("all", ok), ("rare", ok & (c <= RARE))):
                         for i, x in enumerate(CTX):
-                            s = np.where(fm & OM[o] & (ctx[cols] == i))[0]
+                            sel = LMASK[i][cols] if CTX_MODE == "overcount" else (ctx[cols] == i)
+                            s = np.where(fm & OM[o] & sel)[0]
                             add(f"{kind}_{o}_{x}_{fq}", np.asarray(P[:, s].sum(1)).ravel())
                             add(f"called_{kind}_{o}_{x}_{fq}", np.asarray(Q[:, s].sum(1)).ravel())
                 call_sv += np.asarray(Q[:, np.where(ok)[0]].sum(1)).ravel(); tot_sv += ok.sum()
@@ -128,13 +150,15 @@ def main():
             for j in range(cols.size - 1, -1, -1):
                 first[li[j]] = j
             bctx = ctx[cols[first]]
+            bL = LMASK[:, cols[first]] if CTX_MODE == "overcount" else None
             nc = np.asarray(Pf[:, GC].sum(1)).ravel(); nw = np.asarray(Pf[:, GW].sum(1)).ravel()
             OM = origin_masks(nc, nw)
             Pf = Pf.tocsr(); Qf = Qf.tocsr()
             for o in ORIG:
                 for fq, fm in (("all", ok), ("rare", ok & (c <= RARE))):
                     for i, x in enumerate(CTX):
-                        s = np.where(fm & OM[o] & (bctx == i))[0]
+                        sel = bL[i] if CTX_MODE == "overcount" else (bctx == i)
+                        s = np.where(fm & OM[o] & sel)[0]
                         add(f"{kind}_{o}_{x}_{fq}", np.asarray(Pf[s].sum(0)).ravel())
                         add(f"called_{kind}_{o}_{x}_{fq}", np.asarray(Qf[s].sum(0)).ravel())
             call_sv += np.asarray(Qf[np.where(ok)[0]].sum(0)).ravel(); tot_sv += ok.sum()
