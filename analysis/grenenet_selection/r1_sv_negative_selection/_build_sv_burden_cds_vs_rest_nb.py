@@ -20,36 +20,23 @@ import os, sys, json
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _main_fig_common import build, new_markdown_cell, new_code_cell, code_setup_burden as code_setup
 
-md_title = """# Coding SVs against every other SV
+md_title = """# Coding SVs against every other SV, pooled
 
-The burden model splits SVs by genomic context, and those context burdens correlate **0.86–0.96** across
-founders. Two questions follow, and this notebook answers both with fits rather than argument.
+The companion to `sv_burden_model.ipynb`. That notebook fits **every genomic context as its own burden**;
+this one collapses the model to **two** — coding, and everything else pooled — so the contrast is estimated
+directly instead of being read off six collinear coefficients.
 
-**1. Are we missing SVs?** We were. The reported model carries terms for CDS, reference TE, promoter and
-intergenic — so **UTR and intron variants entered no burden at all**: 3,685 of 18,418 passing events
-(**20 %**), and 24 % of the events a typical founder carries. §2 adds every context as its own term and
-asks whether that omission mattered.
+**Why pool at all.** The context burdens correlate **0.86–0.96** across founders. With six separate terms,
+each coefficient is "this context holding the other five fixed", which is a hard quantity to interpret when
+the predictors move together. Two terms make the comparison explicit: coding versus the rest.
 
-**2. Do non-coding SVs really associate positively with fitness?** In the four-context model, CDS comes out
-negative and the other three positive — which is hard to credit when the predictors correlate at 0.9. §3
-collapses the model to **two** burdens, coding and everything-else, so the contrast is estimated directly
-instead of being read off four collinear coefficients.
+## The model
 
-## The models
-
-Both are the main model with only the burden terms changed. Every covariate is retained: the matched SNP
-coding burden, assembly route, founder origin climate **and its interaction with garden climate**, SNP
-kinship, a garden intercept, random garden slopes, and local adaptation fitted **per garden**.
+The main model with only the burden terms changed. Every covariate is retained: the matched SNP coding
+burden, assembly route, founder origin climate **and its interaction with garden climate**, SNP kinship, a
+garden intercept, random garden slopes, and local adaptation fitted **per garden**.
 
 ```r
-# all6 -- every genomic context its own term (closes the UTR/intron gap)
-y ~ snp_CDS + sv_CDS + sv_UTR + sv_intron + sv_TE + sv_promoter + sv_intergenic + cactus
-    + sv_CDS:bio1c + sv_TE:bio1c + sv_promoter:bio1c
-    + obio1c + obio1c:bio1c
-    + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
-    + (0 + sv_CDS | garden) + (0 + sv_TE | garden) + (0 + sv_promoter | garden)
-
-# cds2 -- coding against everything else
 y ~ snp_CDS + sv_CDS + sv_nonCDS + cactus
     + sv_CDS:bio1c + sv_nonCDS:bio1c
     + obio1c + obio1c:bio1c
@@ -58,10 +45,15 @@ y ~ snp_CDS + sv_CDS + sv_nonCDS + cactus
 ```
 
 `sv_nonCDS` pools UTR + intron + TE + promoter + intergenic into one carried/called rate, so **every
-passing SV event is now in exactly one burden**.
+passing SV event is in exactly one burden**. Genomic context is assigned by first match
+(CDS > UTR > intron > reference TE > promoter ≤ 1 kb > intergenic), the project-wide rule.
 
 ⚠ The two predictors still correlate **r = 0.887** — collapsing to two terms does not remove the
-collinearity, it makes what is being contrasted explicit."""
+collinearity, it makes what is being contrasted explicit.
+
+⚠ **`sv_nonCDS` pools five contexts, and none of the five is significant when fitted separately**
+(see `sv_burden_model.ipynb` §2). A significant pooled term is therefore not evidence that any particular
+non-coding context drives it. §5 works out where its sign actually comes from."""
 
 code_load = r"""
 PA=f"{G}/final_models_pooled_all"
@@ -79,7 +71,7 @@ def arm(tag):
        "ll":pd.read_csv(f"{PA}/loglik_M2p_reml{S}.csv").iloc[0],"suf":S}
     o["pv"]={f"sv_{c}":100/(o["sc"].loc[c,"sd_rate"]*o["sc"].loc[c,"med_called"]) for c in o["sc"].index}
     return o
-M2,M6,MAIN=arm("_cds2"),arm("_all6"),arm("")
+M2,MAIN=arm("_cds2"),arm("")
 # the burden x garden-temperature interactions, judged by likelihood-ratio test: ML refits with and
 # without that single interaction, 1 df. Reported uncorrected.
 def lrts(o,terms):
@@ -104,9 +96,7 @@ def perm_p(o, terms):
         pp[t]=(np.sum(np.abs(nz)>=abs(o["co"].loc[nm,"z"]))+1)/(len(nz)+1); sd[t]=nz.std(ddof=1)
     return pp, sd, int(PR.seed.nunique())
 M2["PP"],M2["PSD"],NPERM2=perm_p(M2,["sv_CDS","sv_nonCDS"])
-M6["PP"],M6["PSD"],NPERM6=perm_p(M6,[f"sv_{c}" for c in CT6])
-print(f"permutation replicates -- cds2 {NPERM2}, all6 {NPERM6}")
-M6["LRT"]=lrts(M6,[f"sv_{c}" for c in CT6])
+print(f"permutation replicates -- cds2 {NPERM2}")
 CAT=pd.read_csv(f"{G}/sv_event_catalog.csv"); AP=CAT[CAT.passes]
 B=pd.read_csv(f"{G}/founder_burden_event.csv",dtype={"founder":str})
 car={c:B[f"ins_all_{c}_all"]+B[f"del_all_{c}_all"] for c in CT6}
@@ -124,56 +114,11 @@ print(f"\n  omitted: {mis:,} of {len(AP):,} events = {100*mis/len(AP):.1f}%; "
 rc=car["CDS"]/cal["CDS"]; rn=sum(car[c] for c in CT6 if c!="CDS")/sum(cal[c] for c in CT6 if c!="CDS")
 print(f"\n  correlation of the coding burden with the non-coding burden across founders: "
       f"r = {np.corrcoef(rc,rn)[0,1]:+.3f}")
-for nm,o in (("cds2",M2),("all6",M6)):
+for nm,o in (("cds2",M2),):
     print(f"  {nm:<6} logLik {o['ll'].logLik:.4f}  df {int(o['ll'].df)}  singular {o['ll'].singular}")
 """
 
-md_all6 = """## 1 · Are we missing SVs? — every context as its own term
-
-`all6` gives UTR and intron their own burden terms, so every passing SV event enters exactly one burden.
-The question is whether the 20 % that had been excluded was carrying signal, and whether excluding it had
-distorted the coding estimate.
-
-Open markers are terms that were already in the model; **filled orange** marks the two that had been
-missing entirely."""
-
-code_all6 = r"""
-ORD=["CDS","UTR","intron","TE","promoter","intergenic"]; NEW={"UTR","intron"}
-fig,a=plt.subplots(figsize=(7.6,3.4)); style(a); a.axvline(0,color="0.35",lw=1,ls="--")
-for i,c in enumerate(ORD):
-    t=f"sv_{c}"; e,se=M6["co"].loc[t,"estimate"]*M6["pv"][t], M6["co"].loc[t,"se"]*M6["pv"][t]
-    col="#C46A10" if c in NEW else "#4A3B6B"
-    a.errorbar(e,i,xerr=1.96*se,fmt="o",color=col,mfc=col if M6["co"].loc[t,"p"]<0.05 else "white",
-               mew=1.2,ms=7,capsize=2.5,zorder=3)
-    a.annotate(f"p = {M6['co'].loc[t,'p']:.3g}",xy=(0.985,i),xycoords=("axes fraction","data"),
-               ha="right",va="center",fontsize=7,color="0.35")
-    if i<len(ORD)-1: a.axhline(i+0.5,color="0.93",lw=0.8)
-a.set_yticks(range(len(ORD)))
-a.set_yticklabels(ORD,fontsize=8.5)
-for lb,c in zip(a.get_yticklabels(),ORD):
-    if c in NEW: lb.set_color("#C46A10")
-a.invert_yaxis(); x0,x1=a.get_xlim(); a.set_xlim(x0,x1+0.30*(x1-x0))
-a.set_xlabel("% fitness per carried variant  (± 95% CI)",fontsize=8.5)
-save(fig,"cdsrest_all6",nb=True); plt.show()
-print("EVERY CONTEXT AS ITS OWN TERM:\n")
-print(pd.DataFrame([{"context":c,"%/carried variant":f"{M6['co'].loc['sv_'+c,'estimate']*M6['pv']['sv_'+c]:+.4f}",
-  "95% CI":f"[{(M6['co'].loc['sv_'+c,'estimate']-1.96*M6['co'].loc['sv_'+c,'se'])*M6['pv']['sv_'+c]:+.3f}, "
-           f"{(M6['co'].loc['sv_'+c,'estimate']+1.96*M6['co'].loc['sv_'+c,'se'])*M6['pv']['sv_'+c]:+.3f}]",
-  "Wald p":f"{M6['co'].loc['sv_'+c,'p']:.4g}",
-  "was in the model":"yes" if c in IN4 else "NO"} for c in ORD]).to_string(index=False))
-d=M6["co"].loc["sv_CDS","estimate"]*M6["pv"]["sv_CDS"]-MAIN["co"].loc["sv_CDS","estimate"]*MAIN["pv"]["sv_CDS"]
-print(f"\nDid the omission distort the coding estimate?")
-print(f"  sv_CDS with UTR+intron excluded : {MAIN['co'].loc['sv_CDS','estimate']*MAIN['pv']['sv_CDS']:+.4f}% "
-      f"(p = {MAIN['co'].loc['sv_CDS','p']:.4g})")
-print(f"  sv_CDS with every context in    : {M6['co'].loc['sv_CDS','estimate']*M6['pv']['sv_CDS']:+.4f}% "
-      f"(p = {M6['co'].loc['sv_CDS','p']:.4g})")
-print(f"  difference {d:+.5f} percentage points "
-      f"({abs(M6['co'].loc['sv_CDS','estimate']-MAIN['co'].loc['sv_CDS','estimate'])/MAIN['co'].loc['sv_CDS','se']:.3f} SE)")
-print("\n  UTR and intron are individually null, and putting them in leaves the coding estimate untouched:")
-print("  the gap was real but harmless.")
-"""
-
-md_cds2 = """## 2 · Coding against everything else
+md_cds2 = """## 1 · Coding against everything else
 
 Two burdens only — `sv_CDS` and `sv_nonCDS`, the latter pooling UTR + intron + TE + promoter + intergenic.
 Every passing SV event is in exactly one of them, and the contrast the four-context model only implied is
@@ -222,7 +167,7 @@ print("contrast between two strongly collinear predictors -- which is exactly wh
 print("estimating directly rather than inferring from four separate context coefficients.")
 """
 
-md_int = """## 3 · The garden-temperature interactions
+md_int = """## 2 · The garden-temperature interactions
 
 The burden effects above are at a garden of average temperature. Each arm also fits an interaction with
 garden temperature for its main burdens, judged by likelihood-ratio test — ML refits with and without that
@@ -237,51 +182,40 @@ variants, fitted as separate contexts in `all6`, give 0.093 and 0.095. And it is
 effect whose own interpretation is unresolved (§8)."""
 
 code_int = r'''
-fig,axs=plt.subplots(1,2,figsize=(11.4,2.7),gridspec_kw=dict(width_ratios=[1,1.25],wspace=0.46))
-for k,(ax,o,terms,lab) in enumerate(zip(axs,(M2,M6),
-        (["sv_CDS","sv_nonCDS"],[f"sv_{c}" for c in CT6]),
-        ("coding vs everything else (cds2)","every context (all6)"))):
-    style(ax); panel(ax,"ab"[k],x=-0.30); ax.axvline(0,color="0.35",lw=1,ls="--")
-    for i,t in enumerate(terms):
-        n=f"{t}:bio1c"; kk=o["pv"][t]
-        e,se=o["co"].loc[n,"estimate"]*kk, o["co"].loc[n,"se"]*kk
-        col=CC.get(t[3:],"#4A3B6B")
-        ax.errorbar(e,i,xerr=1.96*se,fmt="o",color=col,mfc=col if o["PP"].get(t,o["LRT"][t])<0.05 else "white",
-                    mew=1.2,ms=7,capsize=2.5,zorder=3)
-        ax.annotate(f"perm p = {o['PP'].get(t,o['LRT'][t]):.2g}",xy=(0.985,i),xycoords=("axes fraction","data"),
-                    ha="right",va="center",fontsize=7,color="0.35")
-        if i<len(terms)-1: ax.axhline(i+0.5,color="0.93",lw=0.8)
-    ax.set_yticks(range(len(terms))); ax.set_yticklabels([t.replace("sv_","") for t in terms],fontsize=8.5)
-    ax.invert_yaxis(); ax.set_ylim(len(terms)-0.5,-0.5)
-    x0,x1=ax.get_xlim(); ax.set_xlim(x0,x1+0.34*(x1-x0))
-    ax.set_xlabel("change in % fitness per carried variant,\nper °C of garden temperature  (± 95% CI)",fontsize=7.5)
-    ax.annotate(lab,xy=(0,1.05),xycoords="axes fraction",fontsize=8.5,color="0.3",va="bottom")
+fig,a=plt.subplots(figsize=(7.6,2.7)); style(a); a.axvline(0,color="0.35",lw=1,ls="--")
+TT=["sv_CDS","sv_nonCDS"]
+for i,t in enumerate(TT):
+    n=f"{t}:bio1c"; kk=M2["pv"][t]
+    e,se=M2["co"].loc[n,"estimate"]*kk, M2["co"].loc[n,"se"]*kk
+    col=CC.get(t[3:],"#4A3B6B"); pp=M2["PP"].get(t,M2["LRT"][t])
+    a.errorbar(e,i,xerr=1.96*se,fmt="o",color=col,mfc=col if pp<0.05 else "white",
+               mew=1.2,ms=7,capsize=2.5,zorder=3)
+    a.annotate(f"perm p = {pp:.3g}",xy=(0.985,i),xycoords=("axes fraction","data"),
+               ha="right",va="center",fontsize=7,color="0.35")
+    if i<len(TT)-1: a.axhline(i+0.5,color="0.93",lw=0.8)
+a.set_yticks(range(len(TT))); a.set_yticklabels(["coding","everything else"],fontsize=8.5)
+a.set_ylim(len(TT)-0.5,-0.5)
+x0,x1=a.get_xlim(); a.set_xlim(x0,x1+0.34*(x1-x0))
+a.set_xlabel("change in % fitness per carried variant per degC  (95% CI)",fontsize=8.5)
 save(fig,"cdsrest_interactions",nb=True); plt.show()
-for o,terms,lab,npm in ((M2,["sv_CDS","sv_nonCDS"],"cds2 -- coding vs everything else",NPERM2),
-                        (M6,[f"sv_{c}" for c in CT6],"all6 -- every context",NPERM6)):
-    print("="*86); print(f"{lab}   ({len(terms)} interactions fitted; {npm} permutation replicates)")
-    print(pd.DataFrame([{"interaction":f"{t}:bio1c",
-        "%/variant/degC":f"{o['co'].loc[t+':bio1c','estimate']*o['pv'][t]:+.5f}",
-        "Wald p":f"{o['co'].loc[t+':bio1c','p']:.3g}","LRT p":f"{o['LRT'][t]:.3g}",
-        "PERMUTATION p":f"{o['PP'].get(t,float('nan')):.3g}",
-        "null SD of z":f"{o['PSD'].get(t,float('nan')):.2f}",
-        "p < 0.05":o["PP"].get(t,o["LRT"][t])<0.05} for t in terms]).to_string(index=False))
-    print()
-surv=[(nm,t) for nm,o,ts in (("cds2",M2,["sv_CDS","sv_nonCDS"]),
-                              ("all6",M6,[f"sv_{c}" for c in CT6]))
-       for t in ts if o["PP"].get(t,o["LRT"][t])<0.05]
-print("reaching PERMUTATION p < 0.05: " + (", ".join(f"{t}:bio1c ({nm})" for nm,t in surv) or "none"))
+print(f"POOLED MODEL -- garden-temperature interactions ({NPERM2} permutation replicates)\n")
+print(pd.DataFrame([{"interaction":f"{t}:bio1c",
+    "%/variant/degC":f"{M2['co'].loc[t+':bio1c','estimate']*M2['pv'][t]:+.5f}",
+    "Wald p":f"{M2['co'].loc[t+':bio1c','p']:.3g}","LRT p":f"{M2['LRT'][t]:.3g}",
+    "PERMUTATION p":f"{M2['PP'].get(t,float('nan')):.3g}",
+    "null SD of z":f"{M2['PSD'].get(t,float('nan')):.2f}",
+    "p < 0.05":M2["PP"].get(t,M2["LRT"][t])<0.05} for t in TT]).to_string(index=False))
 print("\n  Judged on the permutation null, not the model's own: these terms carry only 31 gardens of")
-print("  information and their garden random slopes sit at the variance boundary, so the null SD of z")
-print("  runs ~1.03-1.26 instead of 1 and the Wald/LRT values are anti-conservative. Main effects are")
-print("  reported as fitted -- there permutation and bootstrap agree with Wald to three decimals.")
-print("\n  sv_nonCDS:bio1c remains the strongest interaction after correction (perm p = 0.0023), but it")
-print("  pools five contexts into one term. Fitted separately in all6 none of those five is significant,")
-print("  so the pooled term is not evidence that any particular non-coding context drives it -- and its")
-print("  main effect's interpretation is itself unresolved (see the reading section).")
+print("  information and their garden random slopes sit at the variance boundary, so Wald and LRT are")
+print("  anti-conservative. Main effects are reported as fitted -- there permutation and bootstrap")
+print("  agree with Wald to three decimals.")
+print("\n  sv_nonCDS pools five contexts. Fitted separately in sv_burden_model.ipynb none of those five")
+print("  is significant, so the pooled term is not evidence that any particular non-coding context")
+print("  drives it -- and its main effect's interpretation is unresolved (see the reading section).")
 '''
 
-md_jack = """## 4 · Jackknife — is either coefficient driven by particular ecotypes?
+
+md_jack = """## 3 · Jackknife — is either coefficient driven by particular ecotypes?
 
 Both burdens refitted 231 times, each leaving out one ecotype. The **y-axis is the coefficient itself**, so
 it reads against the two lines that matter: the full-sample estimate and zero.
@@ -369,7 +303,7 @@ for t in ("sv_CDS","sv_nonCDS"):
     print()
 """
 
-md_gard = """## 5 · Coding and non-coding, garden by garden
+md_gard = """## 4 · Coding and non-coding, garden by garden
 
 Each garden's own effect of the two burdens, **from the full model**: the fixed part, plus its temperature
 term, plus that garden's random slope. Every covariate is in simultaneously — kinship, the SNP coding
@@ -478,7 +412,7 @@ for T in TT:
           f"   |   raw {rw.min():+.2f}..{rw.max():+.2f}, positive in {(rw>0).sum():2d}/{len(order)}"
           f"   |   r(raw, conditional) = {np.corrcoef(rw,cd)[0,1]:+.2f}")
 '''
-md_ladder = """## 6 · Why the non-coding coefficient is positive
+md_ladder = """## 5 · Why the non-coding coefficient is positive
 
 The non-coding burden does **not** start out positively associated with fitness. On its own, with nothing
 controlled, more non-coding SVs go with **lower** fitness. The positive coefficient in the reported model is
@@ -563,7 +497,7 @@ for nm in ("sv_nonCDS","sv_CDS"):
     print(f"  variance of the {'non-coding' if nm=='sv_nonCDS' else 'coding':10s} burden explained by the "
           f"top 10 kinship PCs: {100*(1-np.var(v-pcs@np.linalg.lstsq(pcs,v,rcond=None)[0])/np.var(v)):.1f}%")
 '''
-md_lare = """## 7 · Every term of the model, in one figure
+md_lare = """## 6 · Every term of the model, in one figure
 
 The one change under test: local adaptation was a **single** coefficient (`obio1c:bio1c`), forcing it to
 scale linearly with garden temperature. It now also gets a **random garden slope**, `(0 + obio1c | garden)`,
@@ -637,7 +571,7 @@ print("\nRANDOM EFFECTS"); print(VC2.to_string(index=False))
 print(f"\nlogLik {LL2.logLik:.4f}   df {int(LL2.df)}   singular {LL2.singular}")
 '''
 
-md_read = """## 8 · Reading it
+md_read = """## 7 · Reading it
 
 **Nothing important was missing, but the gap was real.** UTR and intron variants — 20 % of passing events —
 had entered no burden term. Given their own terms they are individually null (UTR p = 0.37, intron
@@ -696,7 +630,6 @@ md_methods = """## As run
 if __name__ == "__main__":
     build("sv_burden_cds_vs_rest.ipynb", [
         new_markdown_cell(md_title), new_code_cell(code_setup), new_code_cell(code_load),
-        new_markdown_cell(md_all6), new_code_cell(code_all6),
         new_markdown_cell(md_cds2), new_code_cell(code_cds2),
         new_markdown_cell(md_int),  new_code_cell(code_int),
         new_markdown_cell(md_jack), new_code_cell(code_jack),

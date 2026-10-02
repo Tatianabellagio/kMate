@@ -5,7 +5,7 @@ ONE model, reported on its own. No specification comparisons: every alternative 
 `results/sv_adaptive/model_specs.csv` / `model_registry.csv`, which is where they belong. Earlier notebooks
 are in `archive/burden_superseded_2026-09-29/`.
 
-  y ~ snp_CDS + sv_CDS + sv_TE + sv_promoter + sv_intergenic + cactus
+  y ~ snp_CDS + sv_CDS + sv_UTR + sv_intron + sv_TE + sv_promoter + sv_intergenic + cactus
       + sv_ctx:bio1c   for each of the six contexts
       + obio1c + obio1c:bio1c
       + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
@@ -14,7 +14,7 @@ are in `archive/burden_superseded_2026-09-29/`.
 SVs pooled over insertions and deletions (that split is defined against Col-0, not biology), no origin
 filter, reference TE kept as its own context, founder origin climate and its garden-climate interaction
 always in. The independent founder intercept `fid` is pruned (RE_DROP=fid): it estimated 4.9e-07, so
-removing it costs one parameter, leaves no variance component at the boundary, and changes the
+removing it costs one parameter and changes the
 log-likelihood and every coefficient and standard error by nothing to five decimals.
 
 Diagnostic sections reuse the tested code from `_build_sv_burden_influence_nb.py`, extracted by
@@ -41,7 +41,7 @@ to read, not easier.
 ## The model, exactly as run
 
 ```r
-y ~ snp_CDS + sv_CDS + sv_TE + sv_promoter + sv_intergenic + cactus
+y ~ snp_CDS + sv_CDS + sv_UTR + sv_intron + sv_TE + sv_promoter + sv_intergenic + cactus
     + sv_ctx:bio1c   for each of the six contexts
     + obio1c + obio1c:bio1c
     + (1 | garden) + (1 | kin) + (0 + obio1c | garden)
@@ -53,7 +53,7 @@ Fitted with `lme4qtl::relmatLmer`, kinship passed as `relmat`, on **all 231 foun
 covariate `cactus` rather than as a subset.
 
 **Burdens.** Truvari-collapsed SV **events**, insertions and deletions pooled, one genomic context each by
-first match (CDS > UTR > intron > reference TE > promoter ≤ 2 kb > intergenic). No origin filter — every
+first match (CDS > UTR > intron > reference TE > promoter ≤ 1 kb > intergenic). No origin filter — every
 variant passing call rate ≥ 90 % and ≥ 2 carriers enters:
 
 ```
@@ -76,8 +76,12 @@ folded.
 
 The independent founder intercept `fid` is **pruned**. In the unpruned fit its variance was 4.9 × 10⁻⁷ —
 it carried nothing, all founder-level variation being absorbed by kinship — so removing it costs one
-parameter and leaves no component at the boundary. The two fits agree in log-likelihood (−11501.0028) and
-in every coefficient and standard error to five decimal places.
+parameter for no change in fit. (That comparison was made on the earlier four-burden parameterisation; it
+has not been repeated here, because an unpruned all6 counterpart was never fitted.)
+
+⚠ The fit **is** singular, and pruning `fid` does not change that: with six burdens each carrying its own
+random garden slope, two of those slopes sit at the variance boundary (`sv_TE` 1.4e-10, `sv_CDS` 5.1e-07).
+This is why §3 judges the interactions on a permutation null rather than on the model's own p-values.
 
 ## Reading the coefficients
 
@@ -153,7 +157,8 @@ print(f"founders {len(FB)} = {int((~cac).sum())} short-read + {int(cac.sum())} c
 print(f"origin bio1 {FB.bio1.min():.1f} to {FB.bio1.max():.1f} degC (SD {sd_ob:.2f});  "
       f"garden bio1 {gbn.min():.1f} to {gbn.max():.1f} degC (mean {gbn.mean():.2f} = where bio1c is zero)")
 print(f"\nlogLik {LLR.logLik:.4f}   df {int(LLR.df)}   singular {LLR.singular}")
-print("\nvariance components (none at the boundary):"); print(VC.to_string(index=False))
+print("\nvariance components:"); print(VC.to_string(index=False))
+print(f"  singular: {LLR.singular}   (burden garden-slopes at the boundary are expected with six)")
 print("\nvariants per SD of each burden (the per-carried-variant divisor):")
 for c in SCL.index: print(f"  sv_{c:<11} {VPS['sv_'+c]:8.1f} variants")
 """
@@ -618,72 +623,93 @@ md_read = """## 14 · Reading it
 ### The result
 
 **Carrying a structural variant in coding sequence costs about 1.5 % of founder fitness per variant** —
-−1.49 % at a garden of average temperature, 95 % CI [−2.34, −0.65], p = 5.6 × 10⁻⁴, with founder origin
+−1.47 % at a garden of average temperature, 95 % CI [−2.30, −0.65], p = 4.9 × 10⁻⁴, with founder origin
 climate and its garden-climate interaction in the model.
 
 It is **broad, not concentrated**:
 
 | | |
 |---|---|
-| frequency (§6) | rare −2.49 %, common −0.97 % per variant; contrast p = 0.08 |
-| size (§7) | −1.02 → −1.25 → −2.24 per variant; omnibus across bins p = 0.56 |
-| ecotypes (§9) | 231 leave-one-out refits, all negative, never within 2.9 SE of zero |
-| dropping 20 % at random (§10) | 600 refits, 100 % negative, 99 % still p < 0.05 |
-| gardens (§5) | negative in 27 of 31 gardens |
+| frequency (§6) | rare −2.40 %, common −0.95 % per variant; contrast p = 0.09 |
+| size (§7) | −0.98 → −1.19 → −2.31 per variant; omnibus across bins p = 0.40 |
+| technology (§8) | cactus −1.59 %, short-read −1.63 %; difference p = 0.71 |
+| ecotypes (§10) | 231 leave-one-out refits, all negative |
+| dropping 20 % at random (§11) | 600 refits, 100 % negative, 98.7 % still p < 0.05 |
+| gardens (§5) | negative in **31 of 31** gardens |
 
-Neither stratification isolates a driver. Estimates order as purifying selection predicts — rarer and
-larger variants worse per variant — but in neither case can the strata be told apart, and the effect
-survives every partition precisely because it does not rest on a narrow subset.
+No stratification isolates a driver. Estimates order as purifying selection predicts — rarer and larger
+variants worse per variant — but in neither case can the strata be told apart, and the effect survives
+every partition precisely because it does not rest on a narrow subset. The size strata are underpowered
+by construction: each bin would reach p < 0.05 only ~50–60 % of the time even if all three had the
+undivided effect, so one-of-three significant is the expected outcome, not evidence of a gradient.
 
-### What does not hold
+### The temperature interactions
 
-**The temperature interactions are weak** (§3). Coding SVs give the only one near significance,
-LRT p = 0.043; reference TE and promoter are at 0.093 and 0.095. Fitted *without* the local-adaptation
-terms all three are clearly significant; adding origin climate × garden climate attenuates the estimates by
-29–50 % while leaving the standard errors essentially unchanged — the signature of confounding rather than
-of lost precision. A ~100× shift in the coding interaction (0.0004 → 0.043) is the finding here, wherever
-one puts a threshold. Those uncontrolled fits are in the registry.
+Two of the six clear the permutation null (§3): **coding × temperature** (−0.124 %/variant/°C,
+perm p = 0.0031) and **UTR × temperature** (+0.118, perm p = 0.036). Intron, reference TE, promoter and
+intergenic are all null.
+
+These are judged on a permutation null rather than the model's own p-values, because they carry only 31
+gardens of information and two burden garden-slopes sit at the variance boundary — the null SD of the z
+statistic runs 0.99–1.18 instead of 1, so Wald and LRT are anti-conservative. The main effects are *not*
+corrected this way: there a Freedman-Lane permutation and a residual bootstrap (20,000 each) reproduce the
+Wald values to three decimals.
+
+⚠ **UTR × temperature deserves scepticism.** Its main effect is null (−0.34 %, p = 0.44) on only 2,598
+events, and a significant interaction sitting on a null main effect is the configuration most likely to be
+noise. It is the most normalisation-stable interaction in the analysis, but it has not been replicated.
 
 ### What this does not establish
 
-⚠ **Robustness is not identification.** §§9–10 show the estimate does not depend on particular ecotypes.
+⚠ **Robustness is not identification.** §§10–11 show the estimate does not depend on particular ecotypes.
 Whether something *correlated with* SV burden — rather than the SVs — causes the fitness difference is a
-separate question. The local-adaptation control is the relevant test and leaves `sv_CDS` almost untouched
-(0.22 SE), but `obio1c` is a single summary of provenance, so the control is incomplete.
+separate question. The local-adaptation control is the relevant test and leaves `sv_CDS` almost untouched,
+but `obio1c` is a single summary of provenance, so the control is incomplete.
 
 ⚠ **The control tests the interactions much harder than the main effects.** `obio1c:bio1c` is an
 interaction and therefore near-orthogonal to the burden main effects; the main-effect counterpart is
-`obio1c` itself (p ≈ 0.04). The coding-SV effect is robust to provenance *as far as this design can tell*,
-not established to the standard by which the interactions are refuted.
+`obio1c` itself. The coding-SV effect is robust to provenance *as far as this design can tell*, not
+established to the standard by which the interactions are judged.
 
-⚠ **Private variants are an assembly artifact** (§6). They are reported only within the cactus panel, and
-even there the non-monotone result is a caution about the bin rather than a finding.
+⚠ **The 0.90 call-rate filter matters more than it looks.** It keeps only ~20 % of coding events, and the
+pooled estimate does not survive relaxing it to 0.70 without splitting by call-rate tier. The claim is
+properly stated as *coding SVs that can be genotyped reliably across the panel are deleterious*. See
+`sv_burden_callrate.ipynb`, which is where that is worked out.
 
-⚠ The per-garden panels (§5, §12) come from the fitted model, so they carry every covariate. A temperature
-trend in them is the §3 interaction, which is marginal at best.
+⚠ **Private variants are an assembly artifact** (§6). Reported only within the cactus panel, and even
+there the non-monotone result is a caution about the bin rather than a finding.
+
+⚠ The per-garden panels (§5) come from the fitted model, so they carry every covariate and are shrunk
+toward the fitted line. The 31-of-31 count is a description, not independent evidence; the test is the
+fixed effect.
 
 ### Suggested reporting
 
-> Carrying a structural variant in coding sequence costs about 1.5 % of founder fitness per variant. The
-> effect holds with founder origin climate and its garden-climate interaction in the model, appears in both
-> sequencing panels independently, is not concentrated in rare or in large variants, and is not driven by
-> any subset of ecotypes. No climate-dependent SV burden effect survives the local-adaptation control."""
+> Carrying a structural variant in coding sequence costs about 1.5 % of founder fitness per variant
+> (−1.47 %, 95 % CI [−2.30, −0.65], p = 4.9 × 10⁻⁴), controlling for founder origin climate, its
+> interaction with garden climate fitted per garden, a matched SNP coding burden, assembly route and SNP
+> kinship. The effect is unchanged across allele-frequency and size strata and across both sequencing
+> panels, and survives dropping 20 % of ecotypes at random in 600 refits. It becomes more negative in
+> warmer gardens (−0.124 %/variant/°C, permutation p = 0.0031).
+
+"""
 
 md_methods = """## As run
 
 **The fit.** `_sv_burden_pooled_models.R` with
-`POOL_SET=sv6 BURDEN_ORIGIN=all ONESTAGE_DIR=onestage_all FINAL_OUT=final_models_pooled_all`,
-`EXTRA_FIXED="obio1c + obio1c:bio1c"`, `RE_DROP=fid`, tasks 0–5 (`_submit_main_refid.sh`). Outputs carry
-the suffix `_x_obio1cobio1cbio1c_refid`. Nothing is refitted in this notebook; every number is read from
+`POOL_SET=all6 INTER_SET=all BURDEN_ORIGIN=all ONESTAGE_DIR=onestage_all FINAL_OUT=final_models_pooled_all`,
+`EXTRA_FIXED="obio1c + obio1c:bio1c"`, `EXTRA_RE="(0 + obio1c | garden)"`, `RE_DROP=fid`, tasks 0–8
+(`_submit_refit_ctx.sh`). Outputs carry the suffix
+`_x_obio1cobio1cbio1c_re0obio1cgarden_all6_refid_intall`. Nothing is refitted in this notebook; every number is read from
 the R output.
 
 - **Burdens.** `founder_burden_event.csv` — truvari-collapsed SV **events**, insertions and deletions summed
   within a context, origin class `all`, z-scored across the 231 founders. The stratified sections read
   `founder_burden_event_{freq,size}.csv` from `_sv_burden_strata.py`, which lowers the carrier floor to 1
   for the frequency bins and holds it at 2 for the size bins so the singleton class cannot leak in.
-- **`RE_DROP=fid`.** The independent founder intercept estimated 4.9 × 10⁻⁷ in the unpruned fit. Removing
-  it leaves the log-likelihood and every coefficient and standard error unchanged to five decimals, costs
-  one parameter, and leaves no variance component at the boundary.
+- **`RE_DROP=fid`.** The independent founder intercept estimated 4.9 × 10⁻⁷ in the unpruned fit (measured
+  on the earlier four-burden arm). Removing it costs one parameter for no change in fit. It does **not**
+  make the fit non-singular: two burden garden-slopes sit at the boundary under all6.
 - **`obio1c` vs `bio1c`.** `obio1c` is the **founder's origin** bio1, centred over the founders and *not*
   standardised (hence the rescaling in §3); `bio1c` is the **garden's** bio1, centred over the 31 gardens.
   lme4 names the interaction `bio1c:obio1c` by model-frame order; the load cell resolves the spelling.
