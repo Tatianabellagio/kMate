@@ -197,11 +197,63 @@ print(pd.DataFrame([{"context":c,
     for c in CTX]).to_string(index=False))
 """
 
-md_read = """## 3 · Reading it
+md_flip = """## 3 · The other test: flip the one arbitrary ordering
+
+Overcounting removes the cascade altogether. The narrower test is to keep the cascade and flip only the
+ordering that has no justification — **TE above promoter**. Nothing says a variant inside a reference TE
+that also sits upstream of a gene is a TE rather than a promoter variant; it is called TE because TE comes
+first in the rule.
+
+Flipping it moves **1,117 events** out of TE and into promoter. If the positive TE coefficient were an
+artifact of the labelling, it would move with them.
+
+It does not. TE keeps the signal and gets *stronger* per variant, while promoter gains the events and
+stays null — which is what you would see if the TE∩promoter events were diluting an effect carried by
+the unambiguous TEs."""
+
+code_flip = r'''
+FL=arm("_promfirst")
+print("PRECEDENCE FLIP -- TE above promoter (reported) vs promoter above TE\n")
+rows=[]
+for c in CTX:
+    t=f"sv_{c}"
+    rows.append({"context":c,
+        "TE first (reported)":f"{CAS['co'].loc[t,'estimate']*CAS['pv'][t]:+.4f} (p {CAS['co'].loc[t,'p']:.3g})",
+        "promoter first":f"{FL['co'].loc[t,'estimate']*FL['pv'][t]:+.4f} (p {FL['co'].loc[t,'p']:.3g})",
+        "events, TE first":f"{int(CAS['sc'].loc[c,'med_called']):,}",
+        "events, prom first":f"{int(FL['sc'].loc[c,'med_called']):,}"})
+print(pd.DataFrame(rows).to_string(index=False))
+mv=int(CAS["sc"].loc["TE","med_called"])-int(FL["sc"].loc["TE","med_called"])
+print(f"\n  {mv:,} events move from TE to promoter.")
+print(f"  TE       {CAS['co'].loc['sv_TE','estimate']*CAS['pv']['sv_TE']:+.4f} -> "
+      f"{FL['co'].loc['sv_TE','estimate']*FL['pv']['sv_TE']:+.4f} %/variant  (keeps the signal)")
+print(f"  promoter {CAS['co'].loc['sv_promoter','estimate']*CAS['pv']['sv_promoter']:+.4f} -> "
+      f"{FL['co'].loc['sv_promoter','estimate']*FL['pv']['sv_promoter']:+.4f} %/variant  (stays null)")
+fig,a=plt.subplots(figsize=(7.8,3.4)); style(a); a.axvline(0,color="0.35",lw=1,ls="--")
+for i,c in enumerate(CTX):
+    t=f"sv_{c}"
+    for j,(o,al) in enumerate(((CAS,0.5),(FL,1.0))):
+        k=o["pv"][t]; e,se=o["co"].loc[t,"estimate"]*k,o["co"].loc[t,"se"]*k
+        a.errorbar(e,i+(j-0.5)*0.30,xerr=1.96*se,fmt="o",color=CC[c],
+                   mfc=CC[c] if o["co"].loc[t,"p"]<0.05 else "white",mew=1.2,ms=6,
+                   capsize=2,zorder=3,alpha=al)
+    if i<len(CTX)-1: a.axhline(i+0.5,color="0.93",lw=0.8)
+a.set_yticks(range(len(CTX))); a.set_yticklabels(CTX,fontsize=8.5); a.set_ylim(len(CTX)-0.5,-0.5)
+a.set_xlabel("% fitness per carried variant  (95% CI)",fontsize=8.5)
+a.annotate("faded = TE above promoter (reported),  solid = promoter above TE",
+           xy=(0.02,1.04),xycoords="axes fraction",fontsize=7.5,color="0.4")
+save(fig,"overcount_precedence_flip",nb=True); plt.show()
+'''
+
+md_read = """## 4 · Reading it
 
 Overcounting removes the one genuinely arbitrary choice in the context assignment — the TE-above-promoter
 ordering — at the price of burdens that overlap and are therefore harder to separate. §1 quantifies both
 sides of that trade; §2 shows which conclusions survive it.
+
+**Both tests point the same way.** Overcounting (§2) changes no conclusion; flipping the one arbitrary
+ordering (§3) leaves the TE signal with the TE variants. The cascade is not manufacturing the non-coding
+positives.
 
 **What to check against the cascade model.** The coding effect is the headline, and it should be the least
 affected: coding events are the least likely to be reclassified by dropping the cascade, since CDS already
@@ -236,5 +288,6 @@ if __name__ == "__main__":
         new_markdown_cell(md_title), new_code_cell(code_setup), new_code_cell(code_load),
         new_markdown_cell(md_counts), new_code_cell(code_counts),
         new_markdown_cell(md_fit),    new_code_cell(code_fit),
+        new_markdown_cell(md_flip),   new_code_cell(code_flip),
         new_markdown_cell(md_read),   new_markdown_cell(md_methods),
     ])
