@@ -90,7 +90,7 @@ in every coefficient and standard error to five decimal places.
 Both come out of this one fit; no separate main-effects model is needed or used.
 
 ⚠ `obio1c:bio1c` is itself an interaction, so it is near-orthogonal to the burden main effects: it tests
-the `sv_ctx:bio1c` terms hard and the `sv_ctx` terms only mildly. §13 returns to this."""
+the `sv_ctx:bio1c` terms hard and the `sv_ctx` terms only mildly. §14 returns to this."""
 
 code_load = r"""
 PA=f"{G}/final_models_pooled_all"
@@ -448,13 +448,78 @@ md_freq = _ns["md_freq"].replace("## 7 ·", "## 6 ·")
 md_size = _ns["md_size"].replace("## 8 ·", "## 7 ·")
 code_freq, code_size = _ns["code_freq"], _ns["code_size"]
 
-md_avp  = _K["md_avp"].replace("## 1 ·", "## 8 ·")
-md_infl = _K["md_infl"].replace("## 2 ·", "## 9 ·")
-md_deld = _K["md_deld"].replace("## 3 ·", "## 10 ·")
+md_tech = """## 8 · Sequencing technology — does either panel carry the result on its own?
+
+The 231 founders come from two sources: **80** with their own long-read cactus assembly and **151**
+genotyped from short reads with PanGenie. SV detection differs sharply between them — a founder with its
+own assembly is called a carrier of ~23 % more events while being genotyped at only ~4 % more — so the
+coding result should not rest on one panel.
+
+The model is refitted on each panel alone and compared against all 231 together. `cactus` drops out of
+the fixed effects inside a panel, where it is constant; everything else is unchanged.
+
+The orange band is the 95 % CI of the whole-panel estimate, carried across so each arm can be read
+against it rather than only against zero."""
+
+code_tech = r'''
+TPAN=[("_cactus","cactus assemblies\n(80 founders)","#4A3B6B"),
+      ("_shortread","short-read / PanGenie\n(151 founders)","#6B5A8E")]
+def tload(tag):
+    S=f"_x_obio1cobio1cbio1c_re0obio1cgarden_all6{tag}_refid_intall"
+    co=pd.read_csv(f"{PA}/coef_M2p_reml{S}.csv").set_index("term")
+    sc=pd.read_csv(f"{PA}/pooled_rate_scale_x_obio1cobio1cbio1c_all6{tag}.csv").set_index("context")
+    sp=pd.read_csv(f"{PA}/spec_M2p_reml{S}.csv").iloc[0]
+    k=100/(sc.loc["CDS","sd_rate"]*sc.loc["CDS","med_called"])
+    return co,k,int(sp.n_founders)
+UN=CO.loc["sv_CDS","estimate"]*PV("sv_CDS"); UNS_=CO.loc["sv_CDS","se"]*PV("sv_CDS")
+LO,HI=UN-1.96*UNS_,UN+1.96*UNS_
+fig,a=plt.subplots(figsize=(7.8,3.3)); style(a); a.axvline(0,color="0.35",lw=1,ls="--")
+a.axvspan(LO,HI,color="#B04A00",alpha=0.10,lw=0,zorder=1)
+a.axvline(UN,color="#B04A00",lw=1.3,ls=":",zorder=2)
+labs=[]
+for i,(tag,lab,col) in enumerate(TPAN):
+    co,k,n=tload(tag); e,s_=co.loc["sv_CDS","estimate"]*k,co.loc["sv_CDS","se"]*k
+    a.errorbar(e,i,xerr=1.96*s_,fmt="o",color=col,mfc=col if co.loc["sv_CDS","p"]<0.05 else "white",
+               mew=1.2,ms=7,capsize=2.5,zorder=3)
+    a.annotate(f"p = {co.loc['sv_CDS','p']:.3g}",xy=(0.985,i),xycoords=("axes fraction","data"),
+               ha="right",va="center",fontsize=7,color="0.35")
+    if i<len(TPAN)-1: a.axhline(i+0.5,color="0.93",lw=0.8)
+    labs.append(lab)
+a.axhline(len(TPAN)-0.5,color="0.75",lw=0.9,ls="--")
+a.errorbar(UN,len(TPAN),xerr=1.96*UNS_,fmt="o",color="#B04A00",mew=1.2,ms=7,capsize=2.5,zorder=3)
+a.annotate(f"p = {CO.loc['sv_CDS','p']:.3g}",xy=(0.985,len(TPAN)),xycoords=("axes fraction","data"),
+           ha="right",va="center",fontsize=7,color="#B04A00")
+labs.append("both together\n(231 founders)")
+a.set_yticks(range(len(TPAN)+1)); a.set_yticklabels(labs,fontsize=8)
+a.get_yticklabels()[-1].set_color("#B04A00")
+a.set_ylim(len(TPAN)+0.5,-0.5)
+x0,x1=a.get_xlim(); a.set_xlim(x0,x1+0.30*(x1-x0))
+a.set_xlabel("% fitness per carried coding SV  (± 95% CI)",fontsize=8.5)
+save(fig,"model_tech_panels",nb=True); plt.show()
+print("CODING-SV BURDEN BY SEQUENCING TECHNOLOGY\n")
+rows=[]
+for tag,lab,_ in TPAN+[("","both together",None)]:
+    co,k,n=tload(tag) if tag else (CO,PV("sv_CDS"),231)
+    e,s_=co.loc["sv_CDS","estimate"]*k,co.loc["sv_CDS","se"]*k
+    rows.append({"panel":lab.replace(chr(10)," "),"founders":n,
+                 "%/carried variant":f"{e:+.4f}","95% CI":f"[{e-1.96*s_:+.3f}, {e+1.96*s_:+.3f}]",
+                 "per SD":f"{co.loc['sv_CDS','estimate']:+.4f} +- {co.loc['sv_CDS','se']:.4f}",
+                 "p":f"{co.loc['sv_CDS','p']:.4g}"})
+print(pd.DataFrame(rows).to_string(index=False))
+c0,k0,_=tload("_cactus"); c1,k1,_=tload("_shortread")
+d=c0.loc["sv_CDS","estimate"]-c1.loc["sv_CDS","estimate"]
+sd=np.sqrt(c0.loc["sv_CDS","se"]**2+c1.loc["sv_CDS","se"]**2)
+print(f"\n  cactus vs short-read, per SD: {d:+.4f} +- {sd:.4f}   z = {d/sd:+.2f}   "
+      f"p = {2*stats.norm.sf(abs(d/sd)):.3g}")
+print("  (independent panels, so the difference SE is the root-sum-square of the two)")
+'''
+md_avp  = _K["md_avp"].replace("## 1 ·", "## 9 ·")
+md_infl = _K["md_infl"].replace("## 2 ·", "## 10 ·")
+md_deld = _K["md_deld"].replace("## 3 ·", "## 11 ·")
 code_load_diag, code_avp, code_infl, code_deld = (_K["code_load"], _K["code_avp"],
                                                   _K["code_infl"], _K["code_deld"])
 
-md_lare = """## 11 · Every term of the model, in one figure
+md_lare = """## 12 · Every term of the model, in one figure
 
 The whole fit in one place: every fixed effect with its 95 % confidence interval. Filled markers are
 p < 0.05. Three panels because the scales differ by more than an order of magnitude — on a shared axis the
@@ -528,7 +593,7 @@ print("\nRANDOM EFFECTS"); print(VC2.to_string(index=False))
 print(f"\nlogLik {LL2.logLik:.4f}   df {int(LL2.df)}   singular {LL2.singular}")
 '''
 
-md_tab = """## 12 · The complete coefficient table
+md_tab = """## 13 · The complete coefficient table
 
 Every fixed effect on the model's own scale — per SD of the standardised rate, which is what R reports —
 rather than the per-variant display scale used in the figures. Nothing is omitted."""
@@ -548,7 +613,7 @@ print(pd.DataFrame([{"context":c,"sd_rate":f"{SCL.loc[c,'sd_rate']:.6f}",
                      "variants per SD":f"{VPS['sv_'+c]:.1f}"} for c in SCL.index]).to_string(index=False))
 """
 
-md_read = """## 13 · Reading it
+md_read = """## 14 · Reading it
 
 ### The result
 
@@ -651,6 +716,7 @@ if __name__ == "__main__":
         new_markdown_cell(md_pergarden), new_code_cell(code_pergarden),
         new_markdown_cell(md_freq),   new_code_cell(code_freq),
         new_markdown_cell(md_size),   new_code_cell(code_size),
+        new_markdown_cell(md_tech),   new_code_cell(code_tech),
         new_markdown_cell(md_avp),    new_code_cell(code_load_diag), new_code_cell(code_avp),
         new_markdown_cell(md_infl),   new_code_cell(code_infl),
         new_markdown_cell(md_deld),   new_code_cell(code_deld),
