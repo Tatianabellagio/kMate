@@ -178,6 +178,13 @@ the fixed effect plus its temperature term and `slope_blup` is that garden's ran
 **(a) Against garden temperature**, using the **totals**. This is the interaction, drawn: a sloped line
 means the burden's effect depends on temperature.
 
+⚠ **CDS and TE come out as perfect lines (r = ∓1.000), and that is not a result.** Their garden random
+slope sits at the variance boundary — `sv_CDS` 5.1e-07, `sv_TE` 1.4e-10 — so every garden's deviation is
+numerically zero and `total` reduces to `fixed_part`, which *is* a straight line in `bio1c`. The table
+below prints the variance next to the spread of the deviations so this is checkable rather than asserted.
+For the four burdens with real slope variance the scatter is genuine and their r (0.41–0.72) does mean
+something.
+
 **(b) Against each other**, using the **BLUP deviations only**. This is the part that matters, and it is
 why the panel is not drawn from the totals: two totals both contain a straight line in `bio1c`, so
 correlating them would mostly measure that shared line rather than anything about the gardens. The
@@ -237,8 +244,20 @@ print(pd.DataFrame([{"context":c,"slope %/degC":f"{np.polyfit(BIO,TOT[c],1)[0]:+
                      "p":f"{stats.pearsonr(BIO,TOT[c])[1]:.3g}",
                      "range across gardens":f"{TOT[c].min():+.3f} .. {TOT[c].max():+.3f}"}
                     for c in CTX]).to_string(index=False))
-print("\n  These r values are near 1 by construction -- `total` contains the fixed temperature term,")
-print("  which IS a straight line in bio1c. The slope is the content; the correlation is not.\n")
+VC=pd.read_csv(f"{PA}/varcomp_M2p_reml{SUF}.csv")
+print("\n  WHY TWO OF THESE ARE PERFECT LINES\n")
+print(f"    {'term':14s} {'garden slope variance':>22s} {'SD of slope_blup':>18s} {'r(total, bio1)':>16s}")
+for c in CTX:
+    t=f"sv_{c}"; q=VC[VC.var1==t].vcov
+    vc=float(q.iloc[0]) if len(q) else float("nan")
+    sg=P[P.term==t]
+    print(f"    {t:14s} {vc:22.3e} {sg.slope_blup.std():18.3e}"
+          f" {stats.pearsonr(sg.bio1,sg.total)[0]:+16.4f}")
+print("\n  sv_CDS and sv_TE sit at the VARIANCE BOUNDARY: their garden slope variance is ~0, so every")
+print("  garden gets slope_blup ~ 0 and `total` collapses to `fixed_part` = intercept + slope x bio1c,")
+print("  a straight line by definition. Their r = +-1.000 is arithmetic, not evidence.")
+print("  The other four have real slope variance, so their points scatter around the line and their")
+print("  r (0.41 to 0.72) does carry information about how tightly the effect tracks temperature.")
 print("\nPER-GARDEN BLUP DEVIATIONS, pairwise  (the fixed line removed)\n")
 sd=BLU.std()
 dead=[c for c in CTX if sd[c]<1e-9]
@@ -263,10 +282,13 @@ would have been the wrong functional form and no re-parameterisation would have 
 so the issue with these burdens is collinearity, not mis-specification. Those are different problems with
 different fixes.
 
-**On the per-garden effects (§3).** The vs-temperature panels are the interactions drawn out, and their
-correlations are near 1 **by construction** — the total contains the fixed temperature term, which is a
-straight line in `bio1c`. Only the slope carries information there; the correlation is an artifact of what
-is being plotted, and would look equally impressive under a null.
+**On the per-garden effects (§3).** The vs-temperature panels are the interactions drawn out. For
+**CDS and TE** the correlation is exactly ∓1 because their garden random slope is at the variance
+boundary: with no deviation left, `total` is the fixed line and nothing else. Reading those two panels as
+"the effect tracks temperature beautifully" would be reading the model's own parameterisation back out of
+itself. For the other four the slope variance is real and the scatter is informative.
+
+In all six panels it is the **slope** that carries the interaction, not the correlation.
 
 The pairwise BLUP panel is the one that can surprise. Contexts whose garden deviations correlate are
 jointly stronger in the same gardens for a reason temperature does not capture — which is a hint about an
