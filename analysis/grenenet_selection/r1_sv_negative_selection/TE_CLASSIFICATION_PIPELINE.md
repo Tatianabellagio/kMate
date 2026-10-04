@@ -168,7 +168,39 @@ bedtools getfasta with samtools faidx") changed `prepTSD.sh` so the flank FASTA 
 match. Every TSD search since that commit compares only the unmasked edges of the SV allele itself,
 with no flanking reference. Here: 395 PASS of 42,837 tested, and 31,771 of the failures are tagged
 `poly-A`/`poly-T`, which is really the label for an empty comparison window. No upstream issue reports
-it (checked 2026-10-04). **TSDs are not used anywhere in the classification.**
+it on `main` (checked 2026-10-04).
+
+**Fixed and re-run (§5b).**
+
+## 5b · TSDs, re-run with the flank fix
+
+`graffite_prepTSD_flank_names.patch`, applied to the local GraffiTE checkout (`telib/graffite_src`),
+restores the pre-`3f062c1` flank step: BED windows + `bedtools getfasta -nameOnly`, so flanks are named
+`{id}__L` / `{id}__R` again. `_submit_graffite_tsd.sh` (job 39626019, 25 min) re-runs only the TSD stage,
+entering at GraffiTE's documented `--RM_dir` point with the published `run/2_Repeat_Filtering/{1..5}`, so
+nothing is re-masked. Output: `graffite/run_tsd/3_TSD_search/`. The script refuses to run if the patch
+is not applied.
+
+- Test on 200 Chr2 records before launching: PASS 3 → 114.
+- Full run: **17,124 PASS of 42,837 tested** (40%), against 395 before; 15,549 insertions, 1,575
+  deletions.
+- TSD lengths match the superfamilies broadly: DNA/MULE-MuDR peaks at 8–9 bp, DNA/hAT at 7–8,
+  LTR/Copia and LTR/Gypsy at 4–5; LINE/L1 is spread out, as expected.
+
+Columns: `tsd_status` (`PASS` / `FAIL` / `not_tested`), `tsd_seq`, `tsd_len` per record; per event,
+`n_records_tsd_tested`, `n_records_tsd_pass`, `rep_tsd_status`, `rep_tsd_len`.
+
+Limits:
+- **Scope is GraffiTE's own**: single-copy (`n_hits=1`) records whose OneCode span is > 0.80. Everything
+  else is `not_tested` (185,014 records): replacements, partial TEs, multi-copy records, and Helitrons
+  (OneCode drops them, and they make no TSD anyway). `not_tested` is not evidence of absence, and neither
+  is `FAIL` for an old element, whose TSDs erode.
+- **Short calls are suspect.** 27% of PASS calls are exactly 4 bp, the shortest the BLAST step
+  (`word_size 4`) can report; PIF-Harbinger (expected 3 bp) is 63% 4 bp. Some lengths also look a base
+  short (MuDR 8 rather than 9). Upstream has fixes for both, **merged only into the `v1.1dev` branch**:
+  #117 (junction offsets taken from `WIN` instead of `WIN + 1`) and #119 (a TSD under 6 bp counts only
+  if it sits on the junction). `v1.1dev` is 439 commits ahead of `main` with a rewritten TSD module, and
+  has not been adopted here. Until it is, treat 4–5 bp PASS calls as weak evidence.
 
 ## 6 · Differences from the earlier cargo table (`rm_cargo_allins.csv`)
 
@@ -201,8 +233,9 @@ ATMSAT1) as TE. GraffiTE's README warns against `-nolow` for this reason.
   the common `ATREP18_AT1TE50795`, so Helitron counts are slightly low.
 - **Detection power falls with length.** Below ~100 bp an alignment search finds little, so TE content
   and size are confounded for both biological and technical reasons. Stratify on size.
-- **No TSDs** (see §5), so there is no library-independent evidence of transposition, and no polarity:
-  "insertion" and "deletion" are relative to Col-0, not ancestral state.
+- **TSDs cover a minority of records** (§5b): 42,837 of 227,851 tested, short calls are weak, and
+  everything untested has no polarity: "insertion" and "deletion" are relative to Col-0, not ancestral
+  state.
 - **Units.** Records are panel alleles. Per the project rule, SV analyses should use the event table.
 
 ## Re-running
@@ -213,6 +246,8 @@ sbatch _submit_graffite_vcf.sh                          # 1 → sv_sites.vcf
 sbatch _submit_graffite.sh                              # 2 → graffite/run/, nxf_work
 python _graffite_prep_skipped.py                        # 3a (env basic) → graffite/raw/, graffite/skipped/
 sbatch --exclude=n0041.savio4 _submit_graffite_skipped.sh   # 3b
-python _graffite_classify.py                            # 4 (env basic) → sv_repeat_class_*.csv
+git -C ../../../telib/graffite_src apply $PWD/graffite_prepTSD_flank_names.patch   # 5b, once
+sbatch _submit_graffite_tsd.sh                          # 5b → graffite/run_tsd/
+python _graffite_classify.py                            # 4 (env basic) → sv_repeat_class_*.csv (reads run_tsd if present)
 # parity check of 3b: SLURM_ARRAY_TASK_ID=5 TEST=300 TEST_FA=$PWD/results/sv_adaptive/graffite/raw/Chr5/indels.fa bash _submit_graffite_skipped.sh
 ```

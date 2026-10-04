@@ -140,55 +140,65 @@ M=M.merge(CAT.loc[CAT.kind=="ins",["key","context","passes"]],on="key",how="left
 print(f"with the burden model's cascade context: {int(M.context.notna().sum()):,}")
 '''
 
-md_spec = """## 1 · The cargo spectrum, two ways
+md_spec = """## 1 · The cargo spectrum, insertions and deletions
 
-The same data counted by **insertions** and by **base pairs**. They give different pictures because the
-classes differ about four-fold in median size, and which one to quote depends on the question: the burden model counts
-*events*, so the left panel is the one that matters there; the right panel is the one to quote for "how
-much of the inserted DNA in this species is transposon"."""
+Insertions and deletions together, counted two ways: by **records** and by **base pairs**. A deletion's
+class describes the reference sequence it removes (the REF allele, masked with the same protocol), so the
+two directions can be compared on one scale.
+
+Count and mass give different pictures because the classes differ about four-fold in median size. The
+burden model counts *events*, so the count panel is the one that matters there. The base-pair panel is
+the one to quote for "how much of the polymorphic sequence is transposon". Panels a and b stack the two
+directions; above each bar, the upper label is the insertions and the lower the deletions, with the
+share of **its own direction** in brackets (so each direction's percentages sum to 100). Panels c and
+d show size by class for each direction separately."""
 
 code_spec = r"""
-g=M.groupby("cargo").agg(n=("key","size"),bp=("seq_len","sum"),te=("te_bp","sum"),
-                         med=("size","median")).reindex(ORD)
-fig,axs=plt.subplots(1,3,figsize=(13.2,3.6),gridspec_kw=dict(wspace=0.42))
-a=axs[0]; style(a,axis="y")
-a.bar(range(len(ORD)),100*g.n/g.n.sum(),color=[CCg[c] for c in ORD],width=0.72)
-for i,c in enumerate(ORD):
-    a.annotate(f"{g.n[c]:,}",xy=(i,100*g.n[c]/g.n.sum()),ha="center",va="bottom",fontsize=7,color="0.3")
-a.set_xticks(range(len(ORD))); a.set_xticklabels(ORD,fontsize=7.5,rotation=30,ha="right")
-a.set_ylabel("% of insertions",fontsize=8.5)
-a.annotate("a   by insertion count",xy=(0,1.06),xycoords="axes fraction",fontsize=8.8,
-           fontweight="bold",color="0.3")
-a=axs[1]; style(a,axis="y")
-a.bar(range(len(ORD)),100*g.bp/g.bp.sum(),color=[CCg[c] for c in ORD],width=0.72)
-for i,c in enumerate(ORD):
-    a.annotate(f"{g.bp[c]/1e6:.0f} Mb",xy=(i,100*g.bp[c]/g.bp.sum()),ha="center",va="bottom",
-               fontsize=7,color="0.3")
-a.set_xticks(range(len(ORD))); a.set_xticklabels(ORD,fontsize=7.5,rotation=30,ha="right")
-a.set_ylabel("% of inserted sequence",fontsize=8.5)
-a.annotate("b   by base pairs",xy=(0,1.06),xycoords="axes fraction",fontsize=8.8,
-           fontweight="bold",color="0.3")
-a=axs[2]; style(a,axis="both")
-for c in ORD:
-    v=M.loc[M.cargo==c,"size"]
-    a.hist(np.log10(v[v>0]),bins=50,histtype="step",lw=1.4,color=CCg[c],label=c,density=True)
-a.set_xlabel("insertion size (log10 bp)",fontsize=8.5); a.set_ylabel("density",fontsize=8.5)
-a.legend(fontsize=6.6,frameon=False)
-a.annotate("c   size, by class",xy=(0,1.06),xycoords="axes fraction",fontsize=8.8,
-           fontweight="bold",color="0.3")
+D=R[(R.kind=="del")&(R.size_bp>50)].copy()          # deletions > 50 bp, same cut as the insertions
+D["cargo"]=pd.Categorical(D.cargo,ORD,ordered=True)
+def summ(d,szcol):
+    return d.groupby("cargo").agg(n=("key","size"),bp=("seq_len","sum"),te=("te_bp","sum"),
+                                  med=(szcol,"median")).reindex(ORD)
+gi=summ(M,"size"); gd=summ(D,"size_bp")
+KC={"ins":PAL["ins_promoter"],"del":PAL["del_promoter"]}
+fig=plt.figure(figsize=(17.0,5.6))
+gs=fig.add_gridspec(2,3,wspace=0.30,hspace=0.55,width_ratios=[1.3,1.3,1])
+x=np.arange(len(ORD))
+for col,(key,div,ylab,lab) in enumerate([("n",1e3,"SV records (thousands)","a   by record count"),
+                                         ("bp",1e6,"sequence classified (Mb)","b   by base pairs")]):
+    a=fig.add_subplot(gs[:,col]); style(a,axis="y")
+    vi=gi[key]/div; vd=gd[key]/div
+    a.bar(x,vi,color=KC["ins"],width=0.72,label=f"insertions (n={len(M):,})")
+    a.bar(x,vd,bottom=vi,color=KC["del"],width=0.72,label=f"deletions (n={len(D):,})")
+    for i,c in enumerate(ORD):
+        pi,pd_=100*gi[key][c]/gi[key].sum(),100*gd[key][c]/gd[key].sum()   # share of its own direction
+        txt=(f"{int(gi.n[c]):,} ({pi:.1f}%)\n{int(gd.n[c]):,} ({pd_:.1f}%)" if key=="n"
+             else f"{gi.bp[c]/1e6:.0f} Mb ({pi:.1f}%)\n{gd.bp[c]/1e6:.0f} Mb ({pd_:.1f}%)")
+        a.annotate(txt,xy=(i,vi[c]+vd[c]),ha="center",va="bottom",fontsize=6.0,color="0.3")
+    a.set_xticks(x); a.set_xticklabels(ORD,fontsize=7.5,rotation=30,ha="right")
+    a.set_ylabel(ylab,fontsize=8.5); a.set_ylim(0,1.18*float((vi+vd).max()))
+    a.legend(fontsize=7,frameon=False,loc="upper right")
+    a.annotate(lab,xy=(0,1.03),xycoords="axes fraction",fontsize=8.6,
+               fontweight="bold",color="0.3")
+for row,(d,szcol,lab) in enumerate([(M,"size","c   insertion size, by class"),
+                                    (D,"size_bp","d   deletion size, by class")]):
+    a=fig.add_subplot(gs[row,2]); style(a,axis="both")
+    for c in ORD:
+        v=d.loc[d.cargo==c,szcol]
+        a.hist(np.log10(v[v>0]),bins=50,histtype="step",lw=1.3,color=CCg[c],label=c,density=True)
+    a.set_xlabel("size (log10 bp)",fontsize=8); a.set_ylabel("density",fontsize=8)
+    a.set_xlim(1.65,5.6)
+    if row==0: a.legend(fontsize=6.2,frameon=False)
+    a.annotate(lab,xy=(0,1.06),xycoords="axes fraction",fontsize=8.4,fontweight="bold",color="0.3")
 save(fig,"cargorm_spectrum",nb=True); plt.show()
-t=g.assign(pct_n=100*g.n/g.n.sum(),pct_bp=100*g.bp/g.bp.sum(),
-           pct_masked=100*g.te/g.bp)
-print("THE SAME DATA, TWO DENOMINATORS\n")
-print(f"  {'class':12s} {'insertions':>11s} {'% of count':>11s} {'median bp':>10s} "
-      f"{'Mb':>8s} {'% of sequence':>14s}")
-for c in ORD:
-    print(f"  {c:12s} {g.n[c]:11,d} {t.pct_n[c]:10.1f}% {g.med[c]:10.0f} {g.bp[c]/1e6:8.1f} "
-          f"{t.pct_bp[c]:13.1f}%")
-nt,tf=g.loc["non_te"],g.loc["te_full"]
-print(f"\n  non_te is {100*nt.n/g.n.sum():.0f}% of insertions but only {100*nt.bp/g.bp.sum():.0f}% of sequence")
-print(f"  because its median insertion is {nt.med:.0f} bp against {tf.med:.0f} bp for te_full "
-      f"({tf.med/nt.med:.0f}x)")
+print("THE SAME DATA, TWO DENOMINATORS  (records > 50 bp; Mb = classified allele: ALT of an insertion, REF of a deletion)\n")
+for kd,g in (("INSERTIONS",gi),("DELETIONS",gd)):
+    print(f"  {kd}")
+    print(f"  {'class':12s} {'records':>9s} {'% of count':>11s} {'median bp':>10s} {'Mb':>8s} {'% of sequence':>14s}")
+    for c in ORD:
+        print(f"  {c:12s} {int(g.n[c]):9,d} {100*g.n[c]/g.n.sum():10.1f}% {g.med[c]:10.0f} "
+              f"{g.bp[c]/1e6:8.1f} {100*g.bp[c]/g.bp.sum():13.1f}%")
+    print(f"  masked as TE: {100*g.te.sum()/g.bp.sum():.1f}% of the classified sequence\n")
 """
 
 md_size = """## 2 · TE content against insertion length
@@ -239,24 +249,14 @@ print(M.assign(full=M.cargo=="te_full").pivot_table(index="szbin",columns="repl"
 
 md_fam = """## 3 · Which families, and where they land
 
-Family is the library entry covering the most of that insertion, so an insertion made of one element gets
-that element's family.
-
-⚠ **Two different site classifications exist in this project, and they are not interchangeable.**
-
-| | categories | source |
-|---|---|---|
-| `genic` (panel b) | CDS · UTR · intron · exon_noncoding · intergenic, plus a separate TE-overlap flag | `_insertion_genomic_context.py`, all 172,220 insertions |
-| **cascade** (panel c) | CDS > UTR > intron > **TE** > **promoter ≤1 kb** > intergenic, first match wins | `_sv_sfs_context.py`, **this is what the burden model fits** |
-
-The older scheme has **no TE and no promoter category**, so its `intergenic` pools all three: of its 131,685
-intergenic insertions, the cascade calls 12,961 intergenic, 11,679 promoter and 10,705 TE. Panel c is
-therefore the one to compare against anything in `sv_burden_model.ipynb`; it covers the insertions present
-in the event catalogue."""
+Family is the TE family covering the most of that insertion, so an insertion made of one element gets
+that element's family. Landing site is the burden model's cascade (CDS > UTR > intron > TE > promoter
+≤ 1 kb > intergenic, first match wins; `_sv_sfs_context.py`), so panel b compares directly with
+`sv_burden_model.ipynb`. It covers the insertions present in the event catalogue."""
 
 code_fam = r"""te=M[M.cargo.isin(["te_full","te_most"])]
 top=te.family.value_counts().head(15)
-fig,axs=plt.subplots(1,3,figsize=(13.6,3.9),gridspec_kw=dict(wspace=0.52))
+fig,axs=plt.subplots(1,2,figsize=(10.6,3.9),gridspec_kw=dict(wspace=0.55))
 a=axs[0]; style(a,axis="x")
 yy=np.arange(len(top))[::-1]
 a.barh(yy,top.to_numpy(),color="#B04A00",height=0.66)
@@ -265,16 +265,6 @@ a.set_xlabel("insertions where this family dominates",fontsize=8.5)
 a.annotate("a   top families (te_full + te_most)",xy=(0,1.06),xycoords="axes fraction",
            fontsize=8.4,fontweight="bold",color="0.3")
 a=axs[1]; style(a,axis="y")
-ctx=[c for c in ["CDS","UTR","intron","exon_noncoding","intergenic"] if c in set(M.genic)]
-sm=M.groupby("genic").te_frac.mean().reindex(ctx)
-a.bar(range(len(ctx)),sm,color="#8C8C8C",width=0.66)
-a.set_xticks(range(len(ctx))); a.set_xticklabels(ctx,fontsize=7,rotation=25,ha="right")
-a.set_ylabel("mean fraction masked as TE",fontsize=8.5); a.set_ylim(0,1)
-for i,c in enumerate(ctx):
-    a.annotate(f"{int((M.genic==c).sum()):,}",xy=(i,0.03),ha="center",fontsize=6.2,color="white")
-a.annotate("b   older scheme (no TE/promoter class)",xy=(0,1.06),xycoords="axes fraction",
-           fontsize=8.4,fontweight="bold",color="0.3")
-a=axs[2]; style(a,axis="y")
 CX=["CDS","UTR","intron","TE","promoter","intergenic"]
 CXC={"CDS":"#2F4A1F","UTR":"#4E6B3A","intron":"#7E9B6B","TE":"#C46A10",
      "promoter":"#5B7A99","intergenic":"#B9B9B9"}
@@ -284,17 +274,13 @@ a.set_xticks(range(len(CX))); a.set_xticklabels(CX,fontsize=7,rotation=25,ha="ri
 a.set_ylabel("mean fraction masked as TE",fontsize=8.5); a.set_ylim(0,1)
 for i,c in enumerate(CX):
     a.annotate(f"{int((M.context==c).sum()):,}",xy=(i,0.03),ha="center",fontsize=6.2,color="white")
-a.annotate("c   the burden model's cascade",xy=(0,1.06),xycoords="axes fraction",
+a.annotate("b   by landing site (burden cascade)",xy=(0,1.06),xycoords="axes fraction",
            fontsize=8.4,fontweight="bold",color="0.3")
 save(fig,"cargorm_families",nb=True); plt.show()
 print("TOP FAMILIES\n"); print(top.to_string())
 print("\nTE CONTENT BY LANDING SITE -- the burden model's cascade\n")
 print(M[M.context.notna()].groupby("context").agg(n=("key","size"),mean_te=("te_frac","mean"),
       pct_full=("cargo",lambda s:100*(s=="te_full").mean())).reindex(CX).round(3).to_string())
-print("\nHOW THE TWO SCHEMES MAP ONTO EACH OTHER (rows = older scheme)\n")
-print(pd.crosstab(M.genic,M.context).to_string())
-print("\n  The older scheme's `intergenic` is the cascade's TE + promoter + intergenic, which is why")
-print("  panel b has no TE bar and panel c does. Nothing in the burden model uses the older scheme.")
 """
 
 md_cold = """## 4 · Is TE cargo related to where the carriers come from?
@@ -592,6 +578,12 @@ alone.
 classes differ about four-fold in median size (226 bp for `non_te`, 924 bp for `te_full`). The burden
 model counts **events**, so the count version is the one that applies there.
 
+**Deletions carry less TE than insertions** (§1): 32.3% of deletion records are whole TEs against 44.8%
+of insertions, and 54.6% of the deleted reference sequence is TE against 62.7% of the inserted. 43.9% of
+deletions have no TE at all (median 128 bp). Unlike insertions, whole-TE deletions include a pile of very
+short records (panel d). A ~100 bp deletion classed `te_full` has removed a piece of an element, not an
+element, so for deletions `te_full` means "the removed sequence is TE", not "a TE was excised".
+
 **TE content rises with length**: mean TE fraction 0.2 below 100 bp, 0.7 at 3–10 kb. Part of that is real
 and part is detection power. Because the measure is graded, an analysis can stratify on size instead of
 having to decide which.
@@ -615,9 +607,10 @@ cold-enriched in 4/4 strata (§6), and its kinship caveat is unchanged.
 - **The unmasked part.** Some is genuinely not TE (gene duplications, novel sequence) and some is
   families absent from both libraries. Only a pangenome-derived library, such as panEDTA on our own
   assemblies, can separate those two.
-- **No target site duplications.** A TSD is library-independent evidence that an insertion arose by
-  transposition, and it fixes which allele is ancestral. GraffiTE's TSD search is broken upstream (it runs
-  without the reference flanks since commit `3f062c1`), so none are used here.
+- **Target site duplications are not used here yet.** A TSD is library-independent evidence that an
+  insertion arose by transposition, and it fixes which allele is ancestral. After a fix to GraffiTE's flank
+  step they are now in the classification table (`tsd_status`: 17,124 PASS of 42,837 single-copy records
+  tested). Short (4–5 bp) calls are weak; see the pipeline doc §5b.
 - **Units.** This notebook counts panel records (alleles). The project's SV unit is the Truvari event, and
   `sv_repeat_class_events.csv` carries the same classification per event.
 - **Cargo is not yet in the burden model.** Deletions now have cargo too (the REF allele, same protocol),
@@ -636,10 +629,11 @@ md_methods = """## As run
 - **Per insertion** (`_graffite_classify.py`): TE fraction = union of TE-class hits / length of the ALT
   allele; family = the TE family covering the most of it. Simple repeat, low complexity and satellite are
   measured separately and do not count as TE. GraffiTE's OneCode-based span is not used (Helitron-blind).
-- **Not used**: GraffiTE's TSD calls. Since upstream commit `3f062c1` its TSD search runs without the
-  reference flanks.
-- Site context (`genic`), frequency, carrier count and `carrier_bio1` are read unchanged from
-  `insertion_context.csv`."""
+- **TSDs**: from a TSD-only GraffiTE re-run with the flank fix (`graffite_prepTSD_flank_names.patch`,
+  `_submit_graffite_tsd.sh`); in the classification table, not used in this notebook.
+- Frequency, carrier count and `carrier_bio1` are read unchanged from `insertion_context.csv`; landing
+  site is the burden model's cascade (`context` in `sv_event_catalog.csv`).
+- §1 adds the deletions (> 50 bp) from the same classification table; everything else is insertions."""
 
 if __name__ == "__main__":
     build("sv_insertion_cargo_repeatmasker.ipynb", [

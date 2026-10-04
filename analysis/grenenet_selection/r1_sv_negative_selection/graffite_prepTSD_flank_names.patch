@@ -1,0 +1,19 @@
+diff --git a/bin/prepTSD.sh b/bin/prepTSD.sh
+index 85e82f1..12ef4df 100755
+--- a/bin/prepTSD.sh
++++ b/bin/prepTSD.sh
+@@ -26,9 +26,12 @@ bcftools view -H ${VCF} | \
+ # extend +/- ${WIN} bp in two entries per SV
+ cat <(bedtools slop -i oneHit_SV_coordinates.bed -g gLength.txt -l 30 -r 0 | awk '{print $0"__L"}') \
+ <(bedtools slop -i oneHit_SV_coordinates.bed -g gLength.txt -l 0 -r 30 | awk '{print $0"__R"}') | \
+-sort -k1,1 -k2,2n -k3,3n | awk '/__L/ {print $1":"$2"-"($2+30); next} /__R/ {print $1":"($3-30)"-"$3}' > oneHit_SV_coordinates_win.regions
++sort -k1,1 -k2,2n -k3,3n | awk '/__L/ {print $1"\t"$2"\t"($2+30)"\t"$4; next} /__R/ {print $1"\t"($3-30)"\t"$3"\t"$4}' > oneHit_SV_coordinates_win.bed
+ # extract fasta from flanking
+-samtools faidx -r oneHit_SV_coordinates_win.regions -o flanking_sequences.fasta ${REF}
++# kmate patch: TSD_Match_v2.sh looks flanks up as `{id}__L` / `{id}__R`, so they must be named by SV ID.
++# 3f062c1 switched to `samtools faidx -r`, which names them by region, and no flank was ever found.
++# This restores the pre-3f062c1 bedtools route; -nameOnly gives exactly `{id}__L` (no ::coords suffix).
++bedtools getfasta -fi ${REF} -bed oneHit_SV_coordinates_win.bed -nameOnly > flanking_sequences.fasta
+ 
+ ##################################################
+ # Step 2: extract 5' and 3' of each masked TE SV #

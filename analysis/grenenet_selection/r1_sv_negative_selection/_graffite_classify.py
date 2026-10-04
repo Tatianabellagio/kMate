@@ -22,9 +22,13 @@ Spans are computed from the RAW RepeatMasker .out, as the union of hit intervals
 te_partial >= 0.20, te_trace > 0, non_te), so it is comparable to rm_cargo_allins.csv -- which differs in
 having been run with -nolow -norna at default speed, on insertions only.
 
-Not used: GraffiTE's TSD calls. Since upstream commit 3f062c1 (2025-03-26) prepTSD.sh names the
-reference flanks by region (samtools faidx -r) while TSD_Match_v2.sh looks them up as `{id}__L/__R`, so
-every TSD search ran on the SV's own unmasked edges with no flanking sequence (395 PASS of 42,837).
+TSDs come from the TSD-only re-run (_submit_graffite_tsd.sh, graffite/run_tsd/), NOT from the original
+run. Since upstream commit 3f062c1 (2025-03-26) prepTSD.sh names the reference flanks by region
+(samtools faidx -r) while TSD_Match_v2.sh looks them up as `{id}__L/__R`, so the original run searched
+every TSD on the SV's own unmasked edges with no flanking sequence (395 PASS of 42,837);
+graffite_prepTSD_flank_names.patch restores the flanks. GraffiTE searches only its own single-copy pME
+candidates, so `tsd_status` is `not_tested` for everything else (replacements, Helitrons, multi-copy and
+partial-TE records); that is not evidence that a TSD is absent.
 
 Replacement records (hprc_type COMPLEX, and INS/DEL with unshared_bp > 0): the classified sequence is the
 whole ALT (insertion) or REF (deletion), which includes sequence the other allele replaces. For the
@@ -166,6 +170,20 @@ def main():
     for c in ("span_any", "span_te", "span_simple", "span_graffite", "top_family_frac"):
         R[c] = R[c].clip(upper=1.0)
 
+    # TSDs from the re-run with the flank-naming fix (_submit_graffite_tsd.sh). GraffiTE searches only
+    # its own single-copy pME candidates; everything else is `not_tested`, which is NOT evidence of absence
+    tsd_f = f"{G}/run_tsd/3_TSD_search/TSD_summary.txt"
+    if os.path.exists(tsd_f):
+        TS = pd.read_csv(tsd_f, sep="\t", header=None, usecols=[0, 11, 12, 13],
+                         names=["id", "tsd_5p", "tsd_3p", "tsd_status"]).drop_duplicates("id").set_index("id")
+        R["tsd_status"] = TS.tsd_status.reindex(R.index).fillna("not_tested")
+        ok = R.tsd_status == "PASS"
+        R["tsd_seq"] = np.where(ok, TS.tsd_5p.reindex(R.index), "")
+        R["tsd_len"] = np.where(ok, R.tsd_seq.str.len(), 0)
+    else:
+        print(f"no TSD re-run output at {tsd_f}: TSD columns left empty", flush=True)
+        R["tsd_status"], R["tsd_seq"], R["tsd_len"] = "not_run", "", 0
+
     def lab(f):
         if f >= 0.80: return "te_full"
         if f >= 0.50: return "te_most"
@@ -193,7 +211,7 @@ def main():
     cols = ["key", "id", "chrom", "pos", "kind", "size_bp", "seq_len", "hprc_type", "unshared_bp",
             "annotated_by", "cargo", "dominant", "span_te", "span_simple", "span_any", "span_graffite",
             "te_bp", "helitron_bp", "top_family", "top_superfamily", "top_family_frac", "top_div",
-            "n_te_families", "onecode_copies", "event_key", "is_rep"]
+            "n_te_families", "onecode_copies", "tsd_status", "tsd_seq", "tsd_len", "event_key", "is_rep"]
     R = R[cols]
     R.to_csv(f"{G}/sv_repeat_class_records.csv", index=False)
 
@@ -211,6 +229,10 @@ def main():
         .assign(same=lambda d: d.top_superfamily == d.rs).groupby("event_key").same.mean()
     EV["any_replacement"] = ev.assign(x=(ev.hprc_type == "COMPLEX") | (ev.unshared_bp > 0)) \
         .groupby("event_key").x.any()
+    EV["n_records_tsd_tested"] = ev.assign(x=ev.tsd_status.isin(["PASS", "FAIL"])).groupby("event_key").x.sum()
+    EV["n_records_tsd_pass"] = ev.assign(x=ev.tsd_status == "PASS").groupby("event_key").x.sum()
+    EV["rep_tsd_status"] = rep.tsd_status
+    EV["rep_tsd_len"] = rep.tsd_len
     EV = EV.reset_index()
     EV.to_csv(f"{G}/sv_repeat_class_events.csv", index=False)
 
@@ -228,6 +250,16 @@ def main():
           .head(8).to_string(), "\n")
     print(f"events whose records disagree on cargo class: "
           f"{(EV.frac_records_same_cargo < 1).sum():,} of {(EV.n_records > 1).sum():,} multi-record events")
+    print("\nTSDs (records): status x kind")
+    print(pd.crosstab(R.tsd_status, R.kind, margins=True).to_string())
+    tt = R[R.tsd_status.isin(["PASS", "FAIL"])]
+    if len(tt):
+        print("\nTSD pass rate and modal TSD length by top superfamily (tested records, superfamilies with >= 200)")
+        g = tt.groupby("top_superfamily")
+        s = pd.DataFrame(dict(n_tested=g.size(), pct_pass=100 * g.tsd_status.apply(lambda x: (x == "PASS").mean()),
+                              modal_len=tt[tt.tsd_status == "PASS"].groupby("top_superfamily").tsd_len
+                              .agg(lambda x: x.mode().iloc[0] if len(x) else np.nan)))
+        print(s[s.n_tested >= 200].sort_values("n_tested", ascending=False).round(1).to_string())
     hel = R[R.cargo == "te_full"]
     print(f"te_full records whose top superfamily is RC/Helitron: {(hel.top_superfamily == 'RC/Helitron').sum():,} "
           f"of {len(hel):,}; of those, span_graffite > 0.80 (in pangenome.vcf): "

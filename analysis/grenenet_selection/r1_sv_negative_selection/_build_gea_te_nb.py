@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 """Build+execute `gea_te_cargo.ipynb`: are the climate-associated SVs transposons?
 
-Joins the GEA hit list to the RepeatMasker cargo annotation and asks three things: whether significant
-hits are enriched for TE sequence, which families carry them, and whether those families relate to the
-carriers' origin climate. Runs the whole thing twice -- at the production 50% call-rate floor and at the
-archived run with no call-rate filter -- because SVs seen only in the long-read panel cannot pass a 50%
-floor by construction.
+Joins the GEA hit list to the SV repeat classification and asks which TE families the hits carry, where
+they land, what the call-rate floor removes, and why ONSEN is not a hit. Whether the hits are TE-enriched
+at all is in gea_hit_landscape.ipynb section 1b. Uses the production 50% call-rate run and the archived run
+with no call-rate filter, because SVs seen only in the long-read panel cannot pass a 50% floor.
 
 `basic` env.
 """
@@ -39,17 +38,18 @@ with respect to the question: the long-read panel is 78 of 231 founders (**34%**
 only there cannot clear a 50% floor. If TE-rich variants are preferentially long-read-only, the
 production run would be blind to exactly the class this notebook is about.
 
-## Two traps this has to handle
+**Whether the hits are TE-enriched at all** is answered in `gea_hit_landscape.ipynb` §1b: against
+everything the GEA tested, within size × MAF × replacement strata, with LD-block bootstrap CIs. This
+notebook takes that as given and goes further: which families, where the hits land, what the call-rate
+floor removes, and ONSEN.
+
+## The join
 
 **The join.** The GEA pool and our catalogue share `chrom` and `pos`, but 2.14% of panel positions carry
 more than one record, so a position join silently matches the wrong allele. Every join here is on
 **chrom + position + direction + size (within 5 bp)**, taking the best size match per unit, and units that
-do not match uniquely are dropped rather than guessed at.
-
-**The background.** "Are hits TE-rich?" needs the comparison to be against the variants that were
-**tested**, not against every SV event in the panel. The tested universe is filtered on MAF and call
-rate, and those filters change its TE content: the tested insertions are markedly TE-poorer than the panel
-as a whole. Compared with the whole panel instead, the hits look ordinary and the enrichment disappears."""
+do not match uniquely are dropped rather than guessed at (251 of the 282 cr50 hits join).
+`gea_hit_landscape.ipynb` joins through integer unit ids instead and places all 282."""
 
 code_load = r"""
 import os
@@ -64,7 +64,6 @@ RM["repl"]=(RM.hprc_type=="COMPLEX")|(RM.unshared_bp>0)
 assert CAT.key.isin(RM.key).all()
 CTXC={"CDS":"#2F4A1F","UTR":"#4E6B3A","intron":"#7E9B6B","TE":"#C46A10",
       "promoter":"#5B7A99","intergenic":"#B9B9B9"}
-SZ=[50,100,300,1000,3000,10000,10**9]
 def load_run(path):
     d=pd.read_csv(path)
     d["kd"]=np.where(d.kind=="insertion","ins","del")
@@ -85,59 +84,7 @@ for k,v in RUNS.items():
 TEHALF=["te_full","te_most"]
 """
 
-md_enrich = """## 1 · Are the hits enriched for TE sequence?
-
-**Insertions and deletions.** A deletion's cargo is the reference sequence it removes, masked with the same
-protocol as an insertion's ALT, so both directions now have a class. Hits are compared against the
-**tested background of the same run**, which is the comparison that controls for MAF and call rate.
-
-Two tests per panel:
-- **Fisher**, hits vs tested: the raw comparison;
-- **Mantel–Haenszel**, the same comparison **within strata of SV size × replacement status**. TE content
-  rises steeply with size, and replacement records (HPRC `COMPLEX`, or a swapped base) are much less often
-  whole TEs at the same size. If hits differ from the background in either, the raw odds ratio is partly
-  that. Strata without a hit carry no information and are dropped."""
-
-code_enrich = r"""
-from statsmodels.stats.contingency_tables import StratifiedTable
-fig,axs=plt.subplots(2,2,figsize=(11.8,6.8),gridspec_kw=dict(wspace=0.40,hspace=0.60))
-SUM=[]
-for r,kd in enumerate(["ins","del"]):
-    for c,(tag,J) in enumerate(RUNS.items()):
-        a=axs[r,c]; style(a,axis="y")
-        d=J[(J.kd==kd)&J.te_frac.notna()].copy()
-        d["te"]=d.cargo.isin(TEHALF)
-        H=d[d.hit]; B=d[~d.hit]
-        ct=np.array([[int(H.te.sum()),int((~H.te).sum())],[int(B.te.sum()),int((~B.te).sum())]])
-        orr,p=stats.fisher_exact(ct)
-        d["stratum"]=pd.cut(d.size_bp,SZ).astype(str)+"|"+d.repl.astype(str)
-        tabs=[]
-        for s,g in d.groupby("stratum"):
-            t=np.array([[(g.hit&g.te).sum(),(g.hit&~g.te).sum()],
-                        [(~g.hit&g.te).sum(),(~g.hit&~g.te).sum()]],dtype=float)
-            if t[0].sum()>0 and t[1].sum()>0 and t[:,0].sum()>0 and t[:,1].sum()>0: tabs.append(t)
-        st=StratifiedTable(tabs); omh=st.oddsratio_pooled; pmh=st.test_null_odds().pvalue
-        a.bar([0,1],[100*B.te.mean(),100*H.te.mean()],color=["0.72",PAL[f"{kd}_promoter"]],width=0.6)
-        a.set_xticks([0,1]); a.set_xticklabels([f"tested\n(n={len(B):,})",f"GEA hits\n(n={len(H)})"],fontsize=8)
-        a.set_ylabel(f"% of {'insertions' if kd=='ins' else 'deletions'} at least half TE",fontsize=8.5)
-        a.set_ylim(0,100*max(B.te.mean(),H.te.mean())*1.55)   # headroom for the annotation
-        a.annotate(f"{tag}, {'insertions' if kd=='ins' else 'deletions'}\n"
-                   f"Fisher OR {orr:.2f}, p = {p:.2g}\nsize x replacement MH OR {omh:.2f}, p = {pmh:.2g}",
-                   xy=(0.03,0.97),xycoords="axes fraction",va="top",fontsize=7.4,fontweight="bold",color="0.25")
-        SUM.append(dict(kind=kd,run=tag,n_hit=len(H),n_bg=len(B),pct_hit=100*H.te.mean(),pct_bg=100*B.te.mean(),
-                        OR=orr,p=p,OR_MH=omh,p_MH=pmh,n_strata=len(tabs),
-                        med_size_hit=H.size_bp.median(),med_size_bg=B.size_bp.median(),
-                        pct_repl_hit=100*H.repl.mean(),pct_repl_bg=100*B.repl.mean()))
-save(fig,"geate_enrichment",nb=True); plt.show()
-print("TE CONTENT OF GEA HITS vs THE TESTED BACKGROUND  (te_full + te_most = at least half TE)\n")
-print(pd.DataFrame(SUM).round(4).to_string(index=False))
-ce=CAT.merge(RM[["key","cargo"]],on="key")
-print("\nfor reference, ALL panel SV events (no MAF / call-rate filter): "
-      + ", ".join(f"{k} {100*ce[ce.kind==k].cargo.isin(TEHALF).mean():.1f}% at least half TE"
-                  for k in ("ins","del")))
-"""
-
-md_fam = """## 2 · Which families, and where the hits land
+md_fam = """## 1 · Which families, and where the hits land
 
 Two different statements that are easy to conflate: the **cargo** of a hit (what sequence the insertion
 carries) and its **landing site** (what it inserted into, by the burden model's cascade). A variant can
@@ -160,26 +107,37 @@ a=axs[1]; style(a,axis="y")
 CX=["CDS","UTR","intron","TE","promoter","intergenic"]
 hc=H.context.value_counts().reindex(CX).fillna(0)
 bc=J[~J.hit].context.value_counts().reindex(CX).fillna(0)
+# enrichment per landing site: Fisher, hits vs the other tested events, Bonferroni over the 6 sites
+LS=[]
+for c in CX:
+    a1,b1=int(hc[c]),int(hc.sum()-hc[c]); c1,d1=int(bc[c]),int(bc.sum()-bc[c])
+    orr,p=stats.fisher_exact([[a1,b1],[c1,d1]])
+    LS.append(dict(context=c,hits=a1,pct_hits=100*a1/hc.sum(),tested=c1,pct_tested=100*c1/bc.sum(),
+                   OR=orr,p=p,p_bonf=min(1,p*len(CX))))
+LS=pd.DataFrame(LS).set_index("context")
 x=np.arange(len(CX))
-a.bar(x-0.19,100*bc/bc.sum(),width=0.36,color="0.72",label="tested")
-a.bar(x+0.19,100*hc/hc.sum(),width=0.36,color=[CTXC[c] for c in CX],label="hits")
+a.bar(x-0.19,100*bc/bc.sum(),width=0.36,color="0.78",label="tested")
+a.bar(x+0.19,100*hc/hc.sum(),width=0.36,color=[CTXC[c] if c!="intergenic" else "0.45" for c in CX],label="hits")
+for i,c in enumerate(CX):
+    r=LS.loc[c]; star="*" if r.p_bonf<0.05 else ""
+    a.annotate(f"OR {r.OR:.2f}{star}\np={r.p:.2g}",xy=(i+0.19,max(r.pct_hits,r.pct_tested)+0.6),ha="center",
+               va="bottom",fontsize=6.2,color="0.25",fontweight="bold" if star else "normal")
+a.set_ylim(0,1.25*float(max(LS.pct_hits.max(),LS.pct_tested.max())))
 a.set_xticks(x); a.set_xticklabels(CX,fontsize=7.5,rotation=25,ha="right")
-a.set_ylabel("% of SV events",fontsize=8.5); a.legend(fontsize=7,frameon=False)
-a.annotate("b   landing site (burden cascade)",xy=(0,1.06),xycoords="axes fraction",fontsize=8.4,
-           fontweight="bold",color="0.3")
+a.set_ylabel("% of SV events",fontsize=8.5); a.legend(fontsize=7,frameon=False,loc="upper left")
+a.annotate("b   landing site (burden cascade); * Bonferroni < 0.05",xy=(0,1.06),xycoords="axes fraction",
+           fontsize=8.4,fontweight="bold",color="0.3")
 save(fig,"geate_families",nb=True); plt.show()
 print("CARGO FAMILIES OF THE GEA HITS (cr50; hits at least half TE)\n"); print(FT.astype(int).to_string())
 for kd in ("ins","del"):
     h=H[(H.kd==kd)&H.cargo.isin(TEHALF)]
     print(f"\n  {kd}: {len(h)} TE hits, {h.family.nunique()} families; most frequent family in "
           f"{h.family.value_counts().iloc[0]} of them; superfamilies {h.cls.value_counts().head(4).to_dict()}")
-print("\nLANDING SITE, hits vs tested (cr50)\n")
-t=pd.DataFrame({"hits":hc.astype(int),"% hits":(100*hc/hc.sum()).round(1),
-                "tested":bc.astype(int),"% tested":(100*bc/bc.sum()).round(1)})
-print(t.to_string())
+print("\nLANDING SITE, hits vs the other tested events (cr50; Fisher, Bonferroni over 6 sites)\n")
+print(LS.round({"pct_hits":1,"pct_tested":1,"OR":2,"p":4,"p_bonf":4}).to_string())
 """
 
-md_cr = """## 3 · What the call-rate filter removes
+md_cr = """## 2 · What the call-rate filter removes
 
 The production GEA requires a variant to be called in ≥ 116 of 231 founders. The long-read panel is **78
 founders (34%)**, so an SV detectable only from assemblies cannot clear that floor however real it is.
@@ -231,7 +189,7 @@ print(f"  mean TE fraction: removed {lo.te_frac.mean():.3f}   kept {hi.te_frac.m
 print("\n  hit sets, % at least half TE: " + ", ".join(f"{s[0]} {s[1]:.1f}% of {s[2]}" for s in S))
 """
 
-md_famtest = """## 4 · Is any individual family enriched — and where is ONSEN?
+md_famtest = """## 3 · Is any individual family enriched — and where is ONSEN?
 
 The overall excess is modest and could be one family or many. This tests every family with at least 20
 tested insertions, Fisher against all other tested insertions, Bonferroni over the families tested.
@@ -298,68 +256,18 @@ n78={k:int((J_.kd.eq("ins")&J_.family.astype(str).str.contains("ATCOPIA78")).sum
 print(f"  ATCOPIA78 events tested by the GEA: " + ", ".join(f"{k} {v}" for k,v in n78.items()))
 '''
 
-md_maf = """## 5 · Would dropping the MAF filter help?
+md_read = """## 4 · Reading it
 
-GEA scans normally impose a MAF floor because rare-variant association statistics are unstable. That is
-the textbook reason, and it is worth checking whether it actually applies here before accepting it — the
-previous section showed the floor is what hides ONSEN.
+**Enrichment is in `gea_hit_landscape.ipynb` §1b.** In short: insertion hits are TE-enriched against
+everything tested (53.6% vs 44.3% at least half TE, stratified OR 1.67, CI 1.16–2.36); deletion hits are
+not (OR 1.16, CI 0.76–1.68). This notebook takes that as given.
 
-The scan already recorded **inflation by MAF bin**, so the question is answerable from what exists."""
-
-code_maf = r'''MA=pd.read_csv(f"{os.path.normpath(f'{G}/../../../r2_gea_nonsnp/phase1_replication/results/multiaxis')}"
-               "/axis_inflation_maf_nonsnp.csv")
-FL=pd.read_csv(f"{os.path.normpath(f'{G}/../../../r2_gea_nonsnp/phase1_replication/results/multiaxis')}"
-               "/axis_inflation_floor_sv.csv")
-fig,axs=plt.subplots(1,2,figsize=(12.0,3.6),gridspec_kw=dict(wspace=0.42))
-a=axs[0]; style(a,axis="both")
-AX=["bio1","bio10","bio11","bio15"]
-for ax_ in AX:
-    d=MA[MA.axis==ax_].sort_values("maf_lo")
-    if len(d): a.plot((d.maf_lo+d.maf_hi)/2,d.lam,marker="o",ms=4,lw=1.5,label=ax_)
-a.axhline(1,color="0.5",lw=1.0,ls=(0,(4,2)))
-a.set_xlabel("MAF bin (midpoint)",fontsize=8.5); a.set_ylabel("genomic inflation lambda",fontsize=8.5)
-a.legend(fontsize=7,frameon=False)
-a.annotate("a   inflation does NOT rise at low MAF",xy=(0,1.06),xycoords="axes fraction",
-           fontsize=8.4,fontweight="bold",color="0.3")
-a=axs[1]; style(a,axis="both")
-for ax_ in AX:
-    d=FL[FL.axis==ax_].sort_values("floor")
-    if len(d): a.plot(d.floor,d.lam,marker="s",ms=4,lw=1.5,label=ax_)
-a.axhline(1,color="0.5",lw=1.0,ls=(0,(4,2)))
-a.set_xlabel("MAF floor applied",fontsize=8.5); a.set_ylabel("lambda among SVs kept",fontsize=8.5)
-a.legend(fontsize=7,frameon=False)
-a.annotate("b   raising the floor does not fix it either",xy=(0,1.06),xycoords="axes fraction",
-           fontsize=8.4,fontweight="bold",color="0.3")
-save(fig,"geate_maf_inflation",nb=True); plt.show()
-print("INFLATION BY MAF BIN (non-SNP units)\n")
-print(MA[MA.axis.isin(AX)].pivot_table(index=["maf_lo","maf_hi"],columns="axis",
-                                       values="lam").round(3).to_string())
-print("\nINFLATION AS THE MAF FLOOR IS RAISED (SV units)\n")
-print(FL[FL.axis.isin(AX)].pivot_table(index="floor",columns="axis",values="lam").round(3).to_string())
-print("\n  Lambda is FLAT across MAF, and if anything slightly LOWER in the rarest bin tested")
-print("  (bio1: 2.27 at MAF 0.05-0.075 against 2.59 at 0.30-0.50). Raising the floor to 0.25")
-print("  discards 80% of SV units and leaves lambda unchanged at ~2.5. So in this dataset the")
-print("  inflation is climate structure, not rare-variant noise, and the MAF filter is not")
-print("  buying calibration -- which is the usual justification for having one.")
-'''
-
-md_read = """## 6 · Reading it
-
-**Insertion hits are TE-enriched, and it is not a size effect.** 54.2% of GEA insertion hits are at least
-half TE, against 41.5% of the insertions tested alongside them (Fisher OR 1.67, p = 0.004). Hits and
-background have nearly the same median size (256 vs 262 bp) and replacement share (21% vs 22%). Within
-size × replacement strata the odds ratio is 1.94 (Mantel–Haenszel p = 0.001). The no-call-rate run agrees
-(55.3% vs 42.8%, OR 1.65; stratified 1.61, p = 0.007).
-
-**Deletion hits are not.** 40.0% vs 36.9% (OR 1.14, p = 0.51; stratified 1.14, p = 0.51), with a weak,
-non-significant tendency in the no-call-rate run (OR 1.35, p = 0.08). Whatever ties TE cargo to the
-climate signal is an insertion-side pattern. "Insertion" and "deletion" are relative to Col-0, not ancestral
-state, and without TSDs that can't be resolved here.
-
-⚠ **The background still matters.** The hits (54.2%) look just like the panel's insertion events as a whole
-(52.8%). The enrichment exists only against the tested universe, which the MAF and call-rate filters make
-TE-poorer. That is the right comparator, because it is what the GEA could have found, but the enrichment
-is a statement about the tested set, not the panel.
+**Where the hits land: depleted from coding sequence, enriched nowhere.** 4.4% of hits fall in CDS against
+9.2% of tested events (OR 0.45, Bonferroni p = 0.034), the only site that survives correction. Hits inside
+annotated TEs (35.5% vs 33.0%) and in promoters (20.3% vs 19.4%) are at background. So hits *carry* TE
+sequence more often than expected, but they do not *land* in TEs more often. The two are separate
+properties. This test pools both directions and is unstratified; the stratified, per-direction version is
+`gea_hit_landscape.ipynb` §2.
 
 **No single family drives it.** The 71 insertion hits that are at least half TE come from 58 families;
 the most frequent appears 5 times. No family passes Bonferroni. The nominal top three are ATREP3
@@ -383,8 +291,9 @@ other side: three cr50 **deletion** hits remove an ATCOPIA78 copy that Col-0 car
 **What is still missing**
 - **Direction.** This asks what the hits *are*, not which way their frequency moves with climate. Pairing
   cargo with the sign of the climate association is the obvious next step.
-- **Polarity.** Without target site duplications, an insertion relative to Col-0 cannot be told apart
-  from a deletion in the Col-0 lineage (GraffiTE's TSD search is broken upstream; see the pipeline doc).
+- **Polarity.** An insertion relative to Col-0 is not necessarily new. Target site duplications, now
+  available per record after the GraffiTE flank fix (`tsd_status` in the classification table), can
+  resolve this for single-copy, clean TE insertions; they are not used here yet.
 - **The hit list is a candidate net.** Raw uncalibrated LFMM p, climate-structured hits, no GIF
   correction, as the GEA manifest states. Nothing here is a calibrated enrichment test of that list."""
 
@@ -399,9 +308,9 @@ md_methods = """## As run
   deletions. TE fraction = union of TE-class hits / allele length; simple repeat, low complexity and
   satellite do not count as TE. An event takes the class of its representative record (the catalogue
   `key`). Until 2026-10-04 this read `rm_cargo_allins.csv` (`-nolow`, insertions only).
-- **Size × replacement strata**: SV size bins 50–100–300–1k–3k–10k–∞ bp × replacement status (HPRC
-  `COMPLEX`, or a swapped base); Mantel–Haenszel via `statsmodels` `StratifiedTable`, using strata that
-  contain at least one hit.
+- **Landing-site enrichment**: per site, Fisher's exact test of hits vs the other tested events (cr50,
+  both directions pooled), Bonferroni over the six sites. Unstratified; the size × MAF-stratified,
+  block-bootstrapped version by direction is `gea_hit_landscape.ipynb` §2 (its region classifier differs).
 - **Join**: chrom + position + direction + size within 5 bp, best size match per unit, non-unique matches
   dropped. Never on position alone — 2.14% of panel positions carry more than one record.
 - **Landing site** is the burden model's cascade (`context` in `sv_event_catalog.csv`), not the older
@@ -410,10 +319,8 @@ md_methods = """## As run
 if __name__ == "__main__":
     build("gea_te_cargo.ipynb", [
         new_markdown_cell(md_title),  new_code_cell(code_setup), new_code_cell(code_load),
-        new_markdown_cell(md_enrich), new_code_cell(code_enrich),
         new_markdown_cell(md_fam),    new_code_cell(code_fam),
         new_markdown_cell(md_cr),     new_code_cell(code_cr),
         new_markdown_cell(md_famtest), new_code_cell(code_famtest),
-        new_markdown_cell(md_maf),     new_code_cell(code_maf),
         new_markdown_cell(md_read),   new_markdown_cell(md_methods),
     ])
