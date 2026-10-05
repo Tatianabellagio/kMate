@@ -35,6 +35,7 @@ requirements:
                                        # which on conda-forge is a Python string-similarity
                                        # library and ships no `jellyfish` binary.
     - samtools                         # BAM read access
+    - bcftools                         # decompose / haploidize (panel VCF prep)
 
 test:
   imports:
@@ -56,9 +57,9 @@ about:
     kMate estimates per-founder mixture proportions (h) in a sequenced pool from
     canonical k-mer counts against a pangenome founder x k-mer matrix, then
     projects to per-record allele frequencies for SNPs, indels and SVs in one
-    pass. Supports whole-chromosome (global) and per-window (window) estimation
-    and optional per-bubble k-mer weighting. `kmate selftest` verifies an install
-    on a bundled fixture.
+    pass. Fits one mixture per chromosome (inbred/selfing pools) or per window
+    (recombinant pools), and builds its founder matrices from a pangenome VCF.
+    `kmate selftest` verifies an install on a bundled fixture.
   dev_url: https://github.com/Tatianabellagio/kMate
 
 extra:

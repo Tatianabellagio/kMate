@@ -62,17 +62,35 @@ per genotype.
 > errors; you get wrong frequencies.
 
 Use symbolic-ID propagation instead, which matches variants by identity rather than by
-alignment:
+alignment.
+
+**If you built the graph from your founders' assemblies (A above)**, give its VCF and GFA:
+
+```bash
+kmate decompose \
+    --genotyped-vcf out/mypanel.vcf.gz \
+    --gfa           out/mypanel.gfa.gz \
+    --haploidize --het missing \
+    --out panel.vcf.gz
+```
+
+This is the slow step: it reads the whole GFA (Chr1 of a 135-assembly *Arabidopsis*
+graph: ~30 min, ~20 GB). Subset the VCF to one chromosome first (`bcftools view -r Chr1`)
+and run chromosomes in parallel; the GFA stays whole.
+
+**If your founders were genotyped on someone else's graph**, annotate that graph's VCF
+once with `annotate_vcf.py`, then:
 
 ```bash
 kmate decompose \
     --annotated-vcf      annotated_multiallelic.vcf.gz \
     --biallelic-catalog  annotated_biallelic.vcf.gz \
     --genotyped-vcf      your_genotyped.vcf.gz \
-    --convert-to-biallelic /path/to/convert-to-biallelic.py \
     --haploidize --het missing \
     --out panel.vcf.gz
 ```
+
+Either way the output is sorted and indexed.
 
 ### Choosing `--het`
 
@@ -96,10 +114,10 @@ coin flip, because guessing the phase would invent haplotypes.
 ### Acknowledgement
 
 The decomposition method is not kMate's. It is **HPRC symbolic-ID propagation**, run
-here via [`annotate_vcf.py`](https://github.com/human-pangenomics/hpp_pangenome_resources)
-(HPRC) and [`convert-to-biallelic.py`](https://github.com/eblerjana/pangenie-tools)
-(eblerjana). Neither is bundled; you install them yourself. Only the `INFO/ID` transfer
-step is kMate's own.
+via `annotate_vcf.py` and `convert-to-biallelic.py` from
+[PanGenie](https://github.com/eblerjana/pangenie) (Jana Ebler, MIT). kMate bundles both
+unmodified, so there is nothing extra to install. Only the `INFO/ID` transfer step is
+kMate's own.
 
 If the decomposition matters to your results, cite
 Ebler et al. (2022) *Nature Genetics* 54:518–525 and

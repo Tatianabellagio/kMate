@@ -26,5 +26,6 @@ where = ["src"]
 include = ["kmate*"]
 
 [tool.setuptools.package-data]
-# Ship the tiny end-to-end self-test fixture (`kmate selftest`).
-kmate = ["data/selftest/*"]
+# Ship the tiny end-to-end self-test fixture (`kmate selftest`), and the two
+# vendored PanGenie scripts `kmate decompose` runs (MIT; see _vendor/pangenie/).
+kmate = ["data/selftest/*", "_vendor/pangenie/*"]
