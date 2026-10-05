@@ -39,6 +39,9 @@ CRTAG <- Sys.getenv("CRTAG", "")
 BMODE <- Sys.getenv("BURDEN_MODE", "rate")
 stopifnot(BMODE %in% c("rate", "count"))
 RAW <- file.path(here, "results", "sv_adaptive", sprintf("founder_burden_event%s.csv", CRTAG))
+# BURDEN_FILE: read a differently-classified burden table in the same column convention, e.g.
+# founder_burden_event_cargo.csv (`_sv_burden_cargo_export.py`, for POOL_SET=cargo10). Empty by default.
+if (nzchar(Sys.getenv("BURDEN_FILE", ""))) RAW <- file.path(here, "results", "sv_adaptive", Sys.getenv("BURDEN_FILE"))
 OUT <- file.path(here, "results", "sv_adaptive", Sys.getenv("FINAL_OUT", "final_models_pooled"))
 ORIGIN <- Sys.getenv("BURDEN_ORIGIN", "shared")
 stopifnot(ORIGIN %in% c("shared", "all"))
@@ -70,8 +73,14 @@ if (nzchar(SUBSET)) {
 # and intron, which are 20% of passing events and entered nothing until `all6` and `cds2` were added.
 CTX6 <- c("CDS", "UTR", "intron", "TE", "promoter", "intergenic")
 POOL_SET0 <- Sys.getenv("POOL_SET", "sv6")
-stopifnot(POOL_SET0 %in% c("sv4", "sv6", "all6", "cds2"))
+stopifnot(POOL_SET0 %in% c("sv4", "sv6", "all6", "cds2", "cargo10"))
+# cargo10: content (TE = at least half TE / nTE) x location (CDS, UTR, intron, promoter, intergenic), with the
+# reference-TE layer moved from location to content, so a TE inserted into OR deleted from a promoter is one
+# class. Needs BURDEN_FILE=founder_burden_event_cargo.csv (`_sv_burden_cargo_build.py` + `_cargo_export.py`).
+CARGO10 <- c(paste0("TE", c("cds", "utr", "intron", "promoter", "intergenic")),
+             paste0("nTE", c("cds", "utr", "intron", "promoter", "intergenic")))
 GRP <- switch(POOL_SET0,
+  cargo10 = setNames(as.list(CARGO10), CARGO10),
   sv4  = list(CDS = "CDS", promoter = "promoter", intergenic = "intergenic"),
   sv6  = list(CDS = "CDS", TE = "TE", promoter = "promoter", intergenic = "intergenic"),
   all6 = list(CDS = "CDS", UTR = "UTR", intron = "intron", TE = "TE",
@@ -180,6 +189,7 @@ expand <- function(v) unlist(lapply(v, function(t) {
 }))
 # which burdens get a garden-temperature interaction and a random garden slope
 SV3 <- expand(switch(POOL_SET,
+  cargo10 = paste0("sv_", CARGO10),
   sv4  = c("sv_CDS", "sv_promoter"),
   sv6  = c("sv_CDS", "sv_TE", "sv_promoter"),
   all6 = c("sv_CDS", "sv_TE", "sv_promoter"),
