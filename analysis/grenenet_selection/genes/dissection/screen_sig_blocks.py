@@ -18,7 +18,7 @@ Significance set
 ----------------
 Union over cls in {sv, smallindel, nonsnp} x axis in {bio1..19, pc1} of the
 per-class genome-wide Bonferroni (0.05/n, MAF>0.05) block-LEAD hits from the raw
-(pre-WZA) LFMM p in wza_in_clq09_tile. NB: raw uncalibrated p (matches the
+LFMM p in tile_cr50 (production: MAF 0.05 + call rate 0.50, SVs as events). NB: raw uncalibrated p (matches the
 newpeak dotgrid); treat as a candidate net, not a calibrated hit list.
 
 Outputs (genes_expl/):
@@ -46,6 +46,9 @@ WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 CLASSES = ["sv", "smallindel", "nonsnp"]
 GFF = lib.TAIR10_GENES_TE                      # full hierarchy incl. TEs
+TE_ABOVE_PROMOTER = True                       # project-wide default (2026-10-01). Set False (the NEW candidate list,
+                                               # 2026-10-02) to let a promoter call win over a TE overlap; `te_overlap` is
+                                               # recorded either way.
 PROM_BP = 1000                                 # promoter window upstream of TSS (project-wide;
                                                # matches _sv_sfs_context.PROM_BP)
 PROXIMAL_BP = 5000                             # "near a gene" cutoff
@@ -180,7 +183,7 @@ def classify(C):
                     tier, subr = "4_exon_noncoding", "exon(noncoding)"
                 else:
                     tier, subr = "5_intron", "intron"
-            elif not te_hit:                                    # promoter (vectorized); TE wins
+            elif (not te_hit) or (not TE_ABOVE_PROMOTER):       # promoter (vectorized); TE wins unless TE_ABOVE_PROMOTER is False
                 lo = np.where(sd == "+", st - PROM_BP, en + 1)
                 hi = np.where(sd == "+", st - 1, en + PROM_BP)
                 pm = (vs <= hi) & (ve >= lo)

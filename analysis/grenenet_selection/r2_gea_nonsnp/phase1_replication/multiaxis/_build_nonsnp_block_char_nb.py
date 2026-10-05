@@ -4,19 +4,22 @@
 The set: every clq0.9 tiling block that, on >=1 of the 20 climate axes, has a lead
 (min-p) non-SNP (SV+small-indel) record clearing per-class Bonferroni while its lead
 SNP record does NOT (SNP-absent blocks count as SNP-not-sig — the "SNPs missed it"
-case). ~692 unique blocks. Question: are these a special kind of genomic region —
+case). Input: production `results/multiaxis/tile_cr50` (MAF >= 0.05 + founder call rate
+>= 0.50; small indels per record, SVs per Truvari event; unmerged tiling blocks).
+Question: are these a special kind of genomic region —
 TE/repeat-rich, non-genic, pericentromeric — i.e. places SNP calling is blind, or are
 they scattered like the SNP peaks?
 
 Three pillars, every enrichment against a MATCHED BACKGROUND = all tiling blocks that
-carry a testable non-SNP record (41,908 blocks; the 692 are a subset):
+carry a testable non-SNP record (the foreground is a subset; both counts printed in-notebook):
   A  feature/TE composition  (TAIR10 genes_transposons.gff: gene / TE / TE-gene /
      pseudogene / ncRNA coverage; TE-superfamily mix from the Alias field)
   B  structural context      (distance to centromere, block size, SNP-sparsity, SV size)
-  C  signal-quality overlay  (lead MAF; genomic-inflation (GIF) survival of the leads)
+  C  signal-quality overlay  (lead MAF; per-axis new-peak count next to that axis' lambda)
 
-All 692 are kept but split by recurrence: 1-axis (noisy tail) vs >=2-axis (robust core).
-Raw uncalibrated p throughout (pillar C makes the caveat quantitative). No chart titles
+All blocks are kept but split by recurrence: 1-axis (noisy tail) vs >=2-axis (robust core).
+Raw uncalibrated p throughout, never GIF-corrected (project rule; pillar C states lambda as a
+caveat instead of a "survives correction" test, which earlier versions computed). No chart titles
 (project convention): markdown headers + axis labels + in-panel annotations carry context.
 """
 import nbformat as nbf
@@ -25,7 +28,8 @@ from nbconvert.preprocessors import ExecutePreprocessor
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT = os.path.join(HERE, "nonsnp_block_characterization.ipynb")
+# rendered notebooks live in the tree-level notebooks/, not beside their builder
+OUT = os.path.normpath(os.path.join(HERE, "..", "..", "..", "notebooks", "nonsnp_block_characterization.ipynb"))
 
 C = []
 md = lambda s: C.append(new_markdown_cell(s))
@@ -36,13 +40,21 @@ md(r"""# What are the non-SNP new-peak blocks? — feature / structural / signal
 **The set.** clq0.9 **tiling** blocks where, on >=1 of the 20 climate axes (bio1-19 + pc1),
 the lead (min-p) **non-SNP** (SV + small-indel) LFMM record clears per-class Bonferroni
 (0.05/n) while the lead **SNP** record in that same block does **not** — SNP-absent blocks
-count as SNP-not-significant (the "SNPs missed it" case, which is the whole point). ~692
-unique blocks. gen9, MAF>0.05.
+count as SNP-not-significant (the "SNPs missed it" case, which is the whole point). gen9,
+LFMM K=16, raw p.
+
+**Input.** Production `results/multiaxis/tile_cr50` (2026-09-30 re-run): MAF >= 0.05 **and**
+founder call rate >= 0.50. Small indels are tested per record, SVs per **Truvari event** (pooled
+non-SNP = small-indel records + SV events; an event's pos / size come from its representative
+allele). Blocks are the clq r2=0.9 tiling **without** `merge_small_blocks`, so a block id names
+the same LD interval for SNPs and non-SNPs — the SNP-vs-non-SNP contrast within a block is
+like-for-like (the old per-class merge mis-keyed ~27% of SV records).
 
 **Question.** Are these a *special kind of genomic region* — TE/repeat-rich, non-genic,
 pericentromeric (places short-read SNP calling goes blind) — or are they scattered like the
 SNP peaks? Answered against a **matched background** = every tiling block carrying a testable
-non-SNP record (41,908; the 692 are a subset). Whole-genome would be the wrong denominator.
+non-SNP record (the foreground is a subset; counts printed below). Whole-genome would be the
+wrong denominator.
 
 **Three pillars**
 - **A — feature / TE composition:** per-block coverage by protein-coding gene, TE
@@ -50,19 +62,29 @@ non-SNP record (41,908; the 692 are a subset). Whole-genome would be the wrong d
   mix (Alias field); a genic / TE / intergenic classification.
 - **B — structural context:** distance to centromere, block physical size, how many blocks are
   genuinely SNP-sparse/absent (makes the caveat quantitative), lead-SV size profile.
-- **C — signal-quality overlay:** lead non-SNP MAF; which leads survive genomic-inflation (GIF)
-  correction — ties the characterization to the raw-p inflation caveat.
+- **C — signal-quality overlay:** lead non-SNP MAF; per-axis new-peak count next to that axis'
+  genomic-inflation lambda — ties the characterization to the raw-p inflation caveat.
 
-All 692 kept, **split by recurrence**: `1-axis` (noisy tail, ~79%) vs `>=2-axis` (robust core).
-Raw uncalibrated p throughout.""")
+All blocks kept, **split by recurrence**: `1-axis` (noisy tail) vs `>=2-axis` (robust core); the
+split is printed below. Raw uncalibrated p throughout — never GIF-corrected (project rule).""")
 
 # ---------------------------------------------------------------- setup ------
 co(r"""import os, sys, numpy as np, pandas as pd, matplotlib.pyplot as plt
 from scipy import stats
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+# NB: `__file__` is NOT defined in a Jupyter kernel; walk up from cwd to the tree root.
+def _tree_root(start=None):
+    d = os.path.abspath(start or os.getcwd())
+    while d != os.path.dirname(d):
+        if os.path.basename(d) == "grenenet_selection" and os.path.exists(os.path.join(d, "lib.py")):
+            return d
+        d = os.path.dirname(d)
+    raise RuntimeError("could not locate the grenenet_selection tree root from " + os.getcwd())
+sys.path.insert(0, _tree_root())
 import lib
 GEA = lib.GEA
-WZAIN = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+# 2026-09-30 production re-run (MAF 0.05 + founder call rate 0.50, SV/non-SNP on truvari
+# EVENTS, unmerged tiling blocks). Old input: _superseded_pre_cr50/wza_in_clq09_tile.
+WZAIN = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 OUTDIR = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 plt.rcParams.update({"figure.dpi": 110, "axes.spines.top": False, "axes.spines.right": False})
@@ -165,8 +187,8 @@ def cov_superfam(blocks):
             for sf in te.superfam.unique()}
 print("coverage helpers ready")""")
 
-# ------------------------------------------------ foreground 692 -------------
-co(r"""# --- recompute the 692 non-SNP new-peak blocks over 20 axes (slow: loads 40 CSVs) ---
+# ------------------------------------------------ foreground ----------------
+co(r"""# --- recompute the non-SNP new-peak blocks over 20 axes (slow: loads 40 CSVs) ---
 def load(cls, axis):
     f=f"{WZAIN}/lfmm_{cls}_gen9_{axis}.csv"
     if not os.path.exists(f): return None
@@ -192,12 +214,9 @@ for a in AXES:
     rows.append(npk[["block","chrom","pos","ref_len","alt_len","MAF","nlp","nlp_snp","axis","bonf_c"]])
 PK=pd.concat(rows,ignore_index=True)
 PK["size"]=(PK.alt_len-PK.ref_len).abs()
-# GIF-corrected significance of each (block,axis) lead
-PK["lam"]=PK["axis"].map(LAM)
-PK["nlp_gif"]=-np.log10(np.clip(stats.chi2.sf(stats.chi2.isf(10**(-PK.nlp),1)/PK.lam,1),1e-300,1))
-PK["survive_gif"]=PK.nlp_gif>PK.bonf_c
+PK["lam"]=PK["axis"].map(LAM)                                  # stated as a caveat only; p stays raw
 print(f"(block,axis) new peaks: {len(PK)} | unique blocks: {PK.block.nunique()}")
-print("per-axis GIF lambda (nonsnp): min %.2f  median %.2f  max %.2f"%(min(LAM.values()),np.median(list(LAM.values())),max(LAM.values())))""")
+print("per-axis genomic inflation lambda (nonsnp; stated, never applied): min %.2f  median %.2f  max %.2f"%(min(LAM.values()),np.median(list(LAM.values())),max(LAM.values())))""")
 
 co(r"""# --- collapse to one row per block; attach recurrence, best signal, SNP presence/density ---
 # variant-density + SNP presence from bio1 (block membership is axis-invariant)
@@ -205,7 +224,7 @@ snp_b=load("snp","bio1"); nsnp_b=load("nonsnp","bio1")
 n_snp   = snp_b.groupby("block").size().rename("n_snp")
 n_nonsnp= nsnp_b.groupby("block").size().rename("n_nonsnp")
 snp_blocks=set(snp_b.block.unique())
-BG_blocks = sorted(nsnp_b.block.dropna().unique())             # matched background: 41,908
+BG_blocks = sorted(nsnp_b.block.dropna().unique())             # matched background (count printed below)
 
 g=PK.sort_values("nlp",ascending=False)
 best=g.drop_duplicates("block").set_index("block")
@@ -213,14 +232,13 @@ FG=pd.DataFrame(index=sorted(PK.block.unique()))
 FG["n_axes"]=PK.groupby("block")["axis"].nunique()
 FG["best_axis"]=best["axis"]; FG["best_nlp"]=best.nlp
 FG["lead_size"]=best["size"]; FG["lead_MAF"]=best.MAF; FG["lead_pos"]=best.pos
-FG["any_survive_gif"]=PK.groupby("block").survive_gif.any()
 FG["recur"]=np.where(FG.n_axes>=2,">=2-axis","1-axis")
 FG=FG.join(n_snp).join(n_nonsnp)
 FG["n_snp"]=FG.n_snp.fillna(0).astype(int); FG["n_nonsnp"]=FG.n_nonsnp.fillna(0).astype(int)
 FG["snp_present"]=FG.index.isin(snp_blocks)
 FG=FG.join(SPANS[["chrom","start","end","len"]])
 FG["dist_cen"]=FG.apply(lambda r:abs((r.start+r.end)/2 - CEN[r.chrom]),axis=1)
-print("foreground blocks:",len(FG))
+print("foreground blocks:",len(FG),"| matched background blocks:",len(BG_blocks))
 print(FG.recur.value_counts().to_string())
 print("SNP-absent blocks:",int((~FG.snp_present).sum()),f"({100*(~FG.snp_present).mean():.0f}%)")
 display(FG.head())""")
@@ -306,7 +324,7 @@ FGsf=sf_frac(sf_fg); BGsf=sf_frac(sf_bg)
 order=[k for k,_ in sorted(BGsf.items(),key=lambda kv:-kv[1])]
 fig,axs=plt.subplots(1,2,figsize=(14,4.2))
 x=np.arange(len(order)); w=0.38
-axs[0].bar(x-w/2,[FGsf[k] for k in order],w,label="foreground (692)",color=COL[">=2-axis"])
+axs[0].bar(x-w/2,[FGsf[k] for k in order],w,label=f"foreground ({len(FGc)})",color=COL[">=2-axis"])
 axs[0].bar(x+w/2,[BGsf[k] for k in order],w,label="background",color=COL["background"])
 axs[0].set_xticks(x); axs[0].set_xticklabels(order,rotation=40,ha="right",fontsize=7)
 axs[0].set_ylabel("share of TE bp",fontsize=9); axs[0].legend(frameon=False,fontsize=8)
@@ -320,7 +338,9 @@ share.T.plot(kind="barh",stacked=True,ax=axs[1],
              color=["#2E7D32","#A5D6A7","#8E44AD","#CBA6D6","#CED4DA"],width=0.7)
 axs[1].set_xlabel("share of blocks",fontsize=9)
 axs[1].legend(frameon=False,fontsize=7,loc="center left",bbox_to_anchor=(1.0,0.5))
-fig.tight_layout(); plt.show()""")
+fig.tight_layout(); plt.show()
+print("share of TE bp by superfamily (foreground vs background):")
+print(pd.DataFrame({"foreground":FGsf,"background":BGsf}).reindex(order).round(3).to_string())""")
 
 # ------------------------------------------------ Pillar B -------------------
 md(r"""## Pillar B — structural context
@@ -359,7 +379,12 @@ fig.tight_layout(); plt.show()
 # stats
 d1=stats.mannwhitneyu(FG.dist_cen, BG.apply(lambda r:abs((r.start+r.end)/2-CEN[r.chrom]),axis=1),alternative="less")
 print(f"dist-to-centromere FG<bg  MWU p={d1.pvalue:.2e}  (FG median {FG.dist_cen.median()/1e6:.2f} Mb vs bg {(BG.apply(lambda r:abs((r.start+r.end)/2-CEN[r.chrom]),axis=1)).median()/1e6:.2f} Mb)")
-sA=int((~FG.snp_present).sum()); print(f"SNP-absent foreground blocks: {sA}/{len(FG)} ({100*sA/len(FG):.0f}%)")""")
+sA=int((~FG.snp_present).sum()); print(f"SNP-absent foreground blocks: {sA}/{len(FG)} ({100*sA/len(FG):.0f}%)")
+_bg_nsnp=n_snp.reindex(BG_blocks).fillna(0)
+print(f"block length median: FG {FG.len.median():.0f} bp vs bg {BG.len.median():.0f} bp  "
+      f"(MWU FG>bg p={stats.mannwhitneyu(FG.len,BG.len,alternative='greater').pvalue:.1e})")
+print(f"SNP records per block median: FG {FG.n_snp.median():.0f} vs bg {_bg_nsnp.median():.0f}  "
+      f"(MWU FG>bg p={stats.mannwhitneyu(FG.n_snp,_bg_nsnp,alternative='greater').pvalue:.1e})")""")
 
 co(r"""# lead-variant size split by recurrence (SV >50 bp vs small-indel <=50 bp)
 fig,ax=plt.subplots(figsize=(7,4))
@@ -377,11 +402,13 @@ print("lead is SV (>50bp): FG 1-axis %.0f%%  vs  >=2-axis %.0f%%"%(
 # ------------------------------------------------ Pillar C -------------------
 md(r"""## Pillar C — signal-quality overlay (the calibration caveat, quantified)
 
-These are **raw, uncalibrated** LFMM p. Two suspect-signal axes: **(left)** lead non-SNP MAF —
-low-MAF leads are the fragile ones; **(right)** genomic-inflation survival — deflate each lead's
-chi2 by its axis' GIF lambda and re-test at that axis' Bonferroni. The count of the 692 whose
-lead survives GIF is the honest first-pass on how much of this list is inflation vs signal
-(cf. the `gif_manhattan_snp_vs_nonsnp_lfmm_tile.ipynb` twin).""")
+These are **raw, uncalibrated** LFMM p, and they stay raw: the project does not GIF-correct GEA
+p-values (lambda here is partly real climate signal correlated with structure, so dividing it out
+removes signal with the artifact). Lambda is **stated** as a caveat instead. **(left)** lead
+non-SNP MAF — low-MAF leads are the fragile ones; **(right)** per-axis count of new-peak blocks
+against that axis' non-SNP lambda — if the axes with the most peaks are the most inflated ones,
+absolute counts (not the class contrast) carry that caveat. Candidates are strengthened with
+independent evidence downstream, not by a correction.""")
 
 co(r"""fig,axs=plt.subplots(1,2,figsize=(12,4.2))
 bg_lead=nsnp_b.loc[nsnp_b.groupby("block")["pval"].idxmin(),["block","MAF"]].set_index("block")
@@ -391,28 +418,31 @@ ecdf(axs[0], bg_lead.MAF.reindex(BG_blocks).dropna(),"background lead MAF",COL["
 axs[0].set_xlabel("lead non-SNP MAF",fontsize=9); axs[0].set_ylabel("ECDF",fontsize=9)
 axs[0].legend(frameon=False,fontsize=7,loc="lower right")
 
-# GIF survival bars by recurrence
-surv=pd.crosstab(FG.recur, FG.any_survive_gif)
-surv.columns=[f"survive_gif={c}" for c in surv.columns]
-surv.plot(kind="bar",stacked=True,ax=axs[1],color=["#CED4DA","#1B5E20"])
-axs[1].set_ylabel("# blocks",fontsize=9); axs[1].set_xlabel("")
-axs[1].tick_params(axis="x",rotation=0); axs[1].legend(frameon=False,fontsize=8)
+# per-axis new-peak block count vs that axis' non-SNP lambda (lambda stated, never applied)
+cnt=PK.groupby("axis").block.nunique().reindex(AXES).fillna(0)
+lam=pd.Series(LAM).reindex(AXES)
+axs[1].scatter(lam,cnt,s=22,color=COL[">=2-axis"],zorder=3)
+for a in AXES:
+    axs[1].annotate(a,(lam[a],cnt[a]),xytext=(3,2),textcoords="offset points",fontsize=6.5,color="0.3")
+axs[1].axvline(1,ls=":",c="0.5",lw=1)
+axs[1].set_xlabel("genomic inflation lambda (non-SNP, per axis)",fontsize=9)
+axs[1].set_ylabel("# new-peak blocks on that axis",fontsize=9)
 fig.tight_layout(); plt.show()
 
-nsurv=int(FG.any_survive_gif.sum())
-print(f"blocks whose lead survives GIF correction: {nsurv}/{len(FG)} ({100*nsurv/len(FG):.0f}%)")
-print(FG.groupby("recur").any_survive_gif.agg(["sum","mean"]).round(3).to_string())""")
+rho=stats.spearmanr(lam,cnt)
+print(f"lead MAF median: FG {FG.lead_MAF.median():.3f}  vs  background lead {bg_lead.MAF.reindex(BG_blocks).median():.3f}")
+print(f"non-SNP lambda per axis: min {lam.min():.2f}  median {lam.median():.2f}  max {lam.max():.2f} ({lam.idxmax()})")
+print(f"Spearman(axis lambda, axis new-peak count) = {rho.statistic:.2f}  (p={rho.pvalue:.1e}, n={len(AXES)} axes)")""")
 
 md(r"""## Summary table + master CSV
 
 `nonsnp_block_characterization.csv` — one row per block: chrom, span, len, recurrence class,
 best axis/p, lead size/MAF, SNP presence & density, distance-to-centromere, per-class coverage
-fractions, genic/TE/intergenic class, and GIF survival. Top rows below by recurrence then
-signal.""")
+fractions, and genic/TE/intergenic class. Top rows below by recurrence then signal.""")
 
 co(r"""cols=["block","chrom","start","end","len","recur","n_axes","best_axis","best_nlp",
       "lead_size","lead_MAF","snp_present","n_snp","n_nonsnp","dist_cen",
-      "f_gene","f_te_any","f_pseudogene","f_intergenic","klass","any_survive_gif"]
+      "f_gene","f_te_any","f_pseudogene","f_intergenic","klass"]
 # FGc already carries every column (block stats + coverage); just select + sort.
 show=FGc[[c for c in cols if c in FGc.columns]].sort_values(
     ["recur","best_nlp"],ascending=[True,False])
@@ -421,25 +451,35 @@ print("full table:", f"{OUTDIR}/nonsnp_block_characterization.csv")""")
 
 md(r"""## Conclusions — what are these blocks?
 
-A **structurally distinct region class**, but **not a set of calibration-robust adaptive loci**:
+A **structurally distinct region class**; the raw-p caveats below say how far to trust it as
+a list of adaptive loci. Numbers are the printed outputs above (rebuilt on `tile_cr50`).
 
-1. **The SNP-vs-non-SNP contrast is genuine, not SNP-absence.** 0/692 blocks lack SNPs — every
-   one carries SNP records that are simply *not significant* while a non-SNP is. These blocks are
-   in fact SNP-**richer** and physically **larger** than background, so the "SNPs missed it" caveat
-   from the gene-level view does not bite at block level.
-2. **~2x TE-enriched, pseudogene-enriched, gene-depleted** — TE-overlap 48% vs 25% (Fisher OR 2.7),
-   pseudogene OR 3.2, genic class 33-39% vs 52%. TE-superfamily mix mirrors the genome (Helitron /
-   Gypsy dominant): no single element drives it.
-3. **Pericentromere-leaning** — median 5.9 vs 7.2 Mb to the centromere (MWU p=2e-7).
-4. **A small-indel story, not SV** — ~95% of leads are <=50 bp indels; only 4-6% are SVs (>50 bp).
-5. **The signal does not survive genomic-inflation correction** — per-axis lambda median 1.72, and
-   **0/692 leads survive GIF** at Bonferroni; leads are low-MAF (~0.11).
+1. **The SNP-vs-non-SNP contrast is not SNP-absence.** No foreground block lacks SNPs — every
+   one carries SNP records that are simply *not significant* while a non-SNP is. The blocks are
+   SNP-**richer** and physically **larger** than background (Pillar B prints), so the "SNPs
+   missed it" caveat from the gene-level view does not bite at block level. Caveat: a larger,
+   denser block holds more tests, which by itself raises the chance that some lead clears
+   Bonferroni — part of the size/density shift is expected from that alone.
+2. **TE-enriched, pseudogene-enriched, gene-depleted** — TE overlap roughly 2x background with
+   Fisher OR ~3, pseudogene OR >2, and a smaller genic share than background (Pillar A tables).
+   The TE-bp mix is shifted toward LTR/Gypsy relative to background (superfamily shares printed
+   under the Pillar A bar chart; not formally tested).
+3. **Pericentromere-leaning** — median distance to the centromere ~1.3 Mb shorter than
+   background (MWU, Pillar B).
+4. **A small-indel story, not SV** — only a few percent of leads are >50 bp, in both recurrence
+   classes (Pillar B).
+5. **Signal-quality caveats (stated, not corrected).** Leads are lower-MAF than background leads,
+   and the per-axis new-peak count tracks that axis' lambda closely (Spearman printed in Pillar
+   C): the most inflated axes (bio15, bio10, bio1) contribute most blocks. That is what inflation
+   alone would produce, and it is also what climate signal correlated with structure would
+   produce — so it qualifies absolute counts, not the class contrast.
 
-**Read.** The non-SNP-only peaks concentrate in exactly the compartment where indels are dense *and*
-LFMM inflation is worst (TE-rich, pericentromeric, low-MAF). Pillars A-B tell us *where* such signals
-arise; pillar C shows the raw significance is inflation-driven — consistent with the WZA honest-null
-collapse (`../wza_investigation/`, block-calibration memory). Downstream claims need the calibrated
-(GIF / honest-null) threshold, not raw Bonferroni.""")
+**Read.** The non-SNP-only peaks concentrate in the compartment where indels are dense *and*
+LFMM inflation is highest (TE-rich, pericentromeric, low-MAF leads, high-lambda axes). Pillars
+A-B say *where* such signals arise. Per the project rule the p-values stay raw — this is a
+candidate net, not a calibrated test — so individual blocks need independent evidence
+(garden-level aggregation, a matched empirical background, locus context, cross-scan
+recurrence) before being read as adaptive loci.""")
 
 nb = new_notebook(); nb["cells"] = C
 ep = ExecutePreprocessor(timeout=5400, kernel_name="basic", startup_timeout=180)

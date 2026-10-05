@@ -552,3 +552,11 @@ analysis/grenenet_selection/genes/convergence/results/eqtl/output/
 # add a negation BELOW these lines, e.g.:  !src/archive/
 archive/
 archive_gea/
+
+# 2026-10-04: GEA scan data written beside the scripts in genes/convergence (not under a results/ dir, so no
+# existing rule covered them; ~2.7 GB was untracked-but-unignored). Data only -- scripts, READMEs and small
+# summary CSVs here stay visible to git.
+analysis/grenenet_selection/genes/convergence/event_gea/**/*.csv.gz
+analysis/grenenet_selection/genes/convergence/event_gea/**/*.npy
+analysis/grenenet_selection/genes/convergence/event_gea/**/*_units.csv
+analysis/grenenet_selection/genes/convergence/lfmm_signed/**/*.csv.gz

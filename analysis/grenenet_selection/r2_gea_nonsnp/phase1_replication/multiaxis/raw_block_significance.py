@@ -56,7 +56,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 import lib
 
 MA = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
-IND = f"{MA}/wza_in_clq09_tile"
+IND = f"{MA}/tile_cr50"        # production default; --indir overrides (old run: _superseded_pre_cr50/wza_in_clq09_tile)
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 CLASSES = ["snp", "sv", "smallindel", "nonsnp"]
 CHROMS = ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]
@@ -100,6 +100,7 @@ def block_spans(r2=0.9):
 
 
 def main():
+    global IND
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", default="lfmm", choices=["lfmm", "kendall", "binomial"])
     ap.add_argument("--maf", type=float, default=0.05)
@@ -108,10 +109,17 @@ def main():
                     help=f"climate axes to score (default: the {len(AXES)} production axes)")
     ap.add_argument("--classes", nargs="+", default=None, choices=CLASSES)
     ap.add_argument("--out", default=None)
+    ap.add_argument("--indir", default=IND,
+                    help="dir of reblocked per-record/per-unit tables (default: production "
+                         "tile_cr50; the pre-floor run is _superseded_pre_cr50/wza_in_clq09_tile)")
     args = ap.parse_args()
     axes = args.axes or AXES
     classes = args.classes or CLASSES
-    out = args.out or f"{MA}/raw_block_significance_{args.model}.csv"
+    tag = os.path.basename(args.indir.rstrip("/"))
+    out = args.out or (f"{MA}/raw_block_significance_{args.model}.csv" if tag == "wza_in_clq09_tile"
+                       else f"{MA}/raw_block_significance_{args.model}_{tag}.csv")
+    IND = args.indir
+    print(f"input: {IND}\noutput: {out}", flush=True)
 
     SPAN = block_spans()
     print(f"clq0.9 partition: {len(SPAN):,} blocks tiling {GENOME:,} bp", flush=True)

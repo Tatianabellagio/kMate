@@ -1,14 +1,16 @@
 #!/usr/bin/env python
 """Summary tables + 3-way Venn diagrams (SNP / small-indel / SV) of which clq0.9 tiling
-BLOCKS and GENES are climate-significant — raw LFMM, gen9, MAF>0.05, Bonferroni per
-class/axis on >=1 of the 22 axes (bio1-19 + pc1-3).
+BLOCKS and GENES are climate-significant — raw LFMM, gen9, Bonferroni per class/axis on
+>=1 of the 22 axes (bio1-19 + pc1-3). Input: production `results/multiaxis/tile_cr50`
+(MAF >= 0.05 + founder call rate >= 0.50; snp/smallindel per record, sv/nonsnp per Truvari
+event; unmerged clq0.9 tiling blocks, so block ids are comparable across classes).
 
 Two questions:
   (1) how many blocks/genes are significant per class, out of the total tested;
   (2) do SNPs / indels / SVs mark the SAME blocks (and genes)? -> Venn overlap.
 
 The three Venn circles are the three PRIMARY variant classes (snp, smallindel, sv);
-nonsnp = smallindel u sv so it is a table row, not a circle. Overlap between circles
+nonsnp = smallindel records u SV events so it is a table row, not a circle. Overlap between circles
 means the same block/gene is independently significant in >1 class. Note a block can
 only be in a class' circle if it carries a testable record of that class, so the max
 possible triple overlap is bounded by co-testability (reported under the block Venn).
@@ -31,18 +33,25 @@ co = lambda s: C.append(new_code_cell(s))
 
 md(r"""# Significant blocks & genes per variant class + SNP / indel / SV overlap
 
-clq0.9 **tiling** blocks, **raw LFMM** p (gen9, MAF>0.05). A block is *significant* for a
-class if its lead (min-p) record of that class clears the per-class Bonferroni bar
-(0.05 / n_records) on **>=1** of the 20 climate axes (bio1-19 + pc1-3). Genes = protein-coding
-genes overlapping a significant block (TAIR10).
+clq0.9 **tiling** blocks, **raw LFMM** p (gen9, K=16). Input is the production table
+`results/multiaxis/tile_cr50` (2026-09-30 re-run): MAF >= 0.05 **and** founder call rate
+>= 0.50; snp and small-indel are tested **per record**, SV and pooled non-SNP **per Truvari
+event** (an SV's assembly-path alleles collapse into one unit). Blocks are the clq r2=0.9
+tiling **without** `merge_small_blocks`, so a block id names the same LD interval in every
+class — which is what makes the cross-class Venn below meaningful. A block is *significant*
+for a class if its lead (min-p) record/event of that class clears the per-class Bonferroni
+bar (0.05 / n tested rows) on **>=1** of the 22 climate axes (bio1-19 + pc1-3). Genes =
+protein-coding genes overlapping a significant block (TAIR10).
 
 - **Table:** significant / tested blocks and gene counts per class (snp · smallindel · sv ·
-  pooled non-SNP), with percentages of the tested blocks and of all 27,206 genes.
+  pooled non-SNP), with percentages of the tested blocks and of all TAIR10 protein-coding
+  genes (total printed below).
 - **Venn (blocks):** do the three classes mark the **same blocks**? Circles = snp / smallindel
   / sv significant-block sets; overlap = a block significant in >1 class.
 - **Venn (genes):** same, on the gene sets.
 
-Raw, uncalibrated p (inflation acknowledged, kept deliberately).""")
+Raw, uncalibrated p (inflation acknowledged, kept deliberately; never GIF-corrected).
+Per-axis lambda for this table is in `raw_block_significance_lfmm_tile_cr50.csv`.""")
 
 co(r"""import os, sys, numpy as np, pandas as pd, matplotlib.pyplot as plt
 from matplotlib_venn import venn3, venn3_circles
@@ -57,7 +66,10 @@ def _tree_root(start=None):
     raise RuntimeError("could not locate the grenenet_selection tree root from " + os.getcwd())
 sys.path.insert(0, _tree_root())
 import lib
-WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+# 2026-09-30 production re-run: MAF 0.05 + founder call rate 0.50, SV/non-SNP on truvari
+# EVENTS, unmerged tiling blocks. Previous input (records, no call-rate floor, per-class
+# merged blocks) is _superseded_pre_cr50/wza_in_clq09_tile.
+WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50"
 OUTDIR = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1", "pc2", "pc3"]
 plt.rcParams.update({"figure.dpi": 120, "axes.spines.top": False, "axes.spines.right": False})

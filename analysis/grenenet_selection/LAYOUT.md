@@ -47,9 +47,12 @@ that an agent scanning this tree cannot miss that the WZA / multi-model machiner
 dead. Do not add new work to it, and do not create a third archive: anything else that
 retires goes in `archive/`.
 
-⚠ **`results/multiaxis/wza_in_clq09_tile/` is NOT WZA output** despite the name — it is
-the *raw per-record* LFMM table and the live track's primary input (88 files = 4 classes
-× 22 axes). Never move it on a `wza*` name match.
+**Production GEA input = `results/multiaxis/tile_cr50/`** (88 files = 4 classes × 22 axes;
+2026-09-30 re-run: SVs as Truvari events, MAF ≥ 0.05 + call rate ≥ 0.50; see
+`results/multiaxis/README_PRODUCTION.txt`). The previous input `wza_in_clq09_tile/` — raw
+per-record LFMM despite the `wza` name, no call-rate floor — moved on 2026-10-04 with its
+source run `lfmm/` to `results/multiaxis/_superseded_pre_cr50/` (not to `archive_gea/`:
+the call-rate comparison scripts still read it there).
 
 `blocks/` and `wza/` are **method** sections, not results: `blocks/` defines the
 unit, `wza/` aggregates per-variant p-values over it. `wza_script.py` lives there

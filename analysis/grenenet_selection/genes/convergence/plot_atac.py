@@ -5,8 +5,12 @@ Two outputs.
 
 `atac_locus_<sym>.png` -- our version of the MOI-LAB zoom-Manhattan, with the tracks we
 can actually compute for a non-SNP candidate. Five panels on a shared genomic axis:
-  A  GEA -log10 p per record on the candidate's own climate axis (from wza_in_clq09_tile),
-     by variant class, Bonferroni lines per class.
+  A  GEA -log10 p on the candidate's own climate axis, from the production table
+     `results/multiaxis/tile_cr50` (MAF >= 0.05, founder call rate >= 0.50, LFMM K=16, raw p):
+     one point per record for SNPs and short indels, one per Truvari EVENT for SVs (drawn
+     at the event's representative allele), Bonferroni 0.05/n lines per class x axis. The
+     candidate is found through its unit, not its allele key; a candidate the call-rate
+     floor removed is stated in the panel, not left as a missing ring.
   B  cis-eQTL from run_eqtl_cis.py, with our variant's tagging SNP marked -- or a stated
      absence where no SNP is known to carry the variant (GPX6, FUS3).
   C  TFBS turnover from tfbs_turnover.py -- sites LOST, GAINED and unchanged.
@@ -24,11 +28,12 @@ shortlist leaves it.
 
 No titles anywhere -- panels are identified by an in-panel corner annotation (house rule).
 
-Usage:  PY plot_atac.py [SYM ...]      default GPX6
+Usage:  PY plot_atac.py [SYM ...] [--pad BP] [--no-expr] [--compact] [--suffix S]
+        default GPX6. --no-expr drops panel E, --compact renders for slides.
 env: kmate. Compute node.
 """
 from __future__ import annotations
-import os, sys
+import os, sys, argparse, json, time, urllib.request, urllib.parse
 import numpy as np, pandas as pd
 import matplotlib
 matplotlib.use("Agg")
@@ -49,9 +54,23 @@ OUT = f"{HERE}/results"
 FIG = f"{OUT}/plots/atac"          # raw render dir; organize_figures.py links it
                                    # into results/figures/atac (that tree is rebuilt
                                    # from scratch, so nothing may be written there)
-WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+# Production GEA (2026-09-30 re-run): LFMM ridge K=16, gen 9, RAW p (never GIF-corrected),
+# MAF >= 0.05 and founder call rate >= 0.50. snp / smallindel: one row per record (a short
+# indel is one record = one unit). sv: one row per Truvari EVENT (`unit`); its pos/ref_len/
+# alt_len are the REPRESENTATIVE member allele (most carriers), so the candidate's own allele
+# may not appear as a key at all -- it is matched by unit (lead_units below). Replaces the
+# pre-call-rate-floor wza_in_clq09_tile (allele-level for every class), now in
+# results/multiaxis/_superseded_pre_cr50/.
+TILE = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50"
+UNITS_NPZ = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/nonsnp_event_units.npz"
+CR_FLOOR = int(np.ceil(0.50 * 231))      # founders called, the tile_cr50 call-rate floor
 TISSUES = AO.TISSUES
-BONF = {"snp": 7.55, "smallindel": 7.02, "sv": 5.41}       # per-class, as plot_locus_combined
+# per-class Bonferroni, -log10(0.05 / n rows): tile_cr50 holds 1,790,024 snp / 603,630
+# smallindel / 20,134 sv rows on every one of the 22 axes. load_gea re-derives each value
+# from the table it reads, so a rebuilt table cannot leave a stale line. (The constants
+# this replaced, 7.55 / 7.02 / 5.41, were the per-garden GWAS thresholds, not the GEA's.)
+# cargo/plot_insertion_dossier.py imports BONF and load_gea -- keep both signatures.
+BONF = {"snp": 7.554, "smallindel": 7.082, "sv": 5.605}
 CLS_C, TIS_C, ACC = TH.CLASS, TH.TISSUE, TH.ACCENT
 
 # candidate -> the variant to zoom on; axis is the record's own best GEA axis
@@ -64,12 +83,65 @@ CANDIDATES = {r.symbol: dict(gene=r.gene, chrom=r.chrom, pos=int(r.pos),
                              axis=r.axis or None) for r in _T.itertuples()}
 
 
-def gea_axis(cfg):
+_UNITS: dict = {}
+
+
+def _unit_index():
+    """af_store non-SNP record keys + record -> unit map (nonsnp_event_units.npz, CSR)."""
+    if not _UNITS:
+        I = np.load(f"{lib.AF_STORE}/index_nonsnp.npz", allow_pickle=True)
+        U = np.load(UNITS_NPZ, allow_pickle=True)
+        ip = U["indptr"]
+        unit_of = np.empty(len(I["pos"]), np.int64)
+        unit_of[U["indices"]] = np.repeat(np.arange(len(ip) - 1), np.diff(ip))
+        _UNITS.update(chrom=I["chrom"].astype(str), pos=I["pos"], ref_len=I["ref_len"],
+                      alt_len=I["alt_len"], unit_of=unit_of, ncal=U["ncal"])
+    return _UNITS
+
+
+def lead_units(cfg, store_rows=()):
+    """Candidate allele -> af_store record row(s) -> GEA unit(s). Returns (units, ambiguous).
+
+    An SV row in tile_cr50 is an event shown at its representative allele, so looking the
+    candidate up by (pos, ref_len, alt_len) misses it whenever the candidate is a
+    non-representative member (MTERF24, G3Pp1, AT2G14910). The allele is mapped to its record
+    row and the row to its unit instead. ~14% of non-SNP records share a key with another
+    record, and a key can then name two units (AT1G58235: three); `store_rows` (the
+    evidence_matrix's resolved `store_row`) picks between them, and if it cannot, every
+    candidate unit is kept and flagged. SNPs carry no unit and return no units.
+    """
+    if cfg["ref_len"] == 1 and cfg["alt_len"] == 1:
+        return [], False
+    S = _unit_index()
+    rows = np.where((S["chrom"] == cfg["chrom"]) & (S["pos"] == cfg["pos"])
+                    & (S["ref_len"] == cfg["ref_len"]) & (S["alt_len"] == cfg["alt_len"]))[0]
+    units = sorted({int(u) for u in S["unit_of"][rows]})
+    if len(units) > 1:
+        pick = {int(S["unit_of"][int(r)]) for r in store_rows if np.isfinite(r)} & set(units)
+        if len(pick) == 1:
+            units = sorted(pick)
+    return units, len(units) > 1
+
+
+def absent_reason(units):
+    """Why a candidate has no tile_cr50 row: the call-rate floor or the MAF floor."""
+    if not units:
+        return "below the MAF or call-rate floor"
+    nc = int(min(_unit_index()["ncal"][u] for u in units))
+    return (f"founder call rate {nc}/231 < 0.50 floor" if nc < CR_FLOOR
+            else "below the MAF 0.05 floor")
+
+
+def gea_axis(cfg, units=()):
     if cfg["axis"]:
         return cfg["axis"]
     G = pd.read_csv(f"{OUT}/gea_pool.csv")
-    m = G[(G.chrom == cfg["chrom"]) & (G.pos == cfg["pos"])
-          & (G.ref_len == cfg["ref_len"]) & (G.alt_len == cfg["alt_len"])]
+    # the pool is keyed by unit; the allele key only for SNPs (no unit) or an old pool
+    if len(units) and "unit" in G.columns:
+        m = G[G.unit.isin(units)].sort_values("best_nlp", ascending=False)
+    else:
+        m = G[(G.chrom == cfg["chrom"]) & (G.pos == cfg["pos"])
+              & (G.ref_len == cfg["ref_len"]) & (G.alt_len == cfg["alt_len"])]
     return m.best_axis.iloc[0] if len(m) else None
 
 
@@ -103,14 +175,26 @@ def load_eqtl(cfg, sym):
     return Q, tag
 
 
-def load_gea(cfg, lo, hi, axis):
+def load_gea(cfg, lo, hi, axis, units=()):
+    """Window rows of the three disjoint classes, with a `lead` flag (the candidate's unit).
+
+    The table is already MAF >= 0.05 and call-rate >= 0.50, so no filter is re-applied: the
+    Bonferroni denominator (0.05 / every row of that class on this axis, written back into
+    BONF) is then the same set of tests the Manhattan draws from.
+    """
     frames = []
     for cls in ("snp", "smallindel", "sv"):
-        f = f"{WZAIN}/lfmm_{cls}_gen9_{axis}.csv"
+        f = f"{TILE}/lfmm_{cls}_gen9_{axis}.csv"
         if not os.path.exists(f):
             continue
         d = pd.read_csv(f)
-        d = d[(d.chrom == cfg["chrom"]) & (d.pos >= lo) & (d.pos <= hi) & (d.MAF > 0.05)].copy()
+        BONF[cls] = -np.log10(0.05 / len(d))
+        if cls == "snp":
+            d["lead"] = ((d.chrom == cfg["chrom"]) & (d.pos == cfg["pos"])
+                         & (d.ref_len == cfg["ref_len"]) & (d.alt_len == cfg["alt_len"]))
+        else:
+            d["lead"] = d.unit.isin(units)
+        d = d[((d.chrom == cfg["chrom"]) & (d.pos >= lo) & (d.pos <= hi)) | d.lead].copy()
         d["cls"] = cls
         frames.append(d)
     if not frames:
@@ -120,28 +204,91 @@ def load_gea(cfg, lo, hi, axis):
     return g
 
 
-def plot_locus(sym, pad=8000):
+SYMCACHE = f"{OUT}/gene_symbols_cache.json"
+
+
+def gene_symbols(ids):
+    """AT locus id -> gene symbol, from UniProt (cached).
+
+    TAIR10's GFF carries the locus id as `Name`, so lib.load_genes() cannot label a track
+    with a real symbol -- every gene reads as AT4G11600. UniProt's primary gene name fills
+    that in where one exists (AT4G11610 -> MCTP7); where it does not, the locus id IS the
+    name and is kept.
+    """
+    cache = json.load(open(SYMCACHE)) if os.path.exists(SYMCACHE) else {}
+    todo = [g for g in ids if g not in cache]
+    for g in todo:
+        q = urllib.parse.quote(f"gene:{g} AND organism_id:3702")
+        url = (f"https://rest.uniprot.org/uniprotkb/search?query={q}"
+               "&fields=gene_primary,gene_oln&format=tsv")
+        sym = ""
+        for k in range(3):
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "kmate-analysis/1.0"})
+                rows = urllib.request.urlopen(req, timeout=30).read().decode().splitlines()[1:]
+                for r in rows:
+                    f = r.split("\t")
+                    if len(f) >= 2 and g.lower() in f[1].lower() and f[0].strip():
+                        sym = f[0].split()[0]
+                        break
+                break
+            except Exception:                                      # noqa: BLE001
+                time.sleep(2 ** k)
+        cache[g] = sym
+    if todo:
+        json.dump(cache, open(SYMCACHE, "w"))
+    return cache
+
+
+def plot_locus(sym, pad=8000, with_eqtl=True, compact=False, suffix="", vartag=True):
+    """One locus zoom. `pad` sets the window, `with_eqtl` keeps panel E, `compact` renders
+    the same panels in a smaller, narrower figure for slides, `vartag` prints the
+    variant's size above the gene track."""
     cfg = CANDIDATES[sym]
     ch, vpos, rl = cfg["chrom"], cfg["pos"], cfg["ref_len"]
     assert "alt_len" in cfg, "alt_len is required -- see the multiallelic note above"
     vend = vpos + rl - 1
     lo, hi = vpos - pad, vend + pad
-    axis = gea_axis(cfg)
+    E = pd.read_csv(f"{OUT}/evidence_matrix.csv", low_memory=False)
+    e_rows = E[(E.chrom == ch) & (E.pos == vpos) & (E.ref_len == rl)
+               & (E.alt_len == cfg["alt_len"])]
+    units, ambig = lead_units(cfg, e_rows.store_row.dropna().tolist())
+    if ambig:
+        print(f"  !! {sym}: allele key names {len(units)} units {units}; all are ringed")
+    axis = gea_axis(cfg, units)
 
     genes = lib.load_genes()
     gw = genes[(genes.chrom == ch) & (genes.end >= lo) & (genes.start <= hi)]
+    SYMS = gene_symbols(sorted(gw.gene))
+    SYMS[cfg["gene"]] = SYMS.get(cfg["gene"]) or sym          # the candidate's own symbol
     peaks = AO.load_peaks()
     ps, pe, num, tm = peaks[ch]
     k = (pe >= lo) & (ps <= hi)
     ps, pe, num, tm = ps[k], pe[k], num[k], tm[k]
 
-    G = load_gea(cfg, lo, hi, axis) if axis else pd.DataFrame()
+    G = load_gea(cfg, lo, hi, axis, units) if axis else pd.DataFrame()
+    lead = G[G.lead] if len(G) else G
+    if len(lead):
+        for r in lead.itertuples():
+            print(f"  GEA lead ({axis}, tile_cr50): {r.cls}"
+                  + (f" unit {int(r.unit)}" if r.cls != "snp" else "")
+                  + f" shown at {r.pos}:{r.ref_len}/{r.alt_len}, -log10 p = {r.nlp:.2f}"
+                  f" (Bonferroni {BONF[r.cls]:.2f}: "
+                  f"{'clears' if r.nlp >= BONF[r.cls] else 'below'})")
+    elif axis:
+        print(f"  GEA lead ({axis}, tile_cr50): ABSENT -- {absent_reason(units)}")
+    lead_present = bool(len(lead))
+    G = G[(G.pos >= lo) & (G.pos <= hi)] if len(G) else G
     Q, tag = load_eqtl(cfg, sym)
     TAGS = pd.read_csv(f"{OUT}/eqtl_tag_snps.csv") if \
         os.path.exists(f"{OUT}/eqtl_tag_snps.csv") else pd.DataFrame()
     trow = TAGS[TAGS.symbol == sym] if len(TAGS) else TAGS
     tag_pos = int(trow.tag_pos.iloc[0]) if len(trow) and np.isfinite(trow.tag_pos.iloc[0]) \
         else None
+    # the tag SNP exists to say WHERE the expression track is read; with panel E dropped it
+    # marks a position the figure no longer explains, so it goes with the panel
+    if not with_eqtl:
+        tag_pos = None
     tag_meth = trow.method.iloc[0] if len(trow) else ""
     tag_stat = float(trow.tag_stat.iloc[0]) if len(trow) else np.nan
     # hand-run files are keyed by symbol; the whole-pool run (tfbs_pool.py) by variant
@@ -169,10 +316,14 @@ def plot_locus(sym, pad=8000):
         SUM = pd.DataFrame([dict(symbol=sym)])             # pool run exists: "run", not "missing"
 
     # genes on top as the reference track, eQTL last
-    fig, axs = plt.subplots(5, 1, figsize=(11, 11.8), sharex=True,
-                            gridspec_kw=dict(height_ratios=[1.1, 3.2, 1.4, 1.3, 2.2],
-                                             hspace=0.12))
-    ax_gene, ax_gea, ax_tfbs, ax_atac, ax_eqtl = axs
+    ratios = [1.1, 3.2, 1.4, 1.3] + ([2.2] if with_eqtl else [])
+    # height tracks the panels actually drawn, so dropping E does not stretch the rest
+    w, hscale = (7.9, 0.92) if compact else (11, 1.28)
+    fig, axs = plt.subplots(len(ratios), 1, figsize=(w, sum(ratios) * hscale), sharex=True,
+                            gridspec_kw=dict(height_ratios=ratios, hspace=0.12))
+    ax_gene, ax_gea, ax_tfbs, ax_atac = axs[:4]
+    ax_eqtl = axs[4] if with_eqtl else None
+    ax_bottom = axs[-1]
     # The variant footprint, behind every panel. A 2 bp indel is sub-pixel across a 16 kb
     # window, so the band is widened to a visible minimum and the true position is carried
     # by the dashed line -- the band marks "here", the line marks "exactly here".
@@ -205,10 +356,19 @@ def plot_locus(sym, pad=8000):
             ax.axhline(BONF[cls], color=CLS_C[cls], ls=":", lw=0.9, zorder=1)
         # headroom so the panel label never sits on the data
         ax.set_ylim(top=max(G.nlp.max(), max(BONF.values())) * 1.2)
-        lead = G[(G.pos == vpos) & (G.ref_len == rl) & (G.alt_len == cfg["alt_len"])]
+        # the lead by unit, at the position its row is drawn (an SV event sits at its
+        # representative allele, which can be a few bp off the candidate's own)
+        lead = G[G.lead]
         if len(lead):
             ax.scatter(lead.pos, lead.nlp, s=190, facecolor="none", edgecolor=ACC,
                        linewidth=1.8, zorder=5)
+        elif not lead_present:
+            # not a blank: the production GEA dropped this variant, which is a result
+            # boxed: at this height it sits on the Bonferroni lines
+            ax.annotate(f"candidate not in the GEA table: {absent_reason(units)}",
+                        (0.012, 0.87), xycoords="axes fraction", va="top", ha="left",
+                        fontsize=8, color=ACC, zorder=6,
+                        bbox=dict(fc="white", ec="none", alpha=0.85, pad=1.5))
         # the SNP the eQTL is actually read at -- outlined in the tag colour so panel E's
         # value can be traced to a marker here rather than taken on trust
         if tag_pos is not None:
@@ -241,9 +401,9 @@ def plot_locus(sym, pad=8000):
         # record at all. An empty 0-1 panel reads as "no signal"; it means "not tested here".
         ax.set_yticks([])
         msg = "no GEA record for this variant — it is not in the gen9 GEA pool"
-        E = pd.read_csv(f"{OUT}/evidence_matrix.csv")
-        e = E[(E.chrom == ch) & (E.pos == vpos) & (E.ref_len == rl)
-              & (E.alt_len == cfg["alt_len"])]
+        if units and _unit_index()["ncal"][units].min() < CR_FLOOR:
+            msg += f"\n({absent_reason(units)})"
+        e = e_rows
         if len(e):
             e = e.iloc[0]
             msg += (f"\ngarden-level gradient vs {e.best_axis}: {e.pct_sel:.0f}th percentile"
@@ -263,13 +423,17 @@ def plot_locus(sym, pad=8000):
     dsize = abs(cfg["alt_len"] - rl)
     tag_x = min(max(mid, lo + (hi - lo) * 0.13), hi - (hi - lo) * 0.13)
     kindw = "deletion" if kind == "del" else "insertion"
-    ax_gene.annotate(f"{dsize:,} bp {kindw}   REF {rl:,} → ALT {cfg['alt_len']:,} bp",
-                    xy=(tag_x, 1.005), xycoords=("data", "axes fraction"),
-                    ha="center", va="bottom", fontsize=8, color=ACC)
+    if vartag:
+        ax_gene.annotate(f"{dsize:,} bp {kindw}   REF {rl:,} → ALT {cfg['alt_len']:,} bp",
+                         xy=(tag_x, 1.005), xycoords=("data", "axes fraction"),
+                         ha="center", va="bottom", fontsize=8, color=ACC)
 
     # ---- E: cis-eQTL ---------------------------------------------------------------------
-    ax = ax_eqtl
-    if len(Q):
+    # Dropped by --no-expr: the expression track is a stated NEGATIVE for GPX6 (no cis-eQTL
+    # on its haplotype), which belongs in the dossier figure but only invites the wrong
+    # reading on a slide where there is no room for the caveat.
+    ax = ax_eqtl if with_eqtl else None
+    if with_eqtl and len(Q):
         ax.scatter(Q.ps, Q.nlp, s=12, c=TH.FAINT, edgecolor="none", alpha=0.9, zorder=2)
         pk = Q.loc[Q.nlp.idxmax()]
         ax.scatter([pk.ps], [pk.nlp], s=42, c=TH.GREENS[2], edgecolor="none",
@@ -285,8 +449,9 @@ def plot_locus(sym, pad=8000):
                     + ("" if off == 0 else f", nearest tested {off} bp away"),
                     y=0.80, color=TH.TAG)
         ax.set_ylim(top=max(Q.nlp.max(), 1) * 1.60)
-    ax.set_ylabel("$-\\log_{10}p$  cis-eQTL")
-    TH.panel(ax, "E", "expression — cis-eQTL at the tagging SNP (1001T, n=471)")
+    if with_eqtl:
+        ax.set_ylabel("$-\\log_{10}p$  cis-eQTL")
+        TH.panel(ax, "E", "expression — cis-eQTL at the tagging SNP (1001T, n=471)")
 
     # ---- C: TFBS turnover ----------------------------------------------------------------
     ax = ax_tfbs
@@ -336,7 +501,7 @@ def plot_locus(sym, pad=8000):
         y = -(j % 2) * 0.45
         ax.add_patch(Rectangle((g.start, y - 0.10), g.end - g.start, 0.20,
                                color="#B0B0B0", alpha=1.0, lw=0, zorder=2))
-        nm = g.name if isinstance(g.name, str) and g.name else g.gene
+        nm = SYMS.get(g.gene) or (g.name if isinstance(g.name, str) and g.name else g.gene)
         ax.annotate(f"{nm} {'▶' if g.strand == '+' else '◀'}",
                     ((max(g.start, lo) + min(g.end, hi)) / 2, y + 0.16),
                     ha="center", fontsize=7.5,
@@ -346,20 +511,23 @@ def plot_locus(sym, pad=8000):
     TH.panel(ax, "A", "genes", y=1.30)
     # the shared x-axis is labelled on the BOTTOM panel (now the eQTL one), not here --
     # leaving it on the gene panel printed the axis title between panels A and B
-    ax_eqtl.set_xlabel(f"{ch} position (bp)")
-    ax_eqtl.set_xlim(lo, hi)
-    ax_eqtl.ticklabel_format(axis="x", style="plain", useOffset=False)
+    ax_bottom.set_xlabel(f"{ch} position (bp)")
+    ax_bottom.set_xlim(lo, hi)
+    ax_bottom.ticklabel_format(axis="x", style="plain", useOffset=False)
 
     os.makedirs(FIG, exist_ok=True)
     for ext in ("png", "pdf"):
-        fig.savefig(f"{FIG}/atac_locus_{sym}.{ext}", dpi=170, bbox_inches="tight")
+        fig.savefig(f"{FIG}/atac_locus_{sym}{suffix}.{ext}", dpi=170, bbox_inches="tight")
     plt.close(fig)
     # `ov` / `whole` are the quantitative ATAC result -- how much accessible sequence the
     # REF footprint covers and how many peaks it removes outright. The panel deliberately
     # carries no caption, so they are reported here; without this line the number exists
     # nowhere (GPX6: 272 bp across 2 peaks, 1 removed outright).
-    print(f"  wrote {FIG}/atac_locus_{sym}.png   "
-          f"(deletion {vpos:,}-{vend:,}, {rl-1:,} bp; "
+    print(f"  wrote {FIG}/atac_locus_{sym}{suffix}.png   "
+          # an insertion has a point REF footprint, so "deletion ...-..., 0 bp" was both the
+          # wrong word and the wrong number for SKS3-type candidates
+          f"({kindw} at {vpos:,}, {dsize:,} bp" + (f", REF {vpos:,}-{vend:,}" if kind == "del"
+                                                   else "") + "; "
           f"ATAC {ov:,} bp of peak across {len(hit)}, {whole} removed outright, "
           f"up to {ntis}/4 tissues; "
           f"TFBS lost {int((T.effect=='LOST').sum()) if len(T) else 0} / "
@@ -434,7 +602,18 @@ def plot_enrichment():
 
 
 if __name__ == "__main__":
-    syms = sys.argv[1:] or ["GPX6"]
-    for s in syms:
-        plot_locus(s)
-    plot_enrichment()
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("syms", nargs="*", default=["GPX6"])
+    ap.add_argument("--pad", type=int, default=8000, help="bp each side of the variant")
+    ap.add_argument("--no-expr", action="store_true", help="drop the cis-eQTL panel")
+    ap.add_argument("--compact", action="store_true", help="smaller, narrower figure")
+    ap.add_argument("--suffix", default="", help="appended to the output file name")
+    ap.add_argument("--no-vartag", action="store_true",
+                    help="drop the 'N bp deletion / REF -> ALT' line above the gene track")
+    ap.add_argument("--no-enrichment", action="store_true")
+    a = ap.parse_args()
+    for s in a.syms:
+        plot_locus(s, pad=a.pad, with_eqtl=not a.no_expr, compact=a.compact,
+                   suffix=a.suffix, vartag=not a.no_vartag)
+    if not a.no_enrichment:
+        plot_enrichment()

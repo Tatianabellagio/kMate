@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 """Standalone dot-grid of the significant (SV / small-indel / non-SNP) blocks across the
-20 climate axes — LFMM, raw (before-WZA), clq0.9 TILING partition.
+20 climate axes — LFMM, raw (before-WZA), clq0.9 TILING partition. Input: production
+`results/multiaxis/tile_cr50` (MAF >= 0.05 + founder call rate >= 0.50; sv/nonsnp per
+Truvari event; unmerged tiling blocks).
 
 Lifted OUT of `raw_manhattan_snp_vs_{cls}_lfmm_tile.ipynb` so the dot plot can be
-regenerated on its own: that notebook is slow because it renders 20 dense per-axis
+regenerated on its own: that notebook is slow because it renders 22 dense per-axis
 mirror Manhattans first. Here we skip all Manhattan rendering and go straight to the grid.
 
 Shows **ALL** clq0.9 tiling blocks whose LEAD (min-p) class record clears Bonferroni on
@@ -18,8 +20,9 @@ Additions kept from before:
   * a right-hand panel of the variant's indel/SV **size** (|alt_len-ref_len|, bp),
     with rows ordered by that size (size per gene = its strongest-signal lead record).
 
-Emits twin notebooks (same code, class swapped):
+Emits twin notebooks (same code, class swapped) into <tree>/notebooks/:
   newpeak_dotgrid_lfmm_nonsnp.ipynb  · _sv.ipynb  · _smallindel.ipynb
+Kept on its own 20-axis set (bio1-19 + pc1); the parent Manhattan notebook now runs 22.
 """
 import sys
 import nbformat as nbf
@@ -39,9 +42,16 @@ def build(cls, title_word):
     md(f"""# Significant {title_word} blocks across the 20 climate axes — LFMM, raw, clq0.9 tiling
 
 Standalone dot grid, lifted out of `raw_manhattan_snp_vs_{cls}_lfmm_tile.ipynb` (which is
-slow — it renders 20 dense mirror Manhattans first). Shows **ALL** clq0.9 **tiling** blocks
-whose LEAD (min-p) {cls} record clears per-class Bonferroni (0.05/n) on >=1 climate axis
-(bio1-19 + pc1) — gen9, MAF>0.05, `wza_in_clq09_tile` LFMM p.
+slow — it renders dense per-axis mirror Manhattans first). Shows **ALL** clq0.9 **tiling**
+blocks whose LEAD (min-p) {cls} record clears per-class Bonferroni (0.05/n) on >=1 climate
+axis (bio1-19 + pc1; this grid keeps the original 20 axes, pc2/pc3 are not shown).
+
+Input: production `results/multiaxis/tile_cr50` (2026-09-30 re-run) — LFMM K=16, gen9, raw p,
+MAF >= 0.05 **and** founder call rate >= 0.50. SNP and small-indel are tested per record; SV and
+pooled non-SNP per **Truvari event** (one unit per SV event, its pos/size taken from the event's
+representative allele). Blocks are the clq r2=0.9 tiling **without** `merge_small_blocks`, so a
+block id names the same LD interval for every class and "SNP also significant in the same block"
+compares like with like.
 
 Each (gene, axis) dot is **marked by whether the co-located SNP is also significant**:
 * **black-edged, solid** = **non-SNP-only** — no significant SNP in that block ("what did
@@ -49,15 +59,26 @@ Each (gene, axis) dot is **marked by whether the co-located SNP is also signific
 * **white-edged, faded** = **SNP also significant** in the same block (shown for context).
 
 Dot **size** = -log10 p ({cls} lead); **color** = functional category; rows ordered by indel/SV
-size (right panel). **Raw, uncalibrated p — inflation acknowledged, kept deliberately** (this is
+size (right panel; |alt_len - ref_len| of the lead record, or of the event's representative allele). **Raw, uncalibrated p — inflation acknowledged, kept deliberately** (this is
 the raw-LFMM working signal; see `nonsnp_block_characterization.ipynb` for the caveats).""")
 
     co(f"""import os, sys
 import numpy as np, pandas as pd, matplotlib.pyplot as plt
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+# NB: `__file__` is NOT defined in a Jupyter kernel; walk up from cwd to the tree root.
+def _tree_root(start=None):
+    d = os.path.abspath(start or os.getcwd())
+    while d != os.path.dirname(d):
+        if os.path.basename(d) == "grenenet_selection" and os.path.exists(os.path.join(d, "lib.py")):
+            return d
+        d = os.path.dirname(d)
+    raise RuntimeError("could not locate the grenenet_selection tree root from " + os.getcwd())
+sys.path.insert(0, _tree_root())
 import lib
 GEA = lib.GEA
-WZAIN = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+# 2026-09-30 production re-run: MAF 0.05 + founder call rate 0.50, SV/non-SNP on truvari
+# EVENTS, unmerged tiling blocks. Previous input (records, no call-rate floor, per-class
+# merged blocks) is _superseded_pre_cr50/wza_in_clq09_tile.
+WZAIN = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50"
 AXES = [f"bio{{i}}" for i in range(1, 20)] + ["pc1"]
 MODEL = "{MODEL}"
 CLS = "{cls}"
@@ -163,7 +184,7 @@ def pcat(g):
     return c[0] if c else "unclassified"
 
 # show ALL gene-bearing significant genes (no recurrence subsampling). The figure is
-# very tall for nonsnp/smallindel (~1,880 rows); ordered by size, NOT genomically.
+# very tall for nonsnp/smallindel (one row per gene); ordered by size, NOT genomically.
 keep = rep.index
 gord = rep.loc[keep].sort_values(["size", "n_axes"]).index.tolist()          # small at bottom
 thr = 1
@@ -223,7 +244,8 @@ print(f"dot grid: {len(gord)} genes = ALL gene-bearing significant {CLS} blocks 
       f"black-edged dot = non-SNP-only); {_nonly} of them non-SNP-only on >=1 axis.")''')
 
     nb = new_notebook(); nb["cells"] = C
-    out = os.path.join(HERE, f"newpeak_dotgrid_lfmm_{cls}.ipynb")
+    # rendered notebooks live in the tree-level notebooks/, not beside their builder
+    out = os.path.normpath(os.path.join(HERE, "..", "..", "..", "notebooks", f"newpeak_dotgrid_lfmm_{cls}.ipynb"))
     ep = ExecutePreprocessor(timeout=3600, kernel_name="basic", startup_timeout=180)
     ep.preprocess(nb, {"metadata": {"path": HERE}})
     with open(out, "w") as f:

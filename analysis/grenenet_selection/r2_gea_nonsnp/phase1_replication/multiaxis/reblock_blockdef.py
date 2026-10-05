@@ -39,7 +39,7 @@ MA = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
 # backwards compatibility; pass `--models lfmm` for anything current.
 SRC = {
     "kendall":  ("kendall/kendall_{cls}_gen9_{axis}.csv", "pval"),          # RETIRED
-    "lfmm":     ("lfmm/lfmm_{cls}_gen9_{axis}.csv", "pval"),                # live
+    "lfmm":     ("_superseded_pre_cr50/lfmm/lfmm_{cls}_gen9_{axis}.csv", "pval"),  # pre-floor run (superseded 2026-10-04 by tile_cr50)
     "binomial": ("quasibinom/quasibinom_lf16_{cls}_gen9_{axis}.csv", "pval_quasi"),  # RETIRED
 }
 
@@ -88,7 +88,7 @@ def main():
     ap.add_argument("--outdir", default=None)
     args = ap.parse_args()
     tag = args.blockdef.replace('.', '') + ("_tile" if args.how == "tiling" else "")
-    outdir = args.outdir or f"{MA}/wza_in_{tag}"
+    outdir = args.outdir or f"{MA}/_superseded_pre_cr50/wza_in_{tag}"   # pre-floor run; production blocks come from reblock_cr50.py
     for m in args.models:
         reblock_one(m, args.cls, args.axis, args.blockdef, outdir, args.how)
 

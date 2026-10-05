@@ -133,7 +133,9 @@ AT3G22142. Rule: robustness tracks recurrence + founder-frequency + gene-LD, NOT
 - Founder home bio1 (per-accession WorldClim origin):
   `/global/scratch/users/tbellg/gea_grene-net/key_files/1001g_regmap_grenet_ecotype_info_corrected_bioclim_2024May16.csv`
   (`ecotypeid`, `bio1`…). NB: personal-scratch path, not the shared project tree.
-- GEA per-variant LFMM p: `phase1_replication/results/multiaxis/wza_in_clq09_tile/lfmm_{snp,smallindel,sv}_gen9_bio1.csv`.
+- GEA per-variant LFMM p: originally `phase1_replication/results/multiaxis/wza_in_clq09_tile/lfmm_{snp,smallindel,sv}_gen9_bio1.csv`
+  (pre-call-rate-floor run; moved 2026-10-04 to `results/multiaxis/_superseded_pre_cr50/`). The scripts now read the
+  production `results/multiaxis/tile_cr50/` (SVs as Truvari events, call rate ≥ 0.50), so numbers above may differ from a re-run.
 - Δp (hot/cold group-mean AFs): `group_means.npz`.
 - Gene models: `lib.load_genes()` (TAIR10). Gene annotation: `phase1_replication/annotate_genes_tair_uniprot.py`.
 

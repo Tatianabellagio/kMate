@@ -4,11 +4,12 @@ partition (companion/successor to `nonsnp_peak_dotgrid_lfmm.ipynb`, which used t
 STRICT clq0.9 partition -- production, pre-2026-07-27 -- and dropped ~40% of records
 in inter-block gaps).
 
-Same raw (before-WZA) per-record LFMM K=16 p-values, gen9, MAF>0.05, but assigned to
-blocks via `reblock_blockdef.py --how tiling` (HapFM's gap-free rule, 0% records
-dropped): `wza_in_clq09_tile`. This partition is unaffected by the WZA regime changes
-(cap/SD-fit/mean-fit) -- block assignment and per-record p-values don't depend on any
-of that -- so it's safe to use even while the post-WZA a09t arm is mid-rebuild.
+Raw (before-WZA) LFMM K=16 p-values, gen9, from the production table
+`results/multiaxis/tile_cr50` (2026-09-30 re-run): MAF >= 0.05 + founder call rate >= 0.50;
+snp/smallindel per record, sv/nonsnp per Truvari event; blocks = clq0.9 tiling (gap-free,
+0% dropped) WITHOUT merge_small_blocks, so block ids are comparable across classes
+(reblock_cr50.py). The previous input was _superseded_pre_cr50/wza_in_clq09_tile (records,
+no call-rate floor, per-class merged blocks).
 
 Sections:
   1. Peak-count summary -- Bonferroni/FDR per class x climate axis (raw, before WZA).
@@ -19,6 +20,7 @@ Sections:
      description, functional-category tags (heat/drought/cold/flowering keyword scheme,
      same as `candidate_genes_corrected.py`).
 Self-locating paths, no chart titles per repo convention. Runs in `basic` env.
+Emits <tree>/notebooks/nonsnp_peak_dotgrid_lfmm_tile.ipynb.
 """
 import os
 import nbformat as nbf
@@ -37,24 +39,45 @@ partition (production baseline, interval containment) — that partition **disca
 40.7% of non-SNP records** (and 39.7% of SNP, 49.3% of SV) that fall in inter-block
 gaps, since clq blocks are LD islands that don't tile the genome. This version uses
 the **tiling** reblocking (`reblock_blockdef.py --how tiling`, HapFM's gap-free rule):
-every record keeps a block, same LD boundaries. **Raw** per-record LFMM K=16 p-values
-(gen9, MAF>0.05) — which is now the production track: WZA block aggregation was retired
+every record keeps a block, same LD boundaries. **Raw** LFMM K=16 p-values (gen9) — which
+is now the production track: WZA block aggregation was retired
 on 2026-08-25 (see `archive_gea/README.md`; it is ~170x anti-conservative on this data
 and honest recalibration collapses ~7,200 block-hits to 6). Nothing in this notebook
 ever depended on the WZA correction regime, so it is unaffected by that retirement.
 
-**Raw p is uncalibrated.** Genomic inflation is lambda ~1.72 median across classes and
-up to 2.67 (bio15); 19/20 of the original axes exceed 1. Read every count here next to
-lambda, and prefer Bonferroni — BH on raw p calls 40-60% of the genome per axis.""")
+**Input: production `results/multiaxis/tile_cr50`** (2026-09-30 re-run): MAF >= 0.05 **and**
+founder call rate >= 0.50. SNP and small-indel are tested **per record**; SV and pooled
+non-SNP **per Truvari event** (one unit per SV event; its pos / ref_len / alt_len are the
+event's representative allele). Blocks are the clq r2=0.9 tiling **without**
+`merge_small_blocks` (the old per-class merge mis-keyed ~27% of SV records), so a block id
+names the same LD interval in every class and "no SNP significant in the same block" is a
+like-for-like comparison. Bonferroni = 0.05 / n tested rows, per class x axis.
+
+**Raw p is uncalibrated** (never GIF-corrected, project rule). Section 1 prints the genomic
+inflation lambda for every class x axis next to the counts — read every count next to it,
+and prefer Bonferroni: BH on raw p calls tens of thousands of records on the most inflated
+axes (FDR table below), and at block level it covers a large part of the testable genome
+(`raw_block_significance_lfmm_tile_cr50.csv`).""")
 
 co('''
 import os, sys
 import numpy as np, pandas as pd, matplotlib as mpl, matplotlib.pyplot as plt
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+from scipy import stats
+# NB: `__file__` is NOT defined in a Jupyter kernel; walk up from cwd to the tree root.
+def _tree_root(start=None):
+    d = os.path.abspath(start or os.getcwd())
+    while d != os.path.dirname(d):
+        if os.path.basename(d) == "grenenet_selection" and os.path.exists(os.path.join(d, "lib.py")):
+            return d
+        d = os.path.dirname(d)
+    raise RuntimeError("could not locate the grenenet_selection tree root from " + os.getcwd())
+sys.path.insert(0, _tree_root())
 import lib
 GEA = lib.GEA
 MA = f"{GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis"
-IND = f"{MA}/wza_in_clq09_tile"
+# 2026-09-30 production re-run (MAF 0.05 + founder call rate 0.50, SV/non-SNP on truvari
+# EVENTS, unmerged tiling blocks). Old input: _superseded_pre_cr50/wza_in_clq09_tile.
+IND = f"{MA}/tile_cr50"
 OUTDIR = MA
 AXES = [f"bio{i}" for i in range(1, 20)] + ["pc1"]
 CLASSES = ["snp", "sv", "smallindel", "nonsnp"]
@@ -92,7 +115,10 @@ def genes_on(block):
 print(f"loaded: {len(SPANS):,} tiling blocks, {len(GENES):,} genes")
 ''')
 
-md("""## 1. Peak-count summary — Bonferroni/FDR per class x climate axis (raw, before WZA)""")
+md("""## 1. Peak-count summary — Bonferroni/FDR per class x climate axis (raw, before WZA)
+
+Counts are rows (records for snp/smallindel, events for sv/nonsnp), not blocks. `lam` = genomic
+inflation lambda of that class x axis (median chi2 / 0.455) — stated as a caveat, never applied.""")
 
 co('''
 def load_recs(cls, axis):
@@ -106,7 +132,8 @@ for cls in CLASSES:
         p = d.pval.to_numpy(float); p = p[np.isfinite(p)]; n = len(p)
         nbonf = int((p < 0.05 / n).sum()) if n else 0
         nfdr = int((bh(p) < 0.05).sum()) if n else 0
-        rows.append(dict(cls=cls, axis=axis, n=n, nbonf=nbonf, nfdr=nfdr))
+        lam = float(np.median(stats.chi2.isf(np.clip(p, 1e-300, 1), 1)) / stats.chi2.isf(0.5, 1)) if n else np.nan
+        rows.append(dict(cls=cls, axis=axis, n=n, nbonf=nbonf, nfdr=nfdr, lam=round(lam, 3)))
 R = pd.DataFrame(rows)
 R.to_csv(f"{OUTDIR}/lfmm_raw_a09t_perrecord.csv", index=False)
 
@@ -116,6 +143,12 @@ print()
 for metric, lab in [("nbonf", "Bonferroni"), ("nfdr", "BH-FDR q<0.05")]:
     piv = R.pivot_table(index="axis", columns="cls", values=metric, fill_value=0).reindex(index=AXES, columns=CLASSES)
     print(f"--- {lab}, per axis ---"); print(piv.astype(int)); print()
+piv = R.pivot_table(index="axis", columns="cls", values="lam").reindex(index=AXES, columns=CLASSES)
+print("--- genomic inflation lambda, per axis (caveat only; p stays raw) ---"); print(piv.round(2)); print()
+print(f"lambda: median {R.lam.median():.2f}, max {R.lam.max():.2f} ({R.loc[R.lam.idxmax(), 'cls']} "
+      f"{R.loc[R.lam.idxmax(), 'axis']}); class x axis cells with lambda > 1: {(R.lam > 1).sum()}/{len(R)}")
+print("BH-FDR: largest per-axis share of tested rows, by class:",
+      (R.nfdr / R.n).groupby(R.cls).max().reindex(CLASSES).round(3).to_dict())
 ''')
 
 md(r"""## 2. Dot grid — non-SNP peaks x climate axes (SNP-tagging view)
@@ -355,7 +388,8 @@ for ax, tier in zip(axes, ["bonf", "fdr"]):
     GH = gene_tables[tier].drop_duplicates("gene")
     counts = GH["category"].fillna("").replace("", "other").value_counts()
     counts = counts.reindex([c for c in ["heat", "drought_ABA", "cold", "flower_circ", "other"] if c in counts.index])
-    ax.bar(counts.index, counts.values, color=["#C0392B", "#588157", "#3A5A98", "#8E5A9E", "#ADB5BD"][:len(counts)])
+    CATC = {"heat": "#C0392B", "drought_ABA": "#588157", "cold": "#3A5A98", "flower_circ": "#8E5A9E", "other": "#ADB5BD"}
+    ax.bar(counts.index, counts.values, color=[CATC[c] for c in counts.index])   # colour by name, not position
     ax.tick_params(axis="x", labelrotation=30, labelsize=7)
     ax.annotate(f"{tier} tier, non-SNP-only blocks", (0.0, 1.02), xycoords="axes fraction", fontsize=8, va="bottom")
     for sp in ["top", "right"]:
@@ -365,22 +399,25 @@ fig.tight_layout(); plt.show()
 
 md(r"""## Takeaway
 
-On the **clq0.9-tiling** partition (no records dropped to inter-block gaps), raw
-per-record LFMM before any WZA aggregation shows a real class-specific signal: SV and
-especially **smallindel** variants mark hundreds of blocks that SNPs never flag at
-Bonferroni, and thousands at FDR, across the 20 climate axes. The non-SNP-only gene
-set recurs in coherent functional families rather than scattering randomly — multiple
-**heat-shock transcription factors** (HSFA1E/A3/A6A/A7A/A8/C1), **PFT1** (phytochrome/
-flowering-time regulator, hit on 10/20 axes — the single most recurrent non-SNP-only
-gene), the dehydrin **ERD14**, and several **COR** cold-regulated genes. Almost all of
-this is driven by **smallindel**, not SV. Caveats: raw p is uncalibrated (no GIF); "not
-marked by SNP" only means no significant SNP record fell in the *same tiling block* —
-a coarser or finer partition could reassign genes between blocks; and this list hasn't
-been cross-checked against the strict-partition candidate list in
-`candidate_genes_corrected.csv` (different block boundaries).""")
+On the **clq0.9-tiling** partition (no records dropped to inter-block gaps; unmerged, so
+block ids line up across classes), raw LFMM before any WZA aggregation has SV events and
+especially **small-indel** records marking hundreds of blocks that SNPs never flag at
+Bonferroni, and thousands at FDR, across the 20 climate axes (counts printed in section 3).
+Small indels carry most of it — the large majority of gene-bearing non-SNP-only blocks at
+Bonferroni and nearly all at FDR are small-indel blocks (`classes` column). Stress/flowering-
+tagged genes are a small minority of the list (category tables above) and include
+heat-shock / chaperone genes, dehydration-responsive genes and, at the FDR tier only, the
+dehydrin **ERD14**, **PFT1** and a few COR / HSF genes; no enrichment test is run here, so
+read this as a candidate list, not as evidence of functional coherence. Caveats: raw p is
+uncalibrated (lambda per axis in section 1, never applied); "not marked by SNP" only means
+no significant SNP record fell in the *same tiling block* — a coarser or finer partition
+could reassign genes between blocks; and this list hasn't been cross-checked against the
+strict-partition candidate list in `candidate_genes_corrected.csv` (different block
+boundaries).""")
 
 nb = new_notebook(); nb["cells"] = C
-out = os.path.join(HERE, "nonsnp_peak_dotgrid_lfmm_tile.ipynb")
+# rendered notebooks live in the tree-level notebooks/, not beside their builder
+out = os.path.normpath(os.path.join(HERE, "..", "..", "..", "notebooks", "nonsnp_peak_dotgrid_lfmm_tile.ipynb"))
 ep = ExecutePreprocessor(timeout=3600, kernel_name="basic", startup_timeout=180)
 ep.preprocess(nb, {"metadata": {"path": HERE}})
 with open(out, "w") as f:

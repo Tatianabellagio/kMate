@@ -3,7 +3,7 @@
 clq0.9 TILING partition (successor to `raw_manhattan_snp_vs_{cls}_lfmm.ipynb`, which
 used the STRICT clq0.9 partition and dropped 40-49% of records to inter-block gaps).
 
-Same per-record `wza_in_clq09_tile` p-values (not the WZA block aggregate), same
+Production per-record / per-event `tile_cr50` p-values (MAF >= 0.05, call rate >= 0.50, SVs as Truvari events), same
 "SNP up / class down" mirror-Manhattan + QQ style as the persite notebooks: dense
 per-variant scatter, dashed Bonferroni lines, vertical dotted lines + gene labels at
 class-only Bonferroni new peaks. "New peak" = a tiling block whose LEAD (min-p) record
@@ -35,8 +35,8 @@ partition (interval containment) — that partition drops 39.7% of SNP / 49.3% o
 **tiling** reblocking (`reblock_blockdef.py --how tiling`, HapFM's gap-free rule): every
 record keeps a block, same LD boundaries, **0% dropped**.
 
-Per-record `wza_in_clq09_tile` p-values (the input WZA aggregates, not the block-level
-output) — one figure per climate axis (bio1-19 + pc1-3), LFMM only. SNP up, {cls} down.
+Production `tile_cr50` p-values (one row per record; SVs one row per Truvari event; MAF ≥ 0.05,
+call rate ≥ 0.50) — one figure per climate axis (bio1-19 + pc1-3), LFMM only. SNP up, {cls} down.
 Dashed = per-class Bonferroni (0.05/n records). Vertical dotted line + gene label = a
 tiling block whose lead {cls} record is Bonferroni-sig while its lead SNP record in the
 same block is not ("new" peak, first-pass — not yet checked for SNP-tagging).
@@ -65,7 +65,10 @@ def _tree_root(start=None):
 sys.path.insert(0, _tree_root())
 import lib
 GEA = lib.GEA
-WZAIN = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+# 2026-09-30 re-run: MAF 0.05 + founder call rate 0.50, SV/non-SNP on truvari EVENTS.
+# Previous production dir (records, no call-rate floor) was wza_in_clq09_tile; its
+# notebooks are archived under notebooks/old_lfmm/.
+WZAIN = f"{{GEA}}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50"
 AXES = [f"bio{{i}}" for i in range(1, 20)] + ["pc1", "pc2", "pc3"]
 MODEL = "{MODEL}"
 CLS = "{cls}"
@@ -200,9 +203,8 @@ for axis in AXES:
 Union of every gene-bearing new peak found above, deduplicated per gene (kept: the
 axis with the strongest {cls} signal), with Ensembl Plants symbol/description and a
 recurrence count (how many of the 22 axes flag that gene's block). **Raw, uncalibrated
-p — no GIF correction here** (see the `gif_manhattan_snp_vs_{cls}_lfmm_tile.ipynb` twin
-for the inflation-corrected version; the session finding there is that this raw list
-collapses almost entirely once genomic inflation is accounted for).""")
+p — no GIF correction** (project rule: lambda is stated, never applied). Treat this as a
+candidate net that needs independent evidence, not a calibrated hit list.""")
 
     co('''import json, time, urllib.request
 
@@ -256,8 +258,7 @@ stomata) · `light` (photomorphogenesis, UV, shade avoidance, photosynthesis) ·
 (ROS, abiotic/general stress response) · `defense` (immunity, pathogen, SA/JA, R-genes) ·
 `calcium` (Ca2+/calmodulin/CDPK signalling). A gene can carry several. `categories` empty =
 none of the above matched its curated protein name + UniProt FUNCTION/keywords + GO.
-Written to `raw_manhattan_newpeak_genes_{cls}_tile_annotated.csv`. **Raw, uncalibrated p** —
-see the GIF twin for the inflation-corrected view.""")
+Written to `raw_manhattan_newpeak_genes_{cls}_tile_annotated.csv`. **Raw, uncalibrated p.**""")
 
     co('''import importlib.util as _ilu
 

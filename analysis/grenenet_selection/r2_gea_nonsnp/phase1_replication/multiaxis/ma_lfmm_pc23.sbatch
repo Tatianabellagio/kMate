@@ -29,7 +29,7 @@ cd /global/scratch/users/tbellg/kmate
 PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
-LDIR=$PR/results/multiaxis/lfmm
+LDIR=$PR/results/multiaxis/_superseded_pre_cr50/lfmm
 
 AXES=(pc2 pc3)
 CLS=(snp sv smallindel nonsnp)
@@ -51,7 +51,7 @@ $PY - "$C" "$AXIS" <<'EOF'
 import sys, pandas as pd
 cls, axis = sys.argv[1], sys.argv[2]
 CMDIR="analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices"
-LDIR="analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/lfmm"
+LDIR="analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/_superseded_pre_cr50/lfmm"
 rec=pd.read_csv(f"{CMDIR}/{cls}_gen9.records.csv")
 pv=pd.read_csv(f"{LDIR}/lfmm_{cls}_gen9_{axis}_calibp.csv")["pval"].to_numpy()
 assert len(pv)==len(rec),(len(pv),len(rec))
