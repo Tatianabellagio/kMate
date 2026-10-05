@@ -82,7 +82,7 @@ Used when `--unit bp`, `ld` or `tsv`; ignored for `--unit chrom`.
 
 | option | default | meaning |
 |---|---|---|
-| `--vcf` | **required** | panel VCF |
+| `--vcf` | **required** | the **graph** VCF (multi-allelic, before `decompose`) |
 | `--ref` | **required** | reference FASTA, indexed |
 | `--out` | **required** | output prefix; writes `<prefix>_<CHROM>_kmers.tsv.gz` |
 | `-k`, `--kmer-size` | `31` | k-mer length |
@@ -104,7 +104,7 @@ Used when `--unit bp`, `ld` or `tsv`; ignored for `--unit chrom`.
 | option | default | meaning |
 |---|---|---|
 | `--kmers` | **required** | `kmers.tsv.gz` from `build-index` |
-| `--vcf` | **required** | the same panel VCF |
+| `--vcf` | **required** | the panel VCF (decomposed, biallelic) |
 | `--ref` | **required** | reference FASTA. IUPAC codes are normalised to N internally |
 | `--chrom` | **required** | chromosome to build |
 | `--out` | **required** | output prefix |

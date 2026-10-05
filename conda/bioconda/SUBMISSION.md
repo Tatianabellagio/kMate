@@ -31,8 +31,9 @@ Before uploading, install the sdist into a pristine env holding only the recipe'
 deps and run the offline checks:
 
 ```bash
-mamba create -p /tmp/kmate_rel -c conda-forge -c bioconda python numpy scipy pysam \
-    kmer-jellyfish samtools bcftools pip
+mamba create -p /tmp/kmate_rel -c conda-forge -c bioconda "python>=3.9,<3.13" numpy scipy \
+    pysam "kmer-jellyfish >=2.3.1 py*" samtools bcftools pip
+/tmp/kmate_rel/bin/python -c "import dna_jellyfish"           # build-index needs it
 /tmp/kmate_rel/bin/pip install --no-deps dist/kmate-X.Y.Z.tar.gz
 PATH=/tmp/kmate_rel/bin:$PATH kmate selftest                  # must PASS
 PATH=/tmp/kmate_rel/bin:$PATH python tests/test_haploidize.py

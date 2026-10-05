@@ -34,20 +34,22 @@ the cold-regulated *COR413-PM2* gene, rising in cold gardens and falling in warm
 ## Install
 
 ```bash
-mamba create -n kmate -c conda-forge -c bioconda kmate
+mamba create -n kmate -c conda-forge -c bioconda kmate "python<3.13"
 mamba activate kmate
 kmate selftest
 ```
 
-This installs kMate and the programs it calls, **`kmer-jellyfish`** (the k-mer counter)
-and `samtools`.
+This installs kMate and the programs it calls: **`kmer-jellyfish`** (the k-mer counter),
+`samtools` and `bcftools`. Keep Python below 3.13: `kmer-jellyfish` ships its Python
+bindings, which `kmate build-index` needs, only for 3.9–3.12.
 
 ### From source
 
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
 cd kMate
-mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam kmer-jellyfish samtools
+mamba create -n kmate -c conda-forge -c bioconda "python>=3.9,<3.13" numpy scipy pysam \
+    "kmer-jellyfish >=2.3.1 py*" samtools bcftools
 mamba activate kmate
 pip install -e .
 kmate selftest
@@ -68,10 +70,12 @@ them.
 
 ### 1. Build the panel
 
-One VCF of your founder haplotypes becomes two matrices, reused for every pool:
+From the pangenome of your founders' assemblies you get two VCFs: the graph VCF
+(`cactus-pangenome` output, multi-allelic) and the panel VCF (`kmate decompose` output,
+biallelic). The k-mer index comes from the graph VCF; both matrices from the panel VCF:
 
 ```bash
-kmate build-index   --vcf panel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
+kmate build-index   --vcf graph.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
 
 kmate build-kmer-pa --kmers index/ours_Chr1_kmers.tsv.gz \
                     --vcf panel.vcf.gz --ref REF.fa --chrom Chr1 \

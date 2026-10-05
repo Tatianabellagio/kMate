@@ -18,6 +18,21 @@ kMate 0.1.0 on bioconda depended on the wrong one; use 0.1.2 or newer (see
 
 ---
 
+### `ModuleNotFoundError: No module named 'dna_jellyfish'`
+
+`kmate build-index` uses jellyfish's Python bindings, and your environment's Python has
+none. bioconda's `kmer-jellyfish` ships bindings only for Python 3.9–3.12; with a newer
+Python (a fresh solve picks the newest) it installs an old build whose bindings are for
+3.10 only. Recreate the environment with Python capped:
+
+```bash
+mamba create -n kmate -c conda-forge -c bioconda kmate "python<3.13"
+```
+
+Check with `python -c "import dna_jellyfish"`.
+
+---
+
 ### `Panel VCF must be haploid (got len(GT)=2 ...)`
 
 Your VCF has diploid genotypes. A kMate panel column is a *haplotype* (see

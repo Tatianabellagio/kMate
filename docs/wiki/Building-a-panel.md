@@ -4,8 +4,9 @@ Do this **once** per founder-haplotype set. Afterwards you reuse the matrices fo
 pool.
 
 ```
-founder assemblies ──▶ pangenome ──▶ panel VCF ──▶ k-mer index ──▶ kmer_pa
-                                         └──────────────────────▶ var_pa + var_called + meta
+founder assemblies ──▶ graph VCF ──────────────────▶ k-mer index ──┐
+                           └──decompose──▶ panel VCF ──────────────┴──▶ kmer_pa
+                                               └──────────────────────▶ var_pa + var_called + meta
 ```
 
 Step 1 is `cactus-pangenome`; steps 2–4 are `kmate` commands, run **per chromosome**.
@@ -88,8 +89,12 @@ Liao et al. (2023) *Nature* 617:312–324.
 ## Step 3: build the k-mer index
 
 ```bash
-kmate build-index --vcf panel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
+kmate build-index --vcf out/mypanel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
 ```
+
+This takes the **graph** VCF from Step 1, not the decomposed one: the index is built per
+graph bubble, and a decomposed VCF splits bubbles into overlapping records, which
+`build-index` rejects.
 
 Produces `index/ours_<CHR>_kmers.tsv.gz`: the k-mers that identify each bubble.
 

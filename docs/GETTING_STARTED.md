@@ -13,7 +13,7 @@ production vs deprecated see [`PIPELINE_STATE.md`](PIPELINE_STATE.md) §0.
 ## 1. Install
 
 ```bash
-mamba create -n kmate -c conda-forge -c bioconda kmate
+mamba create -n kmate -c conda-forge -c bioconda kmate "python<3.13"
 mamba activate kmate
 kmate selftest          # must print PASS before you go further
 ```
