@@ -16,15 +16,16 @@ Built once per founder set, then reused for every sample.
 | `var_pa_<CHR>.var_called.npz` | founder × variant | which founders have a genotype call (not `./.`) | same |
 | `var_pa_<CHR>.meta.npz` | — | per-record `chrom`, `pos`, `ref`, `alt` | same |
 
-Both matrices are derived from **the same panel VCF**. Build them from different
-VCFs and the EM and the projection disagree silently.
+Both matrices are derived from **the same panel VCF** (the decomposed, biallelic one).
+Build them from different VCFs and the EM and the projection disagree silently. The
+k-mer index is the exception: it comes from the **graph VCF** the panel VCF was
+decomposed from, because it is built per graph bubble.
 
 Producing them is three steps:
 
 ```
-panel VCF ──(1) kmate build-index ────▶ k-mer index ──┐
-    │                                                ├──(2) kmate build-kmer-pa ──▶ kmer_pa
-    └────────────────────────────────────────────────┘
+graph VCF ──(1) kmate build-index ───▶ k-mer index ──┐
+panel VCF ───────────────────────────────────────────┴──(2) kmate build-kmer-pa ──▶ kmer_pa
     └──(3) kmate build-var-pa ──▶ var_pa + var_called + meta
 ```
 
@@ -167,7 +168,7 @@ kmate decompose \
 `annotate_vcf.py` reads the whole GFA and is the slow step (on the 135-assembly
 *Arabidopsis* graph: ~30 min and ~20 GB for Chr1). Run it per chromosome by subsetting
 the VCF first (`bcftools view -r Chr1`); the GFA can stay whole. The output is sorted
-and indexed, ready for `build-index` / `build-var-pa`.
+and indexed, ready for `build-kmer-pa` / `build-var-pa`.
 
 For genotyped founders `--haploidize` makes the diploid genotypes haploid, which the
 builders require — **a kMate panel column is a haplotype**, because `build_kmer_pa` reconstructs exactly one sequence per
@@ -225,7 +226,7 @@ Per chromosome — loop or use a job array. `$CHR` is the VCF's contig name.
 
 ```bash
 kmate build-index \
-    --vcf  panel.vcf.gz \
+    --vcf  out/mypanel.vcf.gz \
     --ref  REF.fa \
     --out  index/ours \
     -k 31 --haploid \
@@ -235,7 +236,9 @@ kmate build-index \
 Writes `index/ours_<CHR>_kmers.tsv.gz`: one row per bubble with its unique k-mers.
 Reproduces `PanGenie-index`'s output; full algorithm in
 [`../panel/pangenie_index/kmer_index_construction.md`](../panel/pangenie_index/kmer_index_construction.md).
-`--haploid` is required for haploid GTs.
+`--haploid` is required for haploid GTs. Give it the **graph** VCF, not the decomposed
+one: decomposition splits a bubble into overlapping records, which `build-index` rejects
+(`invalid coordinates: start > stop`).
 
 ### Step 2 — `kmer_pa`
 

@@ -72,7 +72,7 @@ haplotypes carrying it. One pass covers every SNP, indel and SV.
 
 ```bash
 # install
-mamba create -n kmate -c conda-forge -c bioconda kmate
+mamba create -n kmate -c conda-forge -c bioconda kmate "python<3.13"
 mamba activate kmate
 kmate selftest                      # must print PASS
 ```
@@ -80,7 +80,7 @@ kmate selftest                      # must print PASS
 **Step 1: build the panel from your founders' VCF** (once):
 
 ```bash
-kmate build-index    --vcf panel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
+kmate build-index    --vcf graph.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid   # graph VCF
 
 kmate build-kmer-pa  --kmers index/ours_Chr1_kmers.tsv.gz \
                      --vcf panel.vcf.gz --ref REF.fa --chrom Chr1 \
