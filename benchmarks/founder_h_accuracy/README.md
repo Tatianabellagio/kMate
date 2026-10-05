@@ -30,7 +30,8 @@ downstream of it.
     scripts/run_h_unit_chrom.sbatch   the --unit chrom runner
     results/BASELINE_n231_g0.csv      retained reference point for the old-vs-new delta
     results/ldr01_<regime>_*.{npz,json,csv}   --unit ld r²=0.1 arm (per-block / SNP-parity control)
-    results/<regime>_<arm>_*.{json,csv}       the filt2mb / filt2u / filt2invu / raw arms
+    results/<regime>_<arm>_*.{json,csv}       the filt2u / filt2invu / raw arms
 
-Arms scored here also include the earlier `filt2mb` / `filt2u` / `filt2invu`
-k-mer-filter × weighting combinations, kept for the same delta purpose.
+Arms scored here also include the earlier `filt2u` / `filt2invu` k-mer-filter
+combinations, kept for the same delta purpose. (The `filt2mb` arms, run with the
+retired 1/m_b weight, were deleted 2026-10-05.)

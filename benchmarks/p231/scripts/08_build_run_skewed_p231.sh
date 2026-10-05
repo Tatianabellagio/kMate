@@ -18,7 +18,7 @@
 #   cact : 40 long-read + 10 short-read  -> long-read truth mass 0.80
 #   pg   :  5 long-read + 45 short-read  -> long-read truth mass 0.10
 #
-# Then runs the 3 grid arms (raw / filt2 uniform / filt2 inv_mb) count-once.
+# Then runs the 2 grid arms (raw / filt2) count-once.
 #
 # Usage: sbatch 08_build_run_skewed_p231.sh {cact|pg}
 set -euo pipefail
@@ -96,19 +96,18 @@ DB=${TMPDIR:-/tmp}/skew_${SKEW}.jf
 echo "[$(date)] build_kmer_db -> $DB"
 $(dirname "$PY")/kmate build-kmer-db --reads "$READS/r1.fq" "$READS/r2.fq" --out "$DB" --threads 4
 
-run_arm () {  # arm_tag  prefix  weight
-    local TAG=$1 PREFIX=$2 WEIGHT=$3
+run_arm () {  # arm_tag  prefix
+    local TAG=$1 PREFIX=$2
     local OUT_DIR=$CTRL/results/kmate_global_${TAG}/${REGIME}; mkdir -p "$OUT_DIR"
     local SAMPLE=p231_${TAG}_${REGIME}_cov10_s42
-    echo "[$(date)] arm=$TAG weight=$WEIGHT"
+    echo "[$(date)] arm=$TAG"
     $PY -u $DRIVER --kmer-pa-prefix "$PREFIX" \
         --var-pa $CN_VAR --var-meta $CN_VAR_META \
         --reads "$READS/r1.fq" "$READS/r2.fq" --kmer-db "$DB" \
         --sample "$SAMPLE" --out "$OUT_DIR/${SAMPLE}.tsv" \
-        --threads 4 --chroms Chr1 --block-mode global --kmer-weight $WEIGHT
+        --threads 4 --chroms Chr1 --block-mode global
 }
-run_arm raw_raw     "$RAW_PREFIX" uniform
-run_arm filt2u_raw  "$F2_PREFIX"  uniform
-run_arm filt2mb_raw "$F2_PREFIX"  inv_mb
+run_arm raw_raw     "$RAW_PREFIX"
+run_arm filt2u_raw  "$F2_PREFIX"
 rm -f "$DB"
 echo "[$(date)] DONE skewed $SKEW -> results/kmate_global_*/$REGIME/"

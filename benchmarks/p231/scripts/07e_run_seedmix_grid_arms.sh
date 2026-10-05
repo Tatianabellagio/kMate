@@ -11,11 +11,10 @@
 # 07e -- SEEDMIX (real pool) arms for the h-imbalance grid, on the SAME benchmark
 # matrices as the sim columns (kmer_pa_p231 raw + kmer_pa_p231_filt2), so the grid
 # is apples-to-apples. Count-once: build one Jellyfish DB from the sample reads,
-# query it for all three arms.
+# query it for both arms.
 #
-#   raw      = unfiltered kmer_pa_p231     + --kmer-weight uniform
-#   filt2u   = kmer_pa_p231_filt2          + --kmer-weight uniform
-#   filt2mb  = kmer_pa_p231_filt2          + --kmer-weight inv_mb   (production)
+#   raw      = unfiltered kmer_pa_p231
+#   filt2u   = kmer_pa_p231_filt2
 #
 # Usage: bash 07e_run_seedmix_grid_arms.sh S1   (sample id, S1..S8)
 set -euo pipefail
@@ -43,22 +42,21 @@ DB=${TMPDIR:-/tmp}/seedmix_${S}_grid.jf
 echo "[$(date)] build_kmer_db $S -> $DB"
 $(dirname "$PYTHON")/kmate build-kmer-db --reads "$R1" "$R2" --out "$DB" --threads 4
 
-run_arm () {  # arm_tag  kmer_prefix  weight
-    local TAG=$1 PREFIX=$2 WEIGHT=$3
+run_arm () {  # arm_tag  kmer_prefix
+    local TAG=$1 PREFIX=$2
     local OUT_DIR=$OUTBASE/$TAG; mkdir -p "$OUT_DIR"
     local SAMPLE=SEEDMIX_${S}_${TAG}
-    echo "[$(date)] arm=$TAG  weight=$WEIGHT  kmer_pa=$PREFIX"
+    echo "[$(date)] arm=$TAG  kmer_pa=$PREFIX"
     $PYTHON -u $DRIVER \
         --kmer-pa-prefix "$PREFIX" \
         --var-pa $CN_VAR --var-meta $CN_VAR_META \
         --reads "$R1" "$R2" --kmer-db "$DB" \
         --sample "$SAMPLE" --out "$OUT_DIR/${SAMPLE}.tsv" \
-        --threads 4 --chroms Chr1 --block-mode global --kmer-weight $WEIGHT
+        --threads 4 --chroms Chr1 --block-mode global
 }
 
-run_arm raw     "$RAW_PREFIX" uniform
-run_arm filt2u  "$F2_PREFIX"  uniform
-run_arm filt2mb "$F2_PREFIX"  inv_mb
+run_arm raw     "$RAW_PREFIX"
+run_arm filt2u  "$F2_PREFIX"
 
 rm -f "$DB"
-echo "[$(date)] DONE SEEDMIX $S  -> $OUTBASE/{raw,filt2u,filt2mb}/SEEDMIX_${S}_*.h_per_chrom.npz"
+echo "[$(date)] DONE SEEDMIX $S  -> $OUTBASE/{raw,filt2u}/SEEDMIX_${S}_*.h_per_chrom.npz"
