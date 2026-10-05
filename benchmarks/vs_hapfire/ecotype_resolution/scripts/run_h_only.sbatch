@@ -23,7 +23,7 @@ echo "[$(date)] kMate --h-only on $(hostname): $POOL"
 # GLOBAL mode: drop omega=1/m_b (uniform) per PIPELINE_STATE.md Sec.0 (2026-07-06).
 python -m kmate.per_sample_per_chrom --kmer-pa-prefix "$KP" --h-only \
   --reads "$R1" "$R2" --sample h_${POOL} --threads "$T" --chroms Chr1 \
-  --block-mode global --kmer-weight uniform --out "$OUT"
+  --block-mode global --out "$OUT"
 # score -> ecotype rows
 python3 benchmarks/vs_hapfire/ecotype_resolution/scripts/score_ecotype.py \
   --h "${OUT%.tsv}.h_per_chrom.npz" \

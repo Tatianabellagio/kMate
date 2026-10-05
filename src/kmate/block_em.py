@@ -143,15 +143,11 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                        min_kmers_per_block=200, verbose=False,
                        n_workers=4,
                        global_anchor_weight: float = 0.0,
-                       omega=None,
                        local_only: bool = False,
                        normalize: str = "per_founder",
                        haploblock_collapse: bool = True,
                        haploblock_eps: float = 0.0):
     """Run EM independently per block.
-
-    omega: optional K-vec of per-k-mer weights ω_k (e.g. 1/m_b). Sliced per block
-    and passed to solve_em (omega=None → unweighted MLE; identical to old behavior).
 
     haploblock_collapse (default True): before fitting each block, collapse the F
     founders into the DISTINCT HAPLOTYPES present in that block (founders with a
@@ -225,7 +221,7 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
     t = time.time()
     global_h, info = solve_em(counts, kmer_pa_dense, coverage,
                               max_iter=em_max_iter, tol=tol,
-                              omega=omega, normalize=normalize)
+                              normalize=normalize)
     global_h = global_h.astype(np.float32)
     # Global-free mode: low-evidence/empty blocks get NaN, not global_h.
     fallback_h = np.full(F, np.nan, dtype=np.float32) if local_only else global_h
@@ -251,11 +247,9 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
         if len(idxs_nz) < min_kmers_per_block:
             return b, fallback_h, 1
         c_b = counts[idxs_nz]
-        omega_b = None if omega is None else omega[idxs_nz]
         # per_founder normalizer over the FULL window (all its k-mers, incl. c_k=0),
         # not just the observed idxs_nz — else it's conditioned on this run's zero draws.
-        w_full = (np.ones(len(idxs), np.float32) if omega is None
-                  else omega[idxs].astype(np.float32))
+        w_full = np.ones(len(idxs), np.float32)
         kfw_full = (kmer_pa_dense[:, idxs] @ w_full).astype(np.float32)   # F-vec
 
         if haploblock_collapse:
@@ -276,10 +270,10 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
                     prior_c = np.bincount(lab, weights=global_h, minlength=Kb).astype(np.float32)
                     h_c, _ = solve_em(c_b, cn_c, coverage, max_iter=em_max_iter, tol=tol,
                                       prior_h=prior_c, prior_weight=global_anchor_weight,
-                                      omega=omega_b, normalize=normalize, kfw=kfw_c)
+                                      normalize=normalize, kfw=kfw_c)
                 else:
                     h_c, _ = solve_em(c_b, cn_c, coverage, max_iter=em_max_iter, tol=tol,
-                                      omega=omega_b, normalize=normalize, kfw=kfw_c)
+                                      normalize=normalize, kfw=kfw_c)
                 h_b = (h_c / csize)[lab]                      # split class freq equally to members
                 return b, h_b.astype(np.float32), 0
             # Kb == F: no distinct-haplotype merging — fall through to the direct
@@ -290,10 +284,10 @@ def solve_em_per_block(counts, kmer_pa_dense, kmer_block, n_blocks,
         if global_anchor_weight > 0:
             h_b, _ = solve_em(c_b, cn_b, coverage, max_iter=em_max_iter, tol=tol,
                               prior_h=global_h, prior_weight=global_anchor_weight,
-                              omega=omega_b, normalize=normalize, kfw=kfw_full)
+                              normalize=normalize, kfw=kfw_full)
         else:
             h_b, _ = solve_em(c_b, cn_b, coverage, max_iter=em_max_iter, tol=tol,
-                              omega=omega_b, normalize=normalize, kfw=kfw_full)
+                              normalize=normalize, kfw=kfw_full)
         return b, h_b.astype(np.float32), 0
 
     # Limit per-thread BLAS to avoid oversubscription. n_workers × inner_threads

@@ -62,6 +62,6 @@ $PYTHON -u $DRIVER \
     --sample $SAMPLE \
     --out $OUT_TSV \
     --threads 4 --chroms Chr1 \
-    --unit chrom --kmer-weight uniform
+    --unit chrom
 
 echo; echo "[$(date)] DONE — ${OUT_TSV%.tsv}.h_per_chrom.npz"

@@ -53,6 +53,6 @@ $PYTHON -u $DRIVER \
     --reads $READS/r1.fq $READS/r2.fq \
     --sample $SAMPLE --out $OUT_TSV \
     --threads 8 --chroms Chr1 \
-    --unit chrom --kmer-weight uniform
+    --unit chrom
 
 echo; echo "[$(date)] DONE — $OUT_TSV  (+ h_per_chrom.npz)"

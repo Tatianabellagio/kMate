@@ -68,5 +68,5 @@ $PYTHON -u $DRIVER \
     --reads $READS/r1.fq $READS/r2.fq \
     --sample $SAMPLE --out $OUT_TSV \
     --threads 8 --chroms Chr1 \
-    --unit ld --ld-r2 0.1 --kmer-weight uniform
+    --unit ld --ld-r2 0.1
 echo; echo "[$(date)] DONE — $OUT_TSV"; ls -lh $OUT_TSV

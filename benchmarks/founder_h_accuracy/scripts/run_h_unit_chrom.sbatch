@@ -35,5 +35,5 @@ $PYTHON -u $DRIVER \
     --reads $READS/r1.fq $READS/r2.fq \
     --sample ldr01_${REG} --out $OUT/ldr01_${REG}.tsv \
     --threads 8 --chroms Chr1 \
-    --unit chrom --h-only --kmer-weight uniform
+    --unit chrom --h-only
 echo "[$(date)] DONE — $OUT/ldr01_${REG}.h_per_chrom.npz"

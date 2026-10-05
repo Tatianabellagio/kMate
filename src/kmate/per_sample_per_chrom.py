@@ -197,7 +197,6 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
                          haploblock_eps=0.0):
     """Fit --unit chrom: one founder mixture h over the whole chromosome + AF
     projection. (Also reached via the deprecated --block-mode global alias.)
-    de-replication; m_b = #k-mers sharing the k-mer's bubble_id).
     kmer_db: optional prebuilt Jellyfish DB (count-once path; see
     _count_and_load_kmer_pa_dense).
     emit_af_se: also compute the calibrated per-record AF SE (Fisher delta-method
@@ -213,11 +212,10 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
     if kmer_pa_dense is None:
         return None, None, None, None, 0.0, None
 
-    omega_full = None
     # per_founder normalizer over the FULL panel (all k-mers, incl. c_k=0) — must be
     # computed BEFORE the nonzero filter so it is not conditioned on which k-mers got
     # reads this run (that survivorship bias reintroduces founder collapse). See em_solver.
-    w_full = np.ones(kmer_pa_dense.shape[1], np.float32) if omega_full is None else omega_full
+    w_full = np.ones(kmer_pa_dense.shape[1], np.float32)
     kfw_full = (kmer_pa_dense @ w_full).astype(np.float32)
 
     # kMate design (block → haploblock → EM, here the "block" is the whole chromosome):
@@ -239,18 +237,16 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
     del kmer_pa_dense
     gc.collect()
 
-    omega = None
-
     t = time.time()
     h_c = None
     if Kb == F_founders:
         # fast no-op path: no distinct-haplotype merging, fit founders directly
         # (byte-identical to the collapse path by permutation-equivariance).
         h, info = solve_em(counts_em, kmer_pa_em, cov, max_iter=em_max_iter, tol=1e-7,
-                           omega=omega, normalize=normalize, kfw=kfw_full)
+                           normalize=normalize, kfw=kfw_full)
     else:
         h_c, info = solve_em(counts_em, kmer_pa_em[reps], cov, max_iter=em_max_iter, tol=1e-7,
-                             omega=omega, normalize=normalize, kfw=kfw_full[reps])
+                             normalize=normalize, kfw=kfw_full[reps])
         h = (h_c / csize)[lab].astype(np.float32)     # split haplotype freq to member founders
     print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
           f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
@@ -263,7 +259,7 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
         if Kb == F_founders:
             # no collapse: uncertainty on the founders directly (unchanged path).
             J = fisher_information_h(h, kmer_pa_em, counts_em.astype(np.float64),
-                                     omega=omega, chunk=chunk)
+                                     chunk=chunk)
             support = np.flatnonzero(h > 1e-3)
             Sigma = _tangent_pinv_on_support(J, support, rcond=1e-2)
             eff_rank, cond = _resolvability_from_J(J, support)
@@ -275,7 +271,7 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
             # Computing the Fisher info on the full F founders instead would be singular
             # across k-mer-identical class members (the flat ridge the collapse removes).
             Jc = fisher_information_h(h_c, kmer_pa_em[reps], counts_em.astype(np.float64),
-                                      omega=omega, chunk=chunk)
+                                      chunk=chunk)
             support_c = np.flatnonzero(h_c > 1e-3)
             Sigma_c = _tangent_pinv_on_support(Jc, support_c, rcond=1e-2)
             eff_rank, cond = _resolvability_from_J(Jc, support_c)   # over the K_b classes
@@ -393,15 +389,13 @@ def _fit_unit_blocks(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, threa
     kmer_block = assign_kmers_to_blocks(bubble_id, bubble_chrom,
                                         bubble_start, bubble_end, blocks)
 
-    omega = None
-
     t = time.time()
     h_blocks, status, global_h = solve_em_per_block(
         counts.astype(np.float32), kmer_pa_dense, kmer_block, n_blocks,
         cov, em_max_iter=em_max_iter, tol=1e-7,
         min_kmers_per_block=min_kmers_per_block, verbose=False,
         global_anchor_weight=global_anchor_weight,
-        omega=omega, local_only=local_only, normalize=normalize,
+        local_only=local_only, normalize=normalize,
         haploblock_eps=haploblock_eps,
     )
     _low_label = "NaN'd (local-only)" if local_only else "fallbacks"

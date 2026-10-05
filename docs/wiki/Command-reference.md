@@ -4,9 +4,9 @@ Every option, with its default. **Required** options have no default and must be
 
 Run `kmate <command> --help` for the same information at the terminal.
 
-> This page describes the current source. The released 0.1.2 still has `--kmer-weight`
-> and `--emit-af-se`, and spells `--smooth-windows` as `--no-local-only`. `kmate --help`
-> is authoritative for the version you have installed.
+> This page describes the current source. The released 0.1.2 still accepts `--kmer-weight`
+> and `--emit-af-se` (leave both at their defaults) and spells `--smooth-windows` as
+> `--no-local-only`. `kmate --help` is authoritative for the version you have installed.
 
 | command | what it does |
 |---|---|

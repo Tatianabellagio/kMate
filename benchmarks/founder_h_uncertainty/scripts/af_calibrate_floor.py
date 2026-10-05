@@ -107,8 +107,8 @@ def main():
             # GLOBAL mode: uniform kmer-weight (omega=None), per_founder normalize
             # (solve_em default) -- matches the production recipe.
             h, _ = solve_em(c[nz].astype(np.float32), K[:, nz], lam,
-                            max_iter=1500, tol=1e-9, omega=None)
-            Sig, sp = fisher_cov_h(h, K, c.astype(np.float64), omega=None, chunk=chunk)
+                            max_iter=1500, tol=1e-9)
+            Sig, sp = fisher_cov_h(h, K, c.astype(np.float64), chunk=chunk)
             af_hat = (h @ Vs) / np.maximum(h @ Us, 1e-12)
             _, se = af_se_from_cov(h, Sig, Vs, Us, support=sp)
             err = np.abs(af_hat - aft_s)

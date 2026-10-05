@@ -31,7 +31,7 @@ for b in (7,0):
                    ("per_founder + Dirichlet a=1.05", dict(normalize="per_founder",kfw=kfw_block,dirichlet_alpha=1.05)),
                    ("per_founder + Dirichlet a=1.5",  dict(normalize="per_founder",kfw=kfw_block,dirichlet_alpha=1.5)),
                    ("per_founder + anchor->uniform w=0.3", dict(normalize="per_founder",kfw=kfw_block,prior_h=np.full(F,1/F,np.float32),prior_weight=0.3))]:
-        h,info=solve_em(c,Knz,1.0,max_iter=600,tol=1e-8,omega=None,**kw)
+        h,info=solve_em(c,Knz,1.0,max_iter=600,tol=1e-8,**kw)
         print(f"  {lab:40s} eff_n={effn(h):6.1f} iters={info['iterations']} conv={info['converged']}",flush=True)
 
 # equivalence: solve_em_per_block (1 block = blk7) vs standalone per_founder+block-kfw

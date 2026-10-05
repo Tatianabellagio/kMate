@@ -110,9 +110,8 @@ def solve_em(
     dirichlet_alpha: float = 0.0,  # symmetric Dirichlet prior strength on h
     prior_h: np.ndarray | None = None,    # NEW: anchor h to prior (per-window EM)
     prior_weight: float = 0.0,            # NEW: λ — strength of anchor toward prior_h
-    omega: np.ndarray | None = None,      # NEW: per-k-mer weight ω_k (e.g. 1/m_b)
     normalize: str = "per_founder",       # "per_founder" (default, Kf_w fix) | "global" (legacy)
-    kfw: np.ndarray | None = None,        # per_founder normalizer Σ_k ω_k·kmer_pa[f,k] over the FULL
+    kfw: np.ndarray | None = None,        # per_founder normalizer Σ_k kmer_pa[f,k] over the FULL
                                           # estimation unit (ALL k-mers, incl. c_k=0). MUST be passed
                                           # when the caller pre-slices kmer_pa to observed k-mers,
                                           # else the normalizer is (wrongly) conditioned on which
@@ -136,19 +135,12 @@ def solve_em(
     from prior_h. λ=0 → pure MLE; λ=1 → prior is as influential as the data;
     sweet spot is typically λ ∈ [0.05, 0.5].
 
-    With omega (K-vector of per-k-mer weights ω_k), every count is reweighted:
-    the M-step uses ω_k·c_k everywhere it used c_k, i.e.
-        h_new[f] ∝ h[f] · Σ_k kmer_pa[f,k] · (ω_k·c_k)/μ_k ,  normalized by Σ_k ω_k·c_k.
-    ω_k = 1/m_b (m_b = #k-mers in k's bubble) is per-bubble de-replication; it
-    turns "h ∝ k-mer count" into "h ∝ locus count" and removes the imbalanced-
-    design over-credit. omega=None reproduces the unweighted MLE exactly.
-
     normalize:
       "per_founder" (DEFAULT — the fix; see below) is recommended everywhere.
-      "global" (LEGACY) — the M-step numerator raw_f = h_f·Σ_k kmer_pa[f,k]·ω_k·c_k/μ_k
-        is normalized by the GLOBAL scalar total_c = Σ_k ω_k·c_k. At the noiseless
-        fixed point raw_f = h_f·Kf_w_f, where Kf_w_f = Σ_{k:c_k>0} ω_k·kmer_pa[f,k] is
-        founder f's own (weighted) content over OBSERVED k-mers. So the global
+      "global" (LEGACY) — the M-step numerator raw_f = h_f·Σ_k kmer_pa[f,k]·c_k/μ_k
+        is normalized by the GLOBAL scalar total_c = Σ_k c_k. At the noiseless
+        fixed point raw_f = h_f·Kf_w_f, where Kf_w_f = Σ_{k:c_k>0} kmer_pa[f,k] is
+        founder f's own content over OBSERVED k-mers. So the global
         normalization converges to ĥ_f ∝ h_true_f·Kf_w_f — founders with more k-mers
         (cactus/long-read) are over-credited, k-mer-poor founders collapse to ~0.
       "per_founder" (the fix) — divide raw_f by Kf_w_f (each founder's OWN observed
@@ -172,9 +164,7 @@ def solve_em(
 
     h = np.full(F, 1.0 / F, dtype=np.float32) if h_init is None \
         else h_init.astype(np.float32)
-    # ω-weighted counts (omega=None → unweighted, identical to MLE)
-    wc = counts if omega is None else (omega.astype(np.float32) * counts)
-    total_c = wc.sum()
+    total_c = counts.sum()
 
     # Dirichlet prior pseudo-count (added to numerator before normalization)
     prior_pseudo = np.float32(max(0.0, dirichlet_alpha - 1.0))
@@ -187,8 +177,8 @@ def solve_em(
     else:
         anchor_term = None
 
-    # Per-founder normalization (the Kf_w fix): each founder's own weighted marker
-    # content Kf_w_f = Σ_k ω_k·kmer_pa[f,k] over the FULL estimation unit — ALL
+    # Per-founder normalization (the Kf_w fix): each founder's own marker
+    # content Kf_w_f = Σ_k kmer_pa[f,k] over the FULL estimation unit — ALL
     # k-mers, INCLUDING those with c_k=0 this run. This is the correct (unbiased)
     # normalizer: since E[c_k/μ_k]=λ for every carried k-mer regardless of whether it
     # realizes zero, E[raw_f] = λ·h_f·Kf_full, so raw_f/Kf_full is unbiased for h_f.
@@ -203,13 +193,13 @@ def solve_em(
         if kfw is not None:
             Kf_w = np.maximum(kfw.astype(np.float32), np.float32(1e-12))
         else:
-            w = np.ones(kmer_pa.shape[1], np.float32) if omega is None else omega.astype(np.float32)
+            w = np.ones(kmer_pa.shape[1], np.float32)
             Kf_w = np.maximum((kmer_pa @ w).astype(np.float32), np.float32(1e-12))
 
     history = []
     for it in range(max_iter):
         denom = np.maximum(h @ kmer_pa, np.float32(1e-7))
-        cw = wc / denom
+        cw = counts / denom
         em_term = h * (kmer_pa @ cw)
         if per_founder:
             t = em_term / Kf_w

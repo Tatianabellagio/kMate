@@ -50,13 +50,13 @@ for f in "$R1" "$R2" "$VAR" "$VAR_META" "${KMER_PA}_Chr1.kmer_pa.npz"; do
 done
 
 # --- run: estimate h + project to per-record AF (production recipe) -----------
-# --kmer-weight inv_mb is the production per-bubble de-replication weight.
+# --unit chrom: one founder mixture per chromosome, the selfing/F0 estimator.
 kmate run \
     --kmer-pa-prefix "$KMER_PA" \
     --var-pa "$VAR" --var-called "$VAR_CALLED" --var-meta "$VAR_META" \
     --reads "$R1" "$R2" \
     --sample "SEEDMIX_${S}" --out "$OUT_DIR/SEEDMIX_${S}_chr1.tsv" \
-    --threads 4 --chroms Chr1 --block-mode global --kmer-weight inv_mb
+    --threads 4 --chroms Chr1 --unit chrom
 
 echo "DONE -> $OUT_DIR/SEEDMIX_${S}_chr1.tsv (+ .h_per_chrom.npz)"
 echo "Validate the recovered founder mixture against hapFIRE truth with:"

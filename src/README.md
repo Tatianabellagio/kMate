@@ -23,7 +23,7 @@ remain as deprecated aliases (`global`→`--unit chrom`, `window`→`--unit bp`)
 | `em_solver.py` | EM core. `solve_em()` — the founder-mixture estimator (E/M multiplicative update; supports the Dirichlet anchor used by the legacy window recipe). M-step normalization defaults to `normalize="per_founder"` (each founder divided by its own full-panel k-mer content `Kf_w`). |
 | `kmer_count.py` | Jellyfish wrapper. Counts canonical k=31 k-mers in the reads → the count vector fed to the EM. |
 | `ld_partition.py` | `CompleteLDPartition` — r²-LD blocks from the panel's own `var_pa` (the `--unit ld` partition; blocks are a panel property, computed once and cached). |
-| `h_uncertainty.py` | Collapse-aware uncertainty on the `K_b` haplotype classes (Fisher info + bootstrap) for `--emit-af-se`. |
+| `h_uncertainty.py` | Collapse-aware uncertainty on the `K_b` haplotype classes (Fisher info + bootstrap); used by the `benchmarks/founder_h_uncertainty` study, not by `run`. |
 | `block_em.py` | Per-unit pieces (bp/tsv/ld units): `define_windows`, `assign_kmers_to_blocks`, `assign_records_to_blocks`, `solve_em_per_block` (per-unit EM), `project_blocks_to_records` (per-unit → per-record AF, missing-aware). |
 | `block_haplotype_em.py` | `smooth_h_across_blocks` — Li–Stephens-style smoothing of per-window `h` (legacy `--no-local-only` window recipe only). |
 | `per_sample_per_chrom.py` | Production driver. FASTQ/BAM → counts → EM (per unit) → AF projection → output TSV. Dispatches `--unit {chrom,ld,bp,tsv}` (default `chrom`); `--block-mode {global,window}` are deprecated aliases. |
@@ -33,8 +33,8 @@ remain as deprecated aliases (`global`→`--unit chrom`, `window`→`--unit bp`)
 ```bash
 # --unit chrom (DEFAULT) — selfing / inbred / F0 pools (e.g. SEEDMIX), the
 # GrENE-Net production estimator; one founder mixture per chromosome. Uses the
-# defaults --normalize per_founder + --kmer-weight uniform (2026-07-06;
-# see docs/FOUNDER_NORMALIZATION_FIX.md), so no weight/unit flags needed.
+# default --normalize per_founder (2026-07-06; see
+# docs/FOUNDER_NORMALIZATION_FIX.md), so no normalization/unit flags needed.
 kmate run \
   --kmer-pa-prefix <kmer_pa>/kmer_pa \
   --var-pa <panel>.var_pa.npz --var-called <panel>.var_called.npz \
@@ -42,11 +42,12 @@ kmate run \
   --reads R1.fq R2.fq --sample <name> --out <name>.tsv \
   --threads 8 --chroms Chr1        # --unit chrom is the default
 
-# --unit bp / legacy "star2" window — recombinant pools. Fixed-bp windows, fit
-# local-only by default. The anchored+smoothed star2 recipe is now opt-in behind
-# --no-local-only (--window-bp 10000 --global-anchor-weight 0.3
-#  --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5), and keeps the inv_mb weighting:
-kmate run [same inputs] --unit bp --window-bp 10000 --no-local-only --kmer-weight inv_mb
+# --unit bp — recombinant pools. Fixed-bp windows, each fit from its own k-mers
+# by default. The anchored+smoothed legacy "star2" recipe is opt-in behind
+# --smooth-windows (--window-bp 10000 --global-anchor-weight 0.3
+#  --hmm-smooth-passes 5 --hmm-smooth-alpha 0.5, all defaults):
+kmate run [same inputs] --unit bp --window-bp 10000
+kmate run [same inputs] --unit bp --window-bp 10000 --smooth-windows
 ```
 (`--unit ld --ld-r2 0.1` fits r²-LD blocks; note it collapses in low-diversity
 blocks (centromere) so it is not appropriate for selfing pools.)

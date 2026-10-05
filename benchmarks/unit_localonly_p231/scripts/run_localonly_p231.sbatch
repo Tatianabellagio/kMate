@@ -76,7 +76,7 @@ AW=$WORK/${POOL}_anchored_w10kb.tsv
 LW=$WORK/${POOL}_localonly_w10kb.tsv
 
 # GLOBAL mode: drop omega=1/m_b (uniform) per PIPELINE_STATE.md Sec.0 (2026-07-06).
-run global   "$G"  --block-mode global --kmer-weight uniform
+run global   "$G"  --block-mode global
 # WINDOW mode: --kmer-weight inv_mb unchanged (production window-mode choice).
 run anchD    "$AD" --block-mode window --blocks-tsv "$BLOCKS" --min-kmers-per-block 50 \
                    --global-anchor-weight 0.3 --hmm-smooth-passes 5 --kmer-weight inv_mb

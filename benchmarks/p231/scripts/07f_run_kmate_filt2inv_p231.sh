@@ -84,6 +84,6 @@ $PYTHON -u $DRIVER \
     --sample $SAMPLE \
     --out $OUT_TSV \
     --threads 8 --chroms Chr1 \
-    --block-mode global --kmer-weight uniform
+    --block-mode global
 
 echo; echo "[$(date)] DONE -- $OUT_TSV"; ls -lh $OUT_TSV

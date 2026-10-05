@@ -41,6 +41,6 @@ for lab,kw in [("NEW per_founder+kfw", dict(normalize="per_founder",kfw=kfw)),
                ("OLD multinomial(global)", dict(normalize="global")),
                ("NEW per_founder 800it", dict(normalize="per_founder",kfw=kfw,max_iter=800))]:
     mi=kw.pop("max_iter",300)
-    h,info=solve_em(c_nz,Knz,1.0,max_iter=mi,tol=1e-7,omega=None,**kw)
+    h,info=solve_em(c_nz,Knz,1.0,max_iter=mi,tol=1e-7,**kw)
     print(f"    {lab:32s} eff_n={effn(h):6.1f}  iters={info['iterations']}  conv={info['converged']}")
 print("DONE-BUGHUNT")
