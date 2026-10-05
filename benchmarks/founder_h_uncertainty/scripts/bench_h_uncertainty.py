@@ -40,10 +40,7 @@ def load_kmer_pa():
         else np.asarray(kp, dtype=np.float32)
     meta = np.load(PREFIX / "kmer_pa_Chr1.meta.npz", allow_pickle=True)
     founders = np.asarray(meta["founders"]).astype(str)
-    # GLOBAL mode: uniform kmer-weight (omega=None) per PIPELINE_STATE.md Sec.0
-    # (2026-07-06) -- supersedes the old omega=1/m_b production weighting.
-    omega = None
-    return kmer_pa, founders, omega
+    return kmer_pa, founders
 
 
 def load_truth_h(pool, founders):
@@ -67,7 +64,7 @@ def main():
     rconds = [float(x) for x in args.rconds.split(",")]
     outdir = Path(args.out); outdir.mkdir(parents=True, exist_ok=True)
 
-    kmer_pa, founders, omega = load_kmer_pa()
+    kmer_pa, founders = load_kmer_pa()
     F, K = kmer_pa.shape
     h_true = load_truth_h(args.pool, founders)
     print(f"p80 kmer_pa F={F} K={K:,}; pool={args.pool} "
@@ -80,30 +77,29 @@ def main():
         mu_t = h_true @ kmer_pa
         counts = rng.poisson(lam * mu_t).astype(np.float32)
         nnz = int((counts > 0).sum())
-        h_hat, info = solve_em(counts, kmer_pa, lam, max_iter=300, tol=1e-7,
-                               omega=omega)
+        h_hat, info = solve_em(counts, kmer_pa, lam, max_iter=300, tol=1e-7)
         print(f"[cov {lam:g}] nz={nnz:,} EM {info['iterations']} it; "
               f"||ĥ-h_true||={np.linalg.norm(h_hat-h_true):.4f}", flush=True)
 
         # gold: bootstrap (around ĥ) and truth-MC (around h_true)
-        Sig_b, _ = bootstrap_cov_h(h_hat, kmer_pa, counts, omega=omega,
+        Sig_b, _ = bootstrap_cov_h(h_hat, kmer_pa, counts,
                                    B=args.B, coverage=lam, seed=101,
                                    max_iter=120, tol=1e-5)
         se_b = np.sqrt(np.clip(np.diag(Sig_b), 0, None))
-        Sig_t, _ = bootstrap_cov_h(h_hat, kmer_pa, counts, omega=omega,
+        Sig_t, _ = bootstrap_cov_h(h_hat, kmer_pa, counts,
                                    B=args.B, coverage=lam, seed=202, rate_h=h_true,
                                    max_iter=120, tol=1e-5)
         se_t = np.sqrt(np.clip(np.diag(Sig_t), 0, None))
 
         # analytic Fisher at a grid of rcond
-        J = fisher_information_h(h_hat, kmer_pa, counts, omega=omega)
+        J = fisher_information_h(h_hat, kmer_pa, counts)
         supp = np.flatnonzero(h_hat > args.support_eps)
         se_f = {}
         for rc in rconds:
             Sig_f = _tangent_pinv_on_support(J, supp, rcond=rc)
             se_f[rc] = np.sqrt(np.clip(np.diag(Sig_f), 0, None))
 
-        ident = identifiability(h_hat, kmer_pa, counts, omega=omega,
+        ident = identifiability(h_hat, kmer_pa, counts,
                                 support_eps=args.support_eps)
         for f in range(F):
             row = dict(cov=lam, founder=founders[f], h_true=h_true[f],

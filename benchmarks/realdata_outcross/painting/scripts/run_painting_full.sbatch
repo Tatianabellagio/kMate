@@ -65,7 +65,7 @@ for CHR in $CHROMS; do
         --var-pa $VAR_PA --var-called $VAR_CALLED --var-meta $VAR_META \
         --reads /dev/null --kmer-db "$JF_DB" \
         --sample $SAMPLE --out "$OUT_CHR" --threads $THREADS \
-        --block-mode window --kmer-weight inv_mb --window-bp 10000 --chroms $CHR \
+        --block-mode window --window-bp 10000 --chroms $CHR \
       || { echo "ERROR: window EM failed $CHR"; rm -f "$OUT_CHR"; exit 1; }
 done
 echo "[$(date)] DONE $SAMPLE"

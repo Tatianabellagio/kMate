@@ -57,7 +57,7 @@ rm -f "$ROWS"
 echo "[$(date)] host=$(hostname) build-kmer-db (count once): $POOL"
 kmate build-kmer-db --reads "$R1" "$R2" --out "$JF" --threads "$T"
 
-# common kMate invocation; mode + kmer-weight + other flags appended by each call.
+# common kMate invocation; mode + other flags appended by each call.
 # normalize is left at the per_sample_per_chrom.py default (per_founder, the
 # 2026-07-06 Kf_w fix) for every mode.
 run() {  # <label> <out> <flags...>
@@ -77,13 +77,13 @@ LW=$WORK/${POOL}_localonly_w10kb.tsv
 
 # GLOBAL mode: drop omega=1/m_b (uniform) per PIPELINE_STATE.md Sec.0 (2026-07-06).
 run global   "$G"  --block-mode global
-# WINDOW mode: --kmer-weight inv_mb unchanged (production window-mode choice).
+# WINDOW mode (saved results predate 2026-09-29 and used the retired 1/m_b weight).
 run anchD    "$AD" --block-mode window --blocks-tsv "$BLOCKS" --min-kmers-per-block 50 \
-                   --global-anchor-weight 0.3 --hmm-smooth-passes 5 --kmer-weight inv_mb
-run localD   "$LD" --block-mode window --blocks-tsv "$BLOCKS" --min-kmers-per-block 50 --local-only --kmer-weight inv_mb
+                   --global-anchor-weight 0.3 --hmm-smooth-passes 5
+run localD   "$LD" --block-mode window --blocks-tsv "$BLOCKS" --min-kmers-per-block 50 --local-only
 run anchW    "$AW" --block-mode window --window-bp 10000 --min-kmers-per-block 50 \
-                   --global-anchor-weight 0.3 --hmm-smooth-passes 5 --kmer-weight inv_mb
-run localW   "$LW" --block-mode window --window-bp 10000 --min-kmers-per-block 50 --local-only --kmer-weight inv_mb
+                   --global-anchor-weight 0.3 --hmm-smooth-passes 5
+run localW   "$LW" --block-mode window --window-bp 10000 --min-kmers-per-block 50 --local-only
 
 echo "[$(date)] score all 5 -> $ROWS"
 score() { python3 "$SCORE" --pool "$POOL" --mode "$1" --unit "$2" \

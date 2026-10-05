@@ -44,10 +44,9 @@ def load_all():
     K = np.asarray(kp.todense(), dtype=np.float32) if sparse.issparse(kp) else np.asarray(kp, np.float32)
     m = np.load(PRE / "kmer_pa_Chr1.meta.npz", allow_pickle=True)
     fnd = np.asarray(m["founders"]).astype(str); bid = np.asarray(m["bubble_id"])
-    omega = (1.0 / np.bincount(bid)[bid]).astype(np.float32)
     meta = dict(bid=bid, chrom=np.asarray(m["bubble_chrom"]).astype(str),
                 start=np.asarray(m["bubble_start"]), end=np.asarray(m["bubble_end"]))
-    return K, fnd, omega, meta
+    return K, fnd, meta
 
 
 def truth(pool, fnd):
@@ -68,12 +67,11 @@ def eff_rank_cond(J, supp):
     return float(np.exp(-(p * np.log(p)).sum())), float(pos.max() / pos.min())
 
 
-def win_em(c, K, om, max_iter=400, tol=1e-9):
+def win_em(c, K, max_iter=400, tol=1e-9):
     nz = c > 0
     if nz.sum() < 1:
         return None
-    h, _ = solve_em(c[nz].astype(np.float32), K[:, nz], 1.0, max_iter=max_iter, tol=tol,
-                    omega=None if om is None else om[nz])
+    h, _ = solve_em(c[nz].astype(np.float32), K[:, nz], 1.0, max_iter=max_iter, tol=tol)
     return h
 
 
@@ -91,7 +89,7 @@ def main():
     covs = [float(x) for x in args.covs.split(",")]
     outdir = Path(args.out); outdir.mkdir(parents=True, exist_ok=True)
 
-    K, fnd, omega, meta = load_all()
+    K, fnd, meta = load_all()
     F, Kn = K.shape
     h_true = truth(args.pool, fnd); supp_true = np.flatnonzero(h_true > 0)
     mu = (h_true @ K).astype(np.float32)
@@ -118,27 +116,27 @@ def main():
         idx = order[st[wi]:en[wi]]; nk = idx.size
         if nk == 0:
             continue
-        Kw = K[:, idx]; muw = mu[idx]; omw = omega[idx]
+        Kw = K[:, idx]; muw = mu[idx]
         nloc = int((Kw[supp_true].sum(axis=1) > 0).sum())
         rec = dict(window=wi, n_kmers=nk, n_local_truefounders=nloc,
                    below_floor=int(nk < args.min_kmers))
         # identifiability: noiseless fit + Fisher eigenstructure (at noiseless counts)
-        h_nl = win_em(muw.astype(np.float32), Kw, omw)
+        h_nl = win_em(muw.astype(np.float32), Kw)
         rec["err_noiseless"] = l2(h_nl) if h_nl is not None else np.nan
         if h_nl is not None:
             supp_w = np.flatnonzero(h_nl > 1e-3)
-            J = fisher_information_h(h_nl, Kw, muw, omega=omw)
+            J = fisher_information_h(h_nl, Kw, muw)
             er, cd = eff_rank_cond(J, supp_w)
             rec["eff_rank"] = er; rec["cond"] = cd; rec["nsupp"] = int(supp_w.size)
         # coverage sweep: error + Fisher SE prediction
         for lam in covs:
             c = rng.poisson(lam * muw)
-            h = win_em(c.astype(np.float32), Kw, omw)
+            h = win_em(c.astype(np.float32), Kw)
             rec[f"err_cov{lam:g}"] = l2(h) if h is not None else np.nan
             rec[f"nzk_cov{lam:g}"] = int((c > 0).sum())
             if h is not None:
                 sw = np.flatnonzero(h > 1e-3)
-                J = fisher_information_h(h, Kw, c.astype(np.float64), omega=omw)
+                J = fisher_information_h(h, Kw, c.astype(np.float64))
                 Sig = _tangent_pinv_on_support(J, sw, rcond=1e-2)
                 se = np.sqrt(np.clip(np.diag(Sig), 0, None))
                 rec[f"fisherSEtot_cov{lam:g}"] = float(np.sqrt((se**2).sum()))
@@ -150,9 +148,9 @@ def main():
         if wi in boot_idx:
             lam = covs[len(covs)//2]
             c = rng.poisson(lam * muw)
-            h = win_em(c.astype(np.float32), Kw, omw)
+            h = win_em(c.astype(np.float32), Kw)
             if h is not None and (c > 0).sum() >= 2:
-                Sb, _ = bootstrap_cov_h(h, Kw, c.astype(np.float64), omega=omw,
+                Sb, _ = bootstrap_cov_h(h, Kw, c.astype(np.float64),
                                         B=args.boot_B, coverage=lam, seed=7,
                                         max_iter=200, tol=1e-5)
                 seb = np.sqrt(np.clip(np.diag(Sb), 0, None))

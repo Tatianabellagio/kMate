@@ -41,10 +41,9 @@ def load_all():
     K = np.asarray(kp.todense(), dtype=np.float32) if sparse.issparse(kp) else np.asarray(kp, np.float32)
     m = np.load(PRE / "kmer_pa_Chr1.meta.npz", allow_pickle=True)
     fnd = np.asarray(m["founders"]).astype(str); bid = np.asarray(m["bubble_id"])
-    omega = (1.0 / np.bincount(bid)[bid]).astype(np.float32)
     meta = dict(bid=bid, chrom=np.asarray(m["bubble_chrom"]).astype(str),
                 start=np.asarray(m["bubble_start"]), end=np.asarray(m["bubble_end"]))
-    return K, fnd, omega, meta
+    return K, fnd, meta
 
 
 def truth(fnd, pool="cov10_n50_g0_s42_hotspots_p80_chr1"):
@@ -72,7 +71,7 @@ def n_distinct_signatures(Ksub):
 
 def main():
     t0 = time.time()
-    K, fnd, omega, meta = load_all()
+    K, fnd, meta = load_all()
     F, Kn = K.shape
     h_true = truth(fnd); supp = np.flatnonzero(h_true > 0)
     mu = (h_true @ K).astype(np.float64)                       # noiseless rate per k-mer
@@ -92,7 +91,7 @@ def main():
         idx = order[st[wi]:en[wi]]; nk = idx.size
         if nk == 0:
             continue
-        Kw = K[:, idx]; Kws = Ksupp[:, idx]; omw = omega[idx]; muw = mu[idx]
+        Kw = K[:, idx]; Kws = Ksupp[:, idx]; muw = mu[idx]
         csa = Kw.sum(0); css = Kws.sum(0)
         rec = dict(window=wi, n_kmers=nk)
         # ---- RESOLVABILITY (panel-only, no counts/h) ----
@@ -102,16 +101,16 @@ def main():
         # identity-resolvable founders: distinct presence signatures
         rec["nsig_apriori"]  = n_distinct_signatures(Kw)
         rec["nsig_cond"]     = n_distinct_signatures(Kws)
-        # spectral: eff_rank of the omega-weighted PANEL Gram  G = (K*w) Kᵀ  (no counts, no h)
-        rec["gram_eff_apriori"] = eff_rank_gram((Kw * omw) @ Kw.T)
-        rec["gram_eff_cond"]    = eff_rank_gram((Kws * omw) @ Kws.T)
+        # spectral: eff_rank of the PANEL Gram  G = K Kᵀ  (no counts, no h)
+        rec["gram_eff_apriori"] = eff_rank_gram(Kw @ Kw.T)
+        rec["gram_eff_cond"]    = eff_rank_gram(Kws @ Kws.T)
         # founders with at least one present k-mer here (panel analog of n_local_truefounders)
         rec["nfnd_present"] = int((Kws.sum(1) > 0).sum())
         # CRLB: predicted sqrt(total variance) = sqrt(trace of tangent-pinv of the
         # NOISELESS Fisher J = K diag(ω/μ) Kᵀ on the present support. This is the
         # PRINCIPLED identifiability->error predictor (eff_rank/cond are crude proxies).
         # Counts=muw => k-mers absent under h_true (μ=0) drop out, matching the EM.
-        Jnl = fisher_information_h(h_true, Kw, muw, omega=omw)
+        Jnl = fisher_information_h(h_true, Kw, muw)
         spres = supp[(Kws.sum(1) > 0)]                        # present founders seen here
         for rc in (1e-2, 1e-3, 1e-6):
             Sig = _tangent_pinv_on_support(Jnl, spres, rcond=rc)
@@ -165,13 +164,13 @@ def main():
 
     # ---------------- GLOBAL MODE (whole chromosome = one region) ----------------
     print(f"\n{'='*70}\nGLOBAL MODE  (whole Chr1, one region)\n{'='*70}", flush=True)
-    # omega-weighted panel Gram over ALL k-mers, chunked to stay in memory
+    # panel Gram over ALL k-mers, chunked to stay in memory
     def gram_chunked(rowsel):
         Ksel = K[rowsel]; G = np.zeros((Ksel.shape[0], Ksel.shape[0]), dtype=np.float64)
         step = 1_000_000
         for s0 in range(0, Kn, step):
             sl = slice(s0, min(s0 + step, Kn))
-            Kc = Ksel[:, sl].astype(np.float64) * omega[sl]
+            Kc = Ksel[:, sl].astype(np.float64)
             G += Kc @ Ksel[:, sl].astype(np.float64).T
         return G
     g_ap = eff_rank_gram(gram_chunked(np.arange(F)))

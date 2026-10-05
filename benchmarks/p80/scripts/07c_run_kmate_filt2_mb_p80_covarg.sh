@@ -11,26 +11,20 @@
 
 # =============================================================================
 # Front-runner test: filt2 kmer_pa + GLOBAL EM (normalize=per_founder, the
-# 2026-07-06 Kf_w fix) + kmer weighting A/B. GLOBAL mode only.
+# 2026-07-06 Kf_w fix). GLOBAL mode only. (Runs with the retired 1/m_b weight
+# wrote to results/cactus_em_global_filt2_mb/.)
 #   --kmer-pa-prefix .../kmer_pa_p80_filt2/kmer_pa
-#   outputs to results/cactus_em_global_filt2_{mb,uniform}/<REGIME>/p80_*_*.tsv
+#   outputs to results/cactus_em_global_filt2_uniform/<REGIME>/p80_*_*.tsv
 #
-# Usage: sbatch 07c_run_kmate_filt2_mb_p80.sh REGIME [WEIGHT]
+# Usage: sbatch 07c_run_kmate_filt2_mb_p80_covarg.sh REGIME
 #   REGIME = n50_g0 n200_g0 n231_g0 n50_g1 n200_g1 n231_g1 n50_g3 n50_g3_dom500
-#   WEIGHT = uniform (default, front-runner -- GLOBAL mode drops omega=1/m_b per
-#            PIPELINE_STATE.md Sec.0, 2026-07-06; matches this panel's own
-#            balanced-panel caveat) | inv_mb (legacy A/B baseline)
 # =============================================================================
 mkdir -p logs
 set -euo pipefail
 
-REGIME=${1:?Usage: sbatch 07c_run_kmate_filt2_mb_p80.sh REGIME [WEIGHT]}
-WEIGHT=${2:-uniform}
-if [[ "$WEIGHT" != "inv_mb" && "$WEIGHT" != "uniform" ]]; then
-    echo "ERROR: WEIGHT must be 'inv_mb' or 'uniform'; got '$WEIGHT'" >&2; exit 1
-fi
-[[ "$WEIGHT" == "inv_mb" ]] && WTAG="filt2mb" || WTAG="filt2u"
-[[ "$WEIGHT" == "inv_mb" ]] && ODIR="cactus_em_global_filt2_mb" || ODIR="cactus_em_global_filt2_uniform"
+REGIME=${1:?Usage: sbatch 07c_run_kmate_filt2_mb_p80_covarg.sh REGIME}
+WTAG="filt2u"
+ODIR="cactus_em_global_filt2_uniform"
 
 CTRL=/global/scratch/users/tbellg/kmate/benchmarks/p80
 PYTHON=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
@@ -76,10 +70,9 @@ mkdir -p $OUT_DIR
 SAMPLE=p80_${WTAG}_${REGIME}_cov${COV}_s${SEED}
 OUT_TSV=$OUT_DIR/${SAMPLE}.tsv
 
-echo "[$(date)] kMate filt2 GLOBAL weight=$WEIGHT --regime $REGIME"
+echo "[$(date)] kMate filt2 GLOBAL --regime $REGIME"
 echo "  reads:   $READS_DIR/r1.fq + r2.fq"
 echo "  kmer_pa: $CN_KMER_PREFIX (filt2)"
-echo "  weight:  $WEIGHT"
 echo "  out:     $OUT_TSV"
 
 $PYTHON -u $DRIVER \
@@ -91,8 +84,7 @@ $PYTHON -u $DRIVER \
     --out $OUT_TSV \
     --threads 8 \
     --chroms Chr1 \
-    --block-mode global \
-    --kmer-weight $WEIGHT
+    --block-mode global
 
 echo
 echo "[$(date)] DONE -- $OUT_TSV"

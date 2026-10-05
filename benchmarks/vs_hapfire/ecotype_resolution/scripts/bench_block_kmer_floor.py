@@ -62,7 +62,6 @@ def main():
     ap.add_argument("--chrom", default="Chr1")
     ap.add_argument("--window-bp", type=int, default=5000)
     ap.add_argument("--threads", type=int, default=8)
-    ap.add_argument("--kmer-weight", default="inv_mb", choices=["uniform", "inv_mb"])
     ap.add_argument("--out", required=True)
     a = ap.parse_args()
 
@@ -98,11 +97,6 @@ def main():
     n_blocks = len(blocks)
     kmer_block = assign_kmers_to_blocks(meta["bubble_id"], meta["bubble_chrom"],
                                         meta["bubble_start"], meta["bubble_end"], blocks)
-    omega = None
-    if a.kmer_weight == "inv_mb":
-        m_b = np.bincount(meta["bubble_id"])[meta["bubble_id"]].astype(np.float32)
-        omega = (1.0 / m_b).astype(np.float32)
-
     nz = counts > 0
     n_nz_per_block = np.array([int(nz[kmer_block == b].sum()) for b in range(n_blocks)])
     n_panel_per_block = np.bincount(kmer_block[kmer_block >= 0], minlength=n_blocks)
@@ -115,7 +109,7 @@ def main():
     t = time.time()
     h_blocks, status, global_h = solve_em_per_block(
         counts.astype(np.float32), kmer_pa_dense, kmer_block, n_blocks, coverage,
-        min_kmers_per_block=1, global_anchor_weight=0.0, omega=omega,
+        min_kmers_per_block=1, global_anchor_weight=0.0,
         n_workers=max(1, a.threads // 2), verbose=True)
     print(f"[{a.pool}] pure-local block-EM {time.time()-t:.0f}s "
           f"({(status==0).sum()} local, {(status==2).sum()} empty)", flush=True)

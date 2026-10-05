@@ -13,10 +13,7 @@ captures the coverage-independent bias) for `defined` and `well-called` records.
 
 Usage:  af_calibrate_floor.py --panel {p80,231}   (run via sbatch)
 
-2026-07-06: GLOBAL mode now normalizes per_founder (the Kf_w fix) and drops
-omega=1/m_b (PIPELINE_STATE.md Sec.0) -- omega is loaded below for reference
-but NOT passed to solve_em/fisher_cov_h, matching production's --kmer-weight
-uniform default. Re-run after any EM/weighting change: this calibrates the
+2026-07-06: GLOBAL mode now normalizes per_founder (the Kf_w fix). Re-run after any EM/weighting change: this calibrates the
 AF_ID_FLOOR_DEFAULT constant baked into per_sample_per_chrom.py.
 """
 import argparse, sys, time
@@ -50,8 +47,7 @@ def load(panel):
     kp = sparse.load_npz(f"{p['kpre']}.kmer_pa.npz")
     K = np.asarray(kp.todense(), np.float32) if sparse.issparse(kp) else np.asarray(kp, np.float32)
     m = np.load(f"{p['kpre']}.meta.npz", allow_pickle=True)
-    fk = np.asarray(m["founders"]).astype(str); bid = np.asarray(m["bubble_id"])
-    omega = (1.0 / np.bincount(bid)[bid]).astype(np.float32)
+    fk = np.asarray(m["founders"]).astype(str)
     V = np.asarray(sparse.load_npz(f"{p['vpre']}.var_pa.npz").todense(), np.float64)
     U = np.asarray(sparse.load_npz(f"{p['vpre']}.var_called.npz").todense(), np.float64)
     fv = np.asarray(np.load(f"{p['vpre']}.meta.npz", allow_pickle=True)["founders"]).astype(str)
@@ -59,7 +55,7 @@ def load(panel):
     V, U = V[ridx], U[ridx]
     w = pd.read_csv(p["pool"], sep="\t"); wm = {str(f): float(x) for f, x in zip(w["founder"], w["weight"])}
     h = np.array([wm.get(str(f), 0.0) for f in fk], np.float64); h /= h.sum()
-    return K, omega, V, U, h
+    return K, V, U, h
 
 
 def solve_c_for_coverage(err, se, target=0.95, lo=0.0, hi=0.2):
@@ -80,7 +76,7 @@ def solve_c_for_coverage(err, se, target=0.95, lo=0.0, hi=0.2):
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--panel", choices=list(PANELS), required=True)
     args = ap.parse_args(); t0 = time.time()
-    K, omega, V, U, h_true = load(args.panel)
+    K, V, U, h_true = load(args.panel)
     F, Kn = K.shape; R = V.shape[1]
     mu = (h_true @ K).astype(np.float64)
     af_true = (h_true @ V) / np.maximum(h_true @ U, 1e-12)
@@ -104,7 +100,7 @@ def main():
         for r in range(REPS):
             c = rng.poisson(lam * mu)
             nz = c > 0
-            # GLOBAL mode: uniform kmer-weight (omega=None), per_founder normalize
+            # GLOBAL mode, per_founder normalize
             # (solve_em default) -- matches the production recipe.
             h, _ = solve_em(c[nz].astype(np.float32), K[:, nz], lam,
                             max_iter=1500, tol=1e-9)

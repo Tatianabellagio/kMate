@@ -19,7 +19,7 @@ SEEDS=(42 43 44 45 46 47); LEVELS=(base 8 15 25 40)
 SI=$(( SLURM_ARRAY_TASK_ID / 5 )); LI=$(( SLURM_ARRAY_TASK_ID % 5 ))
 SEED=${SEEDS[$SI]}; LEVEL=${LEVELS[$LI]}
 POOL=cov10_n50_g3_s${SEED}_self97_hotspots_dom500_p231_chr1
-MKB=50; WEIGHT=inv_mb; T=${SLURM_CPUS_PER_TASK:-8}
+MKB=50; T=${SLURM_CPUS_PER_TASK:-8}
 source ~/miniforge3/etc/profile.d/conda.sh && conda activate kmate
 KP=data/kmer_pa_231_arch3_filt2inv/kmer_pa
 VP=panel/arch3/chr1/var_pa_231_arch3_chr1.var_pa.npz
@@ -36,7 +36,7 @@ python -m kmate.per_sample_per_chrom \
   --kmer-pa-prefix "$KP" --var-pa "$VP" --var-meta "$VM" \
   --reads benchmarks/p231/sims/$POOL/reads/r1.fq benchmarks/p231/sims/$POOL/reads/r2.fq \
   --sample sweep_s${SEED}_${LEVEL} --threads "$T" --chroms Chr1 \
-  --block-mode window --kmer-weight "$WEIGHT" \
+  --block-mode window \
   --blocks-tsv "$BLOCKS" --min-kmers-per-block "$MKB" \
   --out "$OUT"
 echo "[$(date)] DONE seed=$SEED level=$LEVEL -> $OUT"
