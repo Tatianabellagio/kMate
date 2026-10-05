@@ -536,7 +536,110 @@ print("  calibrated p-value, and note that origin climate and ancestry are deepl
 print("  Arabidopsis -- no model on 231 accessions fully separates them.")
 '''
 
-md_change = """## 7 · What changed from the previous classification
+md_sfs = """## 7 · How common is each family among the founders?
+
+The founder **site frequency spectrum** (how many of the 231 founders carry an insertion) split by TE
+superfamily and by family. Young, recently active families should be mostly **private**, carried by one
+or a few accessions, while old families have had time to drift to higher frequency.
+
+This section counts **events**, not records: one insertion is often split across several panel
+records (one per assembly path), and counting records would make every family look more private than
+it is. Each event takes the class of its first record (`sv_repeat_class_events.csv`); "TE" means at least
+half TE (`te_full` + `te_most`). Library entries for the same family (internal `_I`, `LTR`, and the
+TAIR10-copy `_AT#TE#####` versions) are merged, so ONSEN = every `ATCOPIA78` entry.
+
+**a** spectrum per superfamily (share of that superfamily's events in each carrier-count bin), ONSEN drawn
+on its own. **b** per family with ≥ 30 events: share of singletons against median divergence from the
+consensus (young = low divergence); colour = superfamily as in **a**, point size = number of events.
+**c** the singleton share per superfamily among all events and among
+events called in ≥ 50% of founders: an insertion seen only in the 78 long-read founders is called in at
+most 34%, so it cannot be common however old it is."""
+
+code_sfs = r"""import re
+CE=pd.read_csv(f"{G}/sv_event_catalog.csv")
+EVC=pd.read_csv(f"{G}/graffite/sv_repeat_class_events.csv")
+S=CE[CE.kind=="ins"].merge(EVC[["rep_key","cargo","top_family","top_superfamily","top_div"]],
+                           left_on="key",right_on="rep_key")
+S["te"]=S.cargo.isin(["te_full","te_most"])
+def fam(f):
+    f=re.sub(r"_AT\dTE\d+$","",str(f)); return re.sub(r"(_I|-I|_LTR|-LTR|LTR|_INT)$","",f)
+S["fam"]=np.where(S.te,S.top_family.map(fam),"")
+SFG={"RC/Helitron":"Helitron","LTR/Copia":"LTR/Copia","LTR/Gypsy":"LTR/Gypsy","LINE/L1":"LINE/L1",
+     "DNA/MULE-MuDR":"MuDR","DNA/MuDR":"MuDR","DNA/PIF-Harbinger":"PIF-Harbinger","DNA/Harbinger":"PIF-Harbinger",
+     "DNA/hAT":"hAT","DNA/HAT":"hAT","DNA/CMC-EnSpm":"CACTA","DNA/En-Spm":"CACTA"}
+S["grp"]=np.where(S.te,S.top_superfamily.map(SFG).fillna("other TE"),np.where(S.cargo=="non_te","no TE","partial TE"))
+S["onsen"]=S.fam.eq("ATCOPIA78")
+CB=[0,1,2,5,10,25,50,100,231]; CBL=["1","2","3-5","6-10","11-25","26-50","51-100","101-231"]
+S["cbin"]=pd.cut(S.n_carriers,CB,labels=CBL)
+GORD=["Helitron","LTR/Copia","LTR/Gypsy","LINE/L1","MuDR","PIF-Harbinger","hAT","CACTA"]
+GC={"Helitron":"#B04A00","LTR/Copia":"#1F4E79","LTR/Gypsy":"#4E81BD","LINE/L1":"#2F6B3A","MuDR":"#8B6BA8",
+    "PIF-Harbinger":"#C9A227","hAT":"#8C564B","CACTA":"#D17FB0","other TE":"#BDBDBD","no TE":"0.45"}
+fig,axs=plt.subplots(1,3,figsize=(15.5,4.1),gridspec_kw=dict(wspace=0.36,width_ratios=[1.25,1.1,1]))
+a=axs[0]; style(a,axis="both"); x=np.arange(len(CBL))
+for g in GORD+["no TE"]:
+    v=S[S.grp==g].cbin.value_counts(normalize=True).reindex(CBL).fillna(0)
+    a.plot(x,100*v,color=GC[g],lw=2.2 if g=="no TE" else 1.5,ls=(0,(4,2)) if g=="no TE" else "-",
+           marker="o",ms=3,label=f"{g} ({int((S.grp==g).sum()):,})")
+v=S[S.onsen].cbin.value_counts(normalize=True).reindex(CBL).fillna(0)
+a.plot(x,100*v,color="#D62728",lw=2.8,marker="D",ms=4.5,label=f"ONSEN / ATCOPIA78 ({int(S.onsen.sum())})",zorder=5)
+a.set_xticks(x); a.set_xticklabels(CBL,fontsize=7.5); a.set_xlabel("founders carrying the insertion (of 231)",fontsize=8.5)
+a.set_ylabel("% of that group's insertion events",fontsize=8.5); a.legend(fontsize=6.4,frameon=False,ncol=1)
+a.annotate("a   frequency spectrum by superfamily",xy=(0,1.04),xycoords="axes fraction",fontsize=8.6,fontweight="bold",color="0.3")
+# b: per family
+Fm=S[S.te].groupby("fam").agg(n=("key","size"),single=("n_carriers",lambda s:100*(s==1).mean()),
+                              med_car=("n_carriers","median"),div=("top_div","median"),
+                              grp=("grp",lambda s:s.mode().iloc[0]))
+Fm=Fm[Fm.n>=30]
+a=axs[1]; style(a,axis="both")
+for g,d in Fm.groupby("grp"):
+    a.scatter(d["div"],d.single,s=8+d.n**0.75,color=GC.get(g,"#BDBDBD"),alpha=0.75,edgecolor="0.3",lw=0.3,label=g)
+a.axhline(100*(S[S.te].n_carriers==1).mean(),color="0.5",lw=0.9,ls=(0,(4,2)))
+lab=pd.concat([Fm.sort_values("single",ascending=False).head(6),Fm.loc[["ATCOPIA78"]] if "ATCOPIA78" in Fm.index else Fm.head(0)])
+for f,r in lab.iterrows():
+    on=f=="ATCOPIA78"
+    a.annotate("ONSEN" if on else f,xy=(r["div"],r.single),xytext=(4,3),textcoords="offset points",
+               fontsize=7 if on else 6.2,color="#D62728" if on else "0.25",fontweight="bold" if on else "normal")
+if "ATCOPIA78" in Fm.index:
+    r=Fm.loc["ATCOPIA78"]; a.scatter([r["div"]],[r.single],s=60,facecolor="none",edgecolor="#D62728",lw=1.6,zorder=5)
+a.set_xscale("symlog",linthresh=1); a.set_xlabel("median divergence from consensus (%)  [young -> old]",fontsize=8.5)
+a.set_ylabel("% of the family's events that are singletons",fontsize=8.5)
+a.annotate(f"b   private vs young ({len(Fm)} families with >= 30 events)",xy=(0,1.04),xycoords="axes fraction",
+           fontsize=8.6,fontweight="bold",color="0.3")
+# c: call-rate robustness
+a=axs[2]; style(a,axis="y")
+R2=[]
+for g in GORD+["no TE"]:
+    d=S[S.grp==g]; d2=d[d.n_called>=116]
+    R2.append(dict(grp=g,all=100*(d.n_carriers==1).mean(),cr50=100*(d2.n_carriers==1).mean(),n=len(d),n_cr50=len(d2)))
+d=S[S.onsen]; d2=d[d.n_called>=116]
+R2.append(dict(grp="ONSEN",all=100*(d.n_carriers==1).mean(),cr50=100*(d2.n_carriers==1).mean(),n=len(d),n_cr50=len(d2)))
+R2=pd.DataFrame(R2); x=np.arange(len(R2))
+a.bar(x-0.19,R2["all"],width=0.36,color=[GC.get(g,"#D62728") for g in R2.grp],label="all events")
+a.bar(x+0.19,R2["cr50"],width=0.36,color=[GC.get(g,"#D62728") for g in R2.grp],alpha=0.45,hatch="///",
+      edgecolor="white",label="called in >= 50% of founders")
+a.set_xticks(x); a.set_xticklabels(R2.grp,fontsize=7,rotation=35,ha="right")
+a.set_ylabel("% singletons",fontsize=8.5)
+from matplotlib.patches import Patch
+a.legend(handles=[Patch(facecolor="0.45",label="all events"),
+                  Patch(facecolor="0.45",alpha=0.45,hatch="///",edgecolor="white",label="called in >= 50% of founders")],
+         fontsize=6.8,frameon=False)
+a.annotate("c   is it just long-read-only events?",xy=(0,1.04),xycoords="axes fraction",fontsize=8.6,
+           fontweight="bold",color="0.3")
+save(fig,"cargorm_sfs_family",nb=True); plt.show()
+print("INSERTION EVENTS: founder frequency by superfamily\n")
+t=S.groupby("grp").agg(events=("key","size"),pct_singleton=("n_carriers",lambda s:100*(s==1).mean()),
+                       pct_le5=("n_carriers",lambda s:100*(s<=5).mean()),median_carriers=("n_carriers","median"),
+                       median_div=("top_div","median"))
+o=S[S.onsen]; t.loc["ONSEN (ATCOPIA78)"]=[len(o),100*(o.n_carriers==1).mean(),100*(o.n_carriers<=5).mean(),
+                                          o.n_carriers.median(),o.top_div.median()]
+print(t.reindex(GORD+["other TE","partial TE","no TE","ONSEN (ATCOPIA78)"]).round(1).to_string())
+print("\nsinglet. share, all events vs events called in >= 50% of founders\n"); print(R2.round(1).to_string(index=False))
+rho,p=stats.spearmanr(Fm["div"],Fm.single)
+print(f"\nfamilies with >= 30 events: Spearman(median divergence, % singletons) = {rho:+.2f}, p = {p:.2g}")
+print("\nMOST PRIVATE FAMILIES (>= 30 events)\n"); print(Fm.sort_values("single",ascending=False).head(10).round(1).to_string())
+"""
+
+md_change = """## 8 · What changed from the previous classification
 
 Until 2026-10-04 this notebook read `rm_cargo_allins.csv`: same library, but default speed, `-nolow
 -norna`, and the TE fraction taken over the **net** inserted size. Two things move, for two different
@@ -566,7 +669,7 @@ print(X[X.context.notna()].groupby("context")
 print(f"\ncargo class unchanged: {100*(X.cargo.astype(str)==X.cargo_old).mean():.1f}% of insertions")
 '''
 
-md_read = """## 8 · Reading it
+md_read = """## 9 · Reading it
 
 **The library was the decisive choice.** 61.0% of inserted bases masked with TAIR10's 320 families,
 **75.7%** with RepBase's 1,136, 76.8% with both. For Arabidopsis cargo work RepBase is the library and a
@@ -584,6 +687,15 @@ deletions have no TE at all (median 128 bp). Unlike insertions, whole-TE deletio
 short records (panel d). A ~100 bp deletion classed `te_full` has removed a piece of an element, not an
 element, so for deletions `te_full` means "the removed sequence is TE", not "a TE was excised".
 
+**Young families are private, and ONSEN is among the most private** (§7, per event). 50.9% of ONSEN
+insertion events are carried by a single founder, and almost none reach 26 or more founders. Other TE
+superfamilies sit at 34–39% singletons (LTR/Copia 46%) and non-TE insertions at 30%. Across families,
+the younger the family (lower divergence from its consensus), the larger its singleton share (Spearman
+ρ = −0.31 over 236 families, p = 1e-6). The most private families are young Copia, VANDAL (MuDR) and
+L1 families at ≤ 2% divergence. Restricting to events called in ≥ 50% of founders lowers every share by
+a few points but leaves the ordering intact (ONSEN 48.5%), so this is not just insertions seen only in the
+long-read founders. A singleton can also be a genotyping error, which this does not rule out.
+
 **TE content rises with length**: mean TE fraction 0.2 below 100 bp, 0.7 at 3–10 kb. Part of that is real
 and part is detection power. Because the measure is graded, an analysis can stratify on size instead of
 having to decide which.
@@ -593,7 +705,7 @@ that, clean insertions become whole TEs more and more often (67% at 3–10 kb), 
 off around 35–43%. Their class describes an ALT allele that also stands in for reference sequence, so
 they should be analysed as their own group, not pooled.
 
-**What moved since the `-nolow` classification (§7).** Most insertions keep their class. The changes come
+**What moved since the `-nolow` classification (§8).** Most insertions keep their class. The changes come
 from two corrections, not from noise. Clean insertions lose whole-TE calls that were really simple repeats.
 Replacement records lose whole-TE calls whose old fraction was capped at 1 by a too-small denominator.
 Because CDS-landing insertions are disproportionately replacements, they move most: `te_full` 46.9% →
@@ -644,6 +756,7 @@ if __name__ == "__main__":
         new_markdown_cell(md_cold), new_code_cell(code_cold),
         new_markdown_cell(md_clim), new_code_cell(code_clim),
         new_markdown_cell(md_onsen), new_code_cell(code_onsen),
+        new_markdown_cell(md_sfs), new_code_cell(code_sfs),
         new_markdown_cell(md_change), new_code_cell(code_change),
         new_markdown_cell(md_read), new_markdown_cell(md_methods),
     ])
