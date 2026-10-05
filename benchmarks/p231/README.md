@@ -60,12 +60,13 @@ individual at 50% of pool reads). g0 = perfect founder mix (no recombination).
 ```
 05_build_fastas_p231.sh         231 consensus FASTAs from merged_231 (array 1-231)
 03_build_kmer_pa_p231.sh        kmer_pa from merged_231 + pang_135 dict
-03b_build_kmer_pa_filt2_p231.sh filt2 (drop ac<2 singletons) -> front-runner kmer_pa
+03b_build_kmer_pa_filt2_p231.sh filt2 (drop ac<2 singletons) -> h-imbalance grid arm (07e/08)
+03c_build_kmer_pa_filt2inv_p231.sh filt2inv (also drop ac=F invariants) -> front-runner kmer_pa
 03c_compare_kmer_pa.py          validate rebuilt vs production kmer_pa
 06_run_sim_p231.sh N G          mosaics (RANDOM crossovers) + VISOR reads + truth x2
 06b_run_sim_p231_skewed.sh      dom500 variant
-07c_run_kmate_filt2_mb_p231.sh REGIME CNVAR [WEIGHT]   EM (--unit chrom, uniform + --normalize per_founder; inv_mb = legacy A/B only) + project
-score_p231.py                   MAE/RMSE/R2/outlier by regime x cnvar x weight x class
+07f_run_kmate_filt2inv_p231.sh REGIME CNVAR   EM (global, --normalize per_founder) + project
+score_p231.py                   MAE/RMSE/R2/outlier by regime x cnvar x class (07f output)
 submit_all_p231.sh              the full DAG
 ```
 

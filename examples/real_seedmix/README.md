@@ -54,7 +54,7 @@ kmate build-kmer-db --reads R1.fq.gz R2.fq.gz --out pool.jf --threads 4
 kmate run --kmer-pa-prefix … --var-pa … --var-meta … \
           --reads R1.fq.gz R2.fq.gz --kmer-db pool.jf \
           --sample S1 --out S1.tsv --chroms Chr1 Chr2 Chr3 Chr4 Chr5 \
-          --block-mode global --kmer-weight inv_mb
+          --unit chrom
 ```
 
 Counts from the DB are byte-identical to the per-chrom count path.

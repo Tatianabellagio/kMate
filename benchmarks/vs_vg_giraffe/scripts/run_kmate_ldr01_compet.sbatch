@@ -22,5 +22,5 @@ $PY -u $ROOT/src/per_sample_per_chrom.py \
   --kmer-pa-prefix $KMER \
   --var-pa ${VAR}.var_pa.npz --var-called ${VAR}.var_called.npz --var-meta ${VAR}.meta.npz \
   --reads $READS/r1.fq $READS/r2.fq --sample ${POOL}_kmate_ldr01 --out $OUT \
-  --threads 8 --chroms Chr1 --unit ld --ld-r2 0.1 --kmer-weight uniform
+  --threads 8 --chroms Chr1 --unit ld --ld-r2 0.1
 echo "[$(date)] DONE — $OUT"

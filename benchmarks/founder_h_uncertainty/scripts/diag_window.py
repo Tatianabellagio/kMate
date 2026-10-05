@@ -17,7 +17,7 @@ Clean generative test on p80, g0 pool (no recombination ⇒ local ancestry = glo
 so the per-window truth is the SAME h_true at every window). For each window:
   noiseless:  c_k = μ_k(h_true)        over the window's k-mers
   coverage λ: c_k ~ Poisson(λ μ_k)     (R replicates, averaged)
-  ĥ_w = per-window weighted-Poisson EM (ω=1/m_b); error = ||ĥ_w - h_true||.
+  ĥ_w = per-window Poisson EM; error = ||ĥ_w - h_true||.
 
 Reports per-window errors + support, and the aggregate error-vs-coverage and
 error-vs-support relationships. Run via sbatch.
@@ -43,12 +43,10 @@ def load_all():
     m = np.load(PREFIX / "kmer_pa_Chr1.meta.npz", allow_pickle=True)
     founders = np.asarray(m["founders"]).astype(str)
     bid = np.asarray(m["bubble_id"])
-    m_b = np.bincount(bid)[bid].astype(np.float64)
-    omega = (1.0 / m_b).astype(np.float32)
     meta = dict(bubble_id=bid, bubble_chrom=np.asarray(m["bubble_chrom"]).astype(str),
                 bubble_start=np.asarray(m["bubble_start"]),
                 bubble_end=np.asarray(m["bubble_end"]))
-    return kmer_pa, founders, omega, meta
+    return kmer_pa, founders, meta
 
 
 def load_truth_h(pool, founders):
@@ -59,14 +57,13 @@ def load_truth_h(pool, founders):
     return h / s if s > 0 else h
 
 
-def win_em(c, K, omega, max_iter=500, tol=1e-9):
+def win_em(c, K, max_iter=500, tol=1e-9):
     """Per-window EM on c>0 k-mers only. Returns ĥ (F,) or None if no evidence."""
     nz = c > 0
     if nz.sum() < 1:
         return None
-    om = None if omega is None else omega[nz]
     h, _ = solve_em(c[nz].astype(np.float32), K[:, nz], 1.0,
-                    max_iter=max_iter, tol=tol, omega=om)
+                    max_iter=max_iter, tol=tol)
     return h
 
 
@@ -83,7 +80,7 @@ def main():
     covs = [float(x) for x in args.covs.split(",")]
     outdir = Path(args.out); outdir.mkdir(parents=True, exist_ok=True)
 
-    kmer_pa, founders, omega, meta = load_all()
+    kmer_pa, founders, meta = load_all()
     F, K = kmer_pa.shape
     h_true = load_truth_h(args.pool, founders)
     supp_true = h_true > 0
@@ -116,7 +113,6 @@ def main():
             continue
         Kw = kmer_pa[:, idx]
         muw = mu_true[idx]
-        omw = omega[idx]
         # how many TRUE founders even have a local k-mer here (local resolvability)
         n_loc_founders = int((Kw[supp_true].sum(axis=1) > 0).sum())
 
@@ -124,7 +120,7 @@ def main():
                    n_local_truefounders=n_loc_founders,
                    below_floor=int(nk < args.min_kmers))
         # noiseless: identifiability floor for this window
-        h_nl = win_em(muw.astype(np.float32), Kw, omw)
+        h_nl = win_em(muw.astype(np.float32), Kw)
         rec["err_noiseless"] = l2(h_nl) if h_nl is not None else np.nan
         rec["nsupp_noiseless"] = int((h_nl > 1e-3).sum()) if h_nl is not None else 0
         # coverage sweep (R replicate Poisson draws, averaged)
@@ -133,7 +129,7 @@ def main():
             for _ in range(args.reps):
                 c = rng.poisson(lam * muw)
                 nzk.append(int((c > 0).sum()))
-                h = win_em(c.astype(np.float32), Kw, omw)
+                h = win_em(c.astype(np.float32), Kw)
                 errs.append(l2(h) if h is not None else np.nan)
             rec[f"err_cov{lam:g}"] = float(np.nanmean(errs))
             rec[f"nzk_cov{lam:g}"] = float(np.mean(nzk))

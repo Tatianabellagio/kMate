@@ -97,6 +97,6 @@ $PYTHON -u $DRIVER \
     --sample $SAMPLE \
     --out $OUT_TSV \
     --threads 8 --chroms Chr1 \
-    $UNIT_ARGS --kmer-weight uniform
+    $UNIT_ARGS
 
 echo; echo "[$(date)] DONE — $OUT_TSV"; ls -lh $OUT_TSV

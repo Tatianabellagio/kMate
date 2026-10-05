@@ -28,12 +28,11 @@ Last verified: 2026-05-27.
 > rule — **and** column-sum = F invariants, the latter added 2026-05-29; §2.1) and the per-k-mer EM weight
 > $\omega_k = 1/m_b$ (per-bubble de-replication; §4.2) were the 2026-05-27
 > production defaults on the heterogeneous 231-founder panel. filt2inv still holds.
-> $\omega_k = 1/m_b$ remains the **window-mode** weighting, but for **global mode**
-> (the GrENE-Net production estimator) it was **superseded 2026-07-06** by
-> per-founder M-step normalization + `--kmer-weight uniform` (§4.3;
-> `docs/FOUNDER_NORMALIZATION_FIX.md`). Both weights are documented inline
-> below; the panel-conditional caveat for $\omega_k=1/m_b$ is in §10 (M6) and
-> `docs/METHODS_TRIED_AND_RESULTS.md` §3.
+> $\omega_k = 1/m_b$ was **superseded 2026-07-06** by the per-founder M-step
+> normalization (§4.3; `docs/FOUNDER_NORMALIZATION_FIX.md`) and **removed from the
+> code 2026-09-29** (`--kmer-weight` is gone; every unit fits the unweighted EM).
+> §4.2 keeps its derivation as a record of what was tried; the panel-conditional
+> caveat is in §10 (M6) and `docs/METHODS_TRIED_AND_RESULTS.md` §3.
 
 ---
 
@@ -207,18 +206,8 @@ The Poisson log-likelihood
 $\ell(\mathbf{h}) = \sum_k \left[c_k \log \mu_k(\mathbf{h}) - \lambda \, \mu_k(\mathbf{h})\right] + \text{const}$
 is concave on $\Delta^{F-1}$.
 
-**Weighted likelihood (production).** Each k-mer carries a non-negative weight
-$\omega_k \geq 0$ that scales its contribution to the log-likelihood:
-
-$$\ell_\omega(\mathbf{h}) \;=\; \sum_k \omega_k \!\left[\,c_k \log \mu_k(\mathbf{h}) \;-\; \lambda \, \mu_k(\mathbf{h})\,\right] + \text{const}.$$
-
-This is the standard composite-likelihood form (Lindsay 1988): $\omega_k$
-adjusts the effective contribution of each pseudo-observation without
-disturbing the simplex constraint or the Poisson concavity argument. The
-unweighted MLE corresponds to $\omega_k \equiv 1$. The window-mode weighting
-$\omega_k = 1/m_b(k)$ — per-bubble de-replication — is derived and motivated
-in §4.2 (global-mode production uses $\omega_k\equiv 1$ + per-founder
-normalization; §4.3).
+kMate maximizes this unweighted likelihood in every unit. (A per-k-mer weight
+$\omega_k = 1/m_b$ was used until 2026-07 and is retired; see §4.2.)
 
 **Coverage estimate $\lambda$.** Reported at load time as a sanity-check value
 (`per_sample_per_chrom.py:104-106`):
@@ -242,18 +231,12 @@ $\sum_f z_{k,f} = c_k$.
 
 $$\mathbb{E}\!\left[z_{k,f} \mid c_k, \mathbf{h}^{(t)}\right] \;=\; c_k \cdot \frac{h_f^{(t)} \, (K_{\mathrm{pa}})_{f,k}}{\mu_k(\mathbf{h}^{(t)})}$$
 
-**M-step (weighted form, production).** Constrained MLE on the simplex under
-the weighted likelihood of §3:
+**M-step.** Constrained MLE on the simplex under the likelihood of §3:
 
-$$\boxed{\; h_f^{(t+1)} \;\propto\; h_f^{(t)} \cdot \sum_{k=1}^K (K_{\mathrm{pa}})_{f,k} \cdot \frac{\omega_k\, c_k}{\mu_k(\mathbf{h}^{(t)})} \;}$$
+$$\boxed{\; h_f^{(t+1)} \;\propto\; h_f^{(t)} \cdot \sum_{k=1}^K (K_{\mathrm{pa}})_{f,k} \cdot \frac{c_k}{\mu_k(\mathbf{h}^{(t)})} \;}$$
 
 followed by L1 renormalization $\sum_f h_f^{(t+1)} = 1$. The coverage $\lambda$
-cancels. Setting $\omega_k \equiv 1$ recovers the unweighted Poisson MLE
-update; $\omega_k = 1/m_b(k)$ is the per-bubble de-replication weight (§4.2) —
-the **window-mode** setting. (For global mode, production is $\omega_k\equiv 1$
-plus the per-founder M-step normalization of §4.3; superseded 2026-07-06 —
-see `docs/FOUNDER_NORMALIZATION_FIX.md`.) This M-step is also renormalized
-per-founder by default (§4.3).
+cancels. This M-step is also renormalized per-founder by default (§4.3).
 
 > **Default normalization changed (2026-07-06): the M-step now divides each
 > founder's numerator by its own effective k-mer content $K^w_f$ before the L1
@@ -266,11 +249,10 @@ per-founder by default (§4.3).
 Vectorized implementation (`em_solver.py:80-110`):
 
 ```python
-wc      = counts if omega is None else (omega * counts)  # ω_k · c_k
 denom   = np.maximum(h @ kmer_pa, 1e-7)   # μ_k(h), with numerical floor
-cw      = wc / denom                  # ω_k · c_k / μ_k
-em_term = h * (kmer_pa @ cw)               # h_f · Σ_k kmer_pa[f,k] · ω_k · c_k / μ_k
-h_new   = em_term / em_term.sum()     # L1 renormalize
+cw      = counts / denom              # c_k / μ_k
+em_term = h * (kmer_pa @ cw)          # h_f · Σ_k kmer_pa[f,k] · c_k / μ_k
+h_new   = em_term / em_term.sum()     # L1 renormalize (legacy `global` form)
 ```
 
 **Initialization (`em_solver.py:70-71`):** $h_f^{(0)} = 1/F$ (uniform).
@@ -309,16 +291,15 @@ $$h_f^{(t+1)} \;\propto\; h_f^{(t)} \sum_k (K_{\mathrm{pa}})_{f,k} \frac{c_k}{\m
 $\beta = 0$ is pure MLE; $\beta = 1$ weights the prior as much as the data;
 $\beta \in [0.05, 0.5]$ is the working range.
 
-### 4.2 Per-bubble de-replication weight $\omega_k = 1/m_b$ (window-mode weighting)
+### 4.2 Per-bubble de-replication weight $\omega_k = 1/m_b$ (RETIRED)
 
-> **Scope (superseded 2026-07-06 for global mode).** $\omega_k = 1/m_b$ is the
-> **window-mode** EM weighting. It was originally the global-mode production
-> weighting too, but with the per-founder M-step normalization of §4.3 the
-> cactus/PG completeness imbalance this weight patched is removed at its source,
-> so global-mode production now uses `--kmer-weight uniform` + `--normalize
-> per_founder` (ablation: uniform AF-MAE 0.0036 vs $1/m_b$ 0.0045). The
-> derivation below stands as the rationale for the window-mode weight and as
-> archaeology; see §4.3 / `docs/FOUNDER_NORMALIZATION_FIX.md`.
+> **Retired — not part of kMate.** This weight patched the cactus/PG completeness
+> imbalance. The per-founder M-step normalization of §4.3 removes that imbalance
+> at its source and measured better (chrom mode: AF-MAE 0.0036 unweighted vs
+> 0.0045 with $1/m_b$), so the weight was dropped for global mode 2026-07-06 and
+> removed from the code 2026-09-29. Window units were never re-benchmarked
+> without it. The section below is kept as a record of what was tried and why;
+> see §4.3 / `docs/FOUNDER_NORMALIZATION_FIX.md`.
 
 **Definition.** Every panel k-mer $k$ is contributed by exactly one PanGenie
 bubble (the local pangenome graph object that produced it; `build_kmer_pa.py`
@@ -327,7 +308,7 @@ preserves the bubble assignment in `meta["bubble_id"]`). Let
 $$m_b(k) \;=\; \#\{k' : \mathrm{bubble}(k') = \mathrm{bubble}(k)\}$$
 
 be the number of canonical k-mers in $k$'s bubble (a per-bubble integer, in
-[1, ~32] given PanGenie's per-allele caps). The production weighting is
+[1, ~32] given PanGenie's per-allele caps). The weighting was
 
 $$\boxed{\;\omega_k \;=\; \frac{1}{m_b(k)}\;}$$
 
@@ -335,12 +316,10 @@ so a bubble contributing $m_b$ k-mers contributes total mass $m_b \cdot (1/m_b)
 = 1$ to the M-step — one *locus* worth of evidence, independent of how many
 k-mers it produced.
 
-**Implementation** (`per_sample_per_chrom.py:121-128`, `:181-187`): computed at
-load time from `meta["bubble_id"]` as
-`m_b = np.bincount(bid)[bid]; omega = 1.0 / m_b` and passed into
-`em_solver.solve_em(omega=...)`. Selected via the CLI flag
-`--kmer-weight inv_mb` (default `uniform`, i.e. $\omega_k \equiv 1$). Wired
-identically in the global and window modes.
+**Implementation (removed 2026-09-29):** computed at load time from
+`meta["bubble_id"]` as `m_b = np.bincount(bid)[bid]; omega = 1.0 / m_b`, passed
+into `em_solver.solve_em(omega=...)`, and selected with the since-removed flag
+`--kmer-weight inv_mb`.
 
 **Why this helps the 231 panel.** The mixed panel (78 long-read cactus + 153
 PG-genotyped short-read founders) has a structural imbalance: cactus founders
@@ -357,15 +336,13 @@ which is panel-symmetric and cancels the over-credit at its source.
 
 **Empirical result.** On the heterogeneous 231 panel, `filt2 + ω_k=1/m_b
 global` wins per-record AF MAE in every cov/n/g regime tested (g0 sims,
-replicate-validated; `docs/METHODS_TRIED_AND_RESULTS.md` §3). $\omega_k = 1/m_b$ is
-therefore the **window-mode** EM weighting alongside the filt2 kmer_pa; for
-global mode it is superseded by per_founder + uniform (§4.3).
+replicate-validated; `docs/METHODS_TRIED_AND_RESULTS.md` §3). That result predates the per-founder
+normalization (§4.3), which beat it and replaced it.
 
 **Equivalence to count rescaling.** Because the Poisson M-step is linear in
 $c_k$, $\omega_k$ enters the update exactly as if each count had been rescaled
-$c_k \leftarrow \omega_k c_k$ pre-EM. Implementation matches: `solve_em` does
-`wc = omega * counts` once and runs the unweighted iteration on `wc`
-(`em_solver.py:80-81`). This is *not* a coverage rescaling — $\omega_k$ varies
+$c_k \leftarrow \omega_k c_k$ pre-EM. The removed implementation did exactly
+that (`wc = omega * counts`, then the unweighted iteration on `wc`). This is *not* a coverage rescaling — $\omega_k$ varies
 across k-mers and is decoupled from $\lambda$.
 
 **Panel-conditional caveat (do not propagate into the paper).** On a
@@ -373,21 +350,18 @@ homogeneous all-long-read control panel (`benchmarks/p80`, 2026-05-27) without
 the cactus/PG imbalance, $\omega_k = 1/m_b$ slightly *under-performs* plain
 $\omega_k=1$ (per-record AF MAE +2% to +41% across regimes). $\omega_k = 1/m_b$
 is therefore an imbalance-canceling correction rather than a universal
-de-replication. For the GrENE-Net 231 panel this distinction is internal to
-the project (see §10 M6); the paper treats $\omega_k = 1/m_b$ as the method's
-default. The flag `--kmer-weight uniform` reproduces the unweighted MLE
-byte-identically (`em_solver.py:80`, `:65`) for users on balanced panels.
+de-replication. See §10 M6.
 
 ### 4.3 Per-founder normalization $\omega$/$K^w_f$ (production default, `normalize="per_founder"`)
 
 **The bug it fixes.** The M-step of §4 renormalizes each iteration by a single
-**global** scalar $\mathrm{total\_c}=\sum_k \omega_k c_k$ — the same denominator
+**global** scalar $\mathrm{total\_c}=\sum_k c_k$ — the same denominator
 for every founder. At the fixed point the per-founder numerator is
 $\mathrm{raw}_f = h^{\text{true}}_f\cdot K^w_f$, where
 
-$$K^w_f \;=\; \sum_{k} \omega_k\,(K_{\mathrm{pa}})_{f,k}$$
+$$K^w_f \;=\; \sum_{k} (K_{\mathrm{pa}})_{f,k}$$
 
-is founder $f$'s $\omega$-weighted k-mer content **over the full estimation unit
+is founder $f$'s k-mer content **over the full estimation unit
 (all k-mers, since $E[c_k/\mu_k]=1$ for every carried k-mer whether or not it
 draws $c_k=0$)**. Normalizing by one global constant therefore converges to
 $\hat h_f \propto h^{\text{true}}_f\cdot K^w_f$: k-mer-rich founders (the 78
@@ -425,9 +399,8 @@ is heavily selfing, so there is little recombination mosaic and one founder
 mixture per chromosome is appropriate for *both* the seed-mix $p_0$ and the
 evolved samples. It emits **both** the per-sample founder $\mathbf h$ and the
 per-record SNP/SV `alt_freq` (the driver always projects $\hat{\mathbf h}$ through
-`var_pa`) in one pass; the production recipe is per_founder + filt2inv +
-`--kmer-weight uniform` (**drop** $\omega=1/m_b$; §4.2), superseding the
-$\omega=1/m_b$-for-global recommendation. **Window mode** (per-window EM + anchor +
+`var_pa`) in one pass; the production recipe is per_founder + filt2inv, unweighted
+(the retired $\omega=1/m_b$ of §4.2 is gone). **Window mode** (per-window EM + anchor +
 HMM smoothing) is for *recombinant* pools, not the selfing production path;
 per_founder is its single default too (it wins the local-only use case by ~18–21%
 RMSE; the difference under the full `star2` recipe is a marginal bias-variance
@@ -627,10 +600,8 @@ Current production:
 - **M-step normalization `per_founder` (§4.3)** is the production default
   everywhere (`--normalize per_founder`), removing the founder-completeness bias
   at its source.
-- **Per-bubble de-replication weight $\omega_k = 1/m_b$ (§4.2)** is the
-  **window-mode** EM weighting (`--kmer-weight inv_mb`). For **global mode** (the
-  GrENE-Net production estimator) it was superseded 2026-07-06 by
-  `--kmer-weight uniform` + per_founder (§4.3). The `kmer_pa_231_arch3_filt2inv`
+- **Unweighted EM in every unit.** The per-bubble weight $\omega_k = 1/m_b$
+  (§4.2) is retired and removed from the code. The `kmer_pa_231_arch3_filt2inv`
   filtered matrix (§2.1) is the production kmer_pa base in both modes.
 - **Haploblock collapse (§4.4)** — fit the $K_b\le F$ distinct haplotypes per
   unit, not all $F$ — is **on by default** in both modes (`--haploblock-eps 0`,
@@ -638,13 +609,15 @@ Current production:
 - **Window mode defaults to `--local-only` (§7, 2026-07-07)**: no global anchor,
   no global fallback, no smoothing. Global anchor (`--global-anchor-weight`) and
   HMM smoothing (`--hmm-smooth-*`, §8.3) are now only reached via the legacy
-  `--no-local-only` "star2" recipe (anchor 0.3, passes 5, α 0.5), not the default.
+  `--smooth-windows` "star2" recipe (anchor 0.3, passes 5, α 0.5), not the default.
 
 Removed / archived (do not use):
 - **K-mer-budget balancing (§8.1)** — earlier row-normalization +
   $K_f^\alpha$ post-correction rebalancing approach. Superseded by $\omega_k =
-  1/m_b$, which targets the same imbalance via the cleaner composite-likelihood
-  route (§4.2). Archived to `src/archive/`.
+  1/m_b$ (§4.2), itself since superseded by per-founder normalization (§4.3).
+  Archived to `src/archive/`.
+- **Per-bubble weight $\omega_k = 1/m_b$ (§4.2)** — removed from the code
+  2026-09-29 (`--kmer-weight`).
 - **Carrier-weighted counts (§8.2)** and **contamination-ω (§8.4)** —
   archived; never beat plain EM and are not part of the paper's algorithm.
 
@@ -673,8 +646,8 @@ Tested in parallel SLURM arrays (k-mer-imbalance investigation,
 anti-correlated; balancing one degrades the other. Plain EM was the
 production default at the time; both this approach and plain EM have since
 been **superseded (2026-05-27) by the weighted EM of §4.2** ($\omega_k =
-1/m_b$), which targets the same imbalance via a composite-likelihood form
-that wins per-record AF MAE on the 231 panel.
+1/m_b$), which won per-record AF MAE on the 231 panel at the time and was in
+turn superseded by the per-founder normalization of §4.3.
 
 ### 8.2 Carrier-weighted counts (`--ac-weight-counts`)
 
@@ -740,7 +713,7 @@ The following are issues / assumptions worth knowing about. Severity tags:
 | M3 | MEDIUM | `--treat-missing-as-n` in `build_kmer_pa.py`. **Corrected 2026-05-29:** the then-production `v3qc_v3` (and `v3qc_v2`) builds — and the current arch3 `kmer_pa` — were/are built with this **ON** (`./.` → N, every k-mer over the span dropped), *not* OFF as this table previously stated. Verified from build scripts + build logs; no N-off build exists on disk. N-on is the deliberate choice — `./.`→REF would fabricate confident reference genotypes from low-quality no-calls. **Hypothesis tested and REJECTED 2026-05-29:** we suspected N-on *causes* the cactus/PG private-k-mer imbalance via PG SV missingness (dropped PG k-mers → cactus-skewed survivors). The missingness-causation test (`notebooks/MISSINGNESS_CAUSES_IMBALANCE.ipynb`, `scripts/run_missingness_test.py`) shows otherwise: in *fully-called* Chr1 bubbles (where N-on ≡ N-off, so missingness cannot contribute) the private ratio is **16.5×**, *higher* than the all-bubble 15.5×, and flat across PG-missingness strata (16.3× at 0% → 15.3× at >40%); cactus privates are no more enriched in missing bubbles (81.9%) than PG privates (82.7%). The imbalance is **real biology** — long-read cactus assemblies realize ~16× more private k-mers/founder than short-read PG-genotyped founders. **Consequences:** (1) the proposed per-founder `kmer_pa` call-mask / dosage fix is **shelved** — it would not reduce the imbalance, which is what `filt2`/ω=1/m_b (§2.1, §4.2) already target; (2) N-on remains the correct modeling choice on its own merits; (3) `kmer_pa` is still not missing-aware the way the §6 projection is (`var_called`) — a latent correctness nuance, but not the imbalance driver. For the paper: state the panel is N-on and that the cactus/PG private skew is a genotyping-modality (assembly vs short-read) effect, not a missingness artifact. |
 | M4 | MEDIUM | `denom = max(h @ kmer_pa, 1e-7)` numerical floor in EM (`em_solver.py:87`). Kicks in only at simplex boundaries; mention if you want to be precise. |
 | M5 | MEDIUM | `samtools fastq -F 0x900` filters secondary+supplementary but **not** PCR duplicates (`kmer_count.py:72`). SEEDMIX is PCR-free (memory: `seedmix_is_pcr_free`) so no dedup needed. **Evolved GrENE-Net samples are not PCR-free and require an upstream dedup step** (clumpify or equivalent) before kMate; otherwise PCR-duplicate reads inflate k-mer counts and bias the EM. State the preprocessing distinction in the paper's per-sample pipeline section. |
-| M6 | MEDIUM | Weighting $\omega_k = 1/m_b$ (§4.2) is **panel-conditional**: it wins per-record AF MAE on the heterogeneous 231 panel (where it cancels the cactus/PG imbalance) but slightly under-performs $\omega_k=1$ on the homogeneous 80-cactus control panel (+2% to +41% MAE, `benchmarks/p80/results/filt2_mb_vs_uniform_summary.tsv`). **Superseded 2026-07-06 for global mode:** with the per-founder M-step normalization (§4.3) the completeness imbalance is removed at its source, so global-mode production uses `--kmer-weight uniform` + `--normalize per_founder` (uniform AF-MAE 0.0036 vs $1/m_b$ 0.0045; the old multinomial + $1/m_b$ was the worst factorial row); $\omega_k=1/m_b$ remains the **window-mode** weighting. Code preserves both via `--kmer-weight {uniform,inv_mb}`. See `docs/FOUNDER_NORMALIZATION_FIX.md` and `docs/METHODS_TRIED_AND_RESULTS.md` §3. |
+| M6 | MEDIUM | Weighting $\omega_k = 1/m_b$ (§4.2) is **panel-conditional**: it wins per-record AF MAE on the heterogeneous 231 panel (where it cancels the cactus/PG imbalance) but slightly under-performs $\omega_k=1$ on the homogeneous 80-cactus control panel (+2% to +41% MAE; the A/B outputs were deleted 2026-10-05, see git history). **Superseded 2026-07-06 for global mode:** with the per-founder M-step normalization (§4.3) the completeness imbalance is removed at its source, so global-mode production uses unweighted EM + `--normalize per_founder` (uniform AF-MAE 0.0036 vs $1/m_b$ 0.0045; the old multinomial + $1/m_b$ was the worst factorial row); **Removed from the code 2026-09-29** (`--kmer-weight` is gone); window units were never re-benchmarked without it. See `docs/FOUNDER_NORMALIZATION_FIX.md` and `docs/METHODS_TRIED_AND_RESULTS.md` §3. |
 | L1 | LOW | `kmer_pa` is conceptually genome-wide but physically per-chromosome (`build_kmer_pa.build_kmer_pa_for_chrom`). Cosmetic. |
 | L2 | LOW | `solve_em_with_omega` (contamination) exists in code but is unused in production runs. |
 | L3 | LOW | `freqk` reports `VCF_pos - 2`; add 2 before joining freqk output to any VCF or var_pa (memory: `freqk_pos_offset`). |
@@ -763,17 +736,16 @@ The following are issues / assumptions worth knowing about. Severity tags:
 |---|---|---|---|
 | Latent | founder mixture $\mathbf{h}$ on simplex | per-LD-block haplotype mixture → CVXPY founder solve | none (no founder concept) |
 | Evidence | canonical k-mer counts $c_k$ | per-base read pileup $P(\text{base}|\text{hap}, q)$ | per-bubble k-mer counts (independent bubbles) |
-| Inference | weighted Poisson EM, multiplicative update (per-founder M-step norm §4.3; $\omega_k=1/m_b$ window / uniform global, §4.2) | per-base likelihood EM (HARP) | per-bubble alt/total ratio |
+| Inference | Poisson EM, multiplicative update (per-founder M-step norm §4.3) | per-base likelihood EM (HARP) | per-bubble alt/total ratio |
 | Cross-bubble pooling | yes — bubbles with sparse k-mers borrow strength via h | yes within an LD block | no |
 | Projection | $\hat{\mathbf{h}}^\top V_{\mathrm{pa}} / \hat{\mathbf{h}}^\top V_{\mathrm{called}}$ | $\hat{\mathbf{h}}_{\text{hap}}^\top \mathrm{H2S}$ + founder solve | per-bubble alt-count / total-count |
 | Sees SVs | yes — k-mers span bubble alleles | no (per-base SNP-only) | yes (bubble-level) |
 | Reference | pangenome graph | single linear reference | pangenome graph |
 
 The M-step form
-$h_f^{(t+1)} \propto h_f^{(t)} \sum_k (K_{\mathrm{pa}})_{f,k}\, \omega_k\, c_k / \mu_k$
+$h_f^{(t+1)} \propto h_f^{(t)} \sum_k (K_{\mathrm{pa}})_{f,k}\, c_k / \mu_k$
 also recurs in NMF (Lee & Seung 1999), the original EM derivation (Dempster
-et al. 1977), and RNA-seq abundance estimation (RSEM/kallisto/salmon); the
-$\omega_k$ weighting is the composite-likelihood generalization (Lindsay 1988).
+et al. 1977), and RNA-seq abundance estimation (RSEM/kallisto/salmon).
 
 ---
 

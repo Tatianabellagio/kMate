@@ -40,7 +40,7 @@ python -m kmate.per_sample_per_chrom \
   --reads "$WORK/reads/r1.fq" "$WORK/reads/r2.fq" \
   --sample "$TAG" --out "$OUT" \
   --threads "${SLURM_CPUS_PER_TASK:-8}" --chroms Chr1 \
-  --block-mode window --window-bp 10000 --kmer-weight inv_mb \
+  --block-mode window --window-bp 10000 \
   --min-kmers-per-block 1 \
   --global-anchor-weight "$ANCHOR" --hmm-smooth-passes "$SMOOTH"
 echo "[$(date)] done -> $OUT"

@@ -76,7 +76,7 @@ for CHR in $CHROMS; do
         --kmer-pa-prefix $KMER_PA_PREFIX \
         --reads /dev/null --kmer-db "$JF_DB" \
         --sample $SAMPLE --out $OUT_CHR \
-        --threads $THREADS --block-mode global --kmer-weight uniform \
+        --threads $THREADS --block-mode global \
         --chroms $CHR --h-only \
       || { echo "ERROR: EM failed $SAMPLE $CHR"; exit 1; }
 done

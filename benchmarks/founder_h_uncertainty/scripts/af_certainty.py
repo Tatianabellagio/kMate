@@ -36,10 +36,7 @@ def load_kmers():
     K = np.asarray(kp.todense(), np.float32) if sparse.issparse(kp) else np.asarray(kp, np.float32)
     m = np.load(KPRE / "kmer_pa_Chr1.meta.npz", allow_pickle=True)
     fnd = np.asarray(m["founders"]).astype(str)
-    # GLOBAL mode: uniform kmer-weight (omega=None) per PIPELINE_STATE.md Sec.0
-    # (2026-07-06) -- supersedes the old omega=1/m_b production weighting.
-    omega = None
-    return K, fnd, omega
+    return K, fnd
 
 
 def truth_h(fnd, pool="cov10_n50_g0_s42_hotspots_p80_chr1"):
@@ -61,11 +58,10 @@ def project(h, V, U, eps=1e-12):
     den = np.maximum(h @ U, eps); return (h @ V) / den, (h @ U)
 
 
-def fit(c, K, omega, cov):
+def fit(c, K, cov):
     nz = c > 0
-    om_nz = None if omega is None else omega[nz]
     h, _ = solve_em(c[nz].astype(np.float32), K[:, nz], cov,
-                    max_iter=1500, tol=1e-9, omega=om_nz)
+                    max_iter=1500, tol=1e-9)
     return h
 
 
@@ -78,7 +74,7 @@ def cover_stats(af_hat, af_true, se, mask):
 
 def main():
     t0 = time.time()
-    K, fnd, omega = load_kmers()
+    K, fnd = load_kmers()
     h_true = truth_h(fnd); supp = np.flatnonzero(h_true > 0)
     mu = (h_true @ K).astype(np.float64)
     V, U = load_var(fnd)
@@ -96,7 +92,7 @@ def main():
     rows = []
 
     # (1) noiseless: the IDENTIFIABILITY/BIAS floor of the AF functional
-    h_nl = fit(mu, K, omega, 1.0)
+    h_nl = fit(mu, K, 1.0)
     af_nl, _ = project(h_nl, V, U)
     h_bias = float(np.linalg.norm(h_nl - h_true))
     af_bias = np.abs(af_nl - af_true)
@@ -113,9 +109,9 @@ def main():
         cov_all, well_all, disc_all, mae_all, exc_all = [], [], [], [], []
         for r in range(REPS):
             c = rng.poisson(lam * mu)
-            h = fit(c.astype(np.float32), K, omega, lam)
+            h = fit(c.astype(np.float32), K, lam)
             af_hat, _ = project(h, V, U)
-            Sig, sp = fisher_cov_h(h, K, c.astype(np.float64), omega=omega)
+            Sig, sp = fisher_cov_h(h, K, c.astype(np.float64))
             _, se = af_se_from_cov(h, Sig, V, U, support=sp)
             c95, disc = cover_stats(af_hat, af_true, se, defined)
             w95, _ = cover_stats(af_hat, af_true, se, wellcalled)

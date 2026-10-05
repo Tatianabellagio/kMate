@@ -105,16 +105,12 @@ def main():
 
     kmer_block = assign_kmers_to_blocks(bubble_id, bubble_chrom,
                                         bubble_start, bubble_end, blocks)
-    # inv_mb de-replication weight (matches production --kmer-weight inv_mb)
-    m_b = np.bincount(bubble_id)[bubble_id].astype(np.float32)
-    omega = (1.0 / m_b).astype(np.float32)
-
     # --- pure local fits: floor=1 (fit every non-empty block), no anchor, no smooth ---
     t = time.time()
     h_blocks, status, global_h = solve_em_per_block(
         counts, kmer_pa_dense, kmer_block, n_blocks, cov,
         em_max_iter=200, tol=1e-7, min_kmers_per_block=1,
-        global_anchor_weight=0.0, omega=omega, local_only=True,
+        global_anchor_weight=0.0, local_only=True,
         n_workers=1)
     print(f"[{tag}] block-EM floor=1 {time.time()-t:.0f}s "
           f"({(status==0).sum()} fit / {(status==2).sum()} empty)", flush=True)
@@ -147,7 +143,7 @@ def main():
         hb = h_blocks[b]
         support = np.flatnonzero(hb > 1e-3)
         if support.size:
-            Jb = fisher_information_h(hb, Kb, counts[idxs_nz], omega=omega[idxs_nz])
+            Jb = fisher_information_h(hb, Kb, counts[idxs_nz])
             effrank_fisher, cond = _resolvability_from_J(Jb, support)
         else:
             effrank_fisher, cond = 0.0, np.inf

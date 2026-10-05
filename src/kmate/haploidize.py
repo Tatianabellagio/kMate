@@ -12,6 +12,7 @@ MAGIC/RIL founders, maize NAM parents). These are expected to be homozygous, so 
 heterozygous call is more likely a genotyping artefact than real diploidy:
 
     0/0, 0|0 -> 0      1/1, 1|1 -> 1      het -> .      ./., . -> .
+    0, 1 (already haploid) -> unchanged
 
 Marking het missing lets the AF projection *exclude* that founder at that record
 (`var_called` is 0 there) instead of inventing a REF or ALT call. Precedent for
@@ -42,9 +43,12 @@ _HOM_REF = {"0/0", "0|0"}
 _HOM_ALT = {"1/1", "1|1"}
 _HET = {"0/1", "1/0", "0|1", "1|0"}
 _MISS = {"./.", ".|.", "."}
+_HAPLOID = {"0", "1"}          # already one allele (e.g. Minigraph-Cactus on haploid assemblies)
 
 
 def _gt_to_haploid(g: str, counts: dict) -> str:
+    if g in _HAPLOID:
+        return g
     if g in _HOM_REF:
         return "0"
     if g in _HOM_ALT:
@@ -73,7 +77,12 @@ def _gt_to_pair(g: str, counts: dict, where: str) -> tuple[str, str]:
                 f"founders are inbred lines."
             )
     else:
-        return (core or "."), (core or ".")
+        # one allele: nothing to split. Copying it into h1 and h2 would invent a
+        # second, identical founder haplotype.
+        raise ValueError(
+            f"--het split needs DIPLOID genotypes; got haploid {core!r} at {where}. "
+            f"A haploid panel is already one column per haplotype: drop --haploidize."
+        )
     counts["cells"] += 1
     return (a if a not in ("", ".") else "."), (b if b not in ("", ".") else ".")
 

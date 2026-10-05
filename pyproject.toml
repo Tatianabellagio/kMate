@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kmate"
-version = "0.1.2"
+version = "0.1.3"
 description = "k-mer-based founder-mixture frequency estimation for pool-seq"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -26,5 +26,6 @@ where = ["src"]
 include = ["kmate*"]
 
 [tool.setuptools.package-data]
-# Ship the tiny end-to-end self-test fixture (`kmate selftest`).
-kmate = ["data/selftest/*"]
+# Ship the tiny end-to-end self-test fixture (`kmate selftest`), and the two
+# vendored PanGenie scripts `kmate decompose` runs (MIT; see _vendor/pangenie/).
+kmate = ["data/selftest/*", "_vendor/pangenie/*"]

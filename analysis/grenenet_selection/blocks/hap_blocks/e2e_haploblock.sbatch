@@ -33,7 +33,7 @@ python -m kmate.per_sample_per_chrom --kmer-pa-prefix "$KMER" \
   --reads "$SIM/reads/r1.fq" "$SIM/reads/r2.fq" --kmer-db "$DB" \
   --sample global_newcode --out "$E2E/global_newcode.tsv" \
   --threads 8 --chroms Chr1 --block-mode global \
-  --kmer-weight uniform --normalize per_founder
+  --normalize per_founder
 
 echo "[$(date)] comparing new h to the pre-change bench global-h (expect ~0 diff) ..."
 python - <<'PY'

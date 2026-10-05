@@ -51,6 +51,21 @@ See each subdir's `README.md` for the stage-by-stage walk-through. Results noteb
 
 ---
 
+## Results produced with the retired 1/m_b weight
+
+The per-bubble k-mer weight (`--kmer-weight inv_mb`) was removed from kMate on
+2026-09-29. These studies ran with it, because it was then the window-mode default;
+their scripts now run unweighted, but their **saved** results predate that, so a
+rerun will not reproduce them exactly:
+
+- `realdata_outcross/painting/` (chromosome painting)
+- `unit_localonly_p231/` (window arms) and `unit_ldblock_window/`
+- `vs_hapfire/ecotype_resolution/` (block k-mer floor, local-only smoke)
+- `vs_vg_giraffe/` (`run_block_nofallback_af`, `run_ldblock_window`, `run_cov_sim_kmate`)
+- `founder_h_uncertainty/` window scripts (`diag_window`, `window_certainty`, `metric_prototype`)
+
+The uniform-vs-1/m_b comparison itself was deleted (2026-10-05).
+
 ## Directory index
 
 Every dir below has its own `README.md` with the question it answers.

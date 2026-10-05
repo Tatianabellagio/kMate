@@ -4,22 +4,18 @@ Do this **once** per founder-haplotype set. Afterwards you reuse the matrices fo
 pool.
 
 ```
-your founders ──▶ panel VCF ──▶ k-mer index ──▶ kmer_pa
-                       └──────────────────────▶ var_pa + var_called + meta
+founder assemblies ──▶ pangenome ──▶ panel VCF ──▶ k-mer index ──▶ kmer_pa
+                                         └──────────────────────▶ var_pa + var_called + meta
 ```
 
-All four steps are `kmate` commands. Run them **per chromosome**.
+Step 1 is `cactus-pangenome`; steps 2–4 are `kmate` commands, run **per chromosome**.
 
 ---
 
-## Step 1: get a panel VCF
+## Step 1: build a pangenome from your founder assemblies
 
-The VCF must meet the requirements in [Input files](Input-files#input-variants-the-panel-vcf).
-Pick whichever starting point matches what you have.
-
-### A. You have founder assemblies
-
-Build a pangenome graph. This gives the full variant spectrum (SNPs, indels **and**
+The usual starting point is **long-read assemblies of your founders**. Build a
+pangenome graph from them; this gives the full variant spectrum (SNPs, indels **and**
 structural variants) with real genotypes.
 
 ```bash
@@ -28,32 +24,30 @@ cactus-pangenome <jobstore> panel.seqfile \
     --reference REFNAME --haplo --vcf --gfa --gbz --giraffe
 ```
 
-`panel.seqfile` is `<name><TAB><path>`, with the **reference first**. The output
-`out/mypanel.vcf.gz` is already reduced to top-level bubbles.
+`panel.seqfile` is `<name><TAB><path>`, with the **reference first**, then one line
+per **haplotype assembly**:
+
+```
+REFNAME     /path/to/reference.fa
+founderA    /path/to/founderA.fa
+founderB    /path/to/founderB.fa
+```
+
+- An **inbred** founder has one assembly: one line, one panel column.
+- An **outbred** founder with a **haplotype-resolved** (phased) assembly has two: give
+  each its own name (`plantA_hap1`, `plantA_hap2`) and you get two panel columns.
+
+Either way `out/mypanel.vcf.gz` has one haploid column per assembly, which is what kMate
+needs, and it is already reduced to top-level bubbles.
 
 Put the jobstore on **node-local disk**. If your reference contains IUPAC codes, use
 **Cactus 3.1.0 or newer**; older versions stop with `Non-ACGTN character`.
 
-### B. You have a pangenome graph VCF already
-
-Reduce it to top-level bubbles:
-
-```bash
-vcfbub -l 0 -a 100000 --input graph.vcf.gz | bgzip > panel.vcf.gz
-bcftools index -t panel.vcf.gz
-```
-
-### C. You have a phased multi-sample callset
-
-This works, but you only get what the callset contains: usually SNPs and short
-indels, no structural variants.
-
 ---
 
-## Step 2: make it biallelic and haploid
+## Step 2: make it biallelic
 
-Graph VCFs are usually multi-allelic. kMate needs one ALT per record and one allele
-per genotype.
+Graph VCFs are multi-allelic; kMate needs one ALT per record.
 
 > ### Do not use `bcftools norm -m -any`
 > On a pangenome graph, splitting records by realignment **scatters carriers across
@@ -62,44 +56,28 @@ per genotype.
 > errors; you get wrong frequencies.
 
 Use symbolic-ID propagation instead, which matches variants by identity rather than by
-alignment:
+alignment. Give the graph's VCF and GFA:
 
 ```bash
 kmate decompose \
-    --annotated-vcf      annotated_multiallelic.vcf.gz \
-    --biallelic-catalog  annotated_biallelic.vcf.gz \
-    --genotyped-vcf      your_genotyped.vcf.gz \
-    --convert-to-biallelic /path/to/convert-to-biallelic.py \
-    --haploidize --het missing \
+    --genotyped-vcf out/mypanel.vcf.gz \
+    --gfa           out/mypanel.gfa.gz \
     --out panel.vcf.gz
 ```
 
-### Choosing `--het`
+The output is sorted and indexed. No `--haploidize`: assembly genotypes are already
+haploid.
 
-A kMate panel column is a **haplotype**, so diploid genotypes must be reduced to one
-allele. How depends on **what your founders are**; see
-[Haplotypes and windows](Haplotypes-and-windows):
-
-| your founders | use | what happens |
-|---|---|---|
-| **inbred lines**: *Arabidopsis* accessions, MAGIC/RIL founders, NAM parents | `--het missing` | `0/0`→`0`, `1/1`→`1`, heterozygous→missing |
-| **outbred and phased**: e.g. HPRC assemblies | `--het split` | each sample becomes two haplotype columns, `sample.h1` and `sample.h2` |
-
-For inbred founders a heterozygous call is usually an error, so marking it missing lets
-kMate skip that founder at that variant instead of guessing. kMate reports the rate and
-warns if more than 10% of calls are heterozygous, which usually means your founders are
-**not** inbred and you want `--het split` instead.
-
-`--het split` needs **phased** genotypes. An unphased heterozygote is an error, not a
-coin flip, because guessing the phase would invent haplotypes.
+This is the slow step: it reads the whole GFA (Chr1 of a 135-assembly *Arabidopsis*
+graph: ~30 min, ~20 GB). Subset the VCF to one chromosome first (`bcftools view -r Chr1`)
+and run chromosomes in parallel; the GFA stays whole.
 
 ### Acknowledgement
 
 The decomposition method is not kMate's. It is **HPRC symbolic-ID propagation**, run
-here via [`annotate_vcf.py`](https://github.com/human-pangenomics/hpp_pangenome_resources)
-(HPRC) and [`convert-to-biallelic.py`](https://github.com/eblerjana/pangenie-tools)
-(eblerjana). Neither is bundled; you install them yourself. Only the `INFO/ID` transfer
-step is kMate's own.
+via `annotate_vcf.py` and `convert-to-biallelic.py` from
+[PanGenie](https://github.com/eblerjana/pangenie) (Jana Ebler, MIT). kMate bundles both
+unmodified, so there is nothing extra to install.
 
 If the decomposition matters to your results, cite
 Ebler et al. (2022) *Nature Genetics* 54:518–525 and
@@ -142,6 +120,71 @@ This drops uninformative k-mers. The right value is **not** the same for every p
 
 On an 8-founder panel, `--min-ac 2` threw away **~46% of all k-mers**. The default is 2,
 so **lower it for a small panel**.
+
+---
+
+## Other starting points
+
+Assemblies of every founder (Step 1) are the case kMate is designed for. The routes
+below work, with caveats.
+
+### Some founders genotyped from short reads
+
+If some founders have no assembly, they can be genotyped on the graph (e.g. with
+PanGenie) and added to the panel. This is what the GrENE-Net 231-founder panel does:
+78 assemblies plus 153 short-read founders.
+
+**Avoid mixing sources if you can.** An assembly resolves far more k-mers than a
+short-read genotype of the same founder, so the two kinds of column are not equally
+complete. On the GrENE-Net panel this skewed the mixture toward assembled founders
+until kMate gained its per-founder normalization; mixed panels need more checking
+than all-assembly ones.
+
+Genotyped VCFs lack the graph's variant IDs and are diploid, so decompose them against
+an annotation of the graph's own VCF (make it once with `annotate_vcf.py`, bundled in
+`kmate/_vendor/pangenie/`), and make the genotypes haploid:
+
+```bash
+kmate decompose \
+    --annotated-vcf      annotated_multiallelic.vcf.gz \
+    --biallelic-catalog  annotated_biallelic.vcf.gz \
+    --genotyped-vcf      your_genotyped.vcf.gz \
+    --haploidize --het missing \
+    --out genotyped_panel.vcf.gz
+```
+
+then merge with the assembly side. `--het` depends on what the founders are; see
+[Haplotypes and windows](Haplotypes-and-windows):
+
+| your founders | use | what happens |
+|---|---|---|
+| **inbred lines**: *Arabidopsis* accessions, MAGIC/RIL founders, NAM parents | `--het missing` | `0/0`→`0`, `1/1`→`1`, heterozygous→missing |
+| **outbred and phased** | `--het split` | each sample becomes two haplotype columns, `sample.h1` and `sample.h2` |
+
+For inbred founders a heterozygous call is usually an error, so marking it missing lets
+kMate skip that founder at that variant instead of guessing. kMate reports the rate and
+warns if more than 10% of calls are heterozygous, which usually means your founders are
+**not** inbred.
+
+`--het split` needs **phased** genotypes; an unphased heterozygote is an error, because
+guessing the phase would invent haplotypes. It is also the route if Cactus wrote two
+haplotypes of one individual as a single diploid sample (it does so for names like
+`plantA.1`, `plantA.2`).
+
+### An existing pangenome graph
+
+Reduce its VCF to top-level bubbles, then decompose with `--gfa` as in Step 2, using the
+graph's GFA:
+
+```bash
+vcfbub -l 0 -a 100000 --input graph.vcf.gz | bgzip > panel.vcf.gz
+bcftools index -t panel.vcf.gz
+```
+
+### A phased multi-sample callset
+
+This works, but you only get what the callset contains: usually SNPs and short
+indels, no structural variants.
 
 ---
 

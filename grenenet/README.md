@@ -12,7 +12,7 @@ and SLURM plumbing. A single-sample / laptop user never needs any of it; they ca
 
 | Layer | Where | What changes it |
 |---|---|---|
-| **Method** — EM, AF projection | `src/per_sample_per_chrom.py` | `--block-mode`, `--kmer-weight`, the matrices |
+| **Method** — EM, AF projection | `src/kmate/per_sample_per_chrom.py` | `--unit`, `--normalize`, the matrices |
 | **Scale-out** — fan across N samples | `grenenet/*.sh` (this folder) | concurrency, memory, **DB I/O placement** |
 
 The performance work below is all the **scale-out** layer. It is *deployment tuning*,
@@ -64,7 +64,7 @@ peak compute + ~3 GB DB); the exit trap frees it even on preemption.
 ### Env knobs
 `BLOCK_MODE` (**global**, default; `window` only if explicitly set) ·
 `JF_DIR` (auto; override to force DB location) ·
-`KMER_WEIGHT` (global/production: `uniform` + `--normalize per_founder`; window: `inv_mb` — superseded 2026-07-06 for global mode, see `docs/FOUNDER_NORMALIZATION_FIX.md`) · `CHROMS` · `KMER_PA_PREFIX` · `VAR_PA_DIR`/`VAR_PA_TAG` ·
+`CHROMS` · `KMER_PA_PREFIX` · `VAR_PA_DIR`/`VAR_PA_TAG` ·
 `OFFSET` (see chunking).
 
 ### Chunking past MaxArraySize (=1001 here)

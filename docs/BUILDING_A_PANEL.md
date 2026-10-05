@@ -81,11 +81,15 @@ bcftools index -t panel.seg.vcf.gz
 
 ## How to generate the panel VCF
 
-Three starting points.
+Three starting points. The first — long-read assemblies of every founder — is the one
+kMate is designed for; the others are fallbacks.
 
 ### From assemblies, via a pangenome graph (recommended)
 
-Gives the full SNP+indel+SV spectrum with real genotypes.
+Gives the full SNP+indel+SV spectrum with real genotypes. List one seqfile line per
+**haplotype assembly**: an inbred founder has one, an outbred founder with a
+haplotype-resolved assembly has two, each under its own name (`plantA_hap1`,
+`plantA_hap2`). Each line becomes one haploid panel column.
 
 ```bash
 # seqfile: "<name><TAB><path>", reference FIRST
@@ -97,7 +101,7 @@ cactus-pangenome <jobstore> panel.seqfile \
 
 `out/mypanel.vcf.gz` is already `vcfbub`-filtered (top-level bubbles). Genotypes are
 haploid with explicit `0` / `1` / `.`, so it satisfies the requirements above — except
-that it may be multi-allelic, so decompose (below).
+that it may be multi-allelic, so decompose it (below) together with `out/mypanel.gfa.gz`.
 
 Put the jobstore on **node-local disk**, not shared scratch. Pin **Cactus ≥ 3.1.0** if
 your reference contains IUPAC codes: 3.1.0 normalises them to `N`, 2.9.3 errors out
@@ -132,18 +136,41 @@ Reference Consortium: each atomic variant nested in a bubble carries a symbolic 
 genotypes move from the multi-allelic record to the biallelic catalog by *matching IDs*,
 never by alignment.
 
+If your founders **are** the graph (you built it from their assemblies — the usual
+case), give the graph's own VCF and GFA:
+
+```bash
+kmate decompose \
+    --genotyped-vcf out/mypanel.vcf.gz \
+    --gfa           out/mypanel.gfa.gz \
+    --out panel.vcf.gz
+```
+
+No `--haploidize`: assembly genotypes are already haploid.
+
+If some founders were **genotyped on** the graph from short reads (e.g. with PanGenie —
+the GrENE-Net panel's 153 non-assembled founders), annotate the graph's own VCF once,
+then decompose the genotyped VCF against that annotation, and merge it with the
+assembly side. Avoid mixing sources if you can: short-read genotypes resolve far fewer
+k-mers than assemblies, so the two kinds of column are unequally complete, which skewed
+the GrENE-Net mixture toward assembled founders until per-founder normalization fixed it.
+
 ```bash
 kmate decompose \
     --annotated-vcf      annotated_multiallelic.vcf.gz \   # from annotate_vcf.py
     --biallelic-catalog  annotated_biallelic.vcf.gz \      # from annotate_vcf.py
     --genotyped-vcf      your_genotyped.vcf.gz \
-    --convert-to-biallelic /path/to/convert-to-biallelic.py \
     --haploidize \
     --out panel.vcf.gz
 ```
 
-`--haploidize` also makes genotypes haploid, which the builders require — **a kMate panel
-column is a haplotype**, because `build_kmer_pa` reconstructs exactly one sequence per
+`annotate_vcf.py` reads the whole GFA and is the slow step (on the 135-assembly
+*Arabidopsis* graph: ~30 min and ~20 GB for Chr1). Run it per chromosome by subsetting
+the VCF first (`bcftools view -r Chr1`); the GFA can stay whole. The output is sorted
+and indexed, ready for `build-index` / `build-var-pa`.
+
+For genotyped founders `--haploidize` makes the diploid genotypes haploid, which the
+builders require — **a kMate panel column is a haplotype**, because `build_kmer_pa` reconstructs exactly one sequence per
 founder. That is a property of the model, not of any particular species. How to get there
 depends on what your founders are:
 
@@ -173,10 +200,11 @@ were never observed.
 ### Acknowledgement
 
 The decomposition method is not kMate's — it is **HPRC symbolic-ID propagation**, run via
-`annotate_vcf.py` (HPRC `prepare-vcf-MC`) and `convert-to-biallelic.py`
-([eblerjana/pangenie-tools](https://github.com/eblerjana/pangenie-tools)). Neither is
-bundled; obtain them separately. Only the `INFO/ID` transfer (`kmate transfer-id`) is
-kMate's own — it exists because `bcftools annotate -c INFO/ID` corrupts the
+`annotate_vcf.py` and `convert-to-biallelic.py` from
+[PanGenie](https://github.com/eblerjana/pangenie) (Jana Ebler, MIT). Both are bundled
+unmodified in `kmate/_vendor/pangenie/`, so nothing extra needs installing;
+`--annotate-vcf-script` / `--convert-to-biallelic` point at other copies if you need to.
+Only the `INFO/ID` transfer (`kmate transfer-id`) is kMate's own — it exists because `bcftools annotate -c INFO/ID` corrupts the
 angle-bracketed graph-node IDs.
 
 If the decomposition matters to your results, cite Ebler et al. (2022) *Nat Genet*

@@ -138,7 +138,7 @@ See [[feedback_gen0_no_replace_required]] for the full rationale and do-not-revi
 
 ## 7. Benchmarks
 
-- `benchmarks/p80/` — homogeneous-panel control. filt2 vs filt2+1/m_b A/B, 6 regimes. DONE; results in `benchmarks/p80/results/filt2_mb_vs_uniform_summary.tsv` + notebook.
+- `benchmarks/p80/` — homogeneous-panel control. filt2 vs filt2+1/m_b A/B, 6 regimes. DONE; the A/B runners, summary TSV and notebook were deleted 2026-10-05 with the weight (recoverable from git history before that date).
 - `benchmarks/p231/` — ⋯ **headline 231 benchmark, in progress** (random crossovers; both var_pa arms; kmer_pa rebuilt from arch3 for single-source). See `benchmarks/p231/README.md`.
 - Prior eval notebooks: `notebooks/FINAL_RESULTS_cov10*.ipynb`, `panel/arch3/chr1/AF_TRUTH_VS_ESTIMATE_arch3_chr1.ipynb`.
 

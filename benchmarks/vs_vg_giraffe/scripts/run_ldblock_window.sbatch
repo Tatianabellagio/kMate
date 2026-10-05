@@ -10,11 +10,11 @@
 #SBATCH --error=benchmarks/unit_ldblock_window/logs/%x_%j.out
 set -eo pipefail
 # window-mode kMate using LD blocks as windows.
-# Usage: sbatch run_ldblock_window.sbatch <POOL> <PANEL> <BLOCKS_TSV> [MIN_KMERS=50] [WEIGHT=inv_mb]
+# Usage: sbatch run_ldblock_window.sbatch <POOL> <PANEL> <BLOCKS_TSV> [MIN_KMERS=50]
 cd /global/scratch/users/tbellg/kmate
 mkdir -p benchmarks/unit_ldblock_window/logs
 POOL=${1:?pool}; PANEL=${2:?p80|p231}; BLOCKS=${3:?blocks tsv}
-MKB=${4:-50}; WEIGHT=${5:-inv_mb}
+MKB=${4:-50}
 T=${SLURM_CPUS_PER_TASK:-8}
 source ~/miniforge3/etc/profile.d/conda.sh && conda activate kmate
 case "$PANEL" in
@@ -34,7 +34,7 @@ python -m kmate.per_sample_per_chrom \
   --kmer-pa-prefix "$KP" --var-pa "$VP" --var-meta "$VM" \
   --reads benchmarks/$PANEL/sims/$POOL/reads/r1.fq benchmarks/$PANEL/sims/$POOL/reads/r2.fq \
   --sample ldblk_${POOL} --threads "$T" --chroms Chr1 \
-  --block-mode window --kmer-weight "$WEIGHT" \
+  --block-mode window \
   --blocks-tsv "$BLOCKS" --min-kmers-per-block "$MKB" \
   --out "$OUT"
 echo "[$(date)] DONE -> $OUT"

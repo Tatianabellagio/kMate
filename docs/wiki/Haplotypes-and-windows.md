@@ -18,14 +18,18 @@ describes two sequences, so it cannot occupy one column.
 
 How many haplotypes a sample yields depends on the organism:
 
-| your founders | haplotypes per sample | how |
+| your founders | haplotypes per founder | how |
 |---|---|---|
-| **inbred lines**: *Arabidopsis* accessions, MAGIC/RIL founders, NAM parents | 1 | the two copies are near-identical, so the line *is* a haplotype (`--het missing`) |
-| **outbred, phased individuals**: HPRC-style assemblies | 2 | split the sample into `sample.h1` and `sample.h2` (`--het split`) |
+| **inbred lines** with an assembly each: *Arabidopsis* accessions, MAGIC/RIL founders, NAM parents | 1 | the line *is* a haplotype: one assembly, one column |
+| **outbred**, with haplotype-resolved assemblies | 2 | each haplotype assembly is its own column |
+| inbred, genotyped from short reads | 1 | heterozygous calls are set missing (`--het missing`) |
+| outbred, phased genotypes | 2 | split into `sample.h1` and `sample.h2` (`--het split`) |
 
 100 inbred accessions give 100 haplotypes; 100 phased outbred individuals give 200.
-kMate estimates a frequency for each. See
-[Building a panel](Building-a-panel#choosing---het).
+kMate estimates a frequency for each. With assemblies there is nothing to convert; see
+[Building a panel](Building-a-panel) (and its
+[short-read section](Building-a-panel#some-founders-genotyped-from-short-reads) for the
+genotyped cases).
 
 ---
 

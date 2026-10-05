@@ -13,8 +13,8 @@ library. The program you need is **`kmer-jellyfish`**:
 mamba install -c conda-forge -c bioconda kmer-jellyfish
 ```
 
-This is also why `conda install kmate` currently gives you a broken install; see
-[Installation](Installation).
+kMate 0.1.0 on bioconda depended on the wrong one; use 0.1.2 or newer (see
+[Installation](Installation)).
 
 ---
 
@@ -28,7 +28,7 @@ kmate decompose --haploidize --het missing ...   # inbred founders
 kmate decompose --haploidize --het split   ...   # outbred, phased founders
 ```
 
-See [Building a panel](Building-a-panel#choosing---het).
+See [Building a panel](Building-a-panel#some-founders-genotyped-from-short-reads).
 
 ---
 
@@ -47,11 +47,12 @@ or use `--het missing` if your founders are inbred lines.
 
 ---
 
-### `convert-to-biallelic.py not found`
+### `kmate decompose --gfa` fails with `invalid literal for int()`
 
-That script is third-party and is not bundled. Get it from
-[eblerjana/pangenie-tools](https://github.com/eblerjana/pangenie-tools) and pass its
-path with `--convert-to-biallelic`.
+`annotate_vcf.py` needs **phased or haploid** genotypes (`0|1`, `1`), and stops on an
+unphased one (`0/1`). A Minigraph-Cactus VCF is always phased, so this usually means the
+VCF you passed is not the graph's own VCF. Use the `--annotated-vcf` /
+`--biallelic-catalog` route for VCFs genotyped on the graph by another tool.
 
 ---
 

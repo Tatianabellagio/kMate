@@ -18,6 +18,6 @@ N=${3:?N_INDIV}; G=${4:?N_GEN}
 echo "[$(date)] cov${COV} sim+kMate for $REG (N=$N G=$G) on $(hostname)"
 echo "[$(date)] === STAGE: simulate reads at ${COV}x ==="
 bash 06_run_sim_p80_covarg.sh "$N" "$G"
-echo "[$(date)] === STAGE: kMate (filt2 inv_mb, global) ==="
-bash 07c_run_kmate_filt2_mb_p80_covarg.sh "$REG" inv_mb
+echo "[$(date)] === STAGE: kMate (filt2, global) ==="
+bash 07c_run_kmate_filt2_mb_p80_covarg.sh "$REG"
 echo "[$(date)] DONE cov${COV} $REG"

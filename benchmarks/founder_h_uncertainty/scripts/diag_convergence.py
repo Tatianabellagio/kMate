@@ -42,13 +42,10 @@ def load_kmer_pa():
         else np.asarray(kp, dtype=np.float32)
     meta = np.load(PREFIX / "kmer_pa_Chr1.meta.npz", allow_pickle=True)
     founders = np.asarray(meta["founders"]).astype(str)
-    # GLOBAL mode: uniform kmer-weight (omega=None) per PIPELINE_STATE.md Sec.0
-    # (2026-07-06) -- supersedes the old omega=1/m_b production weighting. Note
-    # the "0.048 bias floor" this script investigates was later root-caused to
+    # Note the "0.048 bias floor" this script investigates was later root-caused to
     # the Kf_w global-normalization bug (per_founder is now solve_em's default),
     # not pure identifiability -- re-run to see the floor mostly vanish.
-    omega = None
-    return kmer_pa, founders, omega
+    return kmer_pa, founders
 
 
 def load_truth_h(pool, founders):
@@ -59,12 +56,12 @@ def load_truth_h(pool, founders):
     return h / s if s > 0 else h
 
 
-def em_f64(counts, kmer_pa64, omega64, max_iter, tol, h_true=None, trace_every=0):
-    """Plain weighted-Poisson EM in float64 (same update as solve_em, no priors).
+def em_f64(counts, kmer_pa64, max_iter, tol, h_true=None, trace_every=0):
+    """Plain Poisson EM in float64 (same update as solve_em, no priors).
     Optionally records ||ĥ-h_true|| every `trace_every` iters."""
     F, K = kmer_pa64.shape
     h = np.full(F, 1.0 / F, dtype=np.float64)
-    wc = counts.astype(np.float64) if omega64 is None else (omega64 * counts)
+    wc = counts.astype(np.float64)
     total_c = wc.sum()
     dh_hist, err_hist = [], []
     it = 0
@@ -85,13 +82,11 @@ def em_f64(counts, kmer_pa64, omega64, max_iter, tol, h_true=None, trace_every=0
                "err_history": err_hist, "converged": delta < tol}
 
 
-def nz_filter(counts, kmer_pa, kmer_pa64, omega, omega64):
+def nz_filter(counts, kmer_pa, kmer_pa64):
     """Restrict to k-mers with count>0 (EM M-step is exact on these; production
     does the same). Big speedup at low coverage; identical solution."""
     nz = counts > 0
-    om = None if omega is None else omega[nz]
-    om64 = None if omega64 is None else omega64[nz]
-    return counts[nz], kmer_pa[:, nz], kmer_pa64[:, nz], om, om64, int(nz.sum())
+    return counts[nz], kmer_pa[:, nz], kmer_pa64[:, nz], int(nz.sum())
 
 
 def errs(h, h_true, supp_true):
@@ -118,7 +113,7 @@ def main():
     f64_covs = {float(x) for x in args.f64_covs.split(",") if x.strip()}
     outdir = Path(args.out); outdir.mkdir(parents=True, exist_ok=True)
 
-    kmer_pa, founders, omega = load_kmer_pa()
+    kmer_pa, founders = load_kmer_pa()
     F, K = kmer_pa.shape
     h_true = load_truth_h(args.pool, founders)
     supp_true = h_true > 0
@@ -127,18 +122,16 @@ def main():
           flush=True)
 
     kmer_pa64 = kmer_pa.astype(np.float64)            # for the f64 EM
-    omega64 = None if omega is None else omega.astype(np.float64)
     rng = np.random.default_rng(20260629)
     rows, traces = [], {}
 
     # ---- (3) NOISELESS: pure identifiability floor (coverage = ∞) ----
     t0 = time.time()
     counts_nl = mu_true.astype(np.float32)            # c_k = μ_k(h_true), no Poisson
-    c_n, kp_n, kp64_n, om_n, om64_n, nnz_n = nz_filter(
-        counts_nl, kmer_pa, kmer_pa64, omega, omega64)
+    c_n, kp_n, kp64_n, nnz_n = nz_filter(counts_nl, kmer_pa, kmer_pa64)
     h_nl_32, i32 = solve_em(c_n, kp_n, 1.0, max_iter=args.max_iter,
-                            tol=1e-12, omega=om_n)
-    h_nl_64, i64 = em_f64(c_n, kp64_n, om64_n, args.max_iter, 1e-14,
+                            tol=1e-12)
+    h_nl_64, i64 = em_f64(c_n, kp64_n, args.max_iter, 1e-14,
                           h_true=h_true, trace_every=25)
     e32, e64 = errs(h_nl_32, h_true, supp_true), errs(h_nl_64, h_true, supp_true)
     rows.append(dict(cov="noiseless", prec="f32", iters=i32["iterations"],
@@ -158,10 +151,9 @@ def main():
     for lam in covs:
         t0 = time.time()
         counts = rng.poisson(lam * mu_true).astype(np.float32)
-        c_f, kp_f, kp64_f, om_f, om64_f, nnz = nz_filter(
-            counts, kmer_pa, kmer_pa64, omega, omega64)
+        c_f, kp_f, kp64_f, nnz = nz_filter(counts, kmer_pa, kmer_pa64)
         h32, j32 = solve_em(c_f, kp_f, lam, max_iter=args.max_iter,
-                            tol=1e-12, omega=om_f)
+                            tol=1e-12)
         e32 = errs(h32, h_true, supp_true)
         rows.append(dict(cov=lam, prec="f32", iters=j32["iterations"],
                          conv=j32["converged"], final_dh=j32["delta_history"][-1],
@@ -170,7 +162,7 @@ def main():
                f"(it {j32['iterations']}, conv={j32['converged']}, "
                f"dh={j32['delta_history'][-1]:.1e})")
         if lam in f64_covs:
-            h64, j64 = em_f64(c_f, kp64_f, om64_f, args.max_iter, 1e-14,
+            h64, j64 = em_f64(c_f, kp64_f, args.max_iter, 1e-14,
                               h_true=h_true, trace_every=25)
             e64 = errs(h64, h_true, supp_true)
             rows.append(dict(cov=lam, prec="f64", iters=j64["iterations"],

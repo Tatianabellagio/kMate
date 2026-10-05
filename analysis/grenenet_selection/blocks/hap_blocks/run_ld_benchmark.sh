@@ -25,7 +25,7 @@ echo "[$(date)] build k-mer DB once"
 echo "[$(date)] GLOBAL baseline (production, all 231 founders)"
 python -m kmate.per_sample_per_chrom --kmer-pa-prefix "$KMER" --var-pa "$VARPA" --var-meta "$VARMETA" \
     --kmer-db "$DB" --sample global --out "$OUT/global.tsv" --threads 8 --chroms Chr1 \
-    --block-mode global --kmer-weight uniform --normalize per_founder
+    --block-mode global --normalize per_founder
 
 for r2 in 0.10 0.20 0.30 0.40; do
     BT=${PREFIX}_r2_${r2}.tsv
@@ -34,6 +34,6 @@ for r2 in 0.10 0.20 0.30 0.40; do
     python -m kmate.per_sample_per_chrom --kmer-pa-prefix "$KMER" --var-pa "$VARPA" --var-meta "$VARMETA" \
         --kmer-db "$DB" --sample r2_${r2} --out "$OUT/${PART_TAG}_r2_${r2}.tsv" --threads 8 --chroms Chr1 \
         --block-mode window --blocks-tsv "$BT" --local-only --min-kmers-per-block 1 \
-        --kmer-weight uniform --normalize per_founder
+        --normalize per_founder
 done
 echo "[$(date)] DONE"

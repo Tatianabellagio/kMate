@@ -4,9 +4,9 @@ Every option, with its default. **Required** options have no default and must be
 
 Run `kmate <command> --help` for the same information at the terminal.
 
-> This page describes the current source. The released 0.1.2 still has `--kmer-weight`
-> and `--emit-af-se`, and spells `--smooth-windows` as `--no-local-only`. `kmate --help`
-> is authoritative for the version you have installed.
+> This page describes kMate 0.1.3. In 0.1.2, `run` still accepted `--kmer-weight` and
+> `--emit-af-se` and spelled `--smooth-windows` as `--no-local-only`, and `decompose` had
+> no `--gfa`. `kmate --help` is authoritative for the version you have installed.
 
 | command | what it does |
 |---|---|
@@ -139,15 +139,18 @@ Used when `--unit bp`, `ld` or `tsv`; ignored for `--unit chrom`.
 
 ## `kmate decompose`
 
-Runs third-party tools; see [Building a panel](Building-a-panel#acknowledgement).
+Runs two bundled PanGenie scripts; see [Building a panel](Building-a-panel#acknowledgement).
+Give **either** `--gfa` **or** both `--annotated-vcf` and `--biallelic-catalog`.
 
 | option | default | meaning |
 |---|---|---|
-| `--annotated-vcf` | **required** | annotated multi-allelic VCF carrying `INFO/ID` |
-| `--biallelic-catalog` | **required** | biallelic catalog with the same symbolic IDs |
-| `--genotyped-vcf` | **required** | the VCF to decompose |
-| `--out` | **required** | output VCF |
-| `--convert-to-biallelic` | — | path to eblerjana's `convert-to-biallelic.py`, which is not bundled |
+| `--genotyped-vcf` | **required** | the VCF to decompose; with `--gfa`, the Minigraph-Cactus VCF of that graph |
+| `--gfa` | — | the graph's gzipped GFA; annotates `--genotyped-vcf` against it |
+| `--annotated-vcf` | — | annotated multi-allelic VCF carrying `INFO/ID` (instead of `--gfa`) |
+| `--biallelic-catalog` | — | biallelic catalog with the same symbolic IDs (instead of `--gfa`) |
+| `--out` | **required** | output VCF, sorted; indexed when it ends in `.gz` |
+| `--annotate-vcf-script` | bundled | use another copy of `annotate_vcf.py` |
+| `--convert-to-biallelic` | bundled | use another copy of `convert-to-biallelic.py` |
 | `--haploidize` | off | also reduce genotypes to one allele |
 | `--het` | **`missing`** | with `--haploidize`: `missing` for inbred founders, `split` for outbred phased ones |
 | `--threads` | `4` | threads for `bcftools` |

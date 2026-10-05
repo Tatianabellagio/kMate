@@ -32,13 +32,13 @@ print(f"PROTOTYPE (full-panel Kf_w, unfiltered-to-nz K): n_absorbed={n_abs_proto
       f"h_rmse={np.sqrt(np.mean((h_proto-h_true)**2)):.5f}  [{time.time()-t1:.0f}s]", flush=True)
 
 t2 = time.time()
-h_prod_full, info_pf = prod_solve_em(cf, Kf, 1.0, omega=None, normalize="per_founder", max_iter=300, tol=1e-7)
+h_prod_full, info_pf = prod_solve_em(cf, Kf, 1.0, normalize="per_founder", max_iter=300, tol=1e-7)
 n_abs_pf = int((h_prod_full < 1e-3).sum())
 print(f"PRODUCTION code, NOT pre-filtered to nz: n_absorbed={n_abs_pf}  h_rmse={np.sqrt(np.mean((h_prod_full-h_true)**2)):.5f}  [{time.time()-t2:.0f}s]", flush=True)
 
 t3 = time.time()
 nz = cf > 0
-h_prod_real, info_pr = prod_solve_em(cf[nz], Kf[:, nz], 1.0, omega=None, normalize="per_founder", max_iter=300, tol=1e-7)
+h_prod_real, info_pr = prod_solve_em(cf[nz], Kf[:, nz], 1.0, normalize="per_founder", max_iter=300, tol=1e-7)
 n_abs_pr = int((h_prod_real < 1e-3).sum())
 print(f"PRODUCTION code, pre-filtered to nz (REAL pipeline behavior): n_absorbed={n_abs_pr}  h_rmse={np.sqrt(np.mean((h_prod_real-h_true)**2)):.5f}  [{time.time()-t3:.0f}s]", flush=True)
 

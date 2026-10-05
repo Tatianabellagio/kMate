@@ -28,7 +28,7 @@ run() {  # mode-label  extra-flags...
     --var-meta   benchmarks/p80/data/var_pa_p80.meta.npz \
     --reads $D/reads/r1.fq $D/reads/r2.fq \
     --sample g3_$label --out $OUT/g3_$label.tsv \
-    --threads 8 --chroms Chr1 --kmer-weight inv_mb \
+    --threads 8 --chroms Chr1 \
     --block-mode window --window-bp 10000 --min-kmers-per-block 200 "$@"
 }
 

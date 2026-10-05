@@ -73,7 +73,7 @@ run_one () {  # $1 = tag, rest = extra args
         --var-pa $VAR_PA --var-called $VAR_CALLED --var-meta $VAR_META \
         --reads /dev/null --kmer-db "$JF_DB" \
         --sample $SAMPLE --out "$o" --threads $THREADS \
-        --block-mode window --kmer-weight inv_mb --chroms $CHR "$@" \
+        --block-mode window --chroms $CHR "$@" \
       || { echo "ERROR: window EM failed ($tag)"; rm -f "$o"; return 1; }
 }
 

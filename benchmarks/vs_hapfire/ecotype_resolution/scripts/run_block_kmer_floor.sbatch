@@ -31,5 +31,5 @@ echo "[$(date)] host=$(hostname) task=$SLURM_ARRAY_TASK_ID pool=$POOL"
 python benchmarks/vs_hapfire/ecotype_resolution/scripts/bench_block_kmer_floor.py \
   --pool "$POOL" --panel p80 --chrom Chr1 \
   --window-bp 5000 --threads "${SLURM_CPUS_PER_TASK:-8}" \
-  --kmer-weight inv_mb --out "$OUT"
+  --out "$OUT"
 echo "[$(date)] done $POOL"

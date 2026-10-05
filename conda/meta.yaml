@@ -1,5 +1,5 @@
 {% set name = "kmate" %}
-{% set version = "0.1.0" %}
+{% set version = "0.1.3" %}
 
 package:
   name: {{ name }}
@@ -8,9 +8,7 @@ package:
 source:
   # LOCAL build: build from the working tree.
   path: ../
-  # BIOCONDA: replace the line above with a versioned release tarball, e.g.
-  #   url: https://github.com/Tatianabellagio/kMate/archive/refs/tags/v{{ version }}.tar.gz
-  #   sha256: <sha256 of that tarball>
+  # The bioconda recipe (PyPI sdist + sha256) is conda/bioconda/meta.yaml.
 
 build:
   noarch: python                       # pure-Python -> one build, no platform matrix
@@ -33,6 +31,7 @@ requirements:
                                        # which on conda-forge is a Python string-similarity
                                        # library and ships no `jellyfish` binary.
     - samtools                         # BAM read access
+    - bcftools                         # decompose / haploidize (panel VCF prep)
 
 test:
   imports:
@@ -52,8 +51,9 @@ about:
   description: |
     kMate estimates per-founder mixture proportions (h) in a sequenced pool from
     canonical k-mer counts against a pangenome founder x k-mer matrix, then
-    projects to per-record allele frequencies. Supports whole-chromosome (global)
-    and per-window (window) estimation and optional per-bubble k-mer weighting.
+    projects to per-record allele frequencies. Fits one mixture per chromosome
+    (inbred/selfing pools) or per window (recombinant pools), and builds its
+    founder matrices from a pangenome VCF.
 
 extra:
   recipe-maintainers:

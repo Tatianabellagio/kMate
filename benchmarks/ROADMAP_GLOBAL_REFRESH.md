@@ -151,8 +151,8 @@ arms: `raw` (SNP/indel/SV) and `atomized` (SNP-level).
 ## Phase 2 — p80 AF accuracy (control)
 
 Files: `benchmarks/p80/`. Same as Phase 1 with p80 scripts
-(`07c_run_kmate_filt2_mb_p80.sh` → new global-ld runner, `WEIGHT=uniform`),
-`score_filt2_mb_vs_uniform.py` / `score_filt2_mb_missingness.py`, and
+(the `07c`/`07d` uniform-vs-`inv_mb` runners and their scorers were deleted
+2026-10-05 with the weight; `07i_run_kmate_unit_chrom_p80.sh` is the runner), and
 `FINAL_RESULTS_cov10_p80.ipynb`. Panel per Phase-0c decision. p80 remains the
 balanced-panel control (checks the cactus-vs-PG asymmetry is absent).
 
@@ -167,7 +167,7 @@ founder **decomposition** more than AF, so this is the highest-signal refresh.
    (run in `basic` env). Metrics: per-founder h RMSE/MAE, absorbed count,
    cactus-vs-PG mass balance, est-vs-true slope.
 3. Compare against the retained `BASELINE_n231_g0.csv` and the existing
-   `filt2mb`/`filt2u`/`filt2invu` arms already scored here. Expected: 0 absorbed,
+   `filt2u`/`filt2invu` arms already scored here. Expected: 0 absorbed,
    cactus mass ratio ≈ 1.0, slope ≈ 1.0.
 
 ## Phase 4 — Ecotype-count / resolution

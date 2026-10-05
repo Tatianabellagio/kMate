@@ -1,125 +1,81 @@
-# Submitting kMate to bioconda
+# Releasing kMate to PyPI and bioconda
 
-> **STATUS (2026-09-29): ready to submit.** kMate 0.1.2 is on PyPI and the recipe below
-> is verified against it: the `sha256` matches what PyPI serves, and installing that sdist
-> into a pristine conda env holding only the recipe's declared run deps gives
-> `kmate selftest` PASS (R^2=0.996, RMSE=0.0032).
->
-> bioconda currently serves **0.1.0**, which cannot count k-mers (wrong `jellyfish`
-> dependency) and predates the per-founder normalization fix. This is an **update** to
-> `recipes/kmate/meta.yaml`, not a new recipe.
+> **STATUS (2026-10-05): 0.1.3.** The recipe in [`meta.yaml`](meta.yaml) pins the sha256
+> of the 0.1.3 sdist uploaded to PyPI. History: 0.1.0 (June) could not count k-mers
+> (`jellyfish` instead of `kmer-jellyfish`); 0.1.2 (2026-09-29) fixed that; 0.1.3 bundles
+> the decomposition scripts, adds `decompose --gfa` and `bcftools`, and fixes
+> `--haploidize` on haploid input.
 
-The recipe in [`meta.yaml`](meta.yaml) is ready to submit. It fetches the **PyPI
-sdist** (~122 KB), not the GitHub auto-tarball (which archives the whole ~185 MB
-repo and would be rejected). Do the two steps below in order.
+bioconda's `recipes/kmate/meta.yaml` already exists, so each release is a **version
+bump** of that recipe. The recipe fetches the **PyPI sdist** (~170 KB), not the GitHub
+auto-tarball, which archives the whole repo and would be rejected.
 
-## Step 1 — publish the sdist to PyPI
+## 1. Build once, check, then pin the hash
 
-0.1.2 is **already uploaded**. The `sha256` in [`meta.yaml`](meta.yaml) is the hash PyPI
-serves, confirmed by download:
-
-```
-1a509f24e71026eb0cc99350bbfc245f98bf7d83f73650f9d543e6f4934f5d13
-```
-
-> ⚠️ **Upload that artifact, do not rebuild it.** Rebuilding produces a different
-> hash (gzip embeds a timestamp), which would make `meta.yaml` wrong and fail
-> bioconda CI. If you must rebuild, re-read the hash from PyPI afterwards using the
-> command below and paste it into `meta.yaml`.
+Bump `version` in `pyproject.toml`, `src/kmate/__init__.py`, `conda/meta.yaml` and
+`meta.yaml` here. Everything that goes into the sdist (`src/`, `README.md`,
+`pyproject.toml`, `tests/test_*.py`) must be final before building; `conda/` is not in
+the sdist, so the hash can be written into `meta.yaml` afterwards.
 
 ```bash
 mamba activate kmate
-cd <kMate checkout>
-
-python -m twine check dist/kmate-0.1.2.tar.gz     # already PASSES
-python -m twine upload dist/kmate-0.1.2.tar.gz    # needs a PyPI API token
+python -m build --sdist --wheel --no-isolation -o dist/
+python -m twine check dist/kmate-X.Y.Z*
+sha256sum dist/kmate-X.Y.Z.tar.gz          # -> meta.yaml `sha256:`
 ```
 
-After upload, `pip install kmate==0.1.2` works and the `url:` in `meta.yaml` resolves.
+> ⚠️ **Upload the artifact you hashed; do not rebuild it.** gzip embeds a timestamp, so
+> a rebuild changes the hash and bioconda CI fails.
 
-### Confirm the hash PyPI actually serves
+Before uploading, install the sdist into a pristine env holding only the recipe's run
+deps and run the offline checks:
 
 ```bash
-curl -sL https://pypi.org/pypi/kmate/0.1.2/json \
+mamba create -p /tmp/kmate_rel -c conda-forge -c bioconda python numpy scipy pysam \
+    kmer-jellyfish samtools bcftools pip
+/tmp/kmate_rel/bin/pip install --no-deps dist/kmate-X.Y.Z.tar.gz
+PATH=/tmp/kmate_rel/bin:$PATH kmate selftest                  # must PASS
+PATH=/tmp/kmate_rel/bin:$PATH python tests/test_haploidize.py
+PATH=/tmp/kmate_rel/bin:$PATH python tests/test_cli_flags.py
+```
+
+## 2. Upload to PyPI, then confirm the served hash
+
+```bash
+python -m twine upload dist/kmate-X.Y.Z.tar.gz dist/kmate-X.Y.Z-py3-none-any.whl
+curl -sL https://pypi.org/pypi/kmate/X.Y.Z/json \
   | python -c "import sys,json; d=json.load(sys.stdin); print([f['digests']['sha256'] for f in d['urls'] if f['packagetype']=='sdist'][0])"
 ```
 
-It must equal the value above. If not, paste what PyPI reports into `meta.yaml`.
+The printed hash must equal `meta.yaml`'s.
 
-### What 0.1.2 fixes (say this in the PR)
+## 3. Open the bioconda version-bump PR
 
-The published 0.1.0 is broken in two independent ways, both verified against a clean
-`mamba create -c conda-forge -c bioconda kmate`:
-
-1. **It cannot count k-mers.** The recipe depended on `jellyfish`, which on
-   conda-forge is a Python string-similarity library shipping no `jellyfish`
-   binary. `kmate selftest` exited 1 with `jellyfish: command not found`. Fixed by
-   depending on **`kmer-jellyfish`** (the real counter, 2.3.1).
-2. **It is a pre-July-2026 snapshot.** It has no `--normalize`, `--unit` or
-   `--emit-af-se`, and `per_founder` appears zero times in its source — so it would
-   silently run the older EM in which k-mer-poor founders collapse toward zero.
-
-The recipe's `test:` block now also runs `kmate selftest`, which exercises
-jellyfish/samtools end-to-end. The old test ran only `--help`, `--version` and
-`import kmate`, which is exactly why a package that could not count k-mers passed CI.
-
-## Step 2 — open the bioconda PR (this is an UPDATE, not a new recipe)
-
-`recipes/kmate/meta.yaml` **already exists** in bioconda-recipes at version 0.1.0 —
-that is the broken build. So this is a version bump to an existing recipe, not a new
-submission.
+Upload to PyPI first: the recipe fetches the sdist from PyPI, so CI fails on a 404 if
+the release is not up yet.
 
 ```bash
 # fork + clone bioconda-recipes (one-time)
 gh repo fork bioconda/bioconda-recipes --clone --remote
 cd bioconda-recipes
 git checkout master && git pull upstream master
-git checkout -b kmate-0.1.2
-
-# overwrite the existing recipe with ours
+git checkout -b kmate-X.Y.Z
 cp <kMate checkout>/conda/bioconda/meta.yaml recipes/kmate/meta.yaml
-
 git add recipes/kmate/meta.yaml
-git commit -m "Update kmate to 0.1.1"
-git push -u origin kmate-0.1.2
-
-gh pr create --repo bioconda/bioconda-recipes --base master \
-  --title "Update kmate to 0.1.1" \
-  --body "kMate 0.1.1.
-
-Fixes two independent problems in the published 0.1.0, both reproduced against a
-clean \\`mamba create -c conda-forge -c bioconda kmate\\`:
-
-1. **The package cannot count k-mers.** The recipe depended on \\`jellyfish\\`, which on
-   conda-forge is a Python string-similarity library and ships no \\`jellyfish\\`
-   binary. kMate shells out to the k-mer counter, so \\`kmate selftest\\` exited 1 with
-   \\`jellyfish: command not found\\`. Now depends on \\`kmer-jellyfish\\`.
-2. **0.1.0 was built from a stale snapshot**, predating an estimator fix; it lacks
-   \\`--normalize\\`, \\`--unit\\` and \\`--emit-af-se\\`.
-
-The \\`test:\\` block now also runs \\`kmate selftest\\`, a bundled offline end-to-end
-fixture that exercises jellyfish and samtools. The previous test ran only
-\\`--help\\`/\\`--version\\`/\\`import\\`, which is why a package that could not count
-k-mers passed CI. Verified locally: selftest passes from the 0.1.2 sdist in a clean
-environment."
+git commit -m "Update kmate to X.Y.Z"
+git push -u origin kmate-X.Y.Z
+gh pr create --repo bioconda/bioconda-recipes --base master --title "Update kmate to X.Y.Z"
 ```
 
-> **Order matters:** upload to PyPI (Step 1) *before* opening the PR. The recipe
-> fetches the sdist from PyPI, so CI fails on a 404 if the release is not up yet.
-
-Bioconda's CI then builds the recipe in a clean container and runs the `test:`
-stage (`kmate --help`, `kmate --version`, `import kmate`). A reviewer merges it;
-then `conda install -c bioconda kmate` works. Expect a round or two of CI
-feedback — the recipe is a standard noarch-python one, so it should be light.
+bioconda's CI builds the recipe in a clean container and runs its `test:` block,
+including `kmate selftest`. A reviewer merges it; then
+`mamba install -c bioconda kmate=X.Y.Z` works. bioconda's autobump bot may open the PR
+itself once the PyPI release is up; close one of the two if both appear.
 
 ## Notes
 
-- `noarch: python` → one build, no per-platform matrix (the single biggest
-  difficulty reducer; kMate has no compiled extensions).
-- All run deps already live on the channels: numpy/scipy (conda-forge),
-  pysam/jellyfish/samtools (bioconda). Verified they co-resolve.
-- The bundled `data/selftest/` fixture ships inside the sdist (via
-  `[tool.setuptools.package-data]`), so `kmate selftest` works from a conda
-  install too.
-- Future releases: bump `version`, rebuild + re-upload the sdist, update the
-  sha256, and open a version-bump PR (or let bioconda's autobump bot do it).
+- `noarch: python` → one build, no per-platform matrix (kMate has no compiled code).
+- Run deps all live on conda-forge/bioconda: numpy, scipy, pysam, kmer-jellyfish
+  (not `jellyfish`, an unrelated Python library), samtools, bcftools.
+- The selftest fixture and the vendored PanGenie scripts ship inside the sdist via
+  `[tool.setuptools.package-data]`, so both work from a conda install.

@@ -3,8 +3,8 @@
 Two estimators of the sampling covariance of the EM solution ĥ on the simplex:
 
 1. fisher_cov_h  — analytic, O(F²·n_nz): the observed Fisher information of the
-   (weighted) Poisson likelihood, inverted on the simplex tangent space.
-       J = K diag(ω_k c_k / μ_k²) Kᵀ,   μ_k = Σ_f h_f K_{f,k}
+   Poisson likelihood, inverted on the simplex tangent space.
+       J = K diag(c_k / μ_k²) Kᵀ,   μ_k = Σ_f h_f K_{f,k}
    Cheap enough to run per sample (and per window). Captures BOTH
      - low coverage   → small c_k → small J → wide SE, and
      - complex/collinear regions → near-singular J → wide SE on the
@@ -32,10 +32,10 @@ import numpy as np
 from .em_solver import solve_em, haploblock_collapse_indices
 
 
-def fisher_information_h(h, kmer_pa, counts, omega=None, eps_mu=1e-7, chunk=None):
-    """Observed Fisher information J = K diag(ω_k c_k / μ_k²) Kᵀ at h (F×F).
+def fisher_information_h(h, kmer_pa, counts, eps_mu=1e-7, chunk=None):
+    """Observed Fisher information J = K diag(c_k / μ_k²) Kᵀ at h (F×F).
 
-    kmer_pa: F×K (dense). counts: K. omega: K or None (ω_k≡1).
+    kmer_pa: F×K (dense). counts: K.
     Only k-mers with c_k>0 contribute (zeros drop out), matching the EM.
 
     chunk: if set, accumulate J over column blocks of this width instead of
@@ -47,8 +47,6 @@ def fisher_information_h(h, kmer_pa, counts, omega=None, eps_mu=1e-7, chunk=None
     counts = np.asarray(counts, dtype=np.float64)
     mu = np.maximum(h @ kmer_pa, eps_mu)          # K
     w = counts / (mu * mu)                         # c_k / μ_k²
-    if omega is not None:
-        w = w * np.asarray(omega, dtype=np.float64)
     # J = kmer_pa @ diag(w) @ kmer_paᵀ = (kmer_pa * w) @ kmer_paᵀ
     if chunk is None:
         Kw = kmer_pa.astype(np.float64) * w        # F×K (broadcast over columns)
@@ -79,7 +77,7 @@ def _tangent_pinv_on_support(J, support, rcond=1e-10):
     return Sigma
 
 
-def fisher_cov_h(h, kmer_pa, counts, omega=None, support_eps=1e-3, rcond=1e-2,
+def fisher_cov_h(h, kmer_pa, counts, support_eps=1e-3, rcond=1e-2,
                  chunk=None):
     """Analytic covariance Σ (F×F) of ĥ from the observed Fisher information.
 
@@ -93,17 +91,17 @@ def fisher_cov_h(h, kmer_pa, counts, omega=None, support_eps=1e-3, rcond=1e-2,
     unresolvable directions, matching the bootstrap. The right rcond is mildly
     data-dependent — see benchmarks/founder_h_uncertainty.
     """
-    J = fisher_information_h(h, kmer_pa, counts, omega=omega, chunk=chunk)
+    J = fisher_information_h(h, kmer_pa, counts, chunk=chunk)
     support = np.flatnonzero(np.asarray(h) > support_eps)
     Sigma = _tangent_pinv_on_support(J, support, rcond=rcond)
     return Sigma, support
 
 
-def identifiability(h, kmer_pa, counts, omega=None, support_eps=1e-6):
+def identifiability(h, kmer_pa, counts, support_eps=1e-6):
     """Scalar region-resolvability diagnostics from the support Fisher info:
     effective rank and condition number of J_SS. High condition number / low
     eff-rank ⇒ a complex / collinear region that cannot resolve the mixture."""
-    J = fisher_information_h(h, kmer_pa, counts, omega=omega)
+    J = fisher_information_h(h, kmer_pa, counts)
     s = np.flatnonzero(np.asarray(h) > support_eps)
     if s.size <= 1:
         return {"support_size": int(s.size), "eff_rank": float(s.size),
@@ -118,7 +116,7 @@ def identifiability(h, kmer_pa, counts, omega=None, support_eps=1e-6):
     return {"support_size": int(s.size), "eff_rank": eff_rank, "cond": cond}
 
 
-def bootstrap_cov_h(h_hat, kmer_pa, counts, omega=None, B=200,
+def bootstrap_cov_h(h_hat, kmer_pa, counts, B=200,
                     coverage=None, seed=0, max_iter=200, tol=1e-7,
                     rate_h=None, return_samples=False, normalize="per_founder",
                     collapse=True, haploblock_eps=0.0):
@@ -150,8 +148,7 @@ def bootstrap_cov_h(h_hat, kmer_pa, counts, omega=None, B=200,
     # Full-panel per-founder normalizer (over ALL k-mers, incl. those that draw
     # c*=0 in a given bootstrap replicate) — must be computed here and passed to
     # solve_em, since each replicate pre-slices kmer_pa to its own observed set.
-    w_full = np.ones(kmer_pa.shape[1], np.float32) if omega is None \
-        else np.asarray(omega, dtype=np.float32)
+    w_full = np.ones(kmer_pa.shape[1], np.float32)
     kfw_full = (kmer_pa.astype(np.float32) @ w_full).astype(np.float32)
     # Haploblock collapse is a PANEL property (independent of which k-mers a given
     # replicate observes), so compute it once over the full panel here.
@@ -164,15 +161,14 @@ def bootstrap_cov_h(h_hat, kmer_pa, counts, omega=None, B=200,
     for b in range(B):
         c_star = rng.poisson(rate).astype(np.float32)
         nz = c_star > 0
-        om = None if omega is None else np.asarray(omega)[nz]
         if do_collapse:
             h_c, _ = solve_em(c_star[nz], kmer_pa[reps][:, nz], coverage or lam,
-                              max_iter=max_iter, tol=tol, omega=om,
+                              max_iter=max_iter, tol=tol,
                               normalize=normalize, kfw=kfw_full[reps])
             h_b = (h_c / csize)[lab]                # split class freq equally to members
         else:
             h_b, _ = solve_em(c_star[nz], kmer_pa[:, nz], coverage or lam,
-                              max_iter=max_iter, tol=tol, omega=om,
+                              max_iter=max_iter, tol=tol,
                               normalize=normalize, kfw=kfw_full)
         samples[b] = h_b
     Sigma = np.cov(samples.T)

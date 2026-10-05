@@ -35,7 +35,7 @@ for reg in REGIMES:
         tr=pd.read_csv(tp,sep="\t")
         rl=tr["ref_len"].values.astype(int); al=tr["alt_len"].values.astype(int)
         vcls=np.where(np.maximum(rl,al)>=50,"SV",np.where((rl==1)&(al==1),"SNP","indel"))
-        for weight,wtag in [("inv_mb","filt2mb"),("uniform","filt2u")]:
+        for weight,wtag in [("uniform","filt2invu")]:   # 07f output
             ep=f"{CTRL}/results/kmate_global_{wtag}_{cnvar}/{reg}/p231_{wtag}_{cnvar}_{reg}_cov10_s42.tsv"
             if not os.path.exists(ep): continue
             es=pd.read_csv(ep,sep="\t")
