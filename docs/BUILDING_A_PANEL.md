@@ -81,11 +81,15 @@ bcftools index -t panel.seg.vcf.gz
 
 ## How to generate the panel VCF
 
-Three starting points.
+Three starting points. The first — long-read assemblies of every founder — is the one
+kMate is designed for; the others are fallbacks.
 
 ### From assemblies, via a pangenome graph (recommended)
 
-Gives the full SNP+indel+SV spectrum with real genotypes.
+Gives the full SNP+indel+SV spectrum with real genotypes. List one seqfile line per
+**haplotype assembly**: an inbred founder has one, an outbred founder with a
+haplotype-resolved assembly has two, each under its own name (`plantA_hap1`,
+`plantA_hap2`). Each line becomes one haploid panel column.
 
 ```bash
 # seqfile: "<name><TAB><path>", reference FIRST
@@ -132,19 +136,24 @@ Reference Consortium: each atomic variant nested in a bubble carries a symbolic 
 genotypes move from the multi-allelic record to the biallelic catalog by *matching IDs*,
 never by alignment.
 
-If your founders **are** the graph (you built it from their assemblies), give the
-graph's own VCF and GFA:
+If your founders **are** the graph (you built it from their assemblies — the usual
+case), give the graph's own VCF and GFA:
 
 ```bash
 kmate decompose \
     --genotyped-vcf out/mypanel.vcf.gz \
     --gfa           out/mypanel.gfa.gz \
-    --haploidize \
     --out panel.vcf.gz
 ```
 
-If your founders were **genotyped on** a graph (e.g. with PanGenie), annotate the graph's
-own VCF once, then decompose the genotyped VCF against that annotation:
+No `--haploidize`: assembly genotypes are already haploid.
+
+If some founders were **genotyped on** the graph from short reads (e.g. with PanGenie —
+the GrENE-Net panel's 153 non-assembled founders), annotate the graph's own VCF once,
+then decompose the genotyped VCF against that annotation, and merge it with the
+assembly side. Avoid mixing sources if you can: short-read genotypes resolve far fewer
+k-mers than assemblies, so the two kinds of column are unequally complete, which skewed
+the GrENE-Net mixture toward assembled founders until per-founder normalization fixed it.
 
 ```bash
 kmate decompose \
@@ -160,8 +169,8 @@ kmate decompose \
 the VCF first (`bcftools view -r Chr1`); the GFA can stay whole. The output is sorted
 and indexed, ready for `build-index` / `build-var-pa`.
 
-`--haploidize` also makes genotypes haploid, which the builders require — **a kMate panel
-column is a haplotype**, because `build_kmer_pa` reconstructs exactly one sequence per
+For genotyped founders `--haploidize` makes the diploid genotypes haploid, which the
+builders require — **a kMate panel column is a haplotype**, because `build_kmer_pa` reconstructs exactly one sequence per
 founder. That is a property of the model, not of any particular species. How to get there
 depends on what your founders are:
 

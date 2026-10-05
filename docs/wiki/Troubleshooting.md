@@ -13,8 +13,8 @@ library. The program you need is **`kmer-jellyfish`**:
 mamba install -c conda-forge -c bioconda kmer-jellyfish
 ```
 
-This is also why `conda install kmate` currently gives you a broken install; see
-[Installation](Installation).
+kMate 0.1.0 on bioconda depended on the wrong one; use 0.1.2 or newer (see
+[Installation](Installation)).
 
 ---
 
@@ -28,7 +28,7 @@ kmate decompose --haploidize --het missing ...   # inbred founders
 kmate decompose --haploidize --het split   ...   # outbred, phased founders
 ```
 
-See [Building a panel](Building-a-panel#choosing---het).
+See [Building a panel](Building-a-panel#some-founders-genotyped-from-short-reads).
 
 ---
 
