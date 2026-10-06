@@ -96,6 +96,7 @@ Used when `--unit bp`, `ld` or `tsv`; ignored for `--unit chrom`.
 | `--jellyfish-threads` | `4` | threads for the reference k-mer count |
 | `--jellyfish-hash` | `100000000` | hash size for it |
 | `--keep-tempfiles` | off | keep intermediates for debugging |
+| `--tmp-dir` | next to `--out` | where the temporary files go (~2× genome size per assembly set; ~10 GB for 135 *Arabidopsis* assemblies). Use **node-local disk**: kMate warns when it is a network filesystem |
 
 ---
 

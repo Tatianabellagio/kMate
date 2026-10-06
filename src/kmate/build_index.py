@@ -426,6 +426,25 @@ def select_unique_kmers(
 # Genomic k-mer count via jellyfish
 # ---------------------------------------------------------------------------
 
+_NETWORK_FS = {"lustre", "nfs", "nfs4", "gpfs", "beegfs", "cifs", "smb3", "ceph", "fuse.sshfs"}
+
+
+def _filesystem_type(path: str) -> str | None:
+    """Filesystem type of `path` from /proc/mounts (longest matching mount point), or None."""
+    try:
+        real = os.path.realpath(path)
+        best, fstype = "", None
+        with open("/proc/mounts") as fh:
+            for line in fh:
+                parts = line.split()
+                if len(parts) >= 3 and (real == parts[1] or real.startswith(parts[1].rstrip("/") + "/")) \
+                        and len(parts[1]) > len(best):
+                    best, fstype = parts[1], parts[2]
+        return fstype
+    except OSError:
+        return None
+
+
 class JellyfishCounter:
     """Wraps `jellyfish count` + on-disk hash. Uses dna_jellyfish Python bindings
     (SWIG wrappers around libjellyfish) for direct C++-level queries against the
@@ -553,6 +572,12 @@ def main():
     ap.add_argument("--jellyfish-threads", type=int, default=4)
     ap.add_argument("--jellyfish-hash", type=int, default=100_000_000)
     ap.add_argument("--keep-tempfiles", action="store_true")
+    ap.add_argument("--tmp-dir", default=None,
+                    help="where to put the temporary files (the segment FASTA and the jellyfish "
+                         "hash, ~2x the genome size per assembly set; ~10 GB for 135 Arabidopsis "
+                         "assemblies). The hash is memory-mapped and queried at random, so use "
+                         "node-local disk: on a network filesystem (Lustre, NFS) this step can "
+                         "run many times slower. Default: next to --out (<out>_tmp)")
     args = ap.parse_args()
 
     add_reference = not args.no_add_reference
@@ -573,8 +598,18 @@ def main():
 
     # 2. enumerate alleles + write path_segments.fasta (input to jellyfish)
     print("[stage 2] enumerating alleles + writing path_segments FASTA", file=sys.stderr)
-    workdir = args.out + "_tmp"
-    os.makedirs(workdir, exist_ok=True)
+    if args.tmp_dir:
+        os.makedirs(args.tmp_dir, exist_ok=True)
+        workdir = tempfile.mkdtemp(prefix="kmate_index_", dir=args.tmp_dir)
+    else:
+        workdir = args.out + "_tmp"
+        os.makedirs(workdir, exist_ok=True)
+    fs = _filesystem_type(workdir)
+    print(f"  temporary files: {workdir} ({fs or 'unknown filesystem'})", file=sys.stderr)
+    if fs in _NETWORK_FS:
+        print(f"  WARNING: {workdir} is on a network filesystem ({fs}). The jellyfish hash is "
+              f"memory-mapped and queried at random, which can make the unique-k-mer step "
+              f"crawl. Pass --tmp-dir on node-local disk.", file=sys.stderr)
     segments_fasta = os.path.join(workdir, "path_segments.fasta")
     # Pre-compute all bubble alleles so we can stream once for jellyfish
     # and once again for unique-kmer selection.
