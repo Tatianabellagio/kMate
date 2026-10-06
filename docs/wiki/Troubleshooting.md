@@ -18,6 +18,21 @@ kMate 0.1.0 on bioconda depended on the wrong one; use 0.1.2 or newer (see
 
 ---
 
+### `WARNING: estimated coverage ... is below 1×` / `only N panel k-mers were observed`
+
+The pool has too little sequence matching the panel for a stable estimate. Check the
+library's depth first (a failed library looks like flat, very low coverage on every
+chromosome), then that the reads come from a pool of this panel's founders. The
+estimates are still written, but treat them as noise.
+
+### `WARNING: no panel k-mer was observed in the reads`
+
+Nothing in the reads matched the panel on that chromosome, so the mixture and every
+allele frequency there are written as `NaN`. Usually the reads are not from a pool of
+this panel's founders, or the library failed.
+
+---
+
 ### `ModuleNotFoundError: No module named 'dna_jellyfish'`
 
 `kmate build-index` uses jellyfish's Python bindings, and your environment's Python has

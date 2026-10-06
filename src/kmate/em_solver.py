@@ -165,6 +165,9 @@ def solve_em(
     h = np.full(F, 1.0 / F, dtype=np.float32) if h_init is None \
         else h_init.astype(np.float32)
     total_c = counts.sum()
+    if not total_c > 0:
+        # no evidence: the mixture is undefined. Say so instead of dividing by zero.
+        return np.full(F, np.nan), {"iterations": 0, "delta_history": [], "converged": False}
 
     # Dirichlet prior pseudo-count (added to numerator before normalization)
     prior_pseudo = np.float32(max(0.0, dirichlet_alpha - 1.0))

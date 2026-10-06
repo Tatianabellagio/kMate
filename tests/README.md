@@ -19,6 +19,7 @@ Written 2026-08-24 during the root-level cleanup.
 | `test_kmer_count.py` | Validates the k-mer counter against a known reference and a known BAM. |
 | `test_haploidize.py` | `haploidize` genotype rules: diploid collapse, haploid pass-through, `--het split` (seconds, no data; `python tests/test_haploidize.py`). |
 | `test_cli_flags.py` | retired options stay gone: `kmate run --kmer-weight` is rejected (seconds, no data). |
+| `test_low_evidence.py` | a fit with no observed k-mers returns NaN cleanly instead of dividing by zero (seconds, no data). |
 | `test_genomewide_validation.py` | Concatenates per-chromosome `kmer_pa` matrices, counts k-mers in each pool against the full set, runs EM, and compares the result to truth. |
 
 ## SLURM harnesses
@@ -28,6 +29,7 @@ Written 2026-08-24 during the root-level cleanup.
 | `run_build_kmer_pa.sh` | Builds the `K_pa` (k-mer presence/absence) matrices. |
 | `run_build_var_pa.sh` | Builds the `V_pa` (variant presence/absence) matrices. |
 | `run_genomewide_validation.sh` | Drives `test_genomewide_validation.py` genome-wide. |
+| `e2e/e2e.sbatch` + `e2e/compare.py` | release check: fresh env, PyPI install, Chr1 panel from the 135-assembly graph, one pool, compared with the production matrices (~4 h). |
 | `run_decompose_check.sh` | `kmate decompose --gfa` vs the arch3 decomposition on a Chr1 slice (identical records and genotypes), then the rest of the panel chain: `build-index`, `build-kmer-pa`, `build-var-pa`. |
 
 ## Fixture generation

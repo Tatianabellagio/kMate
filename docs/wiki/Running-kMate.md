@@ -53,6 +53,34 @@ content. Without it, k-mer-poor haplotypes collapse toward zero.
 
 ---
 
+## The repeat guard (`--max-kmer-cov-mult`, on by default)
+
+Every panel k-mer is unique within the panel, but not necessarily within the genome: a
+k-mer can also occur in a repeat the panel did not model. In the reads such a k-mer is
+seen far more often than a single-copy one, which can be seen at most about as often as
+the coverage. kMate therefore **drops any k-mer observed more than 5× the sample's
+estimated coverage** before fitting, and re-estimates coverage without them.
+
+kMate estimates coverage from the reads; you do not supply it. The log reports what the
+guard did, for every chromosome (here from `kmate selftest`):
+
+```
+[Chr1] repeat-guard: zeroed 0 k-mers with count > 5×cov (=28); cov re-est 5.5×
+```
+
+- Change the multiple with `--max-kmer-cov-mult N`; `--max-kmer-cov-mult 0` turns the
+  guard off.
+- The cutoff never goes below 1 read, so at very low coverage a k-mer seen once is kept.
+- If the guard drops a large share of the observed k-mers, the panel is missing repeats
+  your genome has, or the reads are not from this panel's species.
+
+Below **1×** estimated coverage kMate warns that the estimates are dominated by sampling
+noise, and below 200 observed panel k-mers that the mixture is poorly determined. With no
+panel k-mer observed at all it writes `NaN` and says so. See
+[Troubleshooting](Troubleshooting).
+
+---
+
 ## Whole genome, counting reads once
 
 k-mer counting dominates runtime. Count once per pool, query per chromosome:

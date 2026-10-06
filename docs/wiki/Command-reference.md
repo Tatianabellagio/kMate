@@ -4,9 +4,9 @@ Every option, with its default. **Required** options have no default and must be
 
 Run `kmate <command> --help` for the same information at the terminal.
 
-> This page describes kMate 0.1.3. In 0.1.2, `run` still accepted `--kmer-weight` and
-> `--emit-af-se` and spelled `--smooth-windows` as `--no-local-only`, and `decompose` had
-> no `--gfa`. `kmate --help` is authoritative for the version you have installed.
+> This page describes kMate 0.1.4. 0.1.3 lacks `build-index --tmp-dir`. In 0.1.2, `run`
+> still accepted `--kmer-weight` and `--emit-af-se` and spelled `--smooth-windows` as
+> `--no-local-only`, and `decompose` had no `--gfa`. `kmate --help` is authoritative for the version you have installed.
 
 | command | what it does |
 |---|---|
@@ -47,7 +47,7 @@ Run `kmate <command> --help` for the same information at the terminal.
 | `--unit` | **`chrom`** | where the mixture is fitted: `chrom`, `bp`, `ld`, `tsv`. See [Haplotypes and windows](Haplotypes-and-windows) |
 | `--normalize` | **`per_founder`** | M-step normalisation. `per_founder` divides each haplotype's update by its own k-mer content; `global` is the legacy multinomial form, under which k-mer-poor haplotypes collapse toward zero |
 | `--haploblock-eps` | `0.0` | merge haplotypes whose k-mer presence differs by at most this fraction of the unit's k-mers. `0` merges only exactly identical ones |
-| `--max-kmer-cov-mult` | `5.0` | drop k-mers with counts above this multiple of estimated coverage (repeat guard). `0` disables |
+| `--max-kmer-cov-mult` | `5.0` | repeat guard: drop k-mers seen more than this multiple of the estimated coverage (never below 1 read). `0` disables. See [Running kMate](Running-kMate#the-repeat-guard---max-kmer-cov-mult-on-by-default) |
 | `--threads` | `4` | threads for k-mer counting |
 | `--hash-size` | `3G` | Jellyfish hash size. Lower it on memory-capped jobs |
 
@@ -96,6 +96,7 @@ Used when `--unit bp`, `ld` or `tsv`; ignored for `--unit chrom`.
 | `--jellyfish-threads` | `4` | threads for the reference k-mer count |
 | `--jellyfish-hash` | `100000000` | hash size for it |
 | `--keep-tempfiles` | off | keep intermediates for debugging |
+| `--tmp-dir` | next to `--out` | where the temporary files go (~2× genome size per assembly set; ~10 GB for 135 *Arabidopsis* assemblies). Use **node-local disk**: kMate warns when it is a network filesystem |
 
 ---
 

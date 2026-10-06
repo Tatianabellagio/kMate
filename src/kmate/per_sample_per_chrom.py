@@ -119,7 +119,9 @@ def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads,
     × cov is therefore hitting extra genomic copies it doesn't tag (panel-unique
     != genome-unique) — its count is zeroed so the downstream `counts > 0` filter
     DROPS it from the EM (the allele is still tagged by its other unique k-mers).
-    cov is re-estimated on the cleaned counts. 0.0 (default) = off / legacy.
+    cov is re-estimated on the cleaned counts. The threshold never drops below 1, so
+    at very low coverage (< 1/max_kmer_cov_mult x) a k-mer seen once is not taken for
+    a repeat. 0.0 (default) = off / legacy.
     """
     cn_path = kmer_pa_prefix + f"_{chrom}.kmer_pa.npz"
     meta_path = kmer_pa_prefix + f"_{chrom}.meta.npz"
@@ -152,17 +154,30 @@ def _count_and_load_kmer_pa_dense(chrom, kmer_pa_prefix, reads_input, threads,
     ac = kmer_pa_dense.sum(axis=0)
     cov = counts.sum() * F / max(1, ac.sum())
     if max_kmer_cov_mult and max_kmer_cov_mult > 0:
-        thr = max_kmer_cov_mult * cov
+        thr = max(max_kmer_cov_mult * cov, 1.0)   # a single observation is never a repeat
         repeat = counts > thr
         n_rep = int(repeat.sum())
         if n_rep:
             counts[repeat] = 0                       # -> dropped by the counts>0 filter
             cov = counts.sum() * F / max(1, ac.sum())  # re-estimate on cleaned counts
         print(f"  [{chrom}] repeat-guard: zeroed {n_rep:,} k-mers with count > "
-              f"{max_kmer_cov_mult:g}×cov (={thr:.0f}); cov re-est {cov:.1f}×", flush=True)
-    print(f"  [{chrom}] cov estimate: {cov:.1f}×, kmer_pa_dense: {kmer_pa_dense.nbytes/1e9:.1f} GB", flush=True)
+              f"{max_kmer_cov_mult:g}×cov (={thr:.0f}); cov re-est {_fmt_cov(cov)}×", flush=True)
+    print(f"  [{chrom}] cov estimate: {_fmt_cov(cov)}×, kmer_pa_dense: {kmer_pa_dense.nbytes/1e9:.1f} GB", flush=True)
+    if cov < LOW_COVERAGE:
+        print(f"  [{chrom}] WARNING: estimated coverage {_fmt_cov(cov)}× is below {LOW_COVERAGE:g}×; "
+              f"at this depth the estimates are dominated by sampling noise.", flush=True)
     return kmer_pa_dense, counts, meta, cov, F, K
 
+
+# Below this many observed panel k-mers a chromosome-wide fit is flagged as unreliable
+# (the same floor --min-kmers-per-block applies to a window), and below this coverage
+# the estimate is flagged as sampling noise (docs/wiki/Input-files.md).
+LOW_EVIDENCE_KMERS = 200
+LOW_COVERAGE = 1.0
+
+
+def _fmt_cov(cov):
+    return f"{cov:.2f}" if cov < 1 else f"{cov:.1f}"
 
 # Module-level globals populated by main(): var_called sparse matrix.
 # _project_with_called_mask reads this so we don't plumb it through every
@@ -232,6 +247,7 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
 
     # Filter to nonzero-count k-mers (the EM only needs those)
     nz = counts > 0
+    n_obs = int(nz.sum())
     kmer_pa_em = np.ascontiguousarray(kmer_pa_dense[:, nz])
     counts_em = counts[nz].astype(np.float32)
     del kmer_pa_dense
@@ -239,7 +255,14 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
 
     t = time.time()
     h_c = None
-    if Kb == F_founders:
+    if n_obs == 0:
+        print(f"  [{chrom}] WARNING: no panel k-mer was observed in the reads, so the founder "
+              f"mixture and every AF on this chromosome are undefined (written as NaN). "
+              f"Check coverage, and that the reads come from a pool of this panel's founders.",
+              flush=True)
+        h = np.full(F_founders, np.nan, dtype=np.float32)
+        info = {"iterations": 0, "delta_history": [], "converged": False}
+    elif Kb == F_founders:
         # fast no-op path: no distinct-haplotype merging, fit founders directly
         # (byte-identical to the collapse path by permutation-equivariance).
         h, info = solve_em(counts_em, kmer_pa_em, cov, max_iter=em_max_iter, tol=1e-7,
@@ -248,8 +271,13 @@ def _fit_unit_chrom(chrom, kmer_pa_prefix, var_pa, var_meta, reads_input, thread
         h_c, info = solve_em(counts_em, kmer_pa_em[reps], cov, max_iter=em_max_iter, tol=1e-7,
                              normalize=normalize, kfw=kfw_full[reps])
         h = (h_c / csize)[lab].astype(np.float32)     # split haplotype freq to member founders
-    print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
-          f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
+    if n_obs:
+        print(f"  [{chrom}] EM solved in {info['iterations']} iters [{time.time()-t:.0f}s]; "
+              f"eff_n_founders = {1/np.sum(h**2):.1f}", flush=True)
+    if 0 < n_obs < LOW_EVIDENCE_KMERS:
+        print(f"  [{chrom}] WARNING: only {n_obs:,} panel k-mers were observed; the founder "
+              f"mixture is poorly determined and AFs on this chromosome are unreliable.",
+              flush=True)
 
     # AF-certainty: observed Fisher info at ĥ (while the k-mer matrix is still alive).
     Sigma = support = af_diag = None
@@ -560,7 +588,8 @@ def main():
                          "single-copy, allele-unique k-mer caps at ~cov (allele freq ≤1), "
                          "so a far-higher count means it recurs in a genomic repeat the "
                          "panel didn't model (panel-unique ≠ genome-unique). Such k-mers "
-                         "are excluded from the EM and cov is re-estimated. 0 = off "
+                         "are excluded from the EM and cov is re-estimated. The threshold "
+                         "is never below 1, so a k-mer seen once is kept. 0 = off "
                          "(legacy / byte-identical to pre-guard runs).")
     ap.add_argument("--haploblock-eps", type=float, default=0.0,
                     help="Haplotype-merge tolerance for the block→haploblock→EM collapse, "

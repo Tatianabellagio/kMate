@@ -89,8 +89,17 @@ Liao et al. (2023) *Nature* 617:312–324.
 ## Step 3: build the k-mer index
 
 ```bash
-kmate build-index --vcf out/mypanel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid
+kmate build-index --vcf out/mypanel.vcf.gz --ref REF.fa --out index/ours -k 31 --haploid \
+    --tmp-dir /path/on/local/disk
 ```
+
+Run it **genome-wide**, not per chromosome: a k-mer only identifies a bubble if it occurs
+once in the whole genome. It writes one index file per chromosome.
+
+Give `--tmp-dir` a **node-local** directory (on a SLURM cluster, usually the job's local
+scratch). The step queries a jellyfish hash of several GB at random; on a shared network
+filesystem (Lustre, NFS) it can run many times slower, and kMate prints a warning. The
+135-assembly *Arabidopsis* graph needs about 10 GB there and ~2 h.
 
 This takes the **graph** VCF from Step 1, not the decomposed one: the index is built per
 graph bubble, and a decomposed VCF splits bubbles into overlapping records, which
