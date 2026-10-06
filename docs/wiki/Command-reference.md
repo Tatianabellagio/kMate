@@ -47,7 +47,7 @@ Run `kmate <command> --help` for the same information at the terminal.
 | `--unit` | **`chrom`** | where the mixture is fitted: `chrom`, `bp`, `ld`, `tsv`. See [Haplotypes and windows](Haplotypes-and-windows) |
 | `--normalize` | **`per_founder`** | M-step normalisation. `per_founder` divides each haplotype's update by its own k-mer content; `global` is the legacy multinomial form, under which k-mer-poor haplotypes collapse toward zero |
 | `--haploblock-eps` | `0.0` | merge haplotypes whose k-mer presence differs by at most this fraction of the unit's k-mers. `0` merges only exactly identical ones |
-| `--max-kmer-cov-mult` | `5.0` | drop k-mers with counts above this multiple of estimated coverage (repeat guard). `0` disables |
+| `--max-kmer-cov-mult` | `5.0` | repeat guard: drop k-mers seen more than this multiple of the estimated coverage (never below 1 read). `0` disables. See [Running kMate](Running-kMate#the-repeat-guard---max-kmer-cov-mult-on-by-default) |
 | `--threads` | `4` | threads for k-mer counting |
 | `--hash-size` | `3G` | Jellyfish hash size. Lower it on memory-capped jobs |
 
