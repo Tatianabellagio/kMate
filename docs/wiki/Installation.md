@@ -53,8 +53,9 @@ PASS: kMate is correctly installed and working.
 kmate --version
 ```
 
-Use **0.1.3 or newer**. 0.1.0 cannot count k-mers; 0.1.2 cannot build a panel from a
-Cactus pangenome without extra scripts, and its `--haploidize` empties haploid panels.
+Use **0.1.4 or newer**. 0.1.0 cannot count k-mers; 0.1.2 cannot build a panel from a
+Cactus pangenome without extra scripts, and its `--haploidize` empties haploid panels;
+0.1.3 returns `NaN` without explanation for very-low-coverage pools.
 
 ## From source
 

@@ -1,10 +1,11 @@
 # Releasing kMate to PyPI and bioconda
 
-> **STATUS (2026-10-05): 0.1.3.** The recipe in [`meta.yaml`](meta.yaml) pins the sha256
-> of the 0.1.3 sdist uploaded to PyPI. History: 0.1.0 (June) could not count k-mers
+> **STATUS (2026-10-06): 0.1.4.** The recipe in [`meta.yaml`](meta.yaml) pins the sha256
+> of the 0.1.4 sdist uploaded to PyPI. History: 0.1.0 (June) could not count k-mers
 > (`jellyfish` instead of `kmer-jellyfish`); 0.1.2 (2026-09-29) fixed that; 0.1.3 bundles
 > the decomposition scripts, adds `decompose --gfa` and `bcftools`, and fixes
-> `--haploidize` on haploid input.
+> `--haploidize` on haploid input; 0.1.4 caps Python below 3.13 (jellyfish bindings),
+> adds `build-index --tmp-dir`, and reports low-evidence fits instead of returning NaN.
 
 bioconda's `recipes/kmate/meta.yaml` already exists, so each release is a **version
 bump** of that recipe. The recipe fetches the **PyPI sdist** (~170 KB), not the GitHub
