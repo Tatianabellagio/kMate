@@ -1,7 +1,7 @@
 # Installation
 
 kMate is a Python package. It also calls external programs: **jellyfish** (k-mer
-counting, plus its Python bindings for `build-index`), **samtools** and **bcftools**.
+counting), **samtools** and **bcftools**.
 
 ## Install
 
@@ -13,9 +13,10 @@ mamba activate kmate
 `conda`/`micromamba` work the same way. This pulls kMate and the programs it calls,
 `kmer-jellyfish`, `samtools` and `bcftools`.
 
-**Keep Python below 3.13.** `kmer-jellyfish` ships its Python bindings only for Python
-3.9–3.12; on a newer Python the solver falls back to an old build whose bindings do not
-load, and `kmate build-index` fails (see [Troubleshooting](Troubleshooting)).
+The `"python<3.13"` pin matters only for kMate 0.1.4 and older, whose `build-index`
+needed jellyfish's Python bindings (bioconda ships them for Python 3.9–3.12 only;
+see [Troubleshooting](Troubleshooting)). From 0.1.5 kMate uses only the `jellyfish`
+program and runs on any Python 3.9+; the pin is harmless.
 
 ### From source
 
@@ -24,8 +25,8 @@ To track the latest changes:
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
 cd kMate
-mamba create -n kmate -c conda-forge -c bioconda "python>=3.9,<3.13" numpy scipy pysam \
-    "kmer-jellyfish >=2.3.1 py*" samtools bcftools
+mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam \
+    kmer-jellyfish samtools bcftools
 mamba activate kmate
 pip install -e .
 ```
@@ -53,9 +54,10 @@ PASS: kMate is correctly installed and working.
 kmate --version
 ```
 
-Use **0.1.4 or newer**. 0.1.0 cannot count k-mers; 0.1.2 cannot build a panel from a
+Use **0.1.5 or newer**. 0.1.0 cannot count k-mers; 0.1.2 cannot build a panel from a
 Cactus pangenome without extra scripts, and its `--haploidize` empties haploid panels;
-0.1.3 returns `NaN` without explanation for very-low-coverage pools.
+0.1.3 returns `NaN` without explanation for very-low-coverage pools; 0.1.3 and 0.1.4
+need Python below 3.13 for `build-index`.
 
 ## From source
 
@@ -64,8 +66,8 @@ For development, or to track the latest changes:
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
 cd kMate
-mamba create -n kmate -c conda-forge -c bioconda "python>=3.9,<3.13" numpy scipy pysam \
-    "kmer-jellyfish >=2.3.1 py*" samtools bcftools
+mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam \
+    kmer-jellyfish samtools bcftools
 mamba activate kmate
 pip install -e .
 kmate selftest

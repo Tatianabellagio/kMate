@@ -4,7 +4,7 @@ Every option, with its default. **Required** options have no default and must be
 
 Run `kmate <command> --help` for the same information at the terminal.
 
-> This page describes kMate 0.1.4. 0.1.3 lacks `build-index --tmp-dir`. In 0.1.2, `run`
+> This page describes kMate 0.1.5 (same options as 0.1.4). 0.1.3 lacks `build-index --tmp-dir`. In 0.1.2, `run`
 > still accepted `--kmer-weight` and `--emit-af-se` and spelled `--smooth-windows` as
 > `--no-local-only`, and `decompose` had no `--gfa`. `kmate --help` is authoritative for the version you have installed.
 

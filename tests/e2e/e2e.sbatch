@@ -34,10 +34,10 @@ stamp() { echo "[$(date +%T)] $*"; }
 stamp "0. fresh env (documented install: conda deps + PyPI kmate)"
 export CONDA_PKGS_DIRS=/local/job${SLURM_JOB_ID}/pkgs CONDA_SOLVER=libmamba
 [ -x $W/env/bin/kmate ] || /global/home/users/tbellg/miniforge3/bin/mamba create -y -q -p $W/env -c conda-forge -c bioconda \
-    "python>=3.9,<3.13" numpy scipy pysam "kmer-jellyfish >=2.3.1 py*" samtools bcftools pip pandas > env.log 2>&1
+    python numpy scipy pysam kmer-jellyfish samtools bcftools pip pandas > env.log 2>&1
 export PATH=$W/env/bin:/usr/bin:/bin
 [ -x $W/env/bin/kmate ] || pip install -q "kmate==$V"
-kmate --version; python --version; python -c "import dna_jellyfish; print('dna_jellyfish OK')"
+kmate --version; python --version
 kmate selftest 2>&1 | tail -1
 
 stamp "1. build-index, genome-wide graph VCF (as production), on node-local disk"

@@ -35,16 +35,15 @@ this panel's founders, or the library failed.
 
 ### `ModuleNotFoundError: No module named 'dna_jellyfish'`
 
-`kmate build-index` uses jellyfish's Python bindings, and your environment's Python has
-none. bioconda's `kmer-jellyfish` ships bindings only for Python 3.9–3.12; with a newer
-Python (a fresh solve picks the newest) it installs an old build whose bindings are for
-3.10 only. Recreate the environment with Python capped:
+You have kMate 0.1.4 or older: its `kmate build-index` used jellyfish's Python
+bindings, which bioconda's `kmer-jellyfish` ships only for Python 3.9–3.12. On a newer
+Python (a fresh solve picks the newest) the bindings do not load. Upgrade: from 0.1.5
+kMate uses only the `jellyfish` program and runs on any Python.
 
 ```bash
 mamba create -n kmate -c conda-forge -c bioconda kmate "python<3.13"
+kmate --version      # 0.1.5 or newer
 ```
-
-Check with `python -c "import dna_jellyfish"`.
 
 ---
 

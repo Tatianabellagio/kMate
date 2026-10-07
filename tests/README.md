@@ -20,6 +20,7 @@ Written 2026-08-24 during the root-level cleanup.
 | `test_haploidize.py` | `haploidize` genotype rules: diploid collapse, haploid pass-through, `--het split` (seconds, no data; `python tests/test_haploidize.py`). |
 | `test_cli_flags.py` | retired options stay gone: `kmate run --kmer-weight` is rejected (seconds, no data). |
 | `test_low_evidence.py` | a fit with no observed k-mers returns NaN cleanly instead of dividing by zero (seconds, no data). |
+| `test_jellyfish_counter.py` | build-index's k-mer counts from the `jellyfish` program (no Python bindings): orientation, N, chunked queries (seconds; needs `jellyfish`). |
 | `test_genomewide_validation.py` | Concatenates per-chromosome `kmer_pa` matrices, counts k-mers in each pool against the full set, runs EM, and compares the result to truth. |
 
 ## SLURM harnesses
