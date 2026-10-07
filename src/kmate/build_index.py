@@ -344,7 +344,7 @@ def build_allele_sequence(
 
 def select_unique_kmers(
     bubble_alleles: list[str],
-    genomic_kmer_count,  # callable: bytes -> int
+    genomic_kmer_counts,  # callable: list[bytes] -> list[int] (canonical k-mers)
     is_biallelic: bool,
     cap_biallelic: int,
     cap_multiallelic: int,
@@ -378,16 +378,14 @@ def select_unique_kmers(
     # lexicographically before populating allele_to_kmers, so the per-allele
     # cap picks the same subset of k-mers.
     allele_to_kmers: dict[int, list[bytes]] = defaultdict(list)
-    for km in sorted(occurrences.keys()):
-        alleles_carrying = occurrences[km]
-        if len(alleles_carrying) != 1:
-            continue   # appears in multiple alleles → skip
-        local_count = 1
-        # query jellyfish on the CANONICAL form (jellyfish was built with -C)
-        genomic = genomic_kmer_count(canonical(km))
-        if genomic - local_count != 0:
+    # k-mers in exactly one allele (local_count 1), looked up together, in order.
+    candidates = [km for km in sorted(occurrences.keys()) if len(occurrences[km]) == 1]
+    # query jellyfish on the CANONICAL form (jellyfish was built with -C)
+    genomic = genomic_kmer_counts([canonical(km) for km in candidates])
+    for km, g in zip(candidates, genomic):
+        if g != 1:
             continue   # k-mer occurs elsewhere → skip
-        allele_to_kmers[alleles_carrying[0]].append(km)
+        allele_to_kmers[occurrences[km][0]].append(km)
 
     # Step 3: round-robin selection up to per-allele cap, with per-bubble total
     n_alleles = len(bubble_alleles)
@@ -446,29 +444,29 @@ def _filesystem_type(path: str) -> str | None:
 
 
 class JellyfishCounter:
-    """Wraps `jellyfish count` + on-disk hash. Uses dna_jellyfish Python bindings
-    (SWIG wrappers around libjellyfish) for direct C++-level queries against the
-    on-disk hash. Constant memory; no Python dict copy of all genomic k-mers.
+    """Genome-wide k-mer counts from the `jellyfish` program alone.
 
-    Requires the `dna_jellyfish` package (ships with bioconda `kmer-jellyfish`).
+    `jellyfish count` builds an on-disk hash of the segment FASTA; one long-lived
+    `jellyfish query -i -l` process then loads that hash into its own memory once
+    (-l) and answers k-mer queries over a pipe (-i), one count per line, already
+    canonicalized (the hash is built with -C). No Python bindings are needed --
+    bioconda ships `dna_jellyfish` for Python 3.9-3.12 only -- and no Python dict
+    of the genome's k-mers is held.
+
+    Queries are written in chunks of `_CHUNK` and their answers read back before
+    the next chunk, so neither pipe buffer can fill and deadlock the two processes.
     """
 
+    _CHUNK = 1000
+
     def __init__(self, fasta_path: str, k: int, hash_size: int = 100_000_000, threads: int = 4, workdir: str | None = None):
-        import dna_jellyfish as _jf  # local import so the module loads without the
-                                     # binding; it is REQUIRED here at construction
-                                     # (no fallback) and raises if missing.
-        self._jf = _jf
         self.k = k
         self.workdir = workdir or tempfile.mkdtemp(prefix="jf_")
         self.jf_path = os.path.join(self.workdir, "panel.jf")
         self._count(fasta_path, hash_size, threads)
-        # configure mer_dna global k-size; required before any MerDNA op
-        self._jf.MerDNA.k(self.k)
-        # QueryMerFile: opens the hash file with mmap, queries in C++ time.
-        self.qf = self._jf.QueryMerFile(self.jf_path)
-        # Reusable MerDNA scratch object — avoids per-query allocation in the
-        # inner loop.
-        self._scratch = self._jf.MerDNA()
+        cmd = ["jellyfish", "query", "-i", "-l", self.jf_path]
+        print(f"  [jellyfish] {' '.join(cmd)}", file=sys.stderr)
+        self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
 
     def _count(self, fasta_path, hash_size, threads):
         cmd = [
@@ -483,15 +481,30 @@ class JellyfishCounter:
         print(f"  [jellyfish] {' '.join(cmd)}", file=sys.stderr)
         subprocess.run(cmd, check=True)
 
-    def get_count(self, kmer: bytes) -> int:
-        """Look up genomic count for kmer. `kmer` is a fwd-direction bytes object;
-        QueryMerFile auto-canonicalizes internally.
+    def get_counts(self, kmers: list[bytes]) -> list[int]:
+        """Genome-wide counts for `kmers` (bytes, either orientation), in order."""
+        out: list[int] = []
+        stdin, stdout = self._proc.stdin, self._proc.stdout
+        for s0 in range(0, len(kmers), self._CHUNK):
+            chunk = kmers[s0:s0 + self._CHUNK]
+            stdin.write(b"\n".join(chunk) + b"\n")
+            stdin.flush()
+            for _ in chunk:
+                line = stdout.readline()
+                if not line:
+                    raise RuntimeError(f"`jellyfish query` on {self.jf_path} exited "
+                                       f"(code {self._proc.poll()}) mid-query")
+                out.append(int(line))
+        return out
 
-        Fast path: reuse a scratch MerDNA via .set(str) — avoids per-call
-        allocation of MerDNA + string conversion.
-        """
-        self._scratch.set(kmer.decode("ascii") if isinstance(kmer, (bytes, bytearray)) else kmer)
-        return self.qf[self._scratch]
+    def get_count(self, kmer: bytes) -> int:
+        """Genome-wide count for one k-mer."""
+        return self.get_counts([kmer])[0]
+
+    def close(self) -> None:
+        if self._proc.poll() is None:
+            self._proc.stdin.close()
+            self._proc.wait()
 
 
 # ---------------------------------------------------------------------------
@@ -643,7 +656,7 @@ def main():
             fa.write(f">{c}_reference_end\n{ref_tail}\n")
     print(f"  {segments_fasta}", file=sys.stderr)
 
-    # 3. jellyfish count + open via dna_jellyfish bindings (constant memory)
+    # 3. jellyfish count + a `jellyfish query` process holding the hash in memory
     print("[stage 3] jellyfish count + open query handle", file=sys.stderr)
     jf = JellyfishCounter(segments_fasta, k, args.jellyfish_hash, args.jellyfish_threads, workdir)
 
@@ -674,7 +687,7 @@ def main():
         is_biallelic = (len(unique_combos) == 2)
         allele_seqs = bubble_alleles_all[bidx]
         selected = select_unique_kmers(
-            allele_seqs, jf.get_count, is_biallelic,
+            allele_seqs, jf.get_counts, is_biallelic,
             args.cap_biallelic, args.cap_multiallelic, k,
             no_caps=args.no_caps,
         )
@@ -721,6 +734,8 @@ def main():
         per_chrom_out[chrom].write(line.encode("ascii"))
     for f in per_chrom_out.values():
         f.close()
+
+    jf.close()
 
     # cleanup
     if not args.keep_tempfiles:

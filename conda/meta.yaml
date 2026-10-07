@@ -19,19 +19,17 @@ build:
 
 requirements:
   host:
-    - python >=3.9,<3.13
+    - python >=3.9
     - pip
     - setuptools >=61
   run:
-    # <3.13 and the py* build: build-index imports the dna_jellyfish bindings, which
-    # only the Python-specific kmer-jellyfish builds ship (3.9-3.12). Without both, a
-    # fresh solve takes the newest Python and the old build-less kmer-jellyfish, whose
-    # bindings are compiled for 3.10 only -> ModuleNotFoundError: dna_jellyfish.
-    - python >=3.9,<3.13
+    # No Python cap: since 0.1.5 kMate uses only the `jellyfish` program, not the
+    # dna_jellyfish bindings (bioconda ships those for Python 3.9-3.12 only).
+    - python >=3.9
     - numpy
     - scipy
     - pysam
-    - kmer-jellyfish >=2.3.1 py*       # k-mer counter + bindings -- NOT `jellyfish`,
+    - kmer-jellyfish >=2.3.1           # k-mer counter (the binary) -- NOT `jellyfish`,
                                        # which on conda-forge is a Python string-similarity
                                        # library and ships no `jellyfish` binary.
     - samtools                         # BAM read access
@@ -43,7 +41,6 @@ test:
   commands:
     - kmate --help
     - kmate --version
-    - python -c "import dna_jellyfish"   # build-index needs the bindings
     # End-to-end: exercises jellyfish/samtools, so a missing or wrong binary
     # dependency fails CI instead of shipping a package that cannot count k-mers.
     - kmate selftest

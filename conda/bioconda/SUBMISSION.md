@@ -32,14 +32,18 @@ Before uploading, install the sdist into a pristine env holding only the recipe'
 deps and run the offline checks:
 
 ```bash
-mamba create -p /tmp/kmate_rel -c conda-forge -c bioconda "python>=3.9,<3.13" numpy scipy \
-    pysam "kmer-jellyfish >=2.3.1 py*" samtools bcftools pip
-/tmp/kmate_rel/bin/python -c "import dna_jellyfish"           # build-index needs it
+mamba create -p /tmp/kmate_rel -c conda-forge -c bioconda python numpy scipy pysam \
+    kmer-jellyfish samtools bcftools pip                        # newest Python, no pins
 /tmp/kmate_rel/bin/pip install --no-deps dist/kmate-X.Y.Z.tar.gz
 PATH=/tmp/kmate_rel/bin:$PATH kmate selftest                  # must PASS
 PATH=/tmp/kmate_rel/bin:$PATH python tests/test_haploidize.py
 PATH=/tmp/kmate_rel/bin:$PATH python tests/test_cli_flags.py
+PATH=/tmp/kmate_rel/bin:$PATH python tests/test_low_evidence.py
+PATH=/tmp/kmate_rel/bin:$PATH python tests/test_jellyfish_counter.py
 ```
+
+For a release that changes the panel builders, also run `tests/e2e/` (fresh install,
+Chr1 panel compared with the production matrices; ~4 h).
 
 ## 2. Upload to PyPI, then confirm the served hash
 
@@ -73,6 +77,17 @@ bioconda's CI builds the recipe in a clean container and runs its `test:` block,
 including `kmate selftest`. A reviewer merges it; then
 `mamba install -c bioconda kmate=X.Y.Z` works. bioconda's autobump bot may open the PR
 itself once the PyPI release is up; close one of the two if both appear.
+
+## 4. After bioconda merges: check the bare install
+
+The solver prefers the newest Python and will quietly fall back to an older kMate whose
+recipe allows it. After the merge, the plain command must give the new version:
+
+```bash
+mamba create --dry-run -n x -c conda-forge -c bioconda kmate    # must list kmate X.Y.Z
+```
+
+(0.1.4 failed this: it capped Python below 3.13, so a bare install picked 0.1.2 on 3.14.)
 
 ## Notes
 
