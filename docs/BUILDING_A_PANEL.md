@@ -237,7 +237,8 @@ kmate build-index \
 Run it genome-wide (k-mer uniqueness is a whole-genome property) with `--tmp-dir` on
 node-local disk: it memory-maps a several-GB jellyfish hash and queries it at random,
 which on Lustre/NFS can stall for hours (kMate warns when it detects one). The
-135-assembly *Arabidopsis* graph needs ~10 GB there, ~2 h and ~25 GB RAM.
+135-assembly *Arabidopsis* graph needs ~10 GB there, ~1.3 h and ~50 GB RAM (kMate plus the
+jellyfish process holding the hash).
 
 Writes `index/ours_<CHR>_kmers.tsv.gz`: one row per bubble with its unique k-mers.
 Reproduces `PanGenie-index`'s output; full algorithm in

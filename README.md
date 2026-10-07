@@ -40,16 +40,17 @@ kmate selftest
 ```
 
 This installs kMate and the programs it calls: **`kmer-jellyfish`** (the k-mer counter),
-`samtools` and `bcftools`. Keep Python below 3.13: `kmer-jellyfish` ships its Python
-bindings, which `kmate build-index` needs, only for 3.9–3.12.
+`samtools` and `bcftools`. The `"python<3.13"` pin is only needed for kMate 0.1.4 and
+older (their `build-index` used jellyfish's Python bindings, which bioconda ships for
+3.9–3.12 only); it is harmless with 0.1.5 and later.
 
 ### From source
 
 ```bash
 git clone https://github.com/Tatianabellagio/kMate.git
 cd kMate
-mamba create -n kmate -c conda-forge -c bioconda "python>=3.9,<3.13" numpy scipy pysam \
-    "kmer-jellyfish >=2.3.1 py*" samtools bcftools
+mamba create -n kmate -c conda-forge -c bioconda python numpy scipy pysam \
+    kmer-jellyfish samtools bcftools
 mamba activate kmate
 pip install -e .
 kmate selftest

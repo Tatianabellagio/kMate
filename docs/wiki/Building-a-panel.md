@@ -99,7 +99,7 @@ once in the whole genome. It writes one index file per chromosome.
 Give `--tmp-dir` a **node-local** directory (on a SLURM cluster, usually the job's local
 scratch). The step queries a jellyfish hash of several GB at random; on a shared network
 filesystem (Lustre, NFS) it can run many times slower, and kMate prints a warning. The
-135-assembly *Arabidopsis* graph needs about 10 GB there and ~2 h.
+135-assembly *Arabidopsis* graph needs about 10 GB there, ~1.3 h and ~50 GB of memory.
 
 This takes the **graph** VCF from Step 1, not the decomposed one: the index is built per
 graph bubble, and a decomposed VCF splits bubbles into overlapping records, which
