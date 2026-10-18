@@ -3,3 +3,4 @@ fits/
 logs/
 results/
 __pycache__/
+before_*/

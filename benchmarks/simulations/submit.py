@@ -4,7 +4,7 @@
 Usage: python submit.py [FIGURE ...] [--dry-run]     (figures as named in runs.py; default all)
 
 One Slurm job per missing pool (simulate.py), one per missing fit (fit.py, after its pool), and score.py after all of
-them. A pool or fit is done when its directory has a DONE file.
+them. A pool or fit is done when its directory has a DONE file. Env: kmate.
 """
 import os, sys, subprocess
 import config as C

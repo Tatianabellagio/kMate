@@ -13,7 +13,7 @@
 # TAIR10 -> consensus chains for the fastas_231n founder genomes (made before 05n wrote chains), with the exact
 # 05n_build_fastas_p231n.sh command, and a check that the regenerated consensus is byte-identical to the FASTA the sims
 # use. make_recomb_mosaics.py needs the chain to cut each segment at the founder's own coordinates
-# (p80/audit_sims/). Output: fastas_231n/<Accession_ID>.chain (+ .chaincheck: SAME / DIFFERENT).
+# (benchmarks/archive/scripts_before_simulations_2026-10-17/p80/audit_sims/). Output: fastas_231n/<Accession_ID>.chain (+ .chaincheck: SAME / DIFFERENT).
 # =============================================================================
 set -euo pipefail
 mkdir -p logs

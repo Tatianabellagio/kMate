@@ -39,11 +39,30 @@ with bwa and run hapFIRE on its GrENE-Net VCF (`../vs_hapfire/scripts/` builds t
 Every step is deterministic: a pool is reproduced from its name. Mosaic FASTAs are deleted after the reads are drawn;
 `shares.tsv` records each individual's share, length, read pairs and wgsim seed.
 
-## Run
+## Run, from a clean start
+
+Inputs (built once; each script's header gives its usage and environment):
+
+| input | built by |
+|---|---|
+| 231 founder genomes (`../p231/fastas_231n/`) and their chains | `../p231/scripts/05n_build_fastas_p231n.sh`, `05c_build_chains_p231n.sh` |
+| 78 long-read founder genomes + chains (`../p80/fastas_78n/`) | `../p80/scripts/05n_build_fastas_p78n.sh` |
+| 231 production panels (`data/kmer_pa_231_arch3_filt2inv`, `panel/arch3/chr1/var_pa_231_arch3_chr1*`) | the arch3 panel pipeline (`panel/arch3/`) |
+| founder-type k-mer panels (`../p231/data/kmer_pa_p231{,_filt2inv}`) | `../p231/scripts/03_build_kmer_pa_p231.sh`, `03c_build_kmer_pa_filt2inv_p231.sh` |
+| 78-founder panels (`../p80/data/var_pa_p78*`, `kmer_pa_p78_{raw,filt2inv}`) | `../p80/scripts/01_build_biallelic_p80.sh`, `03_build_kmer_pa_p80.sh`, `04_build_var_pa_p80.sh`, `build_p78_panels.py` |
+| hapFIRE's genomes, VCFs, genotype matrix, bwa index | `../vs_hapfire/scripts/build_greneNet_fastas.sh`, `build_greneNet_p78_vcf.sh`, `extract_greneNet_gt_matrix.py`, `build_bwa_index.sh` |
+
+Then (`kmate` env, compute node):
 
 ```bash
 cd benchmarks/simulations
 python runs.py                      # what would run
 python submit.py --dry-run          # what is missing
-python submit.py                    # submit it (skips what is done)
+python submit.py                    # submit it (skips what is done); score.py runs after every fit
+```
+
+and, once `score.py` has written `results/`, the figures (`basic` env, compute node):
+
+```bash
+cd analysis/grenenet_selection/notebooks && python _build_kmate_benchmarks_nb.py
 ```

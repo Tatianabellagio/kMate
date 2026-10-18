@@ -23,8 +23,7 @@ Every dir below has its own `README.md` with the question it answers.
 |---|---|
 | `simulations/` | **every pool and fit of the paper's kMate figures** (run table, simulator, fit runner, scorer) |
 | `p231/` | inputs of the production 231-founder panel benchmarks (founder genomes, k-mer panels) |
-| `p80/` | homogeneous-panel control (no cactus-vs-PG asymmetry) |
-| `poolsize_depth/` | accuracy + compute vs pool size N and depth |
+| `p80/` | inputs of the long-read (78-founder) panel benchmarks (founder genomes and chains, 78-founder panels) |
 | `founder_h_accuracy/` | founder-mixture `h` recovery (most sensitive to estimator internals) |
 | `founder_h_imbalance/` | is the private-k-mer filter still needed post-normalization? |
 | `founder_h_uncertainty/` | closed-out: `h` error is identifiability bias, not sampling variance |
@@ -36,7 +35,7 @@ Every dir below has its own `README.md` with the question it answers.
 
 | dir | comparator | status |
 |---|---|---|
-| `vs_hapfire/` | hapFIRE | ✅ the single home for all hapFIRE comparison — speed, founder-`h` accuracy, and `ecotype_resolution/`. Matched pools, **tool-native panels**, 5 seeds |
+| `vs_hapfire/` | hapFIRE | ✅ hapFIRE's inputs (GrENE-Net genomes, VCFs, genotype matrix, bwa index) and `ecotype_resolution/`; its pools and runs are in `simulations/` (matched founders, **tool-native panels**) |
 | `vs_vg_giraffe/` | vg giraffe | ✅ vg arm live; its hapFIRE arm is retired to `archive/` |
 
 **Infrastructure**
@@ -44,8 +43,7 @@ Every dir below has its own `README.md` with the question it answers.
 | dir | what it is |
 |---|---|
 | `kmate_output_store/` | shared per-pool kMate output store (~11 GB) — ⚠️ pre-refresh, see its README |
-| `cross_panel_summary/` | the one table spanning every panel benchmark, its figures, and the shared cross-panel tooling |
-| `archive/` | superseded and invalidated work, each with a README saying why |
+| `archive/` | superseded and invalidated work, each with a README saying why (`scripts_before_simulations_2026-10-17/`: what `simulations/` replaced, with `MANIFEST.csv`) |
 
 ### The one rule worth repeating
 

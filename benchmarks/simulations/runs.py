@@ -1,8 +1,8 @@
-"""Every simulated pool and every kMate fit behind the paper's kMate figures, grouped by figure.
+"""Every simulated pool and every kMate and hapFIRE fit behind the paper's kMate figures, grouped by figure.
 
 A pool is named by its parameters (p231_n50_g3_self97_s42_10x) and a fit by its pool and estimator settings
 (p231_n50_g3_self97_s42_10x.p231.chrom). A pool or fit listed by two figures is simulated or fitted once.
-`python runs.py` prints the number of pools and fits per figure.
+`python runs.py` prints the number of pools and fits per figure. Env: kmate.
 """
 from dataclasses import dataclass
 

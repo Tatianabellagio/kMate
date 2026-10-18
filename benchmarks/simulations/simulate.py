@@ -4,7 +4,7 @@
 Usage: python simulate.py POOL_ID      (POOL_ID as listed by runs.py; writes config.POOLS/POOL_ID/)
 
 1. Mosaics (sims/scripts/make_recomb_mosaics.py). n individuals are drawn from the founder set without replacement
-   (with balanced repeats when n exceeds the founders), then reproduce for `gen` generations, each offspring a clone of
+   (at most one per founder), then reproduce for `gen` generations, each offspring a clone of
    one parent with probability `selfing` and otherwise a recombinant of two (4 cM/Mb). Each TAIR10 segment is cut from
    its founder at the founder's own coordinates (chains), so a whole founder keeps its whole sequence (SNP-only genomes,
    for hapFIRE, are in TAIR10 coordinates and need no chain).
@@ -16,7 +16,7 @@ Usage: python simulate.py POOL_ID      (POOL_ID as listed by runs.py; writes con
    founder individual i carries there, over the founders called at the record; one table per variant panel.
 
 Writes ancestry.tsv, pool_weights.tsv, shares.tsv (ind_id, share, length, non_N, read_pairs, seed), reads/r{1,2}.fq,
-truth_<panel>.tsv.gz. The mosaic FASTAs are deleted once read (the pool is reproducible from its id).
+truth_<panel>.tsv.gz. The mosaic FASTAs are deleted once read (the pool is reproducible from its id). Env: kmate.
 """
 import os, sys, shutil, subprocess, zlib
 import numpy as np, pandas as pd, pysam
@@ -32,7 +32,7 @@ def run(*cmd):
 def founder_type_pool(pool, out):
     """Source weights putting the 50 founders of a founder-type pool at 1/50 (and every other founder at 0)."""
     order = [str(f) for f in np.load(C.FOUNDER_SETS[pool.founders]["order"], allow_pickle=True)["founders"]]
-    long_read = set(pysam.VariantFile(C.LONG_READ_VCF).header.samples)
+    long_read = set(open(C.LONG_READ).read().split())
     n_long = {"long": 40, "short": 5}[pool.founder_type]
     rng = np.random.default_rng(pool.seed)
     chosen = set(rng.choice(sorted(f for f in order if f in long_read), n_long, replace=False)) | \
@@ -60,7 +60,7 @@ def main(pool_id):
         extra += ["--source-weights", founder_type_pool(pool, out)]
     run(C.PYTHON, C.MOSAICS, "--n-indiv", pool.n, "--n-generations", pool.gen, "--seed", pool.seed,
         "--cactus-dir", fs["genomes"], *(["--chain-dir", fs["genomes"]] if fs["chains"] else []), "--founders-meta", fs["order"],
-        "--out-dir", out, "--chroms", C.CHROM, "--gen0-no-replace", *extra)
+        "--out-dir", out, "--chroms", C.CHROM, *extra)
 
     # 2. reads
     inds = sorted(os.listdir(f"{out}/haps"))                       # s_ind001, s_ind002, ...
@@ -92,8 +92,9 @@ def main(pool_id):
     # 3. truth
     for panel in fs["truth"]:
         pre = C.VARIANT_PANELS[panel]["prefix"]
-        run(C.PYTHON, C.TRUTH, "--ancestry", f"{out}/ancestry.tsv", "--weights", f"{out}/shares.tsv",
-            "--var-pa", f"{pre}.var_pa.npz", "--var-meta", f"{pre}.meta.npz", "--out", f"{out}/truth_{panel}.tsv.gz")
+        run(C.PYTHON, C.TRUTH, "--ancestry", f"{out}/ancestry.tsv", "--shares", f"{out}/shares.tsv",
+            "--var-pa", f"{pre}.var_pa.npz", "--var-called", f"{pre}.var_called.npz", "--var-meta", f"{pre}.meta.npz",
+            "--out", f"{out}/truth_{panel}.tsv.gz")
     open(f"{out}/DONE", "w").close()
 
 

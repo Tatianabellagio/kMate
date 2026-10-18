@@ -10,7 +10,7 @@ allele frequencies on its variant panel (or founder frequencies only, --h-only).
 hapFIRE: reads aligned to TAIR10 (bwa mem | samtools sort), then hapFIRE on the founder set's GrENE-Net VCF. Writes
 fit_ecotype_frequency.txt, fit_snp_frequency.txt, align_time.txt, hapfire_time.txt (the BAM is deleted).
 Every step timed with /usr/bin/time -v, with at most FIT_THREADS threads (timed fits pinned to that many cores); DONE
-written last. Output: config.FITS/FIT_ID/.
+written last. Output: config.FITS/FIT_ID/. Env: kmate (hapFIRE itself runs in its own env, config.HAPFIRE_PYTHON).
 """
 import os, sys, subprocess
 import config as C

@@ -24,12 +24,12 @@ Env: kmate. Compute node (~1 h).
 """
 import os, re
 from functools import lru_cache
-import numpy as np, pandas as pd, scipy.sparse as sp, pysam
+import numpy as np, pandas as pd, scipy.sparse as sp
 import config as C
 from runs import figures, AF_SCENARIOS, Pool
 
 KEY = ["chrom", "pos", "ref_len", "alt_len"]
-LONG_READ = set(pysam.VariantFile(C.LONG_READ_VCF).header.samples)
+LONG_READ = set(open(C.LONG_READ).read().split())
 
 
 # ---- inputs ----------------------------------------------------------------------------------------------------------
@@ -113,6 +113,7 @@ def greneNet(founders=None):
     dos = gt["dosage"][:, cols].astype(np.float64); s = dos.sum(1)
     keep = np.minimum(s, dos.shape[1] - s) >= 2
     sites = pd.DataFrame({"chrom": gt["chrom"].astype(str), "pos": gt["pos"]})[keep].reset_index(drop=True)
+    assert not sites.duplicated().any(), "GrENE-Net sites repeat (chrom, pos): the hapFIRE join would pair wrong records"
     return sites, dos[keep], fo[cols]
 
 
@@ -123,7 +124,8 @@ def hapfire(fit, founders=None):
     sites, dos, fo = greneNet(founders)
     truth = sites.assign(truth_af=dos @ np.array([w.get(f, 0.0) for f in fo]))
     sf = pd.read_csv(f"{d}/fit_snp_frequency.txt", sep="\t", header=None, names=["chrom", "pos", "freq"],
-                     dtype={"chrom": str}).merge(truth, on=["chrom", "pos"])
+                     dtype={"chrom": str}).merge(truth, on=["chrom", "pos"], validate="one_to_one")
+    assert len(sf) > 0.9 * len(truth), f"{fit.id}: hapFIRE estimates only {len(sf)} of {len(truth)} SNPs"
     ta, tb = run_time(f"{d}/align_time.txt"), run_time(f"{d}/hapfire_time.txt")
     return dict(h=e.freq.to_numpy(), h_truth=np.array([w.get(f, 0.0) for f in e.founder]), weights=w,
                 af_est=sf.freq.to_numpy(), af_truth=sf.truth_af.to_numpy(), align=ta, hapfire=tb)
@@ -205,7 +207,7 @@ def units():
 
 
 def longread_grid():
-    f78 = tuple(sorted(str(f) for f in np.load(C.FOUNDER_SETS["p78"]["order"], allow_pickle=True)["founders"]))
+    f78 = tuple(sorted(LONG_READ))
     rows = []
     for fit in figures()["longread_grid"]:
         p = fit.pool; w = pool_weights(p); assert set(f for f, v in w.items() if v) <= set(f78)

@@ -1,10 +1,10 @@
-"""Paths and fixed settings shared by simulate.py, fit.py, submit.py and score.py."""
+"""Paths and fixed settings shared by simulate.py, fit.py, submit.py and score.py. Env: kmate."""
 
 K = "/global/scratch/projects/fc_moilab/tbellg/kmate"
 B = f"{K}/benchmarks"
 HERE = f"{B}/simulations"
 POOLS = f"{HERE}/pools"            # one directory per simulated pool
-FITS = f"{HERE}/fits"              # one directory per kMate fit
+FITS = f"{HERE}/fits"              # one directory per fit (kMate or hapFIRE)
 RESULTS = f"{HERE}/results"        # scored tables read by the benchmark notebook
 LOGS = f"{HERE}/logs"
 
@@ -50,8 +50,9 @@ KMER_PANELS = {
     "p78_filt": f"{B}/p80/data/kmer_pa_p78_filt2inv/kmer_pa",
 }
 
-# Long-read founders: the 78 samples of the cactus VCF; the other 153 of the 231 were genotyped from short reads.
-LONG_READ_VCF = f"{K}/panel/arch3/chr1/cactus_78_chr1_haploid.vcf.gz"
+# Long-read founders: the project's master list of the 78 (= the cactus VCF samples; 5772 and 9947 are short-read); the
+# other 153 of the 231 were genotyped from short reads.
+LONG_READ = f"{K}/analysis/grenenet_selection/r3_persite_gwas/results/sv_snp_ld_v2/longread_founders_78.txt"
 
 # Paired-end reads (wgsim): VISOR SHORtS's settings, used for every earlier simulation.
 READ_LEN, INSERT, INSERT_SD = 150, 500, 50
