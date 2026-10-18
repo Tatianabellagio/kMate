@@ -1,3 +1,5 @@
+> **2026-10-17:** the simulations and kMate fits of this benchmark now run from `../simulations/` (run table `runs.py`); the scripts named below are in `../archive/scripts_before_simulations_2026-10-17/`, except the input builders still in `scripts/`.
+
 # `benchmarks/p80/` — 80-cactus-founder control experiment
 
 > **Naming:** the AF-estimation method is now called **kMate** (see `../ALGORITHM.md`). The `cactus_em_*` result-dir names and `07*_run_cactus_em_*.sh` scripts here retain the legacy name `cactus_em`; a full path rename is deferred.

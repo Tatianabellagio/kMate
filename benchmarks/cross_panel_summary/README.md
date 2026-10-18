@@ -1,3 +1,5 @@
+> **2026-10-17:** the simulations and kMate fits of this benchmark now run from `../simulations/` (run table `runs.py`); the scripts named below are in `../archive/scripts_before_simulations_2026-10-17/`.
+
 # benchmarks/cross_panel_summary/
 
 The **one table that spans every panel benchmark**, plus the figures built from it and

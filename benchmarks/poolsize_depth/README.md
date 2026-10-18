@@ -1,3 +1,5 @@
+> **2026-10-17:** the simulations and kMate fits of this benchmark now run from `../simulations/` (run table `runs.py`); the scripts named below are in `../archive/scripts_before_simulations_2026-10-17/`.
+
 # benchmarks/poolsize_depth/
 
 **Question:** how do kMate's accuracy and compute scale with pool size (N founders)

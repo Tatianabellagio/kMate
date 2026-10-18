@@ -19,6 +19,10 @@ Design notes:
   - After n_generations, n_indiv haploid mosaics remain.
   - Mosaic FASTA is built by stitching founder segments at recombination
     boundaries. We use the founder FASTAs in `cactus_dir/<founder>.chr.fa`.
+    These are consensus sequences whose coordinates drift from TAIR10, so each
+    segment (TAIR10 coordinates, as in ancestry.tsv and the truth) is cut at the
+    founder's own consensus coordinates via `chain_dir/<founder>.chain`; mosaic
+    lengths therefore differ from TAIR10 (a pure founder = its whole consensus).
 
 Truth (computed in companion script): per-record AF =
   sum_i var_pa[founder_at_(chrom,pos)_in_ind_i, record] × weight_i / sum_i weight_i
@@ -56,31 +60,16 @@ def load_fai(fai_path):
 
 
 def fa_fetch(fa_path, fai, name, start, end):
-    """Fetch [start, end] (1-based inclusive) from FASTA at fa_path using .fai.
-
-    Always returns exactly (end - start + 1) bases. The requested window is
-    given in TAIR10 coordinates, but the per-founder consensus FASTA can be
-    SHORTER than TAIR10 (net consensus deletions shorten Chr1 by up to ~430 kb,
-    81% of founders). Bytes beyond the founder sequence's real end are therefore
-    PADDED WITH 'N' — never read past the record, which previously spilled the
-    next chromosome's header + sequence (`>Chr2...`) into the mosaic tail. N tail
-    => VISOR emits no reads there (honest "no data"), and the mosaic length stays
-    equal to the requested TAIR10 span so region.bed / truth coords line up."""
+    """Fetch [start, end] (1-based inclusive, within the sequence) from FASTA at fa_path using .fai."""
     length, offset, lblen, llen = fai[name]
     s = start - 1                      # 0-based inclusive start
-    want = end - s                     # number of bases requested
-    e = min(end, length)               # clamp end to the real sequence length
-    if e <= s:
-        return 'N' * want              # window entirely past the sequence end
+    assert 0 <= s < end <= length, (fa_path, name, start, end, length)
     s_off = offset + (s // lblen) * llen + (s % lblen)
-    e_off = offset + (e // lblen) * llen + (e % lblen)
+    e_off = offset + (end // lblen) * llen + (end % lblen)
     with open(fa_path, 'rb') as f:
         f.seek(s_off)
         raw = f.read(e_off - s_off)
-    seq = raw.decode('ascii').replace('\n', '').replace('\r', '').upper()
-    if len(seq) < want:                # founder shorter than TAIR10 -> N-pad tail
-        seq += 'N' * (want - len(seq))
-    return seq
+    return raw.decode('ascii').replace('\n', '').replace('\r', '').upper()
 
 
 class IndexedFasta:
@@ -95,6 +84,66 @@ class IndexedFasta:
     def fetch(self, name, start, end):
         return fa_fetch(self.path, self.fai, name, start, end)
 # ---------------------------------------------------------------------------
+
+
+class ConsensusChain:
+    """TAIR10 -> founder-consensus coordinates for one chromosome, from the chain that `bcftools consensus -c` writes
+    alongside the founder FASTA (t = TAIR10, q = consensus; ungapped blocks, 0-based).
+
+    Founder FASTAs are consensus sequences (indels and SVs applied), so their coordinates drift from TAIR10 by up to
+    ~0.4 Mb. Ancestry tracks and the truth are in TAIR10 coordinates, so each segment must be cut from the founder at
+    the consensus bases that correspond to its TAIR10 span (sims/AUDIT_2026-06-18.md #3; benchmarks/p80/audit_sims/).
+    """
+    def __init__(self, chain_path, chrom, t_len, q_len):
+        ts, qs, sz, found, on = [], [], [], False, False
+        with open(chain_path) as fh:
+            for line in fh:
+                p = line.split()
+                if not p:
+                    continue
+                if p[0] == "chain":
+                    on = p[2] == chrom
+                    if on:
+                        if found:
+                            raise ValueError(f"{chain_path}: more than one chain for {chrom}")
+                        found = True
+                        if int(p[3]) != t_len or int(p[8]) != q_len or p[4] != "+" or p[9] != "+":
+                            raise ValueError(f"{chain_path} {chrom}: chain sizes {p[3]}/{p[8]} do not match TAIR10 "
+                                             f"{t_len} / FASTA {q_len} (or not + strand)")
+                        t, q = int(p[5]), int(p[10])
+                    continue
+                if not on:
+                    continue
+                ts.append(t); qs.append(q); sz.append(int(p[0]))
+                if len(p) == 3:
+                    t += int(p[0]) + int(p[1]); q += int(p[0]) + int(p[2])
+        if not found:
+            raise ValueError(f"{chain_path}: no chain for {chrom}")
+        self.ts, self.qs, self.sz = np.array(ts), np.array(qs), np.array(sz)
+        self.t_len, self.q_len = t_len, q_len
+
+    def cut(self, t):
+        """0-based consensus index where a piece starting at TAIR10 base t (1-based; t_len+1 = past the end) begins.
+        Consecutive pieces of one founder tile its consensus exactly: bases inserted between TAIR10 t-1 and t, and a
+        TAIR10 base t deleted in the founder, both resolve to the start of the next aligned block, so inserted bases
+        stay with the piece on the left."""
+        if t > self.t_len:
+            return self.q_len
+        t0 = t - 1
+        i = int(np.searchsorted(self.ts, t0, side="right")) - 1
+        if i < 0:
+            return 0
+        if t0 < self.ts[i] + self.sz[i]:
+            return int(self.qs[i] + (t0 - self.ts[i]))
+        return int(self.qs[i + 1]) if i + 1 < len(self.qs) else self.q_len
+
+    def piece(self, fasta, chrom, s, e):
+        """Consensus bases of TAIR10 span [s, e] (1-based inclusive)."""
+        a, b = self.cut(s), self.cut(e + 1)
+        if b <= a:
+            return ""
+        assert b <= self.q_len
+        return fasta.fetch(chrom, a + 1, b)
 
 # A. thaliana literature: ~3.6-4 cM/Mb ≈ 4e-8 crossover/bp/meiosis
 DEFAULT_RECOMB_RATE = 4e-8
@@ -227,14 +276,21 @@ def write_ancestry_tsv(pop, out_path):
     return df
 
 
-def write_mosaic_fasta(ind_segs, founder_fastas, out_fa, samtools=None):
-    """Stitch founder FASTA segments into one mosaic FASTA, indexed via samtools faidx."""
+def write_mosaic_fasta(ind_segs, founder_fastas, out_fa, samtools=None, chains=None):
+    """Stitch founder FASTA segments into one mosaic FASTA, indexed via samtools faidx.
+
+    chains: {(founder, chrom): ConsensusChain}. Each TAIR10 segment is cut from the founder at its own consensus
+    coordinates, so a whole-chromosome founder contributes its whole consensus and mosaic lengths vary. None = founder
+    genomes in TAIR10 coordinates (SNP-only consensus; main() checks every length equals TAIR10)."""
     with open(out_fa, "w") as fout:
         for chrom in sorted(ind_segs):
             fout.write(f">{chrom}\n")
             seqs = []
             for s, e, f in ind_segs[chrom]:
-                seq = founder_fastas[f].fetch(chrom, s, e)
+                if chains is None:
+                    seq = founder_fastas[f].fetch(chrom, s, e)
+                else:
+                    seq = chains[(f, chrom)].piece(founder_fastas[f], chrom, s, e)
                 seqs.append(seq)
             full = "".join(seqs)
             for i in range(0, len(full), 80):
@@ -275,12 +331,10 @@ def main():
                          "keeps most individuals pure single-founder even after g3. "
                          "Default 0.0 = forced outcrossing (legacy; existing sims reproduce "
                          "bit-identically). Only takes effect when --n-generations >= 1.")
-    ap.add_argument("--dominant-pure-founder", action="store_true",
-                    help="Force ind001 to a single whole-chromosome founder chosen at "
-                         "random from the source (overrides its recombination). With the "
-                         "skewed driver (06b) giving ind001 the dominant fraction, this "
-                         "models a NON-recombinant ecotype winning to high frequency on a "
-                         "recombinant background (the dom500nr 'selection' variant).")
+    ap.add_argument("--chain-dir", default=None,
+                    help="dir holding <founder>.chain (bcftools consensus -c, written with the founder FASTAs): segments "
+                         "are cut at each founder's own consensus coordinates. Omit only for founder genomes in TAIR10 "
+                         "coordinates (SNP-only consensus); their lengths are checked.")
     ap.add_argument("--source-weights", default=None,
                     help="Optional TSV (founder, prob) defining the source-population founder "
                          "probabilities. The gen-0 pool is then a Stage-1 multinomial draw of "
@@ -394,18 +448,6 @@ def main():
                            gen0_no_replace=args.gen0_no_replace,
                            selfing_rate=args.selfing_rate)
 
-    # Non-recombinant winner (selection variant): force ind001 to be a single
-    # whole-chromosome founder, chosen at random from the source. The skewed
-    # driver (06b) gives ind001 the dominant pool fraction, so this models a
-    # pure (non-recombinant) ecotype sweeping to high frequency on top of a
-    # recombinant background — the counterpart to the default dom500, where the
-    # dominant individual is itself a recombinant mosaic.
-    if args.dominant_pure_founder:
-        winner = str(rng.choice(founders, p=source_probs))
-        pop[0] = {c: [(1, L, winner)] for c, L in CHROM_LENGTHS.items()}
-        print(f"  dominant winner ind001 -> PURE founder {winner} "
-              f"(non-recombinant, whole chromosome)", flush=True)
-
     write_ancestry_tsv(pop, out / "ancestry.tsv")
     print(f"  wrote ancestry.tsv: {sum(len(p[c]) for p in pop for c in p):,} segments", flush=True)
 
@@ -420,6 +462,23 @@ def main():
         founder_fastas[f] = IndexedFasta(str(fa_path))
     print(f"  loaded {len(founder_fastas)} founder FASTAs", flush=True)
 
+    chains = None
+    if not args.chain_dir:
+        for f in used_founders:
+            for c, L in CHROM_LENGTHS.items():
+                if founder_fastas[f].fai[c][0] != L:
+                    raise ValueError(f"{f} {c}: {founder_fastas[f].fai[c][0]:,} bp, not the TAIR10 {L:,}: "
+                                     f"a consensus with indels needs --chain-dir")
+        print("  no --chain-dir: founder genomes in TAIR10 coordinates (lengths checked)", flush=True)
+    else:
+        chains = {}
+        for f in used_founders:
+            for c, L in CHROM_LENGTHS.items():
+                chains[(f, c)] = ConsensusChain(Path(args.chain_dir) / f"{f}.chain", c, L,
+                                                founder_fastas[f].fai[c][0])
+        print(f"  loaded consensus chains for {len(used_founders)} founders "
+              f"(segments cut at each founder's own coordinates)", flush=True)
+
     # Stitch mosaics
     for i, ind in enumerate(pop):
         ind_id = f"ind{i+1:03d}"
@@ -428,7 +487,7 @@ def main():
         out_fa = hap_dir / "h1.fa"
         if out_fa.exists() and (hap_dir / "h1.fa.fai").exists():
             continue
-        write_mosaic_fasta(ind, founder_fastas, str(out_fa), samtools=args.samtools)
+        write_mosaic_fasta(ind, founder_fastas, str(out_fa), samtools=args.samtools, chains=chains)
         if (i + 1) % 10 == 0:
             print(f"  built {i+1}/{args.n_indiv} mosaic FASTAs", flush=True)
     print(f"  done — {args.n_indiv} mosaics in {haps_dir}/", flush=True)

@@ -194,7 +194,11 @@ def main():
     #   2) `visor_pool_fractions.tsv` (ind_id, clone_dir, visor_pct) — per-mosaic
     #      pool fractions used by VISOR. Used by the SKEWED recomb sim.
     #      Each individual gets visor_pct/100 weight in the pool.
+    #   3) `shares.tsv` (ind_id, share, ...) — per-individual pool shares written by
+    #      benchmarks/simulations/simulate.py (ind_id as in ancestry.tsv).
     weights_df = pd.read_csv(args.weights, sep='\t')
+    if 'ind_id' in weights_df.columns and 'share' in weights_df.columns:
+        weights_df = weights_df.assign(visor_pct=weights_df['share'] * 100.0)
     if 'ind_id' in weights_df.columns and 'visor_pct' in weights_df.columns:
         # Skewed mode: per-individual weights. visor_pool_fractions.tsv keys
         # individuals by the clone-dir basename ('s_ind001'); ancestry.tsv keys
@@ -217,7 +221,7 @@ def main():
         ws = sum(ind_weight.values())
         if abs(ws - 1.0) > 1e-3:
             print(f"  WARN: pool weights sum to {ws:.4f}, not 1.0", flush=True)
-        print(f"  per-individual pool weights from {args.weights} (skewed mode)", flush=True)
+        print(f"  per-individual pool weights from {args.weights}", flush=True)
         print(f"    weight stats: min={min(ind_weight.values()):.4f} "
               f"max={max(ind_weight.values()):.4f} "
               f"sum={ws:.4f}", flush=True)

@@ -1,0 +1,5 @@
+pools/
+fits/
+logs/
+results/
+__pycache__/

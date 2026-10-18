@@ -1,3 +1,5 @@
+> **2026-10-17:** the simulations and kMate fits of this benchmark now run from `../simulations/` (run table `runs.py`); hapFIRE's pools and runs included (founder sets `greneNet231` / `greneNet78`, fits `<pool>.hapfire`); the scripts named below are in `../archive/scripts_before_simulations_2026-10-17/`. `scripts/` keeps the builders of hapFIRE's inputs (GrENE-Net genomes, VCFs, genotype matrix, bwa index).
+
 > ℹ️ **See [`PANEL_MISMATCH_BUG.md`](PANEL_MISMATCH_BUG.md).** An earlier
 > poolsize×depth accuracy/speed comparison ran kMate on the arch3 panel but
 > hapFIRE on the old greneNet SNP-only VCF, while reads came from arch3 — a

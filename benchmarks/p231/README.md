@@ -1,3 +1,5 @@
+> **2026-10-17:** the simulations and kMate fits of this benchmark now run from `../simulations/` (run table `runs.py`); the scripts named below are in `../archive/scripts_before_simulations_2026-10-17/`, except the input builders still in `scripts/`.
+
 # `benchmarks/p231/` — 231-founder benchmark (paper headline)
 
 The main kMate accuracy benchmark on the **full 231-founder heterogeneous panel**
