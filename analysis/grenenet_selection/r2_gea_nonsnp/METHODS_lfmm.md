@@ -2,6 +2,9 @@
 
 > ## ⚠ STALE — frozen 2026-09-30, superseded by the call-rate-filtered re-run
 >
+> The current GEA (panel arch3v2 since 2026-10-22, 346 pools in 30 gardens, site 33 excluded) is documented in
+> `phase1_replication/README.md`; the counts below (352 pools, 31 sites) are the arch3 pre-floor run.
+>
 > **Everything below was computed WITHOUT a founder call-rate filter, and ~9% of the non-SNP
 > and ~19% of the SV hit list comes from records that are miscalibrated.** Kept for the
 > record and for comparison; **do not develop it further** and do not add candidates to it.
@@ -34,7 +37,7 @@
 > Treat its exclusion as unresolved rather than settled.
 
 
-GrENE-Net climate GEA, generation 9. Written 2026-08-25 for the manuscript. Every
+GrENE-net climate GEA, generation 9. Written 2026-08-25 for the manuscript. Every
 claim below was checked against the code and, where a filter could be inert or
 load-bearing, against the data. `file:line` citations are the implementation.
 

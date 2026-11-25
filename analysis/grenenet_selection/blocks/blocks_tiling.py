@@ -63,7 +63,7 @@ HAPFM_MIN_VARIANTS = 2        # HapFM's own small-block merge floor (span < 2 va
 def load_blocks(r2: float, chrom: str) -> pd.DataFrame:
     ci = int(chrom.replace("Chr", ""))
     tag = f"clq{r2}"
-    f = f"{lib.CLQ_BLOCKS_DIR}/chr{ci}_{tag}_blocks_{tag}.tsv"
+    f = f"{lib.CLQ_BLOCKS_DIR}{lib.VSUF}/chr{ci}_{tag}_blocks_{tag}.tsv"   # the panel version's map (KMATE_PANEL)
     return pd.read_csv(f, sep="\t").sort_values("start_pos").reset_index(drop=True)
 
 
