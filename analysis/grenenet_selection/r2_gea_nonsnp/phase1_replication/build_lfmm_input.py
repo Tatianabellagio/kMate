@@ -1,18 +1,17 @@
 #!/usr/bin/env python
-"""Build LFMM inputs for the phase-1 replication (per class, per gen).
+"""LFMM input files for one class x climate axis, for both arms of the GEA (steps 2 and 4 of _submit_gea.sh).
 
-Mirrors phase-1's LFMM: Y = Δp (pool AF - founding p0) per record, env = the z-scored
-climate axis, lfmm_ridge K=16 (the R step, multiaxis/run_lfmm_nogif.R, which keeps the RAW
-lfmm_test p and only records lambda; production driver multiaxis/ma_lfmm_cr50.sbatch).
-Phase-1's hapFIRE Δp had no missing values; kMate Δp does (records finite in
->=50% of pools by the class filter), so we impute each record's NaN with that
-record's across-pool mean Δp (standard LFMM locus-mean imputation).
+  Y    delta p = pool frequency - founding frequency p0, [pools x tested units].
+       Record arm (snp, smallindel): built here from --cmdir's {cls}_gen{g}_af.npy and af_store's p0.
+       Event arm (sv, nonsnp): --dp, the delta p of Truvari events built by event_gea/build_event_matrix.py.
+  env  the climate axis from --cmdir's gen{g}.pools.csv, z-scored over pools.
 
-Writes (for class CLS, gen G):
-  lfmm_{CLS}_gen{G}_Y.f64        float64 binary, C-order [n_pools x n_records]
-  lfmm_{CLS}_gen{G}_dims.txt      "n_pools n_records"
-  lfmm_{CLS}_gen{G}_env.csv       one col, z-scored bio (pool order matches Y rows)
-  (records come from the class matrix; the driver joins p back onto {CLS}_gen{G}.records.csv by row position)
+Writes {out}/lfmm_{cls}_gen{g}_Y.f64 (float64, C order), _dims.txt ("n_pools n_units") and _env.csv, which
+multiaxis/run_lfmm_nogif.R reads. Rows are the pools of gen{g}.pools.csv; columns of Y are the rows of the
+records / units table, in order, so the p-values join back by position.
+
+Environment: kmate.
+Usage: build_lfmm_input.py --class snp --climate bio1 --cmdir <class matrices> --out <work dir> [--dp event_dp.npy]
 """
 from __future__ import annotations
 import argparse, os, sys
@@ -21,49 +20,42 @@ import pandas as pd
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 import lib
 
-_P0 = {"snp": "p0_snp.npy", "sv": "p0_nonsnp.npy", "smallindel": "p0_nonsnp.npy",
-       "nonsnp": "p0_nonsnp.npy"}
+P0 = {"snp": "p0_snp.npy", "smallindel": "p0_nonsnp.npy", "sv": "p0_nonsnp.npy", "nonsnp": "p0_nonsnp.npy"}
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--class", dest="cls", required=True,
-                    choices=["snp", "sv", "smallindel", "nonsnp"])
+    ap.add_argument("--class", dest="cls", required=True, choices=list(P0))
+    ap.add_argument("--climate", required=True, help="a column of gen{g}.pools.csv: bio1-19, pc1-3")
+    ap.add_argument("--cmdir", required=True, help="build_class_matrices.py output (pools; records for the record arm)")
+    ap.add_argument("--out", required=True)
     ap.add_argument("--gen", type=int, default=9)
-    ap.add_argument("--climate", default="bio1")
-    ap.add_argument("--cmdir", default=f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices{lib.VSUF}")
-    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/lfmm{lib.VSUF}")
-    args = ap.parse_args()
-    lib.check_version_dir(args.cmdir, "--cmdir")        # never mix panel versions (KMATE_PANEL)
-    if lib.VSUF and lib.VSUF.lstrip("_") not in os.path.realpath(args.out):
-        raise SystemExit(f"--out {args.out} is not under a {lib.PANEL} directory; refusing")
-    os.makedirs(args.out, exist_ok=True)
+    ap.add_argument("--dp", help="event arm: a ready delta p matrix [pools x units] (.npy)")
+    a = ap.parse_args()
+    lib.check_version_dir(a.cmdir, "--cmdir")               # never mix panel versions (KMATE_PANEL)
+    if lib.VSUF and lib.VSUF.lstrip("_") not in os.path.realpath(a.out):
+        raise SystemExit(f"--out {a.out} is not under a {lib.PANEL} directory; refusing")
 
-    recs = pd.read_csv(f"{args.cmdir}/{args.cls}_gen{args.gen}.records.csv")
-    pools = pd.read_csv(f"{args.cmdir}/gen{args.gen}.pools.csv")
-    assert not pools.site.astype(int).isin(lib.EXCLUDED_SITES).any(), "an excluded site (site 33) reached the GEA input"
-    af = np.load(f"{args.cmdir}/{args.cls}_gen{args.gen}_af.npy")          # [pools x rec], NaN=missing
-    p0 = np.load(f"{lib.AF_STORE}/{_P0[args.cls]}")[recs['col'].to_numpy()]  # founding AF per kept record
-    n_pools, n_rec = af.shape
-    assert n_rec == len(recs) and n_pools == len(pools), (af.shape, len(recs), len(pools))
+    pools = pd.read_csv(f"{a.cmdir}/gen{a.gen}.pools.csv")
+    assert not pools.site.astype(int).isin(lib.EXCLUDED_SITES).any(), "an excluded site reached the GEA input"
+    if a.dp:
+        dp = np.load(a.dp)
+    else:
+        col = pd.read_csv(f"{a.cmdir}/{a.cls}_gen{a.gen}.records.csv", usecols=["col"])["col"].to_numpy()
+        af = np.load(f"{a.cmdir}/{a.cls}_gen{a.gen}_af.npy")
+        assert af.shape[1] == len(col)
+        dp = af - np.load(f"{lib.AF_STORE}/{P0[a.cls]}")[col][None, :]
+    assert dp.shape[0] == len(pools), (dp.shape, len(pools))
+    assert np.isfinite(dp).all(), "delta p has missing values; LFMM needs a complete matrix"
 
-    dp = af - p0[None, :]                                  # Δp [pools x rec]
-    # impute NaN with each record's across-pool mean Δp (column mean)
-    with np.errstate(invalid="ignore"):
-        colmean = np.nanmean(dp, axis=0)
-    colmean = np.where(np.isfinite(colmean), colmean, 0.0)
-    miss = ~np.isfinite(dp)
-    dp[miss] = np.take(colmean, np.where(miss)[1])
-    print(f"{args.cls} gen{args.gen}: Δp [{n_pools} x {n_rec:,}] | imputed "
-          f"{miss.sum():,} cells ({100*miss.mean():.1f}%)", flush=True)
-
-    stem = f"{args.out}/lfmm_{args.cls}_gen{args.gen}"
-    dp.astype(np.float64).tofile(f"{stem}_Y.f64")          # C-order [pools x rec]
-    open(f"{stem}_dims.txt", "w").write(f"{n_pools} {n_rec}\n")
-    x = pools[args.climate].to_numpy(float)
-    z = (x - x.mean()) / x.std(ddof=0)                     # standardize env (LFMM convention)
-    pd.DataFrame({args.climate: z}).to_csv(f"{stem}_env.csv", index=False)
-    print(f"  -> {stem}_Y.f64 / _dims.txt / _env.csv (env z-scored {args.climate})", flush=True)
+    os.makedirs(a.out, exist_ok=True)
+    stem = f"{a.out}/lfmm_{a.cls}_gen{a.gen}"
+    dp.astype(np.float64).tofile(f"{stem}_Y.f64")
+    with open(f"{stem}_dims.txt", "w") as fh:
+        fh.write(f"{dp.shape[0]} {dp.shape[1]}\n")
+    x = pools[a.climate].to_numpy(float)
+    pd.DataFrame({a.climate: (x - x.mean()) / x.std(ddof=0)}).to_csv(f"{stem}_env.csv", index=False)
+    print(f"{a.cls} gen{a.gen} {a.climate}: Y [{dp.shape[0]} x {dp.shape[1]:,}] -> {stem}_*", flush=True)
 
 
 if __name__ == "__main__":

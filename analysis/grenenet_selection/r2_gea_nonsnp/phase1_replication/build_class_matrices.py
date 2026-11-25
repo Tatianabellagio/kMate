@@ -1,34 +1,27 @@
 #!/usr/bin/env python
-"""Build filtered per-CLASS, per-GENERATION pool matrices for the phase-1 GEA.
+"""Per-class pool allele-frequency matrices, filtered: the GEA's record-arm input (step 1 of _submit_gea.sh).
 
-Takes the flower-weighted `site_gen_plot` pool matrices (the phase-1 analysis
-unit) and splits/filters them into the three variant classes the kMate panel
-adds over the SNP-only phase-1 paper:
+Reads the flower-weighted site_gen_plot pool matrices (lib.POOL_MATRICES; generation 9 = each plot's last
+generation, assemble_lastgen.py) and splits them into variant classes:
 
-    snp         ref_len==1 & alt_len==1                 (from pool_gen{g}_snp)
-    sv          |alt_len-ref_len| >  SV_MIN_BP (50)     (from pool_gen{g}_nonsnp)
-    smallindel  non-SNP & |alt_len-ref_len| <= SV_MIN_BP(from pool_gen{g}_nonsnp)
+  snp         ref_len == alt_len == 1                       from pool_gen{g}_snp
+  smallindel  non-SNP with |alt_len - ref_len| <= 50 bp     from pool_gen{g}_nonsnp
+  sv          |alt_len - ref_len| > 50 bp                   from pool_gen{g}_nonsnp
+  nonsnp      smallindel + sv                               from pool_gen{g}_nonsnp
 
-Filters (mirroring phase-1 `maf05 mincount05`; both CLI-tunable):
-  * MAF >= --maf-min (0.05)         contemporary MAF = min(p_bar, 1-p_bar),
-                                    p_bar = NaN-aware mean AF across this gen's pools
-  * record finite (non-NaN) in >= --min-finite-frac of the pools (panel/coverage
-    availability; the kMate analog of phase-1's min-count)
-  * invariant records (p_bar in {0,1} after filtering) are dropped (MAF=0 < maf-min)
+Filters, per record:
+  MAF >= --maf-min (0.05), with MAF = min(p_bar, 1 - p_bar) and p_bar = mean frequency over the generation's pools.
+  Founder call rate >= --min-call-rate (0.50), i.e. called in >= 116 of the 231 founders. Where few founders are
+  called, kMate's frequency is the frequency within the called founders: a different estimand that varies less
+  across gardens and so inflates the GEA (multiaxis/callrate_calibration.py).
 
-Each kept record is assigned its phase-1 hapFIRE LD block (lib.assign_ld_blocks).
+Writes in --out:
+  {cls}_gen{g}_af.npy        float32 [pools x kept records]
+  {cls}_gen{g}.records.csv   one row per matrix column: chrom,pos,ref_len,alt_len,p_bar,maf,n_finite,col,block
+                             (col = the record's index in af_store/index_{snp,nonsnp}; block = hapFIRE LD block)
+  gen{g}.pools.csv           one row per matrix row: pool,site,plot,...,bio1-19,pc1-3
 
-Outputs (--out, default analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices):
-  {class}_gen{g}_af.npy       float32 [n_pools_g x n_kept]   (NaN where no data)
-  {class}_gen{g}.records.csv  chrom,pos,ref_len,alt_len,p_bar,maf,n_finite,
-                              col (column index into snp for snp, into nonsnp for smallindel and sv),block
-                              (row-aligned to the matrix columns)
-  gen{g}.pools.csv            pool,site,plot,bio1,...  (row-aligned to matrix rows)
-
-Usage:
-  PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
-  $PY build_class_matrices.py --classes sv smallindel --gens 1 3
-  $PY build_class_matrices.py --classes snp           --gens 1 3   # after snp pools build
+Environment: kmate.  Usage: build_class_matrices.py --classes snp smallindel --gens 9 --out <dir>_arch3v2
 """
 from __future__ import annotations
 import argparse, glob, os, sys
@@ -39,27 +32,23 @@ import lib
 
 SV_MIN_BP = 50
 N_FOUNDERS = 231
-CLASSES = ("snp", "sv", "smallindel", "nonsnp")
-# which pool-matrix kind + af_store index each class is carved from
-_SRC = {"snp": "snp", "sv": "nonsnp", "smallindel": "nonsnp", "nonsnp": "nonsnp"}
+CLASSES = ("snp", "smallindel", "sv", "nonsnp")
+SOURCE = {"snp": "snp", "smallindel": "nonsnp", "sv": "nonsnp", "nonsnp": "nonsnp"}   # pool matrix each class is cut from
 
 
-def class_mask(kind_idx: dict, cls: str) -> np.ndarray:
-    """Boolean over the records of the source pool matrix selecting class `cls`."""
+def class_mask(idx: dict, cls: str) -> np.ndarray:
+    """Which records of the source pool matrix belong to `cls`."""
     if cls in ("snp", "nonsnp"):
-        # snp source is all-SNP, nonsnp source is all-non-SNP (indel+SV pooled)
-        return np.ones(len(kind_idx["pos"]), dtype=bool)
-    dlen = np.abs(kind_idx["alt_len"].astype("int64") - kind_idx["ref_len"].astype("int64"))
+        return np.ones(len(idx["pos"]), dtype=bool)
+    dlen = np.abs(idx["alt_len"].astype("int64") - idx["ref_len"].astype("int64"))
     return dlen > SV_MIN_BP if cls == "sv" else dlen <= SV_MIN_BP
 
 
 def load_n_called(store: str) -> dict:
-    """Per-record founder call count, positionally aligned to each af_store index.
+    """Founders called per record, {"snp": array, "nonsnp": array}, in af_store record order.
 
-    `n_called` = how many of the 231 founders have a called genotype at that record. It is
-    a property of the PANEL (identical across samples), stored per sample in
-    af_store/nc_{kind}/. Loaded positionally -- never joined on (chrom,pos,ref_len,alt_len),
-    which hits the multiallelic trap (14.2% of non-SNP records share such a key on arch3v2).
+    A property of the panel, so any one sample's af_store/nc_{kind}/ file holds it. Positional: never joined on
+    (chrom, pos, ref_len, alt_len), which is not unique for multi-allelic sites.
     """
     out = {}
     for kind in ("snp", "nonsnp"):
@@ -70,134 +59,79 @@ def load_n_called(store: str) -> dict:
     return out
 
 
-def build(gen: int, cls: str, pooldir: str, store: str, out: str,
-          maf_min: float, min_finite_frac: float, min_call_rate: float = 0.0):
-    src = _SRC[cls]
-    mat_path = f"{pooldir}/pool_gen{gen}_{src}_af.npy"
-    meta_path = f"{pooldir}/pool_gen{gen}_{src}.meta.csv"
-    if not os.path.exists(mat_path):
-        print(f"  SKIP gen{gen} {cls}: missing {mat_path}", flush=True)
-        return
-    pmeta = pd.read_csv(meta_path)                      # pools x (pool,site,plot,bio1..)
-    assert not pmeta.site.astype(int).isin(lib.EXCLUDED_SITES).any(), \
-        f"{meta_path} holds an excluded site ({sorted(lib.EXCLUDED_SITES)}); rebuild the pool matrices"   # ⛔ site 33
-    # Climate PCs = PCs of the 19 standardized bioclim vars, each z-scored.
-    # PC1 is +bio1-oriented (matches axis_scan/build_power_inputs.pc1); PC2/PC3 have
-    # no analogous natural anchor, so they are oriented such that the bioclim variable
-    # with the LARGEST ABSOLUTE LOADING gets a positive loading -- deterministic and
-    # reproducible, rather than hand-picked per component. Sign does not affect LFMM
-    # p-values (two-sided test on a single predictor); it only fixes the direction in
-    # which an effect is read. On gen9 (346 pools, 30 sites under arch3v2: site 33 excluded) the variance explained is
-    # PC1 46.8% / PC2 23.4% / PC3 11.7% (82.0% cumulative), and the resulting
-    # orientation is PC2 -> +bio7 (continentality / temperature range), PC3 -> +bio10
-    # (warmest-quarter temperature). Multiaxis uses --climate pcN, so the pools table
-    # must carry these or those tasks KeyError.
-    if not {"pc1", "pc2", "pc3"} <= set(pmeta.columns):
-        _m = pmeta[[f"bio{i}" for i in range(1, 20)]].to_numpy(float)
-        _Z = (_m - _m.mean(0)) / _m.std(0, ddof=0)
-        _U, _S, _Vt = np.linalg.svd(_Z - _Z.mean(0), full_matrices=False)
-        for _k in range(3):
-            _sc = _U[:, _k] * _S[_k]
-            if _k == 0:
-                _flip = np.corrcoef(_sc, _m[:, 0])[0, 1] < 0        # PC1: orient to +bio1
-            else:
-                _flip = _Vt[_k][np.argmax(np.abs(_Vt[_k]))] < 0     # PC2+: dominant loading +ve
-            if _flip:
-                _sc = -_sc
-            pmeta[f"pc{_k + 1}"] = (_sc - _sc.mean()) / _sc.std(ddof=0)
-    idx = dict(np.load(f"{store}/index_{src}.npz", allow_pickle=True))
-    cmask = class_mask(idx, cls)                        # columns of source belonging to cls
+def add_climate_pcs(pools: pd.DataFrame) -> None:
+    """pc1-3 of the 19 standardized bioclim variables over the pools, each z-scored, added as columns.
 
-    # Load the WHOLE matrix into RAM with ONE sequential read, then subset columns
-    # in-memory. (A memmap + fancy column-index would do millions of strided reads
-    # across the file — pathological on shared scratch. gen1 nonsnp ~2.9 GB fits.)
-    af = np.load(mat_path)                              # [pools x n_src], float32, NaN=missing
-    n_pools = af.shape[0]
-    sub = np.ascontiguousarray(af[:, cmask])            # [pools x n_cls]  in-RAM subset
+    Orientation: pc1 correlates positively with bio1; pc2 and pc3 give their largest-|loading| variable a positive
+    loading (on gen 9 that is bio7 and bio10). The sign does not change an LFMM p-value, only how an effect is read.
+    """
+    m = pools[[f"bio{i}" for i in range(1, 20)]].to_numpy(float)
+    z = (m - m.mean(0)) / m.std(0, ddof=0)
+    u, s, vt = np.linalg.svd(z - z.mean(0), full_matrices=False)
+    for k in range(3):
+        score = u[:, k] * s[k]
+        if k == 0:
+            flip = np.corrcoef(score, m[:, 0])[0, 1] < 0
+        else:
+            flip = vt[k][np.argmax(np.abs(vt[k]))] < 0
+        if flip:
+            score = -score
+        pools[f"pc{k + 1}"] = (score - score.mean()) / score.std(ddof=0)
+
+
+def build(gen: int, cls: str, pooldir: str, store: str, out: str, maf_min: float, min_call_rate: float):
+    src = SOURCE[cls]
+    pools = pd.read_csv(f"{pooldir}/pool_gen{gen}_{src}.meta.csv")
+    assert not pools.site.astype(int).isin(lib.EXCLUDED_SITES).any(), \
+        f"pool_gen{gen}_{src} holds an excluded site {sorted(lib.EXCLUDED_SITES)}; rebuild the pool matrices"
+    add_climate_pcs(pools)
+    idx = dict(np.load(f"{store}/index_{src}.npz", allow_pickle=True))
+    cols = np.where(class_mask(idx, cls))[0]                # the class's records, as indices into the source
+
+    # one sequential read of the whole matrix, then an in-memory column subset (a memmap with fancy column
+    # indexing does millions of strided reads, which is pathological on shared scratch)
+    af = np.load(f"{pooldir}/pool_gen{gen}_{src}_af.npy")   # [pools x records], float32
+    assert af.shape[0] == len(pools)
+    sub = np.ascontiguousarray(af[:, cols])
     del af
-    cls_cols = np.where(cmask)[0]                       # orig column index within the source
 
     finite = np.isfinite(sub)
-    n_finite = finite.sum(axis=0)                       # per record
-    with np.errstate(invalid="ignore"):
-        p_bar = np.nansum(np.where(finite, sub, 0.0), axis=0) / np.maximum(n_finite, 1)
+    n_finite = finite.sum(axis=0)                           # = number of pools for every kMate record
+    p_bar = np.nansum(np.where(finite, sub, 0.0), axis=0) / np.maximum(n_finite, 1)
     maf = np.minimum(p_bar, 1.0 - p_bar)
-
-    # The finite/coverage filter is INERT on kMate data: kMate projects AF from the
-    # per-chrom founder-haplotype reconstruction (h), so every record is finite in
-    # every pool (n_finite == n_pools). Verified across all gens x classes (~8.5M
-    # records each): min n_finite == n_pools, 0 records below the 50% threshold, so
-    # MAF is the sole gatekeeper. Term commented out (kept, not deleted, so it can be
-    # re-enabled via --min-finite-frac if this is ever reused on data WITH missingness,
-    # e.g. short-read pools). n_finite is still computed and written to records.csv.
-    keep = (maf >= maf_min)  # & (n_finite >= int(np.ceil(min_finite_frac * n_pools)))
-
-    # FOUNDER CALL-RATE FLOOR (added 2026-09-30). Records called in few founders are a
-    # different estimand, not a noisier one: kMate's MAR projection returns the allele
-    # frequency WITHIN the called founders, and that conditional frequency varies less
-    # across gardens than the population frequency does -- the climate-orthogonal part of
-    # the variation is carried largely by the founders being dropped. Less residual scatter
-    # around the same slope reads as more significance, so these records draw an inflated
-    # threshold rather than a noisier one. Measured within matched MAF strata: the 78-only
-    # stratum runs lambda 2.15-2.27 against 1.67-1.80 for well-called records, with ~1.7-2x
-    # the Bonferroni hit rate, while the 0.50-0.90 band is indistinguishable from fully
-    # called -- hence a floor at 0.50, not 0.90 (which would additionally discard most of
-    # the SV layer for no measurable gain). See
-    # multiaxis/callrate_calibration.py and notebooks/flc_case.ipynb for the worked case.
-    n_called = load_n_called(store)[_SRC[cls]][cls_cols]
-    if min_call_rate > 0:
-        cr_keep = n_called >= np.ceil(min_call_rate * N_FOUNDERS)
-        print(f"  gen{gen} {cls}: call-rate floor {min_call_rate:.2f} "
-              f"(>= {int(np.ceil(min_call_rate * N_FOUNDERS))}/{N_FOUNDERS} founders) removes "
-              f"{int((~cr_keep).sum()):,} of {len(cr_keep):,} records "
-              f"({100 * (~cr_keep).mean():.1f}%)", flush=True)
-        keep = keep & cr_keep
-    kept = np.where(keep)[0]
-    print(f"  gen{gen} {cls}: {len(cls_cols):,} {cls} records -> "
-          f"{len(kept):,} kept (MAF>={maf_min}; finite filter inert on kMate: "
-          f"n_finite in [{int(n_finite.min())},{int(n_finite.max())}]/{n_pools})", flush=True)
-    if len(kept) == 0:
-        return
+    n_called = load_n_called(store)[src][cols]
+    floor = int(np.ceil(min_call_rate * N_FOUNDERS))
+    keep = np.where((maf >= maf_min) & (n_called >= floor))[0]
+    print(f"gen{gen} {cls}: {len(cols):,} records -> {len(keep):,} kept "
+          f"(MAF >= {maf_min}, called in >= {floor}/{N_FOUNDERS} founders)", flush=True)
+    assert len(keep) > 0
 
     os.makedirs(out, exist_ok=True)
-    mat = sub[:, kept].astype(np.float32)
-    np.save(f"{out}/{cls}_gen{gen}_af.npy", mat)
-
-    chrom = idx["chrom"][cls_cols][kept]
-    pos = idx["pos"][cls_cols][kept]
-    block = lib.assign_ld_blocks(np.asarray(chrom, dtype=str), np.asarray(pos))
-    recs = pd.DataFrame(dict(
-        chrom=chrom, pos=pos,
-        ref_len=idx["ref_len"][cls_cols][kept], alt_len=idx["alt_len"][cls_cols][kept],
-        p_bar=p_bar[kept], maf=maf[kept], n_finite=n_finite[kept],
-        col=cls_cols[kept], block=block))
-    recs.to_csv(f"{out}/{cls}_gen{gen}.records.csv", index=False)
-    # pool rowmeta (same for every class of a generation; write once)
-    pmeta.to_csv(f"{out}/gen{gen}.pools.csv", index=False)
-    print(f"    -> {out}/{cls}_gen{gen}_af.npy [{mat.shape[0]} x {mat.shape[1]:,}], "
-          f"{recs.block.ne('').sum():,} with LD block", flush=True)
+    np.save(f"{out}/{cls}_gen{gen}_af.npy", sub[:, keep].astype(np.float32))
+    chrom, pos = idx["chrom"][cols][keep], idx["pos"][cols][keep]
+    pd.DataFrame(dict(
+        chrom=chrom, pos=pos, ref_len=idx["ref_len"][cols][keep], alt_len=idx["alt_len"][cols][keep],
+        p_bar=p_bar[keep], maf=maf[keep], n_finite=n_finite[keep], col=cols[keep],
+        block=lib.assign_ld_blocks(np.asarray(chrom, dtype=str), np.asarray(pos)),
+    )).to_csv(f"{out}/{cls}_gen{gen}.records.csv", index=False)
+    pools.to_csv(f"{out}/gen{gen}.pools.csv", index=False)  # the same for every class of a generation
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pooldir", default=lib.POOL_MATRICES)                  # the panel version's (KMATE_PANEL)
-    ap.add_argument("--store", default=lib.AF_STORE)
-    ap.add_argument("--out", default=f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/class_matrices{lib.VSUF}")
-    ap.add_argument("--classes", nargs="+", default=list(CLASSES), choices=CLASSES)
-    ap.add_argument("--gens", type=int, nargs="+", default=[1, 3])
+    ap.add_argument("--out", required=True)
+    ap.add_argument("--classes", nargs="+", default=["snp", "smallindel"], choices=CLASSES)
+    ap.add_argument("--gens", type=int, nargs="+", default=[9])
     ap.add_argument("--maf-min", type=float, default=0.05)
-    ap.add_argument("--min-finite-frac", type=float, default=0.5)
-    ap.add_argument("--min-call-rate", type=float, default=0.0,
-                    help="founder call-rate floor (n_called/231). 0 = off, the historical "
-                         "behaviour; 0.50 is the calibrated setting (see build()).")
-    args = ap.parse_args()
-    for d, what in ((args.pooldir, "--pooldir"), (args.store, "--store"), (args.out, "--out")):
-        lib.check_version_dir(d, what)                  # never mix panel versions (KMATE_PANEL)
-    os.makedirs(args.out, exist_ok=True)
-    for g in args.gens:
-        for c in args.classes:
-            build(g, c, args.pooldir, args.store, args.out,
-                  args.maf_min, args.min_finite_frac, args.min_call_rate)
+    ap.add_argument("--min-call-rate", type=float, default=0.50, help="founder call-rate floor (n_called / 231)")
+    ap.add_argument("--pooldir", default=lib.POOL_MATRICES)
+    ap.add_argument("--store", default=lib.AF_STORE)
+    a = ap.parse_args()
+    for d, what in ((a.pooldir, "--pooldir"), (a.store, "--store"), (a.out, "--out")):
+        lib.check_version_dir(d, what)                      # never mix panel versions (KMATE_PANEL)
+    for g in a.gens:
+        for c in a.classes:
+            build(g, c, a.pooldir, a.store, a.out, a.maf_min, a.min_call_rate)
 
 
 if __name__ == "__main__":

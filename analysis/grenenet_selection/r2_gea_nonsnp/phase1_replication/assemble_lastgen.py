@@ -1,21 +1,15 @@
 #!/usr/bin/env python
-"""Assemble the phase-1 LAST-GEN pool matrix from kMate per-generation pools.
+"""The GEA's pools: each plot at its last available generation, as pseudo-generation 9 (run before _submit_gea.sh).
 
-Phase-1's "last_gen" analysis unit = the LAST AVAILABLE generation per plot
-(extinction-structured): 355 site_gen_plot pools = 89 gen1 + 73 gen2 + 193 gen3,
-each plot appearing in exactly one generation. The authoritative list is phase-1's
-`key_files/final_gen.csv` (sample_name = site_gen_plot pool id, gen = its generation),
-which matches the columns of the lastgensamples AF matrix phase-1 ran GEA on.
+The GrENE-net phase-1 GEA unit is one pool per plot, taken at the plot's last available generation (1, 2 or 3; plots
+go extinct). The list is phase-1's key_files/final_gen.csv (sample_name = site_gen_plot pool id, gen = its
+generation); site 33 is dropped (lib.EXCLUDED_SITES). This is a pure merge: each pool's row is copied from kMate's
+flower-weighted pool matrix of its own generation, nothing is re-pooled.
 
-This is a pure MERGE: for each of the 355 pools we copy kMate's already-built
-flower-weighted pool AF column from that pool's own generation matrix
-(pool_gen{g}_snp_af.npy). No re-pooling. Output is written as a pseudo-generation
-`pool_gen9_snp` so the existing build_class_matrices.py / run_kendall.py / run_wza.py
-chain runs unchanged (gen label 9 == "last-available-per-plot merge").
-
-Out:
-  pool_gen9_snp_af.npy    float32 [355 x n_snp]
-  pool_gen9_snp.meta.csv  same schema as pool_gen{1,2,3}_snp.meta.csv (incl bio1..19)
+Writes in lib.POOL_MATRICES, for --kind snp and --kind nonsnp:
+  pool_gen9_{kind}_af.npy    float32 [pools x records]
+  pool_gen9_{kind}.meta.csv  the same schema as pool_gen{1,2,3}_{kind}.meta.csv (pool, site, plot, ..., bio1-19)
+Environment: kmate.  Usage: assemble_lastgen.py --kind snp; assemble_lastgen.py --kind nonsnp
 """
 from __future__ import annotations
 import argparse, os, sys
@@ -75,7 +69,6 @@ def main():
             print(f"  merged {i + 1}/{len(fg)} pools", flush=True)
     out.flush()
     meta = pd.DataFrame(meta_rows).reset_index(drop=True)
-    # overwrite generation column with the source gen (already correct from source meta)
     meta.to_csv(f"{PM}/pool_gen{OUT_GEN}_{KIND}.meta.csv", index=False)
     print(f"\n-> {out_path}  [{out.shape[0]} x {out.shape[1]:,}]")
     print(f"-> {PM}/pool_gen{OUT_GEN}_{KIND}.meta.csv  ({len(meta)} pools, "

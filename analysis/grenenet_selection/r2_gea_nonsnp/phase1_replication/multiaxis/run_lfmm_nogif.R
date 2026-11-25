@@ -1,19 +1,16 @@
 #!/usr/bin/env Rscript
-# The GEA's LFMM: lfmm_ridge (K latent factors) + lfmm_test, RAW p (no genomic-control calibration).
-# Used by both arms of the production GEA: the record arm (SNP, short indel; multiaxis/ma_lfmm_cr50.sbatch) and the
-# event arm (SV / non-SNP Truvari events; genes/convergence/event_gea/run_event_lfmm_cr50.sbatch).
+# The GEA's LFMM, for both arms: lfmm_ridge with K latent factors, then lfmm_test. p-values are RAW.
 #
-# Why raw p: calibrate = "gif" divides z^2 by lambda = median(z^2) / 0.456, which is only a deflation when lambda > 1;
-# where K = 16 over-corrects (lambda < 1 on some axes) it would inflate the statistics. Project decision (2026-07-03):
-# save raw p ($pvalue; $calibrated.pvalue is not used) and RECORD lambda.
+# calibrate = "gif" is passed only so lfmm_test returns lambda ($gif); $pvalue is the uncalibrated p and
+# $calibrated.pvalue is not used. Lambda is recorded, never applied: dividing by it deflates only where lambda > 1,
+# and on axes where K = 16 over-corrects (lambda < 1) it would inflate the statistics.
 #
-# Writes <out_csv>: pval (raw), B (effect of the z-scored axis on delta p) and z (the score; its sign is the direction),
-# one row per column of Y, in Y's column order; and lambda to <gif_txt> unless it is "-".
-# B and z were added 2026-10-20 (GEA audit) so the event arm uses this script instead of a copy of it
-# (lfmm_signed/run_lfmm_signed.R, now in archive_convergence/): on the production SV inputs (sv x bio1, sv x pc3) the two
-# give identical pval, B and z, the pval column and lambda are identical to the previous version of this script, and
-# both reproduce event_gea/cr50/lfmm_event_sv_gen9_{bio1,pc3}.csv.gz to <= 2.5e-12.
-# Usage: run_lfmm_nogif.R <stem> <K> <out_csv> <gif_txt|->      (reads stem_Y.f64, stem_dims.txt, stem_env.csv)
+# Reads <stem>_Y.f64, <stem>_dims.txt, <stem>_env.csv (build_lfmm_input.py).
+# Writes <out_csv>: pval (raw), B (effect of the z-scored axis on delta p), z (score; its sign is the direction),
+# one row per column of Y, in order; and lambda to <gif_txt> unless it is "-".
+# Environment: lfmm_env (R package lfmm).
+# Usage: run_lfmm_nogif.R <stem> <K> <out_csv> <gif_txt|->
+
 suppressMessages({library(lfmm)})
 a <- commandArgs(trailingOnly = TRUE)
 stem <- a[1]; K <- as.integer(a[2]); outp <- a[3]; gifout <- a[4]

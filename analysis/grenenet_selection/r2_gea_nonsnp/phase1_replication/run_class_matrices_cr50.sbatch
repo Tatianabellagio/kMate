@@ -8,16 +8,12 @@
 #SBATCH --time=4:00:00
 #SBATCH --output=/global/scratch/projects/fc_moilab/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/_build_cm_cr50_%j.out
 #SBATCH --error=/global/scratch/projects/fc_moilab/tbellg/kmate/analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/_build_cm_cr50_%j.out
-# Class matrices for gen9 WITH the founder call-rate floor of 0.50 (see build_class_matrices.py).
-# Writes to results/class_matrices_cr50/ so the unfiltered production set stays intact and
-# the two can be compared record for record.
+# GEA step 1 (_submit_gea.sh): the generation-9 class matrices of the record arm (snp, smallindel), filtered to
+# MAF >= 0.05 and founder call rate >= 0.50 (build_class_matrices.py defaults) -> results/class_matrices_cr50_arch3v2/
 set -euo pipefail
 cd /global/scratch/projects/fc_moilab/tbellg/kmate
-PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 V=${KMATE_PANEL:-arch3v2}; S=""; [ "$V" = arch3 ] || S="_$V"     # panel version (lib.PANEL): outputs under *_arch3v2 dirs
-$PY -u $PR/build_class_matrices.py \
-    --classes snp sv smallindel nonsnp --gens 9 \
-    --min-call-rate 0.50 \
-    --out $PR/results/class_matrices_cr50$S
+/global/home/users/tbellg/miniforge3/envs/kmate/bin/python -u $PR/build_class_matrices.py \
+    --classes snp smallindel --gens 9 --out $PR/results/class_matrices_cr50$S
 echo "CM_CR50_DONE"
