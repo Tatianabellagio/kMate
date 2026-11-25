@@ -2,8 +2,8 @@
 """Build + execute notebooks/gea_hit_landscape.ipynb: what the non-SNP GEA hits are and where
 they land -- SV hits first, small indels as the comparison -- against everything the GEA tested.
 
-Reads only the GEA's own outputs, via results/gea_hit_landscape.csv.gz
-(gea_hit_landscape_data.py). No chart titles (project convention). Env: basic.
+Reads the GEA's own outputs, via results/gea_hit_landscape.csv.gz (gea_hit_landscape_data.py), plus
+(section 1b) the SV repeat classification in r1_sv_negative_selection/results/sv_adaptive/graffite/. No chart titles (project convention). Env: basic.
 """
 import os
 import nbformat as nbf
@@ -25,25 +25,34 @@ md(r"""# Where the non-SNP GEA hits land — SV hits, and small indels for compa
 in the genome they sit, each set against **everything the GEA tested** (the right background:
 only variants common enough to test can become hits).
 
-**Hits.** The GEA's own call, as in `genes/convergence/build_gea_pool.py`: raw LFMM p-values
-(gen 9, 22 climate axes = bio1–19 + pc1–3), per class × axis MAF > 0.05, Bonferroni at
-0.05 / records tested; a record is a hit if it clears that bar on **any** axis in any of the
-three class scans (SV, small indel, and the two pooled). Nothing is re-estimated here.
+**Rebuilt 2026-09-30 on the re-run GEA.** Two things changed, and both move the numbers here:
+a **founder call-rate floor of ≥ 0.50** on top of MAF ≥ 0.05 (a variant called in only the 78
+long-read founders is a different estimand, not a noisier one — see `notebooks/flc_case.ipynb`),
+and **SVs are now tested as truvari events**, not as arch3 allele records. The previous version
+of this notebook, with neither change, is at `notebooks/old_lfmm/gea_hit_landscape.ipynb`.
 
-**Classes and types.** *SV* = the record is in the SV scan (≥ 50 bp); *small indel* otherwise.
+**Hits.** The GEA's own call: raw LFMM p-values (gen 9, 22 climate axes = bio1–19 + pc1–3), per
+class × axis MAF > 0.05 and call rate ≥ 0.50, Bonferroni at 0.05 / units tested; a unit is a hit
+if it clears that bar on **any** axis in any of the three class scans (SV, small indel, and the
+two pooled). Nothing is re-estimated here.
+
+**Classes and types.** *SV* = the unit is an SV event (|Δlen| > 50 bp); *small indel* otherwise.
 *Deletion* = REF longer than ALT, *insertion* = ALT longer, both relative to Col-0 (not to the
 ancestral state). Equal-length MNPs are neither and are set aside, counted in section 0.
 
 **Regions.** The same classifier the candidate pool uses
 (`genes/dissection/screen_sig_blocks.classify`), run on every tested record
-(`annotate_gea_universe.py`). First match wins, gene body before promoter:
+(`annotate_gea_universe.py`, on the event's representative record — the region call depends on
+the REF span only). First match wins, gene body before promoter:
 CDS > UTR / non-coding exon > intron > **promoter (≤ 1 kb upstream of a TSS, strand-aware, outside
 any gene body)** > reference TE > intergenic (proximal) > gene desert.
 
-**Unit.** One row per variant record, as the GEA tests it — so one SV can appear as several
-records (arch3 splits it per assembly path); see `sv_purging_fixed.ipynb` for why the burden and
-purging work collapses those into events. Split records at identical position and lengths are
-collapsed here, keeping the record the GEA called (2,938 hits, as in the candidate pool).
+**Unit.** One row per **GEA unit**: a truvari event for SVs, a record for short indels and MNPs
+(which are one unit per record either way). That is the unit the burden and purging work already
+used (`sv_purging_fixed.ipynb`), and the unit the SV literature uses. Units carry an integer
+`unit` id, so the scans are matched on that id and never on coordinates — 2.14% of arch3
+positions carry more than one record, and a coordinate join there pairs the wrong allele.
+Section 9 shows what the record-level arm would have given instead, in both directions.
 
 **Enrichment.** For a region *R*: the odds that a variant in *R* is a hit, over the odds for a
 variant outside *R*, Mantel–Haenszel over size-bin × MAF-bin strata (hits skew common and
@@ -132,6 +141,81 @@ for k in KIND:
     t = sv[sv.kind == k]
     print(f"{k:9s} median size: hits {t[t.hit]['size'].median():,.0f} bp, tested {t['size'].median():,.0f} bp | "
           f"median MAF: hits {t[t.hit].MAF.median():.3f}, tested {t.MAF.median():.3f}")""")
+
+md(r"""## 1b · What the SV hits carry — TE content
+
+Each SV unit's repeat class, from the classification of every SV record with GraffiTE's masking protocol
+(`r1_sv_negative_selection/TE_CLASSIFICATION_PIPELINE.md`). A deletion's class describes the reference
+sequence it removes, an insertion's the sequence it adds. A unit is **at least half TE** if its event is
+`te_full` (≥ 80% of the allele masked as TE) or `te_most` (≥ 50%). The event takes the class of its
+first record. Units are matched to events through integer ids (unit → representative af_store record →
+panel record → Truvari event), never coordinates.
+
+**A–B** share at least half TE among all tested SVs of that type and among the GEA hits. The odds ratio
+is the same Mantel–Haenszel / block-bootstrap statistic as section 2, over finer strata here:
+size (50–100–300–1k–3k–10k–∞ bp) × MAF × **replacement status**. TE content rises steeply with size,
+and replacement events (HPRC `COMPLEX`, or a swapped base) are much less often whole TEs at the same
+size, so either could fake an enrichment.""")
+
+co(r"""R1 = os.path.abspath("../r1_sv_negative_selection/results/sv_adaptive")
+PANEL = os.path.abspath("../../../panel/arch3")
+AFI = []                                   # af_store non-SNP index -> (chrom, panel record)
+for c in ["Chr1", "Chr2", "Chr3", "Chr4", "Chr5"]:
+    m = np.load(f"{PANEL}/{c.lower()}/var_pa_231_arch3_{c.lower()}.meta.npz", allow_pickle=True)
+    rl, al = m["ref_len"].astype(int), m["alt_len"].astype(int)
+    AFI.append(pd.DataFrame(dict(chrom=c, rec=np.where(~((rl == 1) & (al == 1)))[0], rl=rl[~((rl == 1) & (al == 1))])))
+AFI = pd.concat(AFI, ignore_index=True)
+EU = np.load(f"{R1}/nonsnp_event_units.npz")
+SVT = sv.copy()
+rep = AFI.iloc[EU["rep"][SVT.unit.to_numpy()]]
+assert (rep.rl.to_numpy() == SVT.ref_len.to_numpy()).all(), "unit -> record mapping is off"
+RCK = pd.read_csv(f"{R1}/graffite/sv_repeat_class_records.csv", usecols=["key", "event_key"]).set_index("key")
+EVC = pd.read_csv(f"{R1}/graffite/sv_repeat_class_events.csv").set_index("event_key")
+ek = (rep.chrom + "|" + rep.rec.astype(str)).map(RCK.event_key).to_numpy()
+for col in ("cargo", "any_replacement", "top_superfamily"):
+    SVT[col] = EVC[col].reindex(ek).to_numpy()
+assert SVT.cargo.notna().all(), "SV units without a repeat class"
+SVT["te"] = SVT.cargo.isin(["te_full", "te_most"])
+TSZ = [50, 100, 300, 1000, 3000, 10000, np.inf]
+rng_te = np.random.default_rng(11)          # own stream: leaves the shared `rng` (sections 2-3) untouched
+rows = []
+fig, axs = plt.subplots(1, 2, figsize=(10, 3.7), gridspec_kw=dict(wspace=0.38))
+for ax, k, L in zip(axs, ["deletion", "insertion"], "AB"):
+    d = SVT[SVT.kind == k].copy()
+    d["stratum"] = (pd.cut(d["size"], TSZ, labels=False).astype(str) + "|"
+                    + pd.cut(d.MAF, GR.MAF_BINS, labels=False, include_lowest=True).astype(str) + "|"
+                    + d.any_replacement.astype(str))
+    o, lo, hi, p = GR.or_with_ci(d, "hit", "te", rng_te)
+    h = d[d.hit]
+    ax.bar([0, 1], [100 * d.te.mean(), 100 * h.te.mean()], color=[REF, KIND[k]], width=0.6)
+    ax.set_xticks([0, 1]); ax.set_xticklabels([f"all tested\n({len(d):,})", f"GEA hits\n({len(h)})"])
+    ax.set_ylabel("% at least half TE"); ax.set_ylim(0, 145 * max(d.te.mean(), h.te.mean()))
+    ax.annotate(f"OR {o:.2f} [{lo:.2f}, {hi:.2f}], p = {p:.2g}", xy=(0.03, 0.97), xycoords="axes fraction",
+                va="top", fontsize=8)
+    TH.grid_only(ax, "y"); TH.panel(ax, L, f"SV {k}s", y=1.12)
+    rows.append(dict(kind=k, tested=len(d), hits=len(h), pct_te_tested=100 * d.te.mean(),
+                     pct_te_hits=100 * h.te.mean(), OR=o, ci_lo=lo, ci_hi=hi, p=p,
+                     med_size_hits=h["size"].median(), med_size_tested=d["size"].median(),
+                     pct_repl_hits=100 * h.any_replacement.mean(), pct_repl_tested=100 * d.any_replacement.mean()))
+plt.savefig(f"{PLOTS}/sv_hits_te_content.png", dpi=170, bbox_inches="tight"); plt.show()
+print("TE CONTENT OF THE SV HITS  (at least half TE = te_full + te_most)\n")
+print(pd.DataFrame(rows).round(3).to_string(index=False))
+for k in KIND:
+    h = SVT[SVT.hit & (SVT.kind == k) & SVT.te]
+    print(f"\n{k} hits at least half TE: {len(h)}; superfamilies {h.top_superfamily.value_counts().head(5).to_dict()}")""")
+
+md(r"""**Reading it.** **Insertion hits are TE-enriched; deletion hits are not.** 53.6% of the 151
+insertion hits are at least half TE against 44.3% of all tested insertions (OR 1.67, 95% CI 1.16–2.36,
+block-bootstrap p = 0.008, within size × MAF × replacement strata). For the 131 deletion hits it is
+42.0% against 38.0% (OR 1.16, CI 0.76–1.68, p = 0.45). Hits and background have about the same
+median size and the same replacement share, so neither explains the insertion result. RC/Helitron is the
+commonest superfamily among the TE hits of both types, but no family dominates
+(`notebooks/gea_te_cargo.ipynb` tests families one by one).
+
+Two limits. "Insertion" and "deletion" are relative to Col-0, not ancestral state, so an insertion hit can
+be an older element lost from Col-0's lineage. And "tested" is already TE-poorer than the panel as a
+whole, because the MAF and call-rate floors remove rare, TE-rich insertions. The enrichment is relative to
+what the GEA could test.""")
 
 md(r"""## 2 · Where the SV hits land
 
@@ -341,11 +425,10 @@ H[cols].assign(MAF=H.MAF.round(3), min_p=H.min_p.map(lambda v: f"{v:.1e}")).rese
 
 md(r"""## 7 · Warm or cold? The direction of the GEA hits
 
-**The sign.** The GEA's saved output is p-values only. `genes/convergence/lfmm_signed/` re-ran the
-**identical** model (same Δp input, LFMM ridge K = 16, raw p) on every axis and kept the effect size
-and z-score that the original run computed and discarded; all 22 axes reproduced the saved p-values
-exactly (largest |Δlog₁₀ p| = 1.8 × 10⁻¹⁵). So this is the GEA's own direction, recovered — not a new
-statistic.
+**The sign.** The production scan (`tile_cr50`) keeps the effect size B and the z-score next to each
+p-value, so the direction is the GEA's own, read from the same fit that produced the p-values — not a
+new statistic. (The earlier route, a separate signed re-run of the pre-floor scan in
+`genes/convergence/lfmm_signed/`, is superseded.)
 
 **What "warm" means.** The input is the change in frequency of the ALT allele and the climate axis is
 z-scored, so z > 0 means the ALT allele rose more where the axis is higher. For a deletion the ALT
@@ -439,21 +522,23 @@ c = ["axis", "cls", "hits_promoter", "warm_share_hits_promoter", "hits_intergeni
      "dz_promoter_minus_intergenic", "dz_lo", "dz_hi", "dz_p"]
 print(GDIR[(GDIR.kind == "deletion") & GDIR.axis.isin(TEMPAX) & GDIR.cls.isin(["sv", "all"])][c].round(3).to_string(index=False))""")
 
-md(r"""**Reading it.** Across all tested variants the sign is balanced (half lean warm), and the GEA's
-temperature hits skew warm — 62.5% of them, 1,381 hits in all. The skew belongs to the **small
-indels**, where every region leans warm (57–86%) and several clear a binomial test against their own
-tested baseline: promoter deletions 63% (p = 0.001), intergenic deletions 66% (p < 0.001), TE
-deletions 64% (p = 0.007), UTR deletions 67% (p = 0.017). The **SV** hits are far fewer (230) and
-much noisier: SV promoter deletions sit at 48% warm — no skew at all — and the only SV cell that
-clears the test is intergenic insertions (79%, p = 0.001). So the warm lean is a property of the
-GEA's temperature hits at large, not of promoters, and it is carried by the small indels. On the
-contrast that is specific: **promoter SV deletions do not lean
-warmer than intergenic SV deletions** — if anything slightly colder, on eight of the nine
-temperature axes, borderline on bio1, bio5, bio11 and pc3 (p = 0.04–0.08), nothing that survives
-looking at nine correlated axes. Pooling in the small indels gives a small positive shift on eight
-of nine axes, none significant. So,
-taking the GEA's variants as they are, it does not reproduce the burden model's warm-favoured
-promoter deletions. The next section shows why.""")
+md(r"""**Reading it.** ⚠️ *The written reading of this section has NOT been carried over from the
+pre-re-run notebook, and deliberately so — it quoted counts and percentages from the record-level,
+pre-call-rate scan, which no longer describe these tables. Those numbers are preserved in
+`notebooks/old_lfmm/gea_hit_landscape.ipynb` if you want the comparison.*
+
+What to read off the output above, in order:
+
+1. the **baseline** — among all tested variants, is the warm/cold split near 50/50? (it should be;
+   a departure means the sign itself is polarised and every share below inherits that);
+2. the **hit** warm share against that baseline, per region and per class, with the binomial test
+   each cell carries;
+3. the **contrast** `promoter − intergenic` on the temperature axes, which is the quantity the
+   burden model actually makes a claim about. Both arms are deletions relative to Col-0, so a
+   reference-polarisation effect is shared and cancels there.
+
+Nine temperature axes are strongly correlated, so a result on one of them is not nine chances —
+read the sign across the row, not the smallest p in it.""")
 
 md(r"""## 8 · The burden model's variant set
 
@@ -461,12 +546,14 @@ The burden model counts SVs as **events** (the alleles of a pangenome bubble col
 `truvari collapse`), uses its own context — CDS > UTR > intron > reference TE > promoter (≤ 2 kb) >
 intergenic — and keeps only **shared** variants (carried by both cold- and warm-origin founders),
 called in ≥ 90% of founders with ≥ 2 carriers. Those labels exist per event in
-`sv_event_catalog.csv`, so this section uses the event-level GEA of section 9 — the same LFMM, with
-SVs counted as events — and applies the burden's labels to it unchanged
-(`event_gea/event_direction_burden_defs.py`). Same contrast and CI as section 7; open = all tested
-SV deletion events, filled = the burden's set.""")
+`sv_event_catalog.csv`, and since the re-run the GEA counts SVs as events too, so the two are now
+on the same unit and the burden's labels apply to the GEA's own signed z unchanged
+(`event_gea/event_direction_burden_defs.py`, run on `event_gea/cr50/`). Note the call-rate bars
+still differ — the burden set asks for ≥ 90%, the GEA for ≥ 50% — so the filtered arm is a strict
+subset. Same contrast and CI as section 7; open = all tested SV deletion events, filled = the
+burden's set.""")
 
-co(r"""BD = pd.read_csv(f"{CONV}/event_gea/event_direction_burden_defs.csv")
+co(r"""BD = pd.read_csv(f"{CONV}/event_gea/cr50/event_direction_burden_defs.csv")
 fig, ax = plt.subplots(figsize=(10.5, 3.6)); x = np.arange(len(TEMPAX))
 for j, (setname, lab, fill) in enumerate([("all tested", "all tested SV deletion events", False),
                                           ("shared + passes (burden filter)", "shared + well-called (burden filter)", True)]):
@@ -480,45 +567,63 @@ TH.grid_only(ax, "y"); ax.legend(loc="lower right", bbox_to_anchor=(1.0, 1.0), n
 plt.savefig(f"{PLOTS}/promoter_direction_burden_filter.png", dpi=170, bbox_inches="tight"); plt.show()
 print(BD.round(3).to_string(index=False))""")
 
-md(r"""**Reading it.** Restricted to the burden's variant set, **the sign flips**: shared, well-called
-promoter deletion events lean warmer than intergenic ones on **all nine** temperature axes — the burden
-model's direction. It is individually significant only on bio8 (p = 0.018), with 678 promoter and 318
-intergenic events, so the per-variant GEA cannot confirm the shift on its own; a small shift spread over
-many variants is what a burden test, which sums over all of them, is built to see. Insertions show
-nothing either way. What the filter removes is the variants carried only by cold- or only by
-warm-origin founders, whose frequencies follow the fate of their lineage; among all tested SVs those
-pull the promoter contrast towards cold.""")
+md(r"""**Reading it.** ⚠️ *As in section 7, the previous written reading is not carried over — it
+described the pre-re-run run. Compare `notebooks/old_lfmm/gea_hit_landscape.ipynb` for it.*
 
-md(r"""## 9 · Parallel check: the GEA with SVs counted as events
+The question this section asks: does the GEA's own signed z reproduce the burden model's
+warm-favoured promoter deletions **once the burden's own variant definitions are applied**? Read
+the open markers (all tested SV deletion events) against the filled ones (shared + well-called)
+axis by axis, and ask whether the filled series sits consistently above zero — consistency across
+the nine correlated temperature axes is the signal here, not any single p. The filter removes
+variants carried only by cold- or only by warm-origin founders, whose frequencies track the fate
+of their lineage rather than the variant; if the contrast moves when they go, that is where it
+came from. Both panels are per-variant tests, and a burden test sums over all variants, so a
+shift too small to clear per-variant significance is not evidence against the burden result.""")
 
-*A parallel branch, kept out of the candidate tables (`genes/convergence/event_gea/`).*
+md(r"""## 9 · What the record-level scan would have given
 
-The GEA tests every arch3 **record**, and arch3 writes one SV as one record per assembly path — the same
-insertion or deletion recurs as several "alleles" differing by a base or two. Its frequency is split
-across them: an SV whose alleles are each rare is never tested, and one that does reach MAF 0.05 can be
-tested several times. Here the same LFMM (ridge K = 16, raw p, MAF ≥ 0.05, the same Δp input and climate
-scaling) is run with each SV collapsed to its truvari event — frequency = the sum of its alleles'. Short
-indels are unchanged: 676,203 units, identical to the GEA's small-indel records, whose Δp reproduces the
-GEA's own input to within 3 × 10⁻⁸. Two scans as the GEA ran them (pooled non-SNP, SV-only), Bonferroni
-per scan × axis.""")
+*The comparison arm, kept at `results/multiaxis/lfmm_cr50` and
+`genes/convergence/event_gea/cr50/`.*
 
-co(r"""EV = pd.read_csv(f"{CONV}/event_gea/event_sv_hits.csv")
+Everything above counts SVs as **truvari events**, which is the production unit since the
+2026-09-30 re-run and the unit the burden and purging work already used. The arm compared here
+is the same LFMM (ridge K = 16, raw p, the same Δp input and climate scaling, the same MAF 0.05
+and call rate 0.50) run instead on arch3 **records** — one row per assembly path, so one
+insertion or deletion recurs as several "alleles" differing by a base or two.
+
+Two things follow from splitting a variant across alleles, and both are visible below. An SV
+whose alleles are each below MAF 0.05 is never tested at all, though together they clear it —
+those events are **testable only after collapsing**. And an SV whose alleles do clear it is
+tested several times over, so its evidence is divided among near-duplicate tests.
+
+Collapsing is not free in the other direction either: a record-arm hit can fall below the bar
+once its alleles are summed, because the summed frequency is a different (and usually less
+extreme) trajectory than the single allele that happened to carry the signal. The counts for
+both directions are printed below — read them together, not just the gains.""")
+
+co(r"""EV = pd.read_csv(f"{CONV}/event_gea/cr50/event_sv_hits.csv")
 EV["region"] = EV.tier.map(REGION)
 EV["stratum"] = (pd.cut(EV["size"], GR.SIZE_BINS, labels=False).astype(str) + "|"
                  + pd.cut(EV.MAF, GR.MAF_BINS, labels=False, include_lowest=True).astype(str))
-new = ~EV.allele_tested
-print(f"SV events tested: {len(EV):,} (the record-level GEA tests 27,586 SV records, touching 21,805 events)")
-print(f"  newly testable (no single allele reaches MAF 0.05; together they do): {int(new.sum()):,}")
+new = ~EV.rec_tested
+print(f"SV events tested by the production (event) GEA: {len(EV):,}")
+print(f"  testable ONLY as events (no member record passes MAF 0.05 + call rate 0.50 alone): {int(new.sum()):,}")
+print(f"  records the record arm spends per event: mean {EV.n_rec.mean():.2f}, max {int(EV.n_rec.max())}")
 print(f"SV event hits: {int(EV.hit.sum())}  ({int((EV.hit & (EV.kind == 'deletion')).sum())} deletions, "
       f"{int((EV.hit & (EV.kind == 'insertion')).sum())} insertions)")
-print(f"  from newly testable events: {int((EV.hit & new).sum())}  (hit rate {100 * (EV.hit & new).sum() / new.sum():.2f}% "
-      f"vs {100 * (EV.hit & ~new).sum() / (~new).sum():.2f}% among previously testable events)")
-print(f"  events carrying a record-level SV hit: {int(EV.allele_hit.sum())}; still a hit as an event: {int((EV.hit & EV.allele_hit).sum())}")
+print(f"  from events only testable after collapsing: {int((EV.hit & new).sum())}  "
+      f"(hit rate {100 * (EV.hit & new).sum() / new.sum():.2f}% "
+      f"vs {100 * (EV.hit & ~new).sum() / (~new).sum():.2f}% among record-testable events)")
+print("\ngained and lost by collapsing:")
+print(f"  events the record arm also called: {int(EV.rec_hit.sum())}")
+print(f"    still a hit as an event:        {int((EV.hit & EV.rec_hit).sum())}")
+print(f"    record-only (lost by collapsing): {int((~EV.hit & EV.rec_hit).sum())}")
+print(f"  event-only (not called by any member record): {int((EV.hit & ~EV.rec_hit).sum())}")
 S_ev = region_stats(EV)
 region_figure(EV, S_ev, "SV event", "sv_event_hits_by_region.png")
 print(S_ev.assign(**{c: S_ev[c].round(3) for c in ["hit_share", "tested_share", "OR", "lo", "hi", "p"]}).to_string(index=False))""")
 
-co(r"""ED = pd.read_csv(f"{CONV}/event_gea/event_direction.csv")
+co(r"""ED = pd.read_csv(f"{CONV}/event_gea/cr50/event_direction.csv")
 g = ED.set_index("axis").reindex(TEMPAX)
 fig, ax = plt.subplots(figsize=(10.5, 3.3)); x = np.arange(len(TEMPAX))
 ax.errorbar(x, g.dz, yerr=[g.dz - g.dz_lo, g.dz_hi - g.dz], fmt="o", ms=7, color=KIND["deletion"], lw=1.3)

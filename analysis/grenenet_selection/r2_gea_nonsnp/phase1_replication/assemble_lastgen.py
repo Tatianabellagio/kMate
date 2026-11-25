@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 import lib
 
 FINAL_GEN = "/global/scratch/users/tbellg/gea_grene-net/key_files/final_gen.csv"
-PM = f"{lib.GEA}/common/results/pool_matrices"
+PM = lib.POOL_MATRICES          # the panel version's (KMATE_PANEL; arch3: common/results/pool_matrices)
 OUT_GEN = 9  # pseudo-generation label for the merged last-gen set
 
 
@@ -36,6 +36,7 @@ def main():
     fg = pd.read_csv(FINAL_GEN)
     fg["pool"] = fg["sample_name"].astype(str)
     fg["gen"] = fg["gen"].astype(int)
+    fg = fg[~fg["site"].astype(int).isin(lib.EXCLUDED_SITES)]     # ⛔ lib.EXCLUDED_SITES (site 33)
     # canonical pool order (same key build_pool_matrix uses)
     fg = fg.sort_values("pool", key=lambda s: s.map(
         lambda p: tuple(int(x) for x in p.split("_")))).reset_index(drop=True)

@@ -1,0 +1,391 @@
+#!/usr/bin/env python
+"""Build+execute `sv_burden_final_models_te.ipynb`: the final founder burden models with reference TE added
+(SV6) and multiple-testing adjustment.
+
+Supersedes `_build_sv_burden_final_nb.py` (SV4, no TE). Reads the saved lme4qtl fits in
+results/sv_adaptive/final_models/ (`_sv_burden_final_models.R`, array `run_final_models.sbatch`), the pre-TE
+fits kept in final_models_sv4_noTE/, and the cactus:bio1c control fits (`EXTRA_FIXED=cactus:bio1c`).
+Shared build helper in `_main_fig_common.py`. `basic` env.
+"""
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from _main_fig_common import build, new_markdown_cell, new_code_cell
+
+md_title = """# Structural variants and founder fitness in GrENE-Net — final models, with reference TE
+
+**Question.** Do founders that carry more structural variants in genes do better or worse in the
+experiment, and does that depend on the climate of the garden?
+
+**What is new here.** Reference **TE** is added as a context (SV6, was SV4). The GEA hit list
+(`gea_hit_landscape.ipynb`) showed a TE enrichment, and TE was already a tested context in the SFS /
+Tajima's D work, but it was absent from this founder-fitness model. Two consequences, both below: the
+coding-insertion effect is unchanged-to-stronger, and a **promoter insertion × temperature interaction
+appears that was invisible without TE**, because the two rates correlate *r* = 0.90 across founders with
+opposite-signed climate slopes. All *p* values for the interactions are now **adjusted for the six tests**
+(Holm and Benjamini–Hochberg; Bonferroni shown for reference).
+
+**Data.** 231 founder accessions grown together in 31 outdoor gardens; for each founder and garden, its
+log change in frequency from the seed mix to the last sampled generation (7,161 founder × garden values,
+no missing cells). Each founder's burden = the share of variants of a class it carries among those it is
+called at, for shared variants (carried by both cold- and warm-origin founders), ≥ 2 carriers, called in
+≥ 90% of founders; SVs as Truvari-collapsed events; contexts coding (CDS), reference TE, promoter
+(≤ 2 kb upstream) and intergenic, first match wins in the order CDS > UTR > intron > TE > promoter.
+
+**Contents.** The two models · *Figure M1* — Model 1, every coefficient · *Figure M2* — Model 2, effects at
+the average garden and the six temperature interactions with adjusted *p* · *Figure M3* — Model 2 garden by
+garden · *Figure M4* — what adding TE changed · *Table C1* — the assembly-route control · key numbers."""
+
+code_setup = r"""
+import os, glob
+import numpy as np, pandas as pd, matplotlib as mpl, matplotlib.pyplot as plt
+from scipy import stats
+plt.rcParams.update({"figure.dpi":120,"font.size":8,"axes.linewidth":0.6,"savefig.bbox":"tight","legend.frameon":False})
+G=os.path.abspath(os.path.join(os.getcwd(),"..","r1_sv_negative_selection","results","sv_adaptive")); os.makedirs(f"{G}/plots",exist_ok=True)
+# colours: insertions forest green, deletions orange, SNPs grey; dark -> light = coding -> promoter -> TE -> intergenic
+# (no blue or red: those are the garden-temperature scale)
+PAL={"snp_CDS":"0.25","snp_promoter":"0.45","snp_TE":"0.55","snp_intergenic":"0.65",
+     "ins_CDS":"#2F4A1F","ins_promoter":"#4E6B3A","ins_TE":"#7A9663","ins_intergenic":"#9DB58C",
+     "del_CDS":"#B04A00","del_promoter":"#F07A2E","del_TE":"#F49C5E","del_intergenic":"#F8BE91"}
+PC=lambda t: PAL[t.split(":")[0]]
+def style(a,axis="x"):
+    a.set_axisbelow(True); a.grid(color="0.9",lw=0.6,axis=axis)
+    for s_ in a.spines.values(): s_.set_visible(False)
+def panel(a,letter,x=-0.08,y=1.04): a.annotate(letter,xy=(x,y),xycoords="axes fraction",fontsize=11,ha="right")
+M="−"
+def pct(v,d=3): return f"{v:+.{d}g}%".replace("-",M)
+NBPLOTS=os.path.join(os.getcwd(),"plots"); os.makedirs(NBPLOTS,exist_ok=True)
+def save(fig,name,nb=False):
+    for d in ([f"{G}/plots"]+([NBPLOTS] if nb else [])):
+        fig.savefig(f"{d}/{name}.png",dpi=200,bbox_inches="tight"); fig.savefig(f"{d}/{name}.pdf",bbox_inches="tight")
+def holm(p):
+    p=np.asarray(p,float); o=np.argsort(p); n=p.size; out=np.empty(n)
+    run=0.0
+    for i,j in enumerate(o):
+        run=max(run,(n-i)*p[j]); out[j]=min(run,1.0)
+    return out
+def bh(p):
+    p=np.asarray(p,float); o=np.argsort(p); n=p.size; out=np.empty(n); run=1.0
+    for i in range(n-1,-1,-1):
+        j=o[i]; run=min(run,n*p[j]/(i+1)); out[j]=min(run,1.0)
+    return out
+"""
+
+md_models = r"""## The two models
+
+Both fitted with `lme4qtl::relmatLmer` (Ziyatdinov et al. 2018, *BMC Bioinformatics* 19:68; on lme4, Bates
+et al. 2015, *J. Stat. Softw.* 67) on all 7,161 founder × garden rows, kinship passed as `relmat`
+(`_sv_burden_final_models.R`, array `run_final_models.sbatch`, one fit per task).
+
+**Model 1 — is each class good or bad for fitness overall?**
+
+> *y* = β₀ + β·[snp_CDS + ins_CDS + ins_TE + ins_promoter + ins_intergenic + del_CDS + del_TE +
+> del_promoter + del_intergenic + cactus] + (1 | garden) + (1 | kin) + (1 | fid)
+> + Σ<sub>t ∈ SV6</sub> (0 + t | garden)
+
+**Model 2 — does the effect depend on garden temperature?** Model 1 plus *t*:bio1c for each of the six
+SV terms SV6 = {ins_CDS, ins_TE, ins_promoter, del_CDS, del_TE, del_promoter}.
+
+*y* = founder log-fitness in the garden; burden terms = standardised shared-variant rates (per SD);
+`cactus` = assembly route; `bio1c` = garden bio1 centred on the mean of the 31 gardens; `kin` = founder
+effect with covariance σ²**K** (SNP kinship); `fid` = independent founder effect; `(0 + t | garden)` =
+independent random garden slopes for the six SV terms.
+
+**Tests.** REML for the reported estimates and Wald *z*. For each temperature interaction, a
+likelihood-ratio test from ML refits of Model 2 with and without that one interaction (1 df). Those six
+LRTs are one family and are adjusted by **Holm** (primary; controls the family-wise error rate and is
+uniformly more powerful than Bonferroni) and **Benjamini–Hochberg** (false-discovery rate); plain
+Bonferroni is shown alongside. The nine burden main effects are adjusted as their own family.
+
+**Scale.** Coefficients are per SD of the founder's rate. They are also shown as **% change in founder
+fitness per carried variant** = coefficient per SD ÷ (SD of the rate × median number of that class's
+variants called per founder); the divisor is recomputed here for all twelve terms including TE
+(`variants_per_sd_event_SV6.csv`) and reproduces the published values exactly for the nine pre-TE terms."""
+
+code_load = r"""
+FD=f"{G}/final_models"; OD=f"{G}/final_models_sv4_noTE"
+F1=pd.read_csv(f"{FD}/coef_M1_reml.csv").set_index("term"); F2=pd.read_csv(f"{FD}/coef_M2_reml.csv").set_index("term")
+VF2=pd.read_csv(f"{FD}/varcomp_M2_reml.csv"); GF2=pd.read_csv(f"{FD}/garden_M2_reml.csv"); VV2=pd.read_csv(f"{FD}/vcov_M2_reml.csv",index_col=0)
+# only the standard fits here; the cactus:bio1c control fits (suffix _x_) carry the same `model` name
+LL=pd.concat([pd.read_csv(f) for f in sorted(glob.glob(f"{FD}/loglik_*.csv")) if "_x_" not in os.path.basename(f)]).set_index("model")
+SV6=["ins_CDS","ins_TE","ins_promoter","del_CDS","del_TE","del_promoter"]
+ROWS9=["snp_CDS","ins_CDS","ins_TE","ins_promoter","ins_intergenic","del_CDS","del_TE","del_promoter","del_intergenic"]
+VPS=pd.read_csv(f"{G}/variants_per_sd_event_SV6.csv").set_index("term").variants_per_sd
+PV=lambda t: 100/VPS[t.split(":")[0]]
+CTXL={"CDS":"coding","TE":"reference TE","promoter":"promoter","intergenic":"intergenic"}
+LABF=lambda t: {"snp":"SNPs","ins":"insertions","del":"deletions"}[t.split("_")[0]]+", "+CTXL[t.split("_")[1].split(":")[0]]
+
+ml=LL.loc["M2_ml","logLik"]
+LRT=pd.DataFrame([{"term":f"{t}:bio1c","chisq":2*(ml-LL.loc[f"M2_ml_drop_{t}","logLik"])} for t in SV6]).set_index("term")
+LRT["p"]=stats.chi2.sf(LRT.chisq.to_numpy(float),1)
+LRT["p_holm"]=holm(LRT.p.values); LRT["p_BH"]=bh(LRT.p.values); LRT["p_bonf"]=np.minimum(LRT.p*len(SV6),1)
+
+MAIN=pd.DataFrame({"term":ROWS9,"estimate":[F1.loc[t,"estimate"] for t in ROWS9],
+                   "se":[F1.loc[t,"se"] for t in ROWS9],"p":[F1.loc[t,"p"] for t in ROWS9]}).set_index("term")
+MAIN["p_holm"]=holm(MAIN.p.values); MAIN["p_BH"]=bh(MAIN.p.values)
+
+print(f"{len(LL)} fits loaded; singular (a variance component at zero) in: {', '.join(LL.index[LL.singular])}")
+print("\nvariance components, Model 2:")
+print(VF2.assign(vcov=VF2.vcov.round(5)).rename(columns={'grp':'group','var1':'term','vcov':'variance'}).to_string(index=False))
+print("\nOne SD of each rate, in variants carried (the divisor for the per-variant scale):")
+print(VPS.loc[ROWS9].round(2).to_string())
+"""
+
+md_m1 = """### Figure M1 — Model 1: overall effect of every term
+
+Every burden fixed effect of Model 1, as % change in founder fitness per carried variant (± 95% CI).
+Colour = class and context (darkest = coding, then promoter, then reference TE, lightest = intergenic);
+filled = Wald p < 0.05 **before** adjustment. The table below gives the raw Wald p and the Holm- and
+BH-adjusted p across the nine burden terms. Assembly route is per group, not per variant, and is printed
+under the figure."""
+
+code_m1 = r"""
+def coef_forest(a,C,rows,interaction=False,sig=None):
+    style(a); a.axvline(0,color="0.4",lw=0.9,ls="--")
+    for yi,t in enumerate(rows):
+        k=t.split("_")[0]; sc=PV(t); b=sc*C.loc[t,"estimate"]; se=sc*C.loc[t,"se"]
+        p=C.loc[t,"p"] if sig is None else sig[t]
+        a.errorbar(b,yi,xerr=1.96*se,fmt="o",ms=7,color=PC(t),mfc=PC(t) if p<0.05 else "white",mew=1.4,capsize=3,elinewidth=1.5)
+        a.annotate(f"{pct(b)}{'/°C' if interaction else ''}   p = {p:.2g}",xy=(1.02,yi),xycoords=("axes fraction","data"),
+                   va="center",fontsize=7,color="0.3",annotation_clip=False)
+        if yi<len(rows)-1 and rows[yi+1].split("_")[0]!=k: a.axhline(yi+0.5,color="0.88",lw=0.8)
+    a.set_yticks(range(len(rows))); a.set_yticklabels([LABF(t)+(" × temperature" if interaction else "") for t in rows],fontsize=8)
+    for tl,t in zip(a.get_yticklabels(),rows): tl.set_color(PC(t))
+    a.set_ylim(len(rows)-0.5,-0.6)
+
+fig,a=plt.subplots(figsize=(5.4,5.0)); coef_forest(a,F1,ROWS9)
+a.set_xlabel("% change in founder fitness per carried variant (± 95% CI)",fontsize=8)
+a.errorbar([],[],fmt="o",color="0.3",ms=6,label="Wald p < 0.05"); a.errorbar([],[],fmt="o",color="0.3",mfc="white",ms=6,label="n.s.")
+a.legend(fontsize=7,loc="lower left")
+save(fig,"final_te_model1_coefficients",nb=True); plt.show()
+print(f"assembly route (cactus − short-read): {F1.loc['cactus','estimate']:+.3f} ± {F1.loc['cactus','se']:.3f} log-fitness, p = {F1.loc['cactus','p']:.2g}")
+print()
+T1=pd.DataFrame({"term":[LABF(t) for t in ROWS9],
+                 "per SD":[f"{MAIN.loc[t,'estimate']:+.3f} ± {MAIN.loc[t,'se']:.3f}" for t in ROWS9],
+                 "% per variant":[f"{pct(PV(t)*MAIN.loc[t,'estimate'])} [{pct(PV(t)*(MAIN.loc[t,'estimate']-1.96*MAIN.loc[t,'se']))}, {pct(PV(t)*(MAIN.loc[t,'estimate']+1.96*MAIN.loc[t,'se']))}]" for t in ROWS9],
+                 "Wald p":[f"{MAIN.loc[t,'p']:.3g}" for t in ROWS9],
+                 "Holm (9)":[f"{MAIN.loc[t,'p_holm']:.3g}" for t in ROWS9],
+                 "BH (9)":[f"{MAIN.loc[t,'p_BH']:.3g}" for t in ROWS9]})
+print("Model 1 main effects, adjusted across the nine burden terms:"); print(T1.to_string(index=False))
+"""
+
+md_m2 = """### Figure M2 — Model 2: effects at the average garden, and the six temperature interactions
+
+**(a)** The nine burden terms from Model 2 (effects at the average garden temperature). **(b)** The six
+burden × garden temperature interactions — change in % fitness per carried variant per °C of garden bio1.
+Markers are filled when the **Holm-adjusted LRT p < 0.05**, so panel (b) is judged on the adjusted test,
+not the raw one. The table gives χ², raw LRT p, and Holm / BH / Bonferroni across the six tests."""
+
+code_m2 = r"""
+sigmap={f"{t}:bio1c":LRT.loc[f"{t}:bio1c","p_holm"] for t in SV6}
+fig,ax=plt.subplots(2,1,figsize=(5.4,8.4),gridspec_kw=dict(height_ratios=[9,6],hspace=0.42))
+coef_forest(ax[0],F2,ROWS9); panel(ax[0],"a",x=-0.3)
+ax[0].set_xlabel("% change in founder fitness per carried variant (± 95% CI)",fontsize=8)
+coef_forest(ax[1],F2,[f"{t}:bio1c" for t in SV6],interaction=True,sig=sigmap); panel(ax[1],"b",x=-0.3)
+ax[1].set_xlabel("change in % fitness per carried variant,\nper °C of garden temperature (± 95% CI)",fontsize=8)
+(l0,h0),(l1,h1)=ax[0].get_xlim(),ax[1].get_xlim(); f=max(-l0/(h0-l0),-l1/(h1-l1))
+for a_,(lo,hi) in zip(ax,((l0,h0),(l1,h1))):
+    L_=max(-lo,f/(1-f)*hi); a_.set_xlim(-L_,L_*(1-f)/f)
+ax[1].errorbar([],[],fmt="o",color="0.3",ms=6,label="Holm-adjusted p < 0.05")
+ax[1].errorbar([],[],fmt="o",color="0.3",mfc="white",ms=6,label="n.s."); ax[1].legend(fontsize=7,loc="lower left")
+save(fig,"final_te_model2_coefficients",nb=True); plt.show()
+T2=pd.DataFrame([{"term":LABF(t)+" × temp","per SD per °C":f"{F2.loc[t+':bio1c','estimate']:+.4f} ± {F2.loc[t+':bio1c','se']:.4f}",
+                  "% per variant per °C":pct(PV(t)*F2.loc[t+':bio1c','estimate']),
+                  "LRT chi2":f"{LRT.loc[t+':bio1c','chisq']:.2f}","LRT p":f"{LRT.loc[t+':bio1c','p']:.4f}",
+                  "Holm (6)":f"{LRT.loc[t+':bio1c','p_holm']:.4f}","BH (6)":f"{LRT.loc[t+':bio1c','p_BH']:.4f}",
+                  "Bonferroni (6)":f"{LRT.loc[t+':bio1c','p_bonf']:.4f}"} for t in SV6])
+print("Temperature interactions, adjusted across the six tests (sorted by raw LRT p):")
+print(T2.sort_values("LRT p").to_string(index=False))
+"""
+
+md_m3 = """### Figure M3 — Model 2 garden by garden, for the interactions that survive adjustment
+
+For each term whose temperature interaction survives Holm adjustment, each garden's total effect from
+Model 2 — the overall effect, plus the temperature term, plus that garden's own random slope — in % per
+carried variant. **Left:** gardens sorted by effect, coloured by garden temperature, bars = ± 1.96
+conditional SD of the garden's slope; line and band = the term's effect at the average garden ± 95% CI.
+**Right:** the same against garden temperature, with Model 2's fitted line and 95% confidence band.
+Panels share a scale within each column. Because gardens are estimated within one model, noisy gardens are
+pulled towards the fitted line."""
+
+code_m3 = r"""
+B1s=GF2.drop_duplicates("garden").bio1; NORMF=mpl.colors.Normalize(B1s.min(),B1s.max()); CMF=plt.get_cmap("coolwarm"); bc0=B1s.mean()
+def garden_fig(terms,name):
+  n=len(terms); fig=plt.figure(figsize=(13.5,3.7*n)); gsf=fig.add_gridspec(n,2,width_ratios=[1.3,1],wspace=0.25,hspace=0.55); AXL=[]; AXR=[]
+  for r_,t in enumerate(terms):
+      sc=PV(t); g=GF2[GF2.term==t].sort_values("total").reset_index(drop=True)
+      b=sc*g.total.to_numpy(); e=1.96*sc*g.cond_sd.to_numpy(); x=g.bio1.to_numpy()
+      b0=sc*F2.loc[t,"estimate"]; s0=sc*F2.loc[t,"se"]; i0,i1=t,f"{t}:bio1c"
+      a=fig.add_subplot(gsf[r_,0]); AXL.append(a); style(a); panel(a,"abcdef"[r_],x=-0.07); a.axvline(0,color="0.4",lw=0.9,ls="--")
+      a.axvspan(b0-1.96*s0,b0+1.96*s0,color=PC(t),alpha=0.14,lw=0); a.axvline(b0,color=PC(t),lw=1.4)
+      for yi in range(len(g)):
+          c_=CMF(NORMF(x[yi])); a.errorbar(b[yi],yi,xerr=e[yi],fmt="o",ms=4.2,color=c_,mec="0.25",mew=0.5,ecolor=c_,elinewidth=1.0,capsize=1.6)
+      a.set_yticks(range(len(g))); a.set_yticklabels(g.garden.astype(int),fontsize=5.5); a.set_ylim(-1,len(g)); a.set_ylabel("site",fontsize=7.5)
+      a.annotate(LABF(t),xy=(0,1.085),xycoords="axes fraction",fontsize=9,color=PC(t),va="bottom",annotation_clip=False)
+      a.annotate(f"{pct(b0)} ± {1.96*s0:.2g} (95% CI), Wald p = {F2.loc[t,'p']:.2g}; negative in {(b<0).sum()}/{len(g)} gardens",
+                 xy=(0,1.01),xycoords="axes fraction",fontsize=7,color="0.3",va="bottom",annotation_clip=False)
+      if r_==n-1: a.set_xlabel("% change in founder fitness per carried variant, per garden",fontsize=8)
+      a=fig.add_subplot(gsf[r_,1]); AXR.append(a); style(a,axis="both"); a.axhline(0,color="0.4",lw=0.9,ls="--")
+      a.errorbar(x,b,yerr=e,fmt="none",ecolor="0.82",elinewidth=0.8,zorder=1)
+      a.scatter(x,b,s=34,c=x,cmap=CMF,norm=NORMF,linewidth=0.4,edgecolor="0.3",zorder=3)
+      xx=np.linspace(x.min(),x.max(),60); xc=xx-bc0; fit=F2.loc[i0,"estimate"]+F2.loc[i1,"estimate"]*xc
+      v=VV2.loc[i0,i0]+xc**2*VV2.loc[i1,i1]+2*xc*VV2.loc[i0,i1]
+      a.fill_between(xx,sc*(fit-1.96*np.sqrt(v)),sc*(fit+1.96*np.sqrt(v)),color=PC(t),alpha=0.15,lw=0); a.plot(xx,sc*fit,color=PC(t),lw=1.8)
+      a.annotate(f"slope {pct(sc*F2.loc[i1,'estimate'])}/°C,  LRT p = {LRT.loc[i1,'p']:.2g},  Holm {LRT.loc[i1,'p_holm']:.2g}",
+                 xy=(0.02,0.03),xycoords="axes fraction",fontsize=7.2,color="0.25")
+      a.set_ylabel("% per variant, per garden",fontsize=7.5)
+      if r_==n-1: a.set_xlabel("garden temperature  bio1 (°C)",fontsize=8)
+  xl=[a.get_xlim() for a in AXL]; yl=[a.get_ylim() for a in AXR]
+  for a in AXL: a.set_xlim(min(v_[0] for v_ in xl),max(v_[1] for v_ in xl))
+  for a in AXR: a.set_ylim(min(v_[0] for v_ in yl),max(v_[1] for v_ in yl))
+  for a in AXL[:-1]+AXR[:-1]: a.tick_params(labelbottom=True)
+  cb=fig.colorbar(mpl.cm.ScalarMappable(norm=NORMF,cmap=CMF),ax=AXL+AXR,pad=0.015,fraction=0.016,aspect=50)
+  cb.set_label("garden temperature  bio1 (°C)",fontsize=8)
+  save(fig,name,nb=True); plt.show()
+
+SIG=[t for t in SV6 if LRT.loc[f"{t}:bio1c","p_holm"]<0.05]
+NS=[t for t in SV6 if t not in SIG]
+print("interactions surviving Holm adjustment:", ", ".join(SIG) if SIG else "none")
+garden_fig(SIG,"final_te_model2_by_garden")
+"""
+
+md_m3s = """### Supplementary Figure MS1 — the interactions that do not survive adjustment
+
+The same layout for the remaining SV6 terms. The model estimates little garden-to-garden variation for
+these, so the gardens sit close to the fitted line."""
+
+code_m3s = r"""
+garden_fig(NS,"final_te_model2_by_garden_supp")
+"""
+
+md_m4 = """### Figure M4 — what adding TE changed
+
+Same model, same data, the only difference being whether the two TE terms are in it. Left: main effects.
+Right: the four interactions common to both specifications. The pre-TE fits are the ones kept in
+`final_models_sv4_noTE/`.
+
+The point of the figure is the **promoter insertion × temperature** interaction: a flat null without TE
+(LRT p = 0.51) and clearly non-zero with it. `ins_TE` and `ins_promoter` correlate *r* = 0.90 across
+founders and their climate slopes have opposite signs, so with TE omitted the promoter slope absorbed the
+TE signal and the two cancelled. Nothing else reverses: the coding terms move slightly away from zero."""
+
+code_m4 = r"""
+O1=pd.read_csv(f"{OD}/coef_M1_reml.csv").set_index("term"); O2=pd.read_csv(f"{OD}/coef_M2_reml.csv").set_index("term")
+OLL=pd.concat([pd.read_csv(f) for f in sorted(glob.glob(f"{OD}/loglik_*.csv")) if "_x_" not in os.path.basename(f)]).set_index("model")
+SV4=["ins_CDS","ins_promoter","del_CDS","del_promoter"]
+oml=OLL.loc["M2_ml","logLik"]
+OLRT={f"{t}:bio1c":stats.chi2.sf(max(2*(oml-OLL.loc[f"M2_ml_drop_{t}","logLik"]),0),1) for t in SV4}
+COMMON=[t for t in ROWS9 if not t.endswith("_TE")]
+fig,ax=plt.subplots(1,2,figsize=(11.5,4.2),gridspec_kw=dict(wspace=0.55))
+for a,(rows,C_new,C_old,lab,inter) in zip(ax,[(COMMON,F1,O1,"Model 1 main effect",False),
+                                              (SV4,F2,O2,"Model 2 temperature interaction",True)]):
+    style(a); a.axvline(0,color="0.4",lw=0.9,ls="--")
+    for yi,t in enumerate(rows):
+        key=f"{t}:bio1c" if inter else t; sc=PV(t)
+        for C_,off,fc in ((C_old,-0.17,"white"),(C_new,0.17,PC(t))):
+            b=sc*C_.loc[key,"estimate"]; se=sc*C_.loc[key,"se"]
+            a.errorbar(b,yi+off,xerr=1.96*se,fmt="o",ms=6,color=PC(t),mfc=fc,mew=1.3,capsize=2.5,elinewidth=1.3)
+        if yi<len(rows)-1: a.axhline(yi+0.5,color="0.92",lw=0.8)
+    a.set_yticks(range(len(rows))); a.set_yticklabels([LABF(t) for t in rows],fontsize=8)
+    for tl,t in zip(a.get_yticklabels(),rows): tl.set_color(PC(t))
+    a.set_ylim(len(rows)-0.5,-0.7); a.set_xlabel(("change in % fitness per variant per °C" if inter else "% change in fitness per carried variant"),fontsize=8)
+    a.annotate(lab,xy=(0,1.04),xycoords="axes fraction",fontsize=8.5,color="0.2")
+ax[0].errorbar([],[],fmt="o",color="0.3",mfc="white",ms=6,label="without TE (SV4)")
+ax[0].errorbar([],[],fmt="o",color="0.3",ms=6,label="with TE (SV6)"); ax[0].legend(fontsize=7,loc="lower left")
+save(fig,"final_te_vs_noTE",nb=True); plt.show()
+print("temperature interactions, raw LRT p, without vs with the TE terms in the model:")
+print(pd.DataFrame([{"term":LABF(t)+" × temp","LRT p without TE":f"{OLRT[t+':bio1c']:.4f}",
+                     "LRT p with TE":f"{LRT.loc[t+':bio1c','p']:.4f}",
+                     "Holm (6) with TE":f"{LRT.loc[t+':bio1c','p_holm']:.4f}"} for t in SV4]).to_string(index=False))
+"""
+
+md_c1 = """### Table C1 — assembly-route control
+
+`ins_TE` correlates *r* = 0.70 with `cactus`, the assembly route, and the `cactus` main effect falls from
++0.153 to +0.069 when TE enters the model — TE absorbs much of the assembly signal. The model carries
+`cactus` as a main effect but no `cactus:bio1c`, so an assembly-route × climate artifact would land on
+`ins_TE:bio1c`. Refitting Model 2 with `cactus:bio1c` added (`EXTRA_FIXED=cactus:bio1c`) tests that
+directly. Adding the term buys almost nothing on its own, and the interactions survive, `ins_TE` most
+weakened — so the TE interaction is attenuated but not explained away by assembly route."""
+
+code_c1 = r"""
+CN=pd.read_csv(f"{FD}/coef_M2_reml_x_cactusbio1c.csv").set_index("term")
+mlc=pd.read_csv(f"{FD}/loglik_M2_ml_x_cactusbio1c.csv").logLik[0]
+print(f"adding cactus:bio1c to Model 2 (ML): LR = {2*(mlc-ml):.3f} on 1 df, p = {stats.chi2.sf(max(2*(mlc-ml),0),1):.3f}")
+print(f"cactus:bio1c itself: {CN.loc['cactus:bio1c','estimate']:+.4f} ± {CN.loc['cactus:bio1c','se']:.4f}, Wald p = {CN.loc['cactus:bio1c','p']:.2g}\n")
+rows=[]
+for t in SV6:
+    i=f"{t}:bio1c"; r={"term":LABF(t)+" × temp",
+                       "estimate (no control)":f"{F2.loc[i,'estimate']:+.4f}","Wald p":f"{F2.loc[i,'p']:.4f}",
+                       "estimate (+cactus:bio1c)":f"{CN.loc[i,'estimate']:+.4f}","Wald p ":f"{CN.loc[i,'p']:.4f}"}
+    f_=f"{FD}/loglik_M2_ml_drop_{t}_x_cactusbio1c.csv"
+    r["LRT p (+control)"]=f"{stats.chi2.sf(max(2*(mlc-pd.read_csv(f_).logLik[0]),0),1):.4f}" if os.path.exists(f_) else "not run"
+    rows.append(r)
+print(pd.DataFrame(rows).to_string(index=False))
+print("\nControl LRTs were run only for the two TE-dependent interactions; the others show Wald only.")
+"""
+
+md_key = """## Key numbers"""
+
+code_key = r"""
+print("Model 1 — overall effects (% per carried variant, Wald p, Holm across the nine burden terms):")
+for t in ROWS9:
+    b=PV(t)*MAIN.loc[t,"estimate"]; s=PV(t)*MAIN.loc[t,"se"]
+    star=" *" if MAIN.loc[t,"p_holm"]<0.05 else ""
+    print(f"  {LABF(t):<26} {pct(b)} [{pct(b-1.96*s)}, {pct(b+1.96*s)}], p = {MAIN.loc[t,'p']:.3g}, Holm = {MAIN.loc[t,'p_holm']:.3g}{star}")
+print("\nModel 2 — burden x garden temperature (% per carried variant per °C; LRT p, Holm across six):")
+for t in sorted(SV6,key=lambda z: LRT.loc[f"{z}:bio1c","p"]):
+    i=f"{t}:bio1c"; star=" *" if LRT.loc[i,"p_holm"]<0.05 else ""
+    print(f"  {LABF(t):<26} {pct(PV(t)*F2.loc[i,'estimate'])}/°C, LRT p = {LRT.loc[i,'p']:.4f}, Holm = {LRT.loc[i,'p_holm']:.4f}, BH = {LRT.loc[i,'p_BH']:.4f}{star}")
+print(f"\nkinship variance {VF2[VF2.grp=='kin'].vcov.iloc[0]:.3f}; "
+      f"garden intercept {VF2[(VF2.var1=='(Intercept)')&VF2.grp.str.startswith('garden')].vcov.iloc[0]:.3f}; "
+      f"residual {VF2[VF2.grp=='Residual'].vcov.iloc[0]:.3f}")
+"""
+
+md_methods = """## Methods, as run
+
+- **Fitness.** Founder frequencies per pool from kMate (`founder_site_dh.npz`): *H*₀ = mean of the 8
+  seed-mix estimates, *H*₀ + Δ*H*ₛ = frequency in the last sampled generation of garden *s* (plots equally
+  weighted); *y* = log[(*H*₀ + Δ*H*ₛ + 10⁻⁵)/(*H*₀ + 10⁻⁵)].
+- **Burden** (`_sv_burden_build.py` → `founder_burden_event.csv`; long table and kinship from
+  `_sv_burden_onestage_export.py`): per founder and class, rate = carried / called among **shared**
+  variants, standardised across founders for the fit. Per-variant scale = coefficient per SD ÷ (SD of the
+  rate × median called per founder), recomputed for all twelve terms in `variants_per_sd_event_SV6.csv`;
+  it reproduces the published `sv_burden_full_model_event_CDS+promoter.csv` values exactly for the nine
+  pre-TE terms.
+- **Kinship.** Standardised genomic relationship matrix from a 2% draw of SNPs with ≥ 5 carriers
+  (`founder_kinship.npy`), passed to `lme4qtl::relmatLmer` as `relmat`.
+- **Fitting** (`_sv_burden_final_models.R`, one SLURM array task per fit, `run_final_models.sbatch`
+  `--array=0-8`): REML for reported estimates and Wald *z*; each temperature interaction tested by a
+  likelihood-ratio test from ML refits of Model 2 with and without it (1 df).
+- **Multiple testing.** The six interaction LRTs are one family (Holm primary, BH and Bonferroni shown);
+  the nine burden main effects are a second family (Holm and BH). No correction is applied across the two
+  families or across the two models.
+- **Assembly-route control.** Model 2 refitted with `cactus:bio1c` added via the `EXTRA_FIXED` environment
+  variable, which suffixes its outputs `_x_cactusbio1c` and leaves default behaviour of the script
+  unchanged.
+
+**Caveats.**
+- Every fit is **singular**: the `del_CDS` garden random slope is estimated at exactly zero (and with TE,
+  the `ins_TE` garden slope at ~5 × 10⁻⁵), so the random-effects structure is over-specified for this data.
+  This predates the TE addition and is present in the pre-TE fits too.
+- The fixed effects are **strongly collinear** — across the 231 founders the burden rates correlate 0.29 to
+  0.94. With TE the predictor-matrix condition number is 237 (159 without), and VIFs are 24 for `snp_CDS`,
+  18 for `ins_promoter`, 11 for `ins_intergenic`, 7.4 for `ins_TE`. `ins_CDS` is the stable term (VIF 3.0,
+  2.8 without TE), which is why its estimate barely moves between specifications.
+- Frequencies within a garden compete (they sum to one), which none of these models represent.
+- REML log-likelihoods are **not** comparable across models with different fixed effects; all
+  likelihood-ratio tests here use the ML refits."""
+
+if __name__ == "__main__":
+    build("sv_burden_final_models_te.ipynb", [
+        new_markdown_cell(md_title), new_code_cell(code_setup),
+        new_markdown_cell(md_models), new_code_cell(code_load),
+        new_markdown_cell(md_m1), new_code_cell(code_m1),
+        new_markdown_cell(md_m2), new_code_cell(code_m2),
+        new_markdown_cell(md_m3), new_code_cell(code_m3),
+        new_markdown_cell(md_m3s), new_code_cell(code_m3s),
+        new_markdown_cell(md_m4), new_code_cell(code_m4),
+        new_markdown_cell(md_c1), new_code_cell(code_c1),
+        new_markdown_cell(md_key), new_code_cell(code_key),
+        new_markdown_cell(md_methods),
+    ])

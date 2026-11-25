@@ -13,9 +13,15 @@ be plotted against THAT scan — a GWAS-only candidate drawn over the LFMM GEA p
 shows an empty Manhattan and reads as a null (this is what CML50 looked like before
 the gwas mode existed).
 
-  "gea"  (default)  LFMM per-record p on the candidate's climate axis, from
-                    `wza_in_clq09_tile`; colour = climate Δp (hot−cold, mean gen 1-3);
-                    Bonferroni lines per variant class.
+  "gea"  (default)  LFMM p on the candidate's climate axis, from the production table
+                    `results/multiaxis/tile_cr50` (MAF >= 0.05, founder call rate >= 0.50,
+                    K=16, raw p): one point per record for SNPs / short indels, one per
+                    Truvari EVENT for SVs, drawn at the event's representative allele.
+                    Colour = climate Δp (hot−cold, mean gen 1-3; an event's is the sum
+                    over its member records). Bonferroni 0.05/n per class on the axis.
+                    The lead is found by unit; one the call-rate floor removed is stated
+                    in panel A. Optional cfg "store_row" (af_store non-SNP row, as in
+                    evidence_matrix.csv) picks the unit when the allele key names two.
   "gwas"            GEMMA per-garden p on the founder selection coefficient `s`, from
                     `r3_persite_gwas/results/gemma_gwas/persite_gwas_{snp,nonsnp,sv}.npz`,
                     for ONE garden (`garden`, default = the lead's median-strength
@@ -33,6 +39,9 @@ Usage (one candidate; JSON config as argv[1]):
   PY plot_locus_combined.py '{"gene":"AT4G11600","sym":"GPX6","chrom":"Chr4",
      "gstart":7009769,"gend":7011375,"vpos":7011705,"ref_len":1225,"alt_len":61,
      "axis":"pc1","pad":8000}'
+  Optional: "pad" narrows the window, "compact": true shrinks the canvas for slides,
+  "inset": false drops the gene-zoom inset (redundant once the window is tight),
+  "suffix" keeps that render beside the standard one.
   PY plot_locus_combined.py '{"gene":"AT5G04170","sym":"CML50","chrom":"Chr5",
      "gstart":1145431,"gend":1147781,"vpos":1146373,"ref_len":95,"alt_len":1,
      "scan":"gwas","pad":8000}'
@@ -57,14 +66,23 @@ import plot_theme as TH                                   # noqa: E402
 
 TH.apply()
 
-WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+# Production GEA (2026-09-30 re-run; replaces the pre-call-rate-floor wza_in_clq09_tile, now in
+# results/multiaxis/_superseded_pre_cr50/). snp / smallindel rows are records (a short indel is
+# one record = one unit); sv rows are Truvari EVENTS (`unit`) shown at their representative
+# member allele (most carriers) -- so the candidate allele is matched by unit, never by key.
+TILE = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50"
+UNITS_NPZ = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/nonsnp_event_units.npz"
+CR_FLOOR = int(np.ceil(0.50 * 231))      # founders called, the tile_cr50 call-rate floor
 GROUP_MEANS = f"{lib.GEA}/common/results/group_means.npz"
 BIO_CSV = ("/global/scratch/users/tbellg/gea_grene-net/key_files/"
            "1001g_regmap_grenet_ecotype_info_corrected_bioclim_2024May16.csv")
 BCF = "/global/home/users/tbellg/miniforge3/envs/kmate/bin/bcftools"
 GWASD = f"{lib.GEA}/r3_persite_gwas/results/gemma_gwas"
 PANEL = "/global/scratch/projects/fc_moilab/tbellg/kmate/panel/arch3"
-BONF = {"snp": 7.606, "smallindel": 7.131, "sv": 5.742}
+# gea mode: -log10(0.05 / n rows) per class, re-derived from the table in load_gea (tile_cr50
+# holds 1,790,024 / 603,630 / 20,134 rows on every axis; 7.606 / 7.131 / 5.742 were the old
+# pre-floor counts)
+BONF = {"snp": 7.554, "smallindel": 7.082, "sv": 5.605}
 # gwas mode: per-class genome-wide Bonferroni from each scan's OWN marker count
 # (snp 1,752,846 / nonsnp 525,043 / sv 12,789) -- they differ by ~140x, which is why
 # one marker's "n gardens" depends on which class scan it is counted in.
@@ -98,26 +116,105 @@ def region_vcf(cfg, lo, hi):
     return out
 
 
-def load_gea(cfg, lo, hi):
+_UNITS: dict = {}
+
+
+def _unit_index():
+    """af_store non-SNP record keys + record -> unit map (nonsnp_event_units.npz, CSR)."""
+    if not _UNITS:
+        I = np.load(f"{lib.AF_STORE}/index_nonsnp.npz", allow_pickle=True)
+        U = np.load(UNITS_NPZ, allow_pickle=True)
+        ip = U["indptr"]
+        unit_of = np.empty(len(I["pos"]), np.int64)
+        unit_of[U["indices"]] = np.repeat(np.arange(len(ip) - 1), np.diff(ip))
+        _UNITS.update(chrom=I["chrom"].astype(str), pos=I["pos"], ref_len=I["ref_len"],
+                      alt_len=I["alt_len"], unit_of=unit_of, ncal=U["ncal"],
+                      indptr=ip, indices=U["indices"])
+    return _UNITS
+
+
+def lead_units(cfg):
+    """Lead allele -> af_store record row(s) -> GEA unit(s). Returns (units, ambiguous).
+
+    An SV row is an event at its representative allele, so a key lookup misses a lead that is
+    a non-representative member. ~14% of non-SNP records share a key with another record and
+    a key can name two units; cfg["store_row"] picks between them when given, otherwise
+    every unit is kept and flagged. SNPs carry no unit.
+    """
+    if cfg["ref_len"] == 1 and cfg["alt_len"] == 1:
+        return [], False
+    S = _unit_index()
+    rows = np.where((S["chrom"] == cfg["chrom"]) & (S["pos"] == cfg["vpos"])
+                    & (S["ref_len"] == cfg["ref_len"]) & (S["alt_len"] == cfg["alt_len"]))[0]
+    units = sorted({int(u) for u in S["unit_of"][rows]})
+    if len(units) > 1 and cfg.get("store_row") is not None:
+        pick = {int(S["unit_of"][int(cfg["store_row"])])} & set(units)
+        units = sorted(pick) or units
+    return units, len(units) > 1
+
+
+def absent_reason(units):
+    """Why a lead has no tile_cr50 row: the call-rate floor or the MAF floor."""
+    if not units:
+        return "below the MAF or call-rate floor"
+    nc = int(min(_unit_index()["ncal"][u] for u in units))
+    return (f"founder call rate {nc}/231 < 0.50 floor" if nc < CR_FLOOR
+            else "below the MAF 0.05 floor")
+
+
+def load_gea(cfg, lo, hi, units=()):
+    """Window rows of the three disjoint classes, with Δp and a `lead` flag (by unit).
+
+    The table is already MAF >= 0.05 / call rate >= 0.50, so no filter is re-applied and
+    BONF is re-derived as 0.05 / every row of the class on this axis.
+    """
     frames = []
     for cls in ("snp", "smallindel", "sv"):
-        f = f"{WZAIN}/lfmm_{cls}_gen9_{cfg['axis']}.csv"
+        f = f"{TILE}/lfmm_{cls}_gen9_{cfg['axis']}.csv"
         if not os.path.exists(f):
             continue
         d = pd.read_csv(f)
-        d = d[(d.chrom == cfg["chrom"]) & (d.pos >= lo) & (d.pos <= hi) & (d.MAF > 0.05)].copy()
+        BONF[cls] = -np.log10(0.05 / len(d))
+        if cls == "snp":
+            d["lead"] = ((d.chrom == cfg["chrom"]) & (d.pos == cfg["vpos"])
+                         & (d.ref_len == cfg["ref_len"]) & (d.alt_len == cfg["alt_len"]))
+        else:
+            d["lead"] = d.unit.isin(units)
+        d = d[((d.chrom == cfg["chrom"]) & (d.pos >= lo) & (d.pos <= hi)) | d.lead].copy()
         d["cls"] = cls
         frames.append(d)
     g = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
     if not len(g):
-        return g
+        # the call-rate floor can empty a whole window (FLC on bio6): keep the columns so
+        # the figure draws an empty Manhattan with its absence note instead of crashing
+        return pd.DataFrame(columns=["chrom", "pos", "ref_len", "alt_len", "MAF", "pval",
+                                     "unit", "cls", "lead", "nlp", "dp"])
     g["nlp"] = -np.log10(g.pval.clip(lower=1e-300))
     z = np.load(GROUP_MEANS, allow_pickle=False)
     div = (z["hot_g1"] - z["cold_g1"]) + (z["hot_g2"] - z["cold_g2"]) + (z["hot_g3"] - z["cold_g3"])
-    key = pd.DataFrame({"chrom": z["chrom"], "pos": z["pos"], "ref_len": z["ref_len"],
-                        "alt_len": z["alt_len"], "dp": div / 3.0})
-    key = key[(key.chrom == cfg["chrom"]) & (key.pos >= lo) & (key.pos <= hi)]
-    return g.merge(key, on=["chrom", "pos", "ref_len", "alt_len"], how="left")
+    dp = div / 3.0
+    snp_rec = (z["ref_len"] == 1) & (z["alt_len"] == 1)
+    # SNP rows carry no unit, so Δp joins on the allele key -- but ONLY where that key is
+    # unique among SNP records: a multiallelic site has two 1/1 records with one key, and a
+    # key join would hand one allele the other's Δp. Ambiguous keys are left NaN (drawn 0).
+    w = np.where(snp_rec & (z["chrom"] == cfg["chrom"]) & (z["pos"] >= lo) & (z["pos"] <= hi))[0]
+    key = pd.DataFrame({"pos": z["pos"][w], "ref_len": 1, "alt_len": 1, "dp": dp[w]})
+    key = key.drop_duplicates("pos", keep=False)
+    sn = g[g.cls == "snp"].drop(columns="dp", errors="ignore").merge(
+        key, on=["pos", "ref_len", "alt_len"], how="left")
+    # non-SNP rows: Δp through the unit's member records. group_means' non-SNP rows are the
+    # af_store index_nonsnp rows in order, and an event's frequency is the SUM of its
+    # members' (build_event_matrix.py), so its Δp is the sum of the members' Δp. For a
+    # short indel (one member) this is just its own record.
+    ns = g[g.cls != "snp"].copy()
+    if len(ns):
+        S = _unit_index()
+        gm_row = np.where(~snp_rec)[0]
+        ip, ix = S["indptr"], S["indices"]
+        mem = [dp[gm_row[ix[ip[int(u)]:ip[int(u) + 1]]]] for u in ns.unit]
+        # a member with no finite pool mean is skipped, not allowed to blank the event
+        ns["dp"] = [float(np.nansum(m)) if np.isfinite(m).any() else np.nan for m in mem]
+    return pd.concat([sn, ns], ignore_index=True)
 
 
 def _panel_sizes(ch, want):
@@ -394,6 +491,10 @@ def gene_zoom_inset(ax, cfg, models, dstart, dend, featc):
     m = models.get(cfg["gene"])
     if m is None:
         return
+    # In a zoomed window the gene track above already resolves the exons, and the inset
+    # then sits on top of the Manhattan it is meant to annotate -- so it is skippable.
+    if not cfg.get("inset", True):
+        return
     span = m["end"] - m["start"]
     gl, gr = m["start"] - span * 0.04, m["end"] + span * 0.04
     ins = ax.inset_axes([0.035, 0.46, 0.40, 0.30])
@@ -440,36 +541,53 @@ def gene_track(ax, cfg, y0, dy, lo, hi, models):
     """JBrowse-style gene models: CDS thick, UTR thin, introns a line with chevrons."""
     genes = lib.load_genes()
     gs = genes[(genes.chrom == cfg["chrom"]) & (genes.end >= lo) & (genes.start <= hi)]
+
+    def cl(a, b):
+        """Clamp a feature to the plotted window.
+
+        Everything here is drawn with clip_on=False so the track can sit above the axes;
+        that also let a gene running past the window edge draw straight over the colour
+        bar (AT4G11610 at a 7 kb window). Clamping the x extent keeps the vertical
+        overflow and drops the horizontal one."""
+        return max(a, lo), min(b, hi)
+
     for _, g in gs.iterrows():
         hl = g.gene == cfg["gene"]
         col = "#b2182b" if hl else "#666"
         al = 0.95 if hl else 0.55
         m = models.get(g.gene)
         if m is None:                                   # no transcript (e.g. a TE gene)
-            ax.add_patch(Rectangle((g.start, y0 - dy * 0.25), g.end - g.start, dy * 0.5,
+            a, b = cl(g.start, g.end)
+            ax.add_patch(Rectangle((a, y0 - dy * 0.25), max(b - a, 1), dy * 0.5,
                          facecolor=col, edgecolor="none", alpha=al * 0.6, zorder=3,
                          clip_on=False))
         else:
             # intron backbone + strand chevrons
-            ax.plot([m["start"], m["end"]], [y0, y0], color=col, lw=0.8, alpha=al,
+            ms_, me_ = cl(m["start"], m["end"])
+            ax.plot([ms_, me_], [y0, y0], color=col, lw=0.8, alpha=al,
                     zorder=3, clip_on=False, solid_capstyle="butt")
             step = max((hi - lo) / 90, 1)
             mark = ">" if m["strand"] == "+" else "<"
-            xs = np.arange(m["start"] + step / 2, m["end"], step)
+            xs = np.arange(ms_ + step / 2, me_, step)
             if len(xs):
                 ax.plot(xs, np.full(len(xs), y0), marker=mark, ls="", ms=2.3,
                         color=col, alpha=al * 0.85, zorder=4, clip_on=False)
             cds = m["cds"]
-            for a, b in m["exons"]:                     # exon body = UTR height
+            for a, b in (cl(*e) for e in m["exons"]):   # exon body = UTR height
+                if b <= a:
+                    continue
                 ax.add_patch(Rectangle((a, y0 - dy * 0.26), max(b - a, 1), dy * 0.52,
                              facecolor=col, edgecolor="none", alpha=al * 0.75,
                              zorder=5, clip_on=False))
-            for a, b in cds:                            # CDS overlay = full height
+            for a, b in (cl(*c) for c in cds):          # CDS overlay = full height
+                if b <= a:
+                    continue
                 ax.add_patch(Rectangle((a, y0 - dy * 0.5), max(b - a, 1), dy,
                              facecolor=col, edgecolor="none", alpha=al, zorder=6,
                              clip_on=False))
         lab = cfg["sym"] if hl else g.gene
-        ax.text((g.start + g.end) / 2, y0 + dy * 0.9, lab, ha="center", va="bottom",
+        la, lb = cl(g.start, g.end)                     # label over the VISIBLE part
+        ax.text((la + lb) / 2, y0 + dy * 0.9, lab, ha="center", va="bottom",
                 fontsize=6.5 if hl else 4.8, style="italic",
                 color=col, clip_on=False)
     return models
@@ -502,7 +620,22 @@ def main():
         cfg["_garden"] = garden
         gea = load_gwas(cfg, lo, hi, garden)
     else:
-        gea = load_gea(cfg, lo, hi)
+        units, ambig = lead_units(cfg)
+        if ambig:
+            print(f"  !! allele key names {len(units)} units {units}; all are marked "
+                  f"(pass \"store_row\" to pick one)")
+        gea = load_gea(cfg, lo, hi, units)
+        lead = gea[gea.lead] if len(gea) else gea
+        for r in lead.itertuples():
+            print(f"  GEA lead ({cfg['axis']}, tile_cr50): {r.cls}"
+                  + (f" unit {int(r.unit)}" if r.cls != "snp" else "")
+                  + f" shown at {r.pos}:{r.ref_len}/{r.alt_len}, -log10 p = {r.nlp:.2f}"
+                  f" (Bonferroni {BONF[r.cls]:.2f}: "
+                  f"{'clears' if r.nlp >= BONF[r.cls] else 'below'})")
+        if not len(lead):
+            print(f"  GEA lead ({cfg['axis']}, tile_cr50): ABSENT -- {absent_reason(units)}")
+        cfg["_absent"] = None if len(lead) else absent_reason(units)
+        gea = gea[(gea.pos >= lo) & (gea.pos <= hi)] if len(gea) else gea
     samp, b1, V, G, MISS = load_panel(vcf, ch, lo, hi)
     # exon/CDS structure for the window, parsed once and reused by the gene track
     models = load_gene_models(ch, lo, hi)
@@ -534,15 +667,25 @@ def main():
     bnorm = diverging(b1mid, np.nanmax(np.abs(b1 - b1mid)))
     order = np.argsort(np.nan_to_num(b1, nan=1e9)); nF = len(samp)
     yrow = {int(i): nF - 1 - k for k, i in enumerate(order)}
-    lead_row = gea[(gea.pos == cfg["vpos"])]
+    # gea: the lead's own unit (an SV event row sits at its representative allele, which can
+    # be a few bp off vpos); gwas: the GEMMA arrays carry position only
+    lead_row = (gea[gea.lead] if len(gea) else gea) if scan != "gwas" else \
+        gea[(gea.pos == cfg["vpos"])]
 
+    # `compact` keeps every panel and shrinks the canvas -- for slides, where the dossier
+    # figure is too tall to read. Width shrinks more than height: the panels are wide and
+    # sparse, so narrowing costs less than losing founder rows.
+    sc_w, sc_h = (0.76, 0.72) if cfg.get("compact") else (1.0, 1.0)
+    # compact also rebalances the stack: the founder panel keeps all 231 rows but stops
+    # taking half the canvas, which is what makes the dossier figure unreadable on a slide
+    hr = [3.0, 4.0, 2.0] if cfg.get("compact") else [3.0, 6.0, 2.0]
     if scan == "gwas":
-        fig = plt.figure(figsize=(12, 17.5))
-        gs = fig.add_gridspec(4, 1, height_ratios=[3.0, 6.0, 2.0, 2.2], hspace=0.06)
+        fig = plt.figure(figsize=(12 * sc_w, 17.5 * sc_h))
+        gs = fig.add_gridspec(4, 1, height_ratios=hr + [2.2], hspace=0.06)
         axG = fig.add_subplot(gs[3])          # own x-axis (gardens, not bp)
     else:
-        fig = plt.figure(figsize=(12, 15))
-        gs = fig.add_gridspec(3, 1, height_ratios=[3.0, 6.0, 2.0], hspace=0.06)
+        fig = plt.figure(figsize=(12 * sc_w, 15 * sc_h))
+        gs = fig.add_gridspec(3, 1, height_ratios=hr, hspace=0.06)
         axG = None
     axM = fig.add_subplot(gs[0]); axH = fig.add_subplot(gs[1], sharex=axM)
     axL = fig.add_subplot(gs[2], sharex=axM)
@@ -566,9 +709,15 @@ def main():
                  fontsize=6.5, color="#666")
     if len(lead_row):
         lr = lead_row.sort_values("nlp").iloc[-1]
-        axM.scatter([cfg["vpos"]], [lr.nlp], marker=CLSMARK[lr.cls][0], s=110,
+        axM.scatter([lr.pos], [lr.nlp], marker=CLSMARK[lr.cls][0], s=110,
                     facecolor=DPCMAP(dnorm(lr[cvar] if lr[cvar] == lr[cvar] else 0)),
                     edgecolor="#b2182b", linewidths=1.5, zorder=5)
+    elif cfg.get("_absent"):
+        # not a blank: the production GEA dropped this lead, which is a result
+        axM.annotate(f"lead not in the GEA table: {cfg['_absent']}", (0.99, 0.03),
+                     xycoords="axes fraction", ha="right", va="bottom", fontsize=7.5,
+                     color="#b2182b", zorder=7,
+                     bbox=dict(fc="white", ec="none", alpha=0.85, pad=1.5))
     ytop = max(9.0, (gea.nlp.max() if len(gea) else 8) + 1.8)
     axM.set_ylim(-0.4, ytop)
     axM.set_ylabel(rf"$-\log_{{10}}p$ GEMMA on $s$ (garden {cfg['_garden']})"
@@ -655,8 +804,11 @@ def main():
         axL.scatter(xc[ok], yc[ok], c=rr[ok], cmap=LDCMAP, vmin=0, vmax=1, marker="s", s=3, edgecolors="none")
         axL.axvline(cfg["vpos"], ls="--", color="#b2182b", lw=0.6, alpha=0.7)
         axL.set_ylim(yc.min() * 1.02, sx)
-        fig.colorbar(plt.cm.ScalarMappable(cmap=LDCMAP, norm=mcolors.Normalize(0, 1)),
-                     ax=axL, fraction=0.02, pad=0.005).set_label(r"$r^2$", fontsize=8)
+        # shrink+anchor keeps the bar clear of the position tick labels of the panel
+        # above, which it collided with once the compact layout tightened the stack
+        cbl = fig.colorbar(plt.cm.ScalarMappable(cmap=LDCMAP, norm=mcolors.Normalize(0, 1)),
+                           ax=axL, fraction=0.02, pad=0.005, shrink=0.78, anchor=(0.0, 0.0))
+        cbl.set_label(r"$r^2$", fontsize=8)
     axL.set_xlim(lo - (hi - lo) * 0.06, hi); axL.axis("off")
 
     # D (gwas only): the lead across all 30 gardens, cold -> hot.
@@ -692,7 +844,10 @@ def main():
 
     # gwas figures get their own suffix so a gene plotted against both scans keeps
     # both, and so a gwas-mode run never silently overwrites a gea-mode figure
-    out = f"{HERE}/loci/{cfg['sym']}_combined" + ("_gwas" if scan == "gwas" else "")
+    # `suffix` keeps a zoomed or compact render beside the standard one instead of
+    # overwriting it -- the dossier figure and the talk figure are both wanted
+    out = (f"{HERE}/loci/{cfg['sym']}_combined" + ("_gwas" if scan == "gwas" else "")
+           + cfg.get("suffix", ""))
     os.makedirs(f"{HERE}/loci", exist_ok=True)
     fig.savefig(out + ".png", dpi=165, bbox_inches="tight")
     fig.savefig(out + ".pdf", bbox_inches="tight")

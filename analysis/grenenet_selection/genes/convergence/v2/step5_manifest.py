@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+"""v2 step 5 -- write MANIFEST.txt for the NEW candidate list: exact inputs, filters, scripts, row counts, layer coverage. Numbers are read from the
+files, never typed. env: kmate."""
+import os, time, glob
+import pandas as pd
+HERE = os.path.dirname(os.path.abspath(__file__)); CONV = os.path.dirname(HERE)
+V2 = os.path.join(CONV, "results", "candidate_list_v2_events_cr50")
+rd = lambda n: pd.read_csv(f"{V2}/{n}", low_memory=False)
+P, F, U, G = rd("gea_pool.csv"), rd("v2_functional_units.csv"), rd("v2_unit_evidence.csv"), rd("v2_candidate_list.csv")
+X, E, T, C = rd("v2_layer_expression.csv"), rd("v2_layer_eqtl.csv"), rd("v2_layer_tfbs.csv"), rd("v2_layer_coding.csv")
+mt = lambda n: time.strftime("%Y-%m-%d %H:%M", time.localtime(os.path.getmtime(f"{V2}/{n}")))
+L = []
+a = L.append
+a("NEW CANDIDATE GENE LIST — v2_events_cr50_GEA_only")
+a(f"Built {time.strftime('%Y-%m-%d')} by genes/convergence/v2/step1..step5. This is NOT the old list and NOT the 2026-10-01 hybrid:")
+a("those are frozen, read-only, in ../candidate_list_OLD_frozen/ (see its README.txt). Every output here carries a v2_ prefix EXCEPT gea_pool.csv and")
+a("gea_pool_records.csv, which share names with files in ../ (old/hybrid): the copies in THIS folder are the v2 pool; the ones in ../ are not.\n")
+a("DISCOVERY (GEA only; the GWAS arm is NOT used and no gwas_* column exists anywhere in this folder)")
+a("  scans      LFMM ridge K=16, generation 9, 352 pools, 22 axes (bio1-19, pc1-3), RAW p (no GIF correction); lambda recorded, never applied")
+a("  units      short-indel / MNP record; SV (>50 bp) = Truvari EVENT (collapse 0.95/0.95/500 bp inside a bubble and type; union of member alleles)")
+a("  filters    MAF >= 0.05 (gen-9 pool-mean frequency) AND called in >= 116 of 231 founders (50%; an event is called at ANY member)")
+a("  input      r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50 (production hybrid: snp+smallindel record-level; sv+nonsnp event-level from genes/convergence/event_gea/cr50)")
+a("  hit rule   Bonferroni 0.05 / n units per class x axis (never divided across axes), union over sv / smallindel / nonsnp scans; blocks = clq r2=0.9 tiling, no merge")
+a(f"  pool       {len(P):,} significant units: " + ", ".join(f"{k} {v:,}" for k, v in P.vclass.value_counts().items()) + "\n")
+a("GENE ASSIGNMENT / FUNCTION (promoter takes precedence over TE for this list; te_overlap is kept as a column)")
+a(f"  functional handle per unit (SV events + small indels; MNPs excluded): {len(F):,} units -> {F.target_gene.nunique():,} genes; tiers F1 CDS-disruptive, F2 CDS in-frame, F3 UTR, F4 promoter <=1 kb, F5 downstream <=1 kb, F6 intron, F7 within 5 kb")
+a("  tier refinement: a coding tier is kept only if the transcript-level effect confirms a protein-changing CDS consequence\n")
+a("EVIDENCE LAYERS (each keyed on `unit`; none joins on chrom,pos,ref_len,alt_len)")
+a(f"  atac              open chromatin overlap, all {len(P):,} pool units (hits are NOT enriched vs everything tested: see layer_atac.py output)")
+a("  snp_visibility    Bonferroni-SNP shadowing (2 kb) + best r2 to panel SNPs AND to independent GrENE-Net short-read SNPs (SNP-blind = short-read r2 < 0.2); panel r2 is inflated by shared haplotype calls")
+a(f"  coding            transcript-level effect, NMD call, protein fraction lost, Pfam domain, grade; CDS-affecting units {int(C.site_feature.astype(str).str.startswith('CDS').sum())}")
+a(f"  expression        carrier vs non-carrier, 1001 Transcriptomes, lineage-controlled (300 random genes): tested {int((X.status=='tested').sum()):,} of {len(X):,}; gene not in 1001T {int((X.status=='gene not in 1001T').sum())}")
+a(f"  tf_motif          FIMO turnover REF vs ALT, scope F3/F4 + ATAC-overlapping: {len(T):,} units scanned")
+a(f"  eqtl              INFORMATIONAL ONLY (the cis-eQTL scan covers 22 genes): readout for {int((E.eqtl_status=='exact_tag_snp').sum())} of {len(E):,} units; not used in the ranking\n")
+a("LINES OF EVIDENCE beyond the functional handle (unit level): U_gea, U_expr, U_regulatory (ATAC or clean TF-motif change), U_snp_blind, plus U_protein (part of function)")
+a("RANKING: 1 best functional handle (SV ahead of indel within a tier) -> 2 protein grade -> 3 extra lines of that unit -> 4 gated GEA line -> 5 user themes -> 6 GEA clusters, p")
+a(f"THEMES: flowering, circadian, oxidative_stress, temperature, water, light (protein name + GO BP + UniProt keywords; annotation is partial, so an unannotated gene cannot be flagged)\n")
+a("CAVEATS THAT TRAVEL WITH EVERY ROW: raw uncalibrated LFMM p (candidate net, not a calibrated hit list); hits are climate-structured; the GWAS arm is excluded, not re-run.\n")
+a(f"OUTPUTS: v2_candidate_list.csv ({len(G):,} genes), v2_unit_evidence.csv ({len(U):,} units), v2_functional_units.csv, v2_variants_classified.csv, v2_candidate_genes.csv, v2_gea_gated_genes.csv, gea_pool*.csv, v2_layer_*.csv")
+a("last written: " + "; ".join(f"{n} {mt(n)}" for n in ("gea_pool.csv", "v2_layer_expression.csv", "v2_layer_tfbs.csv", "v2_unit_evidence.csv", "v2_candidate_list.csv")))
+open(f"{V2}/MANIFEST.txt", "w").write("\n".join(L) + "\n")
+print("\n".join(L))

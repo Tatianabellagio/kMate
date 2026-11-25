@@ -1,0 +1,155 @@
+Still computing. I'm preparing the notebook changes now so the rebuild is immediate:
+
+Patched builder for synonymous/nonsynonymous and plain labels
+
+Chr1 classification is done, showing 106,514 synonymous and 106,734 nonsynonymous SNPs. While the remaining chromosomes finish processing, I'll update the no-singleton robustness check to use the same reference.
+
+Point the no-singleton check at synonymous SNPs
+
+I'll rebuild the notebook as soon as the background job finishes.
+
+
+
+
+
+
+
+gene
+
+
+That's how it's set up — both are columns plus flags, nothing filters on them, and no candidate's line count changed (flags never feed the seven lines). Committed as 2e50f8e.
+
+Where the shortlist stands after everything today:
+
+Tier 1: GPX6, AT1G30820, CYP28, AT3G19515, AT4G02820, PGIP1, plus AT3G58130 as the new entry.
+Tier 2: 4CL1, AAO, BUP, PAA2, FLOT3, AT2G14910, AT5G40855.
+Set aside with reasons recorded: the five per-garden GWAS hits, AT3G44010, the flagged remainder.
+
+Figures for all of them are in genes/figures/<GENE>/, with INDEX.csv as the searchable index.
+
+Natural next steps when you want them: work through the ~20 remaining unflagged 4-line variants I triaged but didn't render, or dig into one of the new Tier 1/2 genes (AT3G58130's rare allele and AAO's eQTL peak both have loose ends).
+
+Cargo is now wired in as an eighth line of evidence, and there's one finding worth your attention.
+
+How it's integrated
+
+cargo_line.py reads the other agent's cargo/results/tfbs_payload/* (read-only — nothing is written back into their tree) and turns it into L_cargo. The line requires four things, not just enrichment:
+
+Enriched against the locus's own dinucleotide-shuffled null (p ≤ 0.05).
+Not repeat-driven — I reused the hits-per-motif and tandem measures from the AT4G11800 artefact. The enriched cargo loci run 1.0–3.7 hits per motif against AT4G11800's 11.4, so they pass cleanly; the check currently removes nothing but will catch the next one.
+Not led by an artefact family — BBR-BPC is the GA-repeat artefact. (The telomeric 7-mer artefact was already filtered upstream by the cargo agent.)
+Landed where a cis-element could act — promoter, UTR, or an ATAC peak. Enrichment in a gene desert is a sequence fact with no route to a phenotype.
+
+24 of 193 insertions are enriched; 6 pass all four. Note that L_cargo can only fire for insertions, so it adds to a candidate but never subtracts, and n_lines isn't comparable between insertions and deletions on its own.
+
+What it found
+
+SKS3 (AT5G48450) is now the top-scoring variant in the whole matrix at 6 of 8 lines — and it's a variant I had set aside. A 423 bp insertion lands inside an ATAC peak in its promoter, and the cargo carries a bZIP cluster at 19.9× (a 44 bp ABRE — the ABA/drought-response element), 6 distinct sites from 106 motif hits, 2.10× overall at p = 0.03. It's the window's top marker at −log₁₀p = 7.65 on bio15, next is 5.9.
+
+I'd set it aside for a shared AF vector, and that turns out to be too blunt. The group has exactly two records: this insertion and a 1 bp promoter variant at PHL11, 1.15 Mb away, perfectly linked in the founder panel. So the statistics can't separate them — but a 423 bp ABRE-bearing insertion in an accessible promoter is a far more plausible causal agent than a 1 bp change. The mechanism breaks a tie the statistics can't.
+
+AT3G27540 is the cleanest of the rest: a 187 bp TE insertion in an ATAC-accessible promoter carrying bZIP at 22× and WRKY at 15× (ABRE plus W-box), with 48 sites from 48 motifs — zero redundancy.
+
+Treat with caution: AT3G47420 (G3Pp1) and LECRK54 are ERF+GATA-led. The dinucleotide shuffle controls base composition but not clustered GC, and the GCC-box is GC-rich in an AT-rich genome — so ERF-led enrichment is weaker evidence than bZIP-led. I flagged these as cargo_gc_caution rather than dropping them.
+
+A discrepancy to resolve
+
+The cargo dossier labels SKS3's insertion as "promoter of AT5G48460, 73 bp away". That's nearest-gene distance, but AT5G48460 is on the minus strand and the insertion sits at its 3′ end — a terminator, not a promoter. Our matrix assigns it to AT5G48450's promoter (~128 bp upstream of its TSS), which I think is right. Worth raising with whoever owns the cargo tree, since it affects gene attribution for any minus-strand locus in their table.
+
+Figures for all five are rendering now, and the dossiers are linked into each gene's folder as <GENE>/cargo.png.
+
+cargo_line.py
++110
+-0
+
+ok audit the cargo tree
+
+Ran a command, read tfbs_insertion_payload.py
+
+Let me verify the statistics empirically rather than by reading alone. First: the replicate naming and the null expectation.
+
+Checked shuffle replicate naming
+
+Replicate naming checks out (1-based, matching the loop). Now the null expectation — the locus-level and family-level code compute it differently.
+
+Compared locus-level and family-level null expectations
+
+Confirmed a real inconsistency: the locus-level null averages only over replicates that produced at least one hit, while the family-level code corrects for that. Let me recompute the null independently to see how much it matters.
+
+Independently recompute the cargo null
+
+The main loci reproduce almost exactly; the bias only bites short insertions where many shuffles yield no hits, and it understates enrichment. Now checking the sequence extraction and gene attribution.
+
+Ran 2 commands
+
+inserted_part is right — for a non-left-anchored record (REF=TG, ALT starting AA) the whole ALT is new. My own cargo_line.py used a naive suffix there, so I'll fix that. Now the gene attribution.
+
+Ran 4 commands
+
+The dossier's title combines two different things: site_cat (from the tier) and nearest_gene (nearest by distance). Let me test how often those disagree.
+
+Tested strand-aware promoter attribution
+
+Eleven of 57 promoter-labelled loci name the wrong gene. Now the deeper question: the statistic counts FIMO hits, and hits inside one element are highly correlated. Let me test whether the enrichment survives merging hits into distinct sites.
+
+Recompute enrichment on merged sites
+
+That's decisive, but merging all motifs is the harshest possible merge. Let me also merge within TF family — the two bracket the truth.
+
+Family-aware merged-site recomputation
+
+Family-aware merging kills the two bZIP/ABRE loci I highlighted and leaves only the ERF/GATA pair I'd flagged as suspect. That inverts my earlier report, so I'll recompute all 193 loci properly rather than argue from six.
+
+Launched merged-site recomputation for all 193 loci
+
+Only 4 cores on this node — I oversubscribed. Let me submit it as a batch job instead, the way the cargo run was done.
+
+Ran 2 commands
+
+The figure render finished, and the audit job is queued. Meanwhile I'll suspend my own cargo line rather than leave a statistic I now know is wrong in the matrix.
+
+Ran 2 commands
+Audit of the cargo tree
+
+I verified by re-running rather than reading, and there is one finding serious enough that I'm retracting what I told you an hour ago.
+
+The main finding: the enrichment statistic counts motif hits, not binding sites
+
+The payload counts FIMO hits on the real and shuffled sides alike. That looks fair, but hits inside one element are not independent — at SKS3's insertion a single 44 bp ABRE draws 59 bZIP hits from 23 motifs. A dinucleotide shuffle destroys clustered elements, so it almost never piles hits that way. One real element therefore becomes dozens of counts against a null that can't produce them, and the ratio and the p-value are both inflated.
+
+I re-ran six loci from scratch, merging overlapping hits into distinct sites, everything else identical:
+
+locus	gene	their hits	family-merged sites	all-motif merged
+Chr5_19636028	SKS3	2.10×, p = 0.03	1.07×, p = 0.40	0.68×, p = 0.99
+Chr3_10204785	AT3G27540	2.41×, p = 0.05	0.64×, p = 0.85	1.30×, p = 0.27
+Chr3_11895525	—	8.22×, p = 0.01	—	1 site vs 1 expected, p = 0.78
+Chr3_10492271	—	4.01×, p = 0.02	—	1 site vs 1 expected, p = 0.80
+Chr2_18114766	LECRK54	2.05×, p = 0.01	1.60×, p = 0.010	1.26×, p = 0.059
+Chr3_17476013	G3Pp1	3.59×, p = 0.01	1.71×, p = 0.010	0.72×, p = 0.96
+
+The two loci I promoted to you collapse. SKS3 and AT3G27540 — the bZIP/ABRE ones I called the strongest — carry no more distinct sites than their own shuffles. The only two that survive family-merging are the ERF+GATA pair I had flagged as GC-clustering suspects. The two short loci with the headline 8.2× and 4.0× enrichments have exactly one site each, matched by many motifs.
+
+So: I've suspended L_cargo — it now scores 0 everywhere, the matrix is re-scored, and SKS3 is back to 5 lines, not 6. The descriptive cargo_* columns stay, since the sequence facts are still facts. A job (39070875) is recomputing the merged-site null for all 193 loci; I'll re-enable the line only for whatever survives.
+
+The cargo README already names this as "the obvious next refinement." It isn't a refinement — it's the difference between a result and no result.
+
+Second finding: 11 of 57 promoter loci name the wrong gene
+
+The dossier title fuses two columns that don't agree: site_cat (from the strand-aware tier) and nearest_gene (nearest by distance). For SKS3's insertion it reads "promoter (<2 kb) of AT5G48460, 73 bp away" — but AT5G48460 is on the minus strand and the insertion is at its 3′ end, a terminator. The gene whose promoter it actually occupies is AT5G48450, 364 bp away.
+
+I checked all 57 promoter-labelled loci against the GFF: 46 agree, 11 name the wrong gene, and in all 11 a correct gene exists. Affected loci include Chr2_18114766, Chr2_13127635, Chr5_19636028, Chr3_9632650, Chr4_2692712. Note nearest_gene is inherited from sv_hit_annotation_loci.csv in our tree, so the root cause is on our side — the cargo dossier just presents it as a promoter claim.
+
+Third: the locus-level null is inconsistent with the family-level one
+
+exp_sites averages only over shuffles that produced ≥1 kept hit (line ~314), while the family-level code divides by the full shuffle count (line 354). For short insertions with many empty shuffles this inflates the expectation — Chr3_11895525's is 5.84 against a true 4.35. It's conservative (understates enrichment) and only bites below ~150 bp, but it means the README's "median enrichment over all 193 is 0.97, so the null is calibrated" rests on a biased statistic.
+
+What checks out
+Replicate naming and the empirical p — _shuf_1..N is 1-based and the loop matches. No off-by-one.
+BH implementation — correct.
+inserted_part — correct, and better than what I wrote: it strips the shared prefix and suffix, which matters for records that aren't left-anchored (REF=TG → ALT starting AA means all 187 bp are new, not 185). My cargo_line.py had the naive version; I've fixed it.
+End-to-end reproduction — for loci above ~185 bp my independent rebuild matched their expectations within 2% (50.36 vs 50.04; 86.37 vs 87.56; 125.56 vs 124.58). The pipeline does what it says.
+The telomere filter is real and load-bearing, as documented.
+
+Minor: atac_at compares a 1-based position against BED half-open coordinates, a ±1 bp edge effect.
+
+Bottom line: the machinery is sound and reproducible; the headline result is an artefact of the counting unit. Committed as 0716929.

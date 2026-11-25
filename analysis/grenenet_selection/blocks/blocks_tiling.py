@@ -63,7 +63,7 @@ HAPFM_MIN_VARIANTS = 2        # HapFM's own small-block merge floor (span < 2 va
 def load_blocks(r2: float, chrom: str) -> pd.DataFrame:
     ci = int(chrom.replace("Chr", ""))
     tag = f"clq{r2}"
-    f = f"{lib.CLQ_BLOCKS_DIR}/chr{ci}_{tag}_blocks_{tag}.tsv"
+    f = f"{lib.CLQ_BLOCKS_DIR}{lib.VSUF}/chr{ci}_{tag}_blocks_{tag}.tsv"   # the panel version's map (KMATE_PANEL)
     return pd.read_csv(f, sep="\t").sort_values("start_pos").reset_index(drop=True)
 
 
@@ -121,7 +121,7 @@ def _report(r2):
     for cls in ["snp", "sv", "smallindel", "nonsnp"]:
         # was kendall/ until 2026-08-25; that model retired to archive_gea/, and this
         # diagnostic only needs record positions, which are identical across models.
-        f = f"{MA}/lfmm/lfmm_{cls}_gen9_bio1.csv"
+        f = f"{MA}/_superseded_pre_cr50/lfmm/lfmm_{cls}_gen9_bio1.csv"
         if not os.path.exists(f):
             continue
         d = pd.read_csv(f, usecols=["chrom", "pos"])

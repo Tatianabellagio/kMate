@@ -32,7 +32,7 @@ GS = "analysis/grenenet_selection"
 rec = pd.read_csv(f"{GS}/r2_gea_nonsnp/phase1_replication/results/class_matrices/nonsnp_gen9.records.csv")
 new = pd.read_csv(f"/global/scratch/projects/fc_moilab/tbellg/kmate/tmp_lfmm_signed/work_nonsnp_{ax}/raw_{ax}.csv")
 assert len(new) == len(rec), (len(new), len(rec))
-old = pd.read_csv(f"{GS}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile/lfmm_nonsnp_gen9_{ax}.csv")
+old = pd.read_csv(f"{GS}/r2_gea_nonsnp/phase1_replication/results/multiaxis/_superseded_pre_cr50/wza_in_clq09_tile/lfmm_nonsnp_gen9_{ax}.csv")
 out = rec.rename(columns={"maf": "MAF"})[["chrom", "pos", "ref_len", "alt_len", "MAF"]].copy()
 out[["pval", "B", "z"]] = new[["pval", "B", "z"]].to_numpy()
 # the saved GEA file is in the same record order; check the p-values reproduce
@@ -42,7 +42,7 @@ print(f"  reproduction vs saved GEA p: max |dlog10 p| = {np.nanmax(d):.2e}, medi
 if np.nanmax(d) > 1e-6:
     raise SystemExit("p-values do NOT reproduce the saved GEA -- not writing a signed table")
 out["block"] = old.block.to_numpy()
-out.to_csv(f"{GS}/genes/convergence/lfmm_signed/lfmm_nonsnp_gen9_{ax}_signed.csv.gz", index=False)
+out.to_csv(f"{GS}/genes/convergence/lfmm_signed/_superseded_pre_cr50/lfmm_nonsnp_gen9_{ax}_signed.csv.gz", index=False)  # pre-floor record-level run; production B/z live in tile_cr50
 print(f"  wrote signed table; share of records with B > 0: {(out.B > 0).mean():.3f}")
 PYEOF
 rm -rf "$WORK"

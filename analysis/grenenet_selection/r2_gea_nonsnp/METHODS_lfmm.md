@@ -1,6 +1,43 @@
 # Methods — every step and filter producing the LFMM p-values
 
-GrENE-Net climate GEA, generation 9. Written 2026-08-25 for the manuscript. Every
+> ## ⚠ STALE — frozen 2026-09-30, superseded by the call-rate-filtered re-run
+>
+> The current GEA (panel arch3v2 since 2026-10-22, 346 pools in 30 gardens, site 33 excluded) is documented in
+> `phase1_replication/README.md`; the counts below (352 pools, 31 sites) are the arch3 pre-floor run.
+>
+> **Everything below was computed WITHOUT a founder call-rate filter, and ~9% of the non-SNP
+> and ~19% of the SV hit list comes from records that are miscalibrated.** Kept for the
+> record and for comparison; **do not develop it further** and do not add candidates to it.
+>
+> **What was found.** kMate's projection `AF = (h @ var_pa) / (h @ var_called)` returns the
+> allele frequency *within the called founders*. Where PanGenie fails, that is 78 of 231, and
+> the conditional frequency of a 78-founder subpopulation varies **less** across gardens than
+> the population frequency does — the climate-orthogonal part of the variation is carried
+> largely by the founders being dropped. The slope on climate is unchanged (identical to
+> within 1%), but the residual scatter falls ~26%, so the same effect draws a much smaller
+> p-value. These records are a **different estimand, not a noisier one**, and they draw an
+> inflated threshold.
+>
+> Measured within matched MAF strata: the 78-only stratum runs λ **2.15–2.27** against
+> **1.67–1.80** for well-called records, at ~1.7–2× the Bonferroni hit rate; the 0.50–0.90
+> band is indistinguishable from fully called. Worked end-to-end at FLC
+> (`notebooks/flc_case.ipynb`): filling the 153 missing founders from the phase-1 panel while
+> keeping kMate's own `h` makes kMate agree with hapFIRE at **r = 0.997** (from 0.68) and
+> drops the gradient from r = −0.673 to −0.547, onto phase-1's −0.538.
+>
+> **The re-run** applies `--min-call-rate 0.50` in `build_class_matrices.py` →
+> `results/class_matrices_cr50/` → `results/multiaxis/lfmm_cr50/`.
+> Evidence: `multiaxis/callrate_calibration.py`, `multiaxis/callrate_floor_effect.py`,
+> `notebooks/flc_case.ipynb`, `notebooks/pangenie_accuracy.ipynb`.
+>
+> **Caveat on the candidates.** The floor removes 5 of the 11 five-line variants, including
+> **GPX6** — whose block is 100% low-call (8.4× enrichment over the window). GPX6 is a harder
+> case than FLC: only 9.7% of its significant SNPs exist in the phase-1 catalogue at all, so
+> the fill test is mostly unrunnable there and "phase-1 missed it" carries no information.
+> Treat its exclusion as unresolved rather than settled.
+
+
+GrENE-net climate GEA, generation 9. Written 2026-08-25 for the manuscript. Every
 claim below was checked against the code and, where a filter could be inert or
 load-bearing, against the data. `file:line` citations are the implementation.
 
@@ -307,7 +344,10 @@ $PY $PR/multiaxis/raw_block_significance.py --model lfmm \
       --axes bio1 ... bio19 pc1 pc2 pc3
 ```
 
-Key outputs: `results/multiaxis/lfmm/lfmm_{cls}_gen9_{axis}.csv` (raw p),
-`..._gif.txt` (λ), `results/multiaxis/wza_in_clq09_tile/` (block-assigned; the name is
-historical — it is the **raw per-record** table, not WZA output),
+Key outputs of this (pre-call-rate-floor) run, moved 2026-10-04 to
+`results/multiaxis/_superseded_pre_cr50/`: `lfmm/lfmm_{cls}_gen9_{axis}.csv` (raw p),
+`..._gif.txt` (λ), `wza_in_clq09_tile/` (block-assigned; the name is
+historical — it is the **raw per-record** table, not WZA output). **Production is now the
+2026-09-30 re-run, `results/multiaxis/tile_cr50/`** (SVs as Truvari events, MAF ≥ 0.05 +
+call rate ≥ 0.50, built by `multiaxis/reblock_cr50.py`; see `results/multiaxis/README_PRODUCTION.txt`),
 `results/multiaxis/raw_block_significance_lfmm{,_union}.csv`.

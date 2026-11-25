@@ -21,7 +21,7 @@ PY=/global/home/users/tbellg/miniforge3/envs/kmate/bin/python
 R=/global/home/users/tbellg/miniforge3/envs/lfmm_env/bin/Rscript
 PR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication
 CMDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices
-LDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/lfmm
+LDIR=analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/_superseded_pre_cr50/lfmm
 i=${SLURM_ARRAY_TASK_ID}; AXIS=$(axis_for $i); C=$(cls_for $i)
 WORK=$LDIR/work_${C}_${AXIS}; mkdir -p "$WORK"
 echo "== host $(hostname) | lfmm $C gen9 $AXIS (work=$WORK) =="
@@ -38,7 +38,7 @@ $PY - "$C" "$AXIS" <<'EOF'
 import sys, pandas as pd
 cls, axis = sys.argv[1], sys.argv[2]
 CMDIR="analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/class_matrices"
-LDIR="analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/lfmm"
+LDIR="analysis/grenenet_selection/r2_gea_nonsnp/phase1_replication/results/multiaxis/_superseded_pre_cr50/lfmm"
 rec=pd.read_csv(f"{CMDIR}/{cls}_gen9.records.csv")
 pv=pd.read_csv(f"{LDIR}/lfmm_{cls}_gen9_{axis}_calibp.csv")["pval"].to_numpy()
 assert len(pv)==len(rec),(len(pv),len(rec))

@@ -1,318 +1,65 @@
-"""Compute per-VCF-record truth AF for a recombinant pool — MAR convention.
+"""Per-record true allele frequency of a simulated pool.
 
-Inputs:
-  --ancestry        ancestry.tsv (ind_id, chrom, start, end, founder)
-  --weights         pool_weights.tsv (founder, count, weight) — realized pool composition
-  --var-pa          var_pa .npz  (F × N_records sparse, rows = founders). Legacy
-                    alias: --cn-var.
-  --var-meta        var_pa meta .npz with 'founders', 'chrom', 'pos', 'ref_len',
-                    'alt_len'. Legacy alias: --cn-var-meta.
-  --var-called      var_called mask .npz (F × N). If omitted, derived from --var-pa
-                    ('.var_pa.npz'->'.var_called.npz', or legacy
-                    '.cn_var.npz'->'.cn_var_called.npz').
-  --source-weights  Optional: source_weights.tsv (founder, prob) — if absent, auto-detected
-                    next to pool_weights.tsv. When present, also emits source_truth_af.
-  --out             output TSV (chrom, pos, ref_len, alt_len, truth_af, info,
-                                [source_truth_af, source_info])
+For each record of a variant panel, the frequency of its alternative allele in the pool: individual i (share w_i,
+shares.tsv) carries, at the record's position, the founder its ancestry track assigns there (ancestry.tsv), so
 
-Logic (MAR convention, 2026-05-21):
-  Each individual contributes weight w_i. For each variant record at (chrom, pos),
-  find the founder owning that position in each individual i. The realized-pool
-  TRUTH AF is:
+    truth_af = sum_i w_i * alt(founder_i) / sum_i w_i * called(founder_i)
 
-      truth_af[r] = (Σ_i w_i · cn_var[founder_i, r]) / (Σ_i w_i · cn_var_called[founder_i, r])
+over the individuals whose founder is called at the record (missing genotypes are left out, as kMate's projection does);
+NaN where none is. info = sum_i w_i * called(founder_i), the share of the pool observed at the record.
 
-  When source_weights.tsv is present, ALSO compute the "infinite-pool" truth
-  expected under the source population's founder probabilities p_f (Stage-1
-  binomial sampling integrated out):
-
-      source_truth_af[r] = (Σ_f p_f · cn_var[f, r]) / (Σ_f p_f · cn_var_called[f, r])
-
-  The pool-vs-source gap is the Stage-1 sampling + drift contribution to error —
-  a noise floor below which no method can recover the source-population AF.
-
-  Previously the denominator was Σ_i w_i (treating missing GTs as REF/non-carrier).
-  Switched to the MAR (missing-at-random) convention to match how cactus_em
-  global-mode projects AF: only count called founders in the denominator. See
-  MISSINGNESS_231PANEL.md for the production-data motivation — at SV records on
-  the 231-panel, 75% of PG founders are `.`, and the "treat-./. -as-REF"
-  convention systematically under-calls SV AF.
-
-  Also emits an `info` column = h-mass observable at this record. Tells
-  downstream consumers how much of the pool's haplotype mass we have direct
-  evidence for at each record. info < 0.5 → low-information record.
-
-Runtime: vectorized — for each individual, build a per-record founder index
-via interval-bucket lookup, gather the cn_var + cn_var_called columns, sum
-into running totals. O(n_indiv × n_records).
+Usage: python compute_recomb_truth.py --ancestry A --shares S --var-pa P.var_pa.npz --var-called P.var_called.npz
+                                      --var-meta P.meta.npz --out truth.tsv.gz
+Writes chrom, pos, ref_len, alt_len, truth_af, info, one row per panel record in panel order. Called by
+benchmarks/simulations/simulate.py. Env: kmate.
 """
-from __future__ import annotations
 import argparse
-from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.sparse import load_npz
 
 
-def assign_founder_per_record(rec_chrom, rec_pos, ind_segs_for_chrom):
-    """For one individual, return the founder owning each record's position.
-
-    rec_chrom: array of record chroms (str)
-    rec_pos:   array of record 1-based positions (int)
-    ind_segs_for_chrom: dict {chrom: sorted list of (start, end, founder)}
-        starts/ends are 1-based inclusive.
-
-    Returns array of founder names (str) length len(rec_chrom). Unmapped → ''.
-    """
-    out = np.empty(len(rec_chrom), dtype=object)
-    out[:] = ''
-    for chrom, segs in ind_segs_for_chrom.items():
-        if not segs:
-            continue
-        starts = np.array([s for s, _, _ in segs])
-        ends = np.array([e for _, e, _ in segs])
-        founders = [f for _, _, f in segs]
-        mask = rec_chrom == chrom
-        if not mask.any():
-            continue
-        pos = rec_pos[mask]
-        # Binary search: for each pos, the segment whose start <= pos and end >= pos
-        idx = np.searchsorted(starts, pos, side='right') - 1
-        idx = np.clip(idx, 0, len(starts) - 1)
-        # Verify pos is within [start[idx], end[idx]]
-        in_range = (pos >= starts[idx]) & (pos <= ends[idx])
-        founders_arr = np.array(founders, dtype=object)
-        sub = np.where(in_range, founders_arr[idx], '')
-        out[mask] = sub
+def founder_at(rec_chrom, rec_pos, segs):
+    """Founder of each record's position on one individual's ancestry track ('' where no segment covers it).
+    segs: ancestry rows of the individual (chrom, start, end, founder), 1-based inclusive."""
+    out = np.full(len(rec_chrom), "", dtype=object)
+    for chrom, s in segs.sort_values("start").groupby("chrom"):
+        m = rec_chrom == chrom
+        starts, ends, founders = s.start.to_numpy(), s.end.to_numpy(), s.founder.astype(str).to_numpy(dtype=object)
+        k = np.clip(np.searchsorted(starts, rec_pos[m], side="right") - 1, 0, len(starts) - 1)
+        out[m] = np.where((rec_pos[m] >= starts[k]) & (rec_pos[m] <= ends[k]), founders[k], "")
     return out
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--ancestry", required=True)
-    ap.add_argument("--weights", required=True)
-    ap.add_argument("--var-pa", "--cn-var", dest="var_pa", required=True,
-                    help="founder × record alt-allele matrix (.var_pa.npz). "
-                         "(--cn-var accepted as a legacy alias.)")
-    ap.add_argument("--var-meta", "--cn-var-meta", dest="var_meta", required=True,
-                    help="matching meta .npz (founders, chrom, pos, ref_len, alt_len). "
-                         "(--cn-var-meta accepted as a legacy alias.)")
-    ap.add_argument("--var-called", default=None,
-                    help="founder × record called-mask (.var_called.npz). Required for "
-                         "MAR truth. If omitted, derived from --var-pa by swapping "
-                         "'.var_pa.npz'->'.var_called.npz' (or legacy "
-                         "'.cn_var.npz'->'.cn_var_called.npz').")
-    ap.add_argument("--out", required=True)
-    ap.add_argument("--source-weights", default=None,
-                    help="Optional source_weights.tsv (founder, prob). If absent, "
-                         "auto-detected next to --weights as 'source_weights.tsv'. "
-                         "When found, emits source_truth_af + source_info columns.")
-    args = ap.parse_args()
+    ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    for arg in ("--ancestry", "--shares", "--var-pa", "--var-called", "--var-meta", "--out"):
+        ap.add_argument(arg, required=True)
+    a = ap.parse_args()
+    alt, called = load_npz(a.var_pa).tocsr(), load_npz(a.var_called).tocsr()
+    meta = np.load(a.var_meta, allow_pickle=True)
+    row = {str(f): i for i, f in enumerate(meta["founders"])}
+    rec_chrom, rec_pos = np.asarray(meta["chrom"]).astype(str), np.asarray(meta["pos"]).astype(np.int64)
+    anc = pd.read_csv(a.ancestry, sep="\t", dtype={"founder": str})
+    share = pd.read_csv(a.shares, sep="\t").set_index("ind_id").share
+    assert set(share.index) == set(anc.ind_id) and abs(share.sum() - 1) < 1e-9, "shares.tsv does not match ancestry.tsv"
+    assert set(anc.founder) <= set(row), "ancestry founders missing from the variant panel"
 
-    print("loading inputs...", flush=True)
-    cn = load_npz(args.var_pa).tocsr()  # F × N
-    # Resolve the called-mask. Explicit --var-called wins; else derive from the
-    # var_pa path by the current ('.var_pa.npz') or legacy ('.cn_var.npz') name.
-    if args.var_called is not None:
-        called_path = args.var_called
-    elif ".var_pa.npz" in args.var_pa:
-        called_path = args.var_pa.replace(".var_pa.npz", ".var_called.npz")
-    else:
-        called_path = args.var_pa.replace(".cn_var.npz", ".cn_var_called.npz")
-    if called_path == args.var_pa:
-        raise ValueError(
-            f"Could not derive a called-mask path from --var-pa={args.var_pa} "
-            f"(name doesn't contain '.var_pa.npz' or '.cn_var.npz'). "
-            f"Pass --var-called explicitly. MAR truth requires the called mask, "
-            f"never the carrier matrix itself."
-        )
-    try:
-        cn_called = load_npz(called_path).tocsr()
-        print(f"  var_called loaded from {called_path}", flush=True)
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            f"MAR truth requires the called-mask .npz.\n"
-            f"Expected: {called_path}\n"
-            f"Pass --var-called explicitly or place it next to --var-pa."
-        )
-    meta = np.load(args.var_meta, allow_pickle=True)
-    cn_founders = list(meta["founders"])
-    founder_to_row = {f: i for i, f in enumerate(cn_founders)}
-    rec_chrom = np.asarray(meta["chrom"]).astype(str)
-    rec_pos = np.asarray(meta["pos"]).astype(np.int64)
-    rec_ref = np.asarray(meta["ref_len"]).astype(np.int32)
-    rec_alt = np.asarray(meta["alt_len"]).astype(np.int32)
-    N_records = len(rec_chrom)
-    F = len(cn_founders)
-    print(f"  cn_var: {F} founders × {N_records:,} records", flush=True)
-    print(f"  cn_var_called density: {cn_called.nnz/(F*N_records)*100:.2f}%", flush=True)
-
-    # Auto-detect source_weights.tsv next to --weights (or use --source-weights).
-    # When found, we compute the "infinite-pool" truth in addition to the realized
-    # pool truth. The pool↔source gap = Stage-1 sampling noise + drift.
-    src_path = args.source_weights
-    if src_path is None:
-        guess = str(Path(args.weights).parent / "source_weights.tsv")
-        if Path(guess).exists():
-            src_path = guess
-    source_probs = None
-    if src_path and Path(src_path).exists():
-        sw = pd.read_csv(src_path, sep='\t')
-        if {"founder", "prob"}.issubset(sw.columns):
-            prob_lookup = dict(zip(sw["founder"].astype(str), sw["prob"].astype(float)))
-            source_probs = np.array([prob_lookup.get(str(f), 0.0) for f in cn_founders],
-                                    dtype=np.float64)
-            s = source_probs.sum()
-            if s > 0:
-                source_probs = source_probs / s
-                print(f"  source_weights loaded from {src_path}", flush=True)
-                print(f"    nonzero source founders: "
-                      f"{int((source_probs>0).sum())}/{F}  "
-                      f"max p={source_probs.max():.4f}  "
-                      f"min p>0={source_probs[source_probs>0].min():.6f}",
-                      flush=True)
-            else:
-                print(f"  WARN: source_weights probs sum to 0 — skipping source_truth",
-                      flush=True)
-                source_probs = None
-        else:
-            print(f"  WARN: source_weights at {src_path} lacks (founder, prob) cols; "
-                  f"skipping source_truth", flush=True)
-    else:
-        print(f"  no source_weights.tsv — only realized-pool truth will be written",
-              flush=True)
-
-    anc = pd.read_csv(args.ancestry, sep='\t')
-    inds = sorted(anc.ind_id.unique())
-    n_indiv = len(inds)
-    print(f"  ancestry: {len(anc):,} segments across {n_indiv} individuals", flush=True)
-
-    # Per-individual pool weights. Two supported file formats:
-    #   1) `pool_weights.tsv` (founder, count, weight) — gen-0 founder weights.
-    #      In this case each individual gets uniform 1/n_indiv weight in the pool
-    #      (the original recomb-sim convention).
-    #   2) `visor_pool_fractions.tsv` (ind_id, clone_dir, visor_pct) — per-mosaic
-    #      pool fractions used by VISOR. Used by the SKEWED recomb sim.
-    #      Each individual gets visor_pct/100 weight in the pool.
-    weights_df = pd.read_csv(args.weights, sep='\t')
-    if 'ind_id' in weights_df.columns and 'visor_pct' in weights_df.columns:
-        # Skewed mode: per-individual weights. visor_pool_fractions.tsv keys
-        # individuals by the clone-dir basename ('s_ind001'); ancestry.tsv keys
-        # them as 'ind001'. Strip a leading 's_' so the two line up — otherwise
-        # every lookup below missed and silently fell back to uniform 1/n,
-        # producing a UNIFORM-pool truth for what is a skewed pool (the dominant
-        # founder's 50% was scored as 2%). [bug fixed 2026-06-18]
-        ind_weight = dict(zip(
-            weights_df['ind_id'].astype(str).str.replace(r'^s_', '', regex=True),
-            weights_df['visor_pct'].astype(float) / 100.0))
-        # Guard: refuse to silently fall back to uniform if the keys don't match
-        # the ancestry individuals.
-        missing = [i for i in inds if i not in ind_weight]
-        if missing:
-            raise ValueError(
-                f"{len(missing)}/{len(inds)} ancestry individuals have no weight in "
-                f"{args.weights} (e.g. {missing[:3]}). ind_id mismatch between "
-                f"visor_pool_fractions.tsv and ancestry.tsv — refusing to fall back "
-                f"to a uniform-pool truth for a skewed pool.")
-        ws = sum(ind_weight.values())
-        if abs(ws - 1.0) > 1e-3:
-            print(f"  WARN: pool weights sum to {ws:.4f}, not 1.0", flush=True)
-        print(f"  per-individual pool weights from {args.weights} (skewed mode)", flush=True)
-        print(f"    weight stats: min={min(ind_weight.values()):.4f} "
-              f"max={max(ind_weight.values()):.4f} "
-              f"sum={ws:.4f}", flush=True)
-    else:
-        # Uniform mode: each individual = 1/n_indiv
-        ind_weight = {ind: 1.0 / n_indiv for ind in inds}
-        print(f"  uniform per-individual pool weights (1/{n_indiv})", flush=True)
-
-    # MAR truth accumulates BOTH a weighted carrier sum (numerator) and a
-    # weighted called sum (denominator). Final truth_af = num / denom, and
-    # info = denom (fraction of pool h-mass observable at this record).
-    num = np.zeros(N_records, dtype=np.float64)
-    denom = np.zeros(N_records, dtype=np.float64)
-    n_assigned = np.zeros(N_records, dtype=np.int32)
-
-    for ind_idx, ind_id in enumerate(inds):
-        ind_anc = anc[anc.ind_id == ind_id]
-        segs_by_chrom = {}
-        for chrom, sub in ind_anc.groupby("chrom"):
-            sub_sorted = sub.sort_values("start")
-            segs_by_chrom[chrom] = list(zip(
-                sub_sorted.start.astype(int).tolist(),
-                sub_sorted.end.astype(int).tolist(),
-                sub_sorted.founder.astype(str).tolist(),
-            ))
-        founder_per_rec = assign_founder_per_record(rec_chrom, rec_pos, segs_by_chrom)
-        # For each record where the founder is known, pull both cn_var (carrier
-        # mask) and cn_var_called (called mask). Both go into the running totals
-        # weighted by this individual's pool weight.
-        ind_carrier = np.zeros(N_records, dtype=np.float32)
-        ind_called  = np.zeros(N_records, dtype=np.float32)
-        for f in set(founder_per_rec):
-            if f == '' or f not in founder_to_row:
-                continue
-            mask = founder_per_rec == f
-            row_idx = founder_to_row[f]
-            row_carrier = np.asarray(cn[row_idx, :].todense()).flatten()
-            row_called  = np.asarray(cn_called[row_idx, :].todense()).flatten()
-            ind_carrier[mask] = row_carrier[mask]
-            ind_called[mask]  = row_called[mask]
-            n_assigned[mask] += 1
-        w = ind_weight.get(ind_id, 1.0 / n_indiv)
-        num   += w * ind_carrier
-        denom += w * ind_called
-        if (ind_idx + 1) % 10 == 0:
-            print(f"  processed {ind_idx+1}/{n_indiv} individuals", flush=True)
-
-    # MAR projection. At records where denom is essentially 0 (no individual's
-    # ancestry-founder was called), truth_af is undefined — emit NaN. Downstream
-    # eval should filter or treat NaN explicitly. `info` is the denominator
-    # itself (h-mass observable).
-    INFO_EPS = 1e-9
-    info = denom.astype(np.float32)
-    truth_af = np.where(denom > INFO_EPS, num / np.maximum(denom, INFO_EPS),
-                        np.nan).astype(np.float32)
-
-    out_cols = {
-        "chrom":    rec_chrom,
-        "pos":      rec_pos,
-        "ref_len":  rec_ref,
-        "alt_len":  rec_alt,
-        "truth_af": truth_af,
-        "info":     info,
-    }
-
-    # If source_weights provided, compute the "infinite-pool" truth: project
-    # source population probabilities through cn_var (MAR). This is the
-    # population parameter the AF estimator is ultimately trying to recover —
-    # the realized-pool truth contains additional Stage-1 binomial + drift noise.
-    if source_probs is not None:
-        # Use sparse matrix products: source_probs is (F,), cn is (F, N).
-        src_num = np.asarray(source_probs @ cn).ravel()
-        src_den = np.asarray(source_probs @ cn_called).ravel()
-        source_info = src_den.astype(np.float32)
-        source_truth_af = np.where(src_den > INFO_EPS,
-                                   src_num / np.maximum(src_den, INFO_EPS),
-                                   np.nan).astype(np.float32)
-        out_cols["source_truth_af"] = source_truth_af
-        out_cols["source_info"] = source_info
-
-    out_df = pd.DataFrame(out_cols)
-    out_df.to_csv(args.out, sep='\t', index=False, compression='gzip' if args.out.endswith('.gz') else None)
-    print(f"\nwrote {args.out}", flush=True)
-    print(f"  truth_af nonzero (>0):     {((truth_af > 0) & np.isfinite(truth_af)).sum():,} / {N_records:,}", flush=True)
-    print(f"  truth_af in (0,1):         {((truth_af > 0) & (truth_af < 1)).sum():,}", flush=True)
-    print(f"  truth_af = NaN (info=0):   {np.isnan(truth_af).sum():,}", flush=True)
-    print(f"  info = 1 (fully observed): {(np.isclose(info, 1.0)).sum():,}", flush=True)
-    print(f"  records with all individuals ancestry-assigned: {(n_assigned == n_indiv).sum():,}", flush=True)
-    if source_probs is not None:
-        gap = np.abs(source_truth_af - truth_af)
-        gap = gap[np.isfinite(gap)]
-        print(f"  source_truth_af nonzero (>0): {((source_truth_af > 0) & np.isfinite(source_truth_af)).sum():,}", flush=True)
-        print(f"  |source - pool| truth gap:    mean={gap.mean():.4f}  median={np.median(gap):.4f}  "
-              f"p99={np.percentile(gap, 99):.4f}", flush=True)
-        print(f"    ↑ this gap is the Stage-1 binomial + drift noise floor", flush=True)
+    num, den = np.zeros(len(rec_pos)), np.zeros(len(rec_pos))
+    for ind, segs in anc.groupby("ind_id", sort=True):
+        f_at = founder_at(rec_chrom, rec_pos, segs)
+        carrier, obs = np.zeros(len(rec_pos), np.float32), np.zeros(len(rec_pos), np.float32)
+        for f in set(f_at) - {""}:
+            m = f_at == f
+            carrier[m] = alt[row[f]].toarray().ravel()[m]
+            obs[m] = called[row[f]].toarray().ravel()[m]
+        num += share[ind] * carrier
+        den += share[ind] * obs
+    truth = np.where(den > 1e-9, num / np.maximum(den, 1e-9), np.nan).astype(np.float32)
+    pd.DataFrame({"chrom": rec_chrom, "pos": rec_pos, "ref_len": np.asarray(meta["ref_len"]).astype(np.int32),
+                  "alt_len": np.asarray(meta["alt_len"]).astype(np.int32), "truth_af": truth,
+                  "info": den.astype(np.float32)}).to_csv(a.out, sep="\t", index=False)
+    print(f"{a.out}: {len(truth):,} records, {np.isnan(truth).sum():,} without a called founder", flush=True)
 
 
 if __name__ == "__main__":

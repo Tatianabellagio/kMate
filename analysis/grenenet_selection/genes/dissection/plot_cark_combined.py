@@ -13,9 +13,12 @@ genes THROUGH the distal SV (Chr2:13,090,000-13,137,000, ~47 kb). The founder-LD
 triangle answers whether that distal SV is genuinely linked to the CARK block.
 
 Three stacked panels, shared genomic x-axis (LocusZoom style):
-  A  LFMM GEA Manhattan (bio1 axis) -- driven by the wza_in cohort variants where
-     lfmm_p / dp live; -log10 p, colour = dp (final - p0), marker = SNP/indel/SV;
-     per-class genome-wide Bonferroni lines; droplines at class-Bonferroni hits.
+  A  LFMM GEA Manhattan (bio1 axis) -- from the production table
+     results/multiaxis/tile_cr50 (MAF >= 0.05, founder call rate >= 0.50, K=16, raw p):
+     records for SNPs / short indels, Truvari EVENTS for SVs (drawn at the event's
+     representative allele); -log10 p, colour = climate dp (hot - cold, gen 1-3; an
+     event's is the sum over its member records), marker = SNP/indel/SV; per-class
+     Bonferroni (0.05/n) lines; droplines at class-Bonferroni hits.
      Gene-model track on top (bodies + strand; CARK8/9 highlighted).
   B  Founder panel (231 accessions) -- ordered cold->hot by home bio1, left strip
      = home bio1 origin; ALT ticks across the window (SNP grey / indel orange /
@@ -26,6 +29,12 @@ Three stacked panels, shared genomic x-axis (LocusZoom style):
 
 Manhattan variants (cohort GEA) and panel genotypes (founder VCF) are DIFFERENT
 sets aligned by position -- as in cam5, on purpose.
+
+The account above is the one the old input gave (wza_in_clq09_tile: every SV allele tested
+on its own, no call-rate floor, merged SV blocks). In tile_cr50 the 5.1 kb insertion is ONE
+event of 11 alleles; its summed frequency is a weaker bio1 association and it no longer
+clears the SV Bonferroni, and its block is its own tiling block (no merge). The figure
+prints and labels whatever the table now says rather than the old p.
 
 env: kmate (python + pysam + matplotlib + scipy)
 """
@@ -46,16 +55,22 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 CHROM = "Chr2"
 LO, HI = 13_090_000, 13_137_000                      # ~47 kb: CARK genes -> distal SV
 AXIS = "bio1"
-REGION_VCF = f"{HERE}/cark_region.vcf.gz"
+RES = f"{HERE}/results"                              # where this figure's outputs are tracked
+REGION_VCF = f"{RES}/cark_region.vcf.gz"
 BIO_CSV = ("/global/scratch/users/tbellg/gea_grene-net/key_files/"
            "1001g_regmap_grenet_ecotype_info_corrected_bioclim_2024May16.csv")
-WZAIN = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/wza_in_clq09_tile"
+# Production GEA (replaces the pre-call-rate-floor wza_in_clq09_tile, now in
+# results/multiaxis/_superseded_pre_cr50/). sv rows are Truvari events (`unit`), shown at the
+# representative member allele -- the lead is matched by unit, not by its allele key.
+TILE = f"{lib.GEA}/r2_gea_nonsnp/phase1_replication/results/multiaxis/tile_cr50"
+UNITS_NPZ = f"{lib.GEA}/r1_sv_negative_selection/results/sv_adaptive/nonsnp_event_units.npz"
 GROUP_MEANS = f"{lib.GEA}/common/results/group_means.npz"
 GENES_HL = {"AT2G30730": "CARK9", "AT2G30740": "CARK8"}   # highlighted
 LEAD_POS = 13_127_635                                 # the 5.1 kb insertion
 
-# per-class genome-wide Bonferroni (0.05/n, MAF>0.05) -- the bars the peak cleared
-BONF = {"snp": 7.606, "smallindel": 7.131, "sv": 5.742}
+# per-class genome-wide Bonferroni, -log10(0.05/n rows); load_gea re-derives it from the table
+# (tile_cr50: 1,790,024 / 603,630 / 20,134 rows; the old 7.606 / 7.131 / 5.742 were pre-floor)
+BONF = {"snp": 7.554, "smallindel": 7.082, "sv": 5.605}
 CLSMARK = {"snp": ("o", 22), "smallindel": ("s", 26), "sv": ("D", 40)}
 CLSNAME = {"snp": "SNP", "smallindel": "indel", "sv": "SV"}
 
@@ -66,16 +81,43 @@ def variant_class(ref_len, alt_len):
     return "snp" if d == 0 else ("smallindel" if d < 50 else "sv")
 
 
+def unit_index():
+    """af_store non-SNP record keys + record -> unit map (nonsnp_event_units.npz, CSR)."""
+    I = np.load(f"{lib.AF_STORE}/index_nonsnp.npz", allow_pickle=True)
+    U = np.load(UNITS_NPZ, allow_pickle=True)
+    ip = U["indptr"]
+    unit_of = np.empty(len(I["pos"]), np.int64)
+    unit_of[U["indices"]] = np.repeat(np.arange(len(ip) - 1), np.diff(ip))
+    return I, unit_of, ip, U["indices"]
+
+
+def lead_units(I, unit_of):
+    """Unit(s) of the lead SV: every long (>= 3 kb) record at LEAD_POS, the same rule
+    founder_ld uses to aggregate it. The arch3 records are 11 assembly-path alleles of one
+    Truvari event, so this is one unit."""
+    rows = np.where((I["chrom"].astype(str) == CHROM) & (I["pos"] == LEAD_POS)
+                    & (np.abs(I["alt_len"] - I["ref_len"]) >= 3000))[0]
+    return sorted({int(u) for u in unit_of[rows]})
+
+
 def load_gea():
-    """Concat the disjoint GEA classes in the window; attach dp from group_means."""
+    """Concat the disjoint GEA classes in the window; attach dp from group_means.
+
+    Returns (window table, lead units). The table is already MAF >= 0.05 / call rate >= 0.50,
+    so no filter is re-applied and BONF is 0.05 / every row of the class.
+    """
+    I, unit_of, ip, ix = unit_index()
+    lu = lead_units(I, unit_of)
     frames = []
     for cls in ("snp", "smallindel", "sv"):
-        d = pd.read_csv(f"{WZAIN}/lfmm_{cls}_gen9_{AXIS}.csv")
-        d = d[(d.chrom == CHROM) & (d.pos >= LO) & (d.pos <= HI) & (d.MAF > 0.05)].copy()
+        d = pd.read_csv(f"{TILE}/lfmm_{cls}_gen9_{AXIS}.csv")
+        BONF[cls] = -np.log10(0.05 / len(d))
+        d = d[(d.chrom == CHROM) & (d.pos >= LO) & (d.pos <= HI)].copy()
         d["cls"] = cls
         frames.append(d)
     g = pd.concat(frames, ignore_index=True)
     g["nlp"] = -np.log10(g["pval"].clip(lower=1e-300))
+    g["lead"] = g.unit.isin(lu) if "unit" in g else False
 
     # colour = CLIMATE divergence dp_hc = mean over gen1-3 of (hot - cold) allele freq.
     # NB: a plain net (final - p0) is ~0 for a climate SV that is antagonistically
@@ -89,10 +131,22 @@ def load_gea():
     for ggen in (1, 2, 3):
         div += (z[f"hot_g{ggen}"] - z[f"cold_g{ggen}"])
     key["dp"] = div / 3.0                                  # mean hot-cold over gens
-    key = key[(key.chrom == CHROM) & (key.pos >= LO) & (key.pos <= HI)].copy()
-    g = g.merge(key[["chrom", "pos", "ref_len", "alt_len", "dp"]],
-                on=["chrom", "pos", "ref_len", "alt_len"], how="left")
-    return g
+    snp_rec = (key.ref_len.values == 1) & (key.alt_len.values == 1)
+    # SNP rows carry no unit: join on the allele key, but only where the key is unique among
+    # SNP records (a multiallelic site has two 1/1 records with one key) -- else left NaN
+    w = key[snp_rec & (key.chrom == CHROM).values & (key.pos >= LO).values
+            & (key.pos <= HI).values].drop_duplicates("pos", keep=False)
+    sn = g[g.cls == "snp"].merge(w[["chrom", "pos", "ref_len", "alt_len", "dp"]],
+                                 on=["chrom", "pos", "ref_len", "alt_len"], how="left")
+    # non-SNP rows: through the unit's member records (group_means' non-SNP rows are the
+    # af_store index_nonsnp rows in order). An event's frequency is the SUM of its members'
+    # (build_event_matrix.py), so its dp is the sum of theirs; a short indel is one record.
+    ns = g[g.cls != "snp"].copy()
+    gm_row = np.where(~snp_rec)[0]
+    dpv = key.dp.values
+    mem = [dpv[gm_row[ix[ip[int(u)]:ip[int(u) + 1]]]] for u in ns.unit]
+    ns["dp"] = [float(np.nansum(m)) if np.isfinite(m).any() else np.nan for m in mem]
+    return pd.concat([sn, ns], ignore_index=True), lu
 
 
 # ---------------------------------------------------------------- data: founder panel
@@ -176,7 +230,7 @@ def gene_track(ax, y0, dy):
 
 # ---------------------------------------------------------------- build figure
 def main():
-    gea = load_gea()
+    gea, lead_u = load_gea()
     samp, b1, V, G = load_panel()
     ldpos, R2 = founder_ld(V, G)
 
@@ -223,14 +277,33 @@ def main():
         axM.axhline(y, ls="--", color="#888", lw=0.8)
         axM.text(HI, y, f"{CLSNAME[cls]} Bonferroni (0.05/n)", ha="right",
                  va="bottom", fontsize=6.5, color="#666")
-    # lead SV: emphasise + annotate
-    lead = gea[gea.pos == LEAD_POS].iloc[0]
-    axM.scatter([LEAD_POS], [lead.nlp], marker="D", s=95, facecolor=DPCMAP(dnorm(lead.dp)),
-                edgecolor="#b2182b", linewidths=1.4, zorder=5)
-    axM.annotate(f"5.1 kb insertion\n(SV, p=3×10⁻⁸, MAF {lead.MAF:.2f})",
-                 xy=(LEAD_POS, lead.nlp), xytext=(LEAD_POS - 9000, lead.nlp - 1.4),
-                 fontsize=7, color="#7d1a12", ha="right",
-                 arrowprops=dict(arrowstyle="->", color="#7d1a12", lw=0.9))
+    # lead SV: emphasise + annotate -- by unit (the event row sits at its representative
+    # allele), with the p / MAF the table actually holds, not the old allele-level 3e-8
+    lr = gea[gea.lead]
+    if len(lr):
+        lead = lr.iloc[0]
+        m, e = f"{lead.pval:.0e}".split("e")
+        ptxt = rf"{m}\times10^{{{int(e)}}}"
+        print(f"lead SV (bio1, tile_cr50): unit {int(lead.unit)}, {int(lead.n_alleles)} alleles, "
+              f"shown at {lead.pos}:{lead.ref_len}/{lead.alt_len}, -log10 p = {lead.nlp:.2f} "
+              f"(SV Bonferroni {BONF['sv']:.2f}: "
+              f"{'clears' if lead.nlp >= BONF['sv'] else 'below'}), MAF {lead.MAF:.3f}, "
+              f"block {lead.block}")
+        axM.scatter([lead.pos], [lead.nlp], marker="D", s=95,
+                    facecolor=DPCMAP(dnorm(lead.dp if lead.dp == lead.dp else 0)),
+                    edgecolor="#b2182b", linewidths=1.4, zorder=5)
+        axM.annotate(f"5.1 kb insertion, SV event of {int(lead.n_alleles)} alleles\n"
+                     f"($p={ptxt}$, MAF {lead.MAF:.2f})",
+                     xy=(lead.pos, lead.nlp), xytext=(LEAD_POS - 9000, lead.nlp + 1.4),
+                     fontsize=7, color="#7d1a12", ha="right",
+                     arrowprops=dict(arrowstyle="->", color="#7d1a12", lw=0.9))
+    else:
+        print(f"lead SV (bio1, tile_cr50): ABSENT (units {lead_u}) -- dropped by the "
+              f"MAF or call-rate floor")
+        axM.annotate("5.1 kb insertion: not in the GEA table (MAF / call-rate floor)",
+                     xy=(LEAD_POS, 0.3), xytext=(LEAD_POS - 9000, 3.0), fontsize=7,
+                     color="#7d1a12", ha="right",
+                     arrowprops=dict(arrowstyle="->", color="#7d1a12", lw=0.9))
     axM.set_ylabel(r"$-\log_{10}(p)$  LFMM (bio1)", fontsize=9)
     ytop = max(9.3, gea.nlp.max() + 1.6)
     axM.set_ylim(-0.4, ytop)
@@ -310,8 +383,8 @@ def main():
     axL.axvline(LEAD_POS, ls="--", color="#b2182b", lw=0.7, alpha=0.8)
     axL.text(LO, 0, "founder LD (r$^2$, MAF≥0.05 + lead SV)", ha="left",
              va="top", fontsize=7, color="#555")
-    axL.annotate("lead SV sits in tiling block Chr2_5306 but is merged into the CARK\n"
-                 "block Chr2_5291 (sparse-SV merge → 40 kb WZA unit). Founder r²≤0.05\n"
+    axL.annotate("lead SV sits in tiling block Chr2_5306 (the old WZA input merged it into\n"
+                 "the CARK block Chr2_5291: sparse-SV merge → 40 kb unit). Founder r²≤0.05\n"
                  "to the CARK LD island, r²=0.88 to its own local block (AT2G30800/810)",
                  xy=(LEAD_POS, yc.min() * 0.28), xytext=(LO + 1500, yc.min() * 0.60),
                  fontsize=7, color="#7d1a12", ha="left",
@@ -325,13 +398,13 @@ def main():
 
     axL.set_xlim(LO - 3200, HI + 200)                    # position ruler lives on axH
 
-    out = f"{HERE}/cark_combined_manhattan_hap"
+    out = f"{RES}/plots/cark_combined_manhattan_hap"
     fig.savefig(out + ".png", dpi=170, bbox_inches="tight")
     fig.savefig(out + ".pdf", bbox_inches="tight")
     print(f"wrote {out}.png / .pdf")
 
     # also dump the GEA variant table for the record
-    gea.sort_values("nlp", ascending=False).to_csv(f"{HERE}/cark_gea_variants_{AXIS}.csv",
+    gea.sort_values("nlp", ascending=False).to_csv(f"{RES}/cark_gea_variants_{AXIS}.csv",
                                                     index=False)
     print(f"wrote cark_gea_variants_{AXIS}.csv")
 

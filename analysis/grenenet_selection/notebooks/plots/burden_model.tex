@@ -1,0 +1,91 @@
+% Founder burden model -- slides. Numbers from results/sv_adaptive/sv_burden_lmm_event.csv,
+% sv_burden_lmm_joint_event.csv, sv_burden_lmm_perm_event.npz, sv_burden_lmm_by_garden_event.csv
+% (SV unit = Truvari event, `truvari collapse` defaults).
+\documentclass[aspectratio=169,11pt]{beamer}
+\usetheme{default}
+\usepackage{amsmath,amssymb,booktabs}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{block title}{bg=gray!15,fg=black}
+\setbeamercolor{block body}{bg=gray!5}
+\setbeamerfont{block title}{size=\small}
+\newcommand{\tightdisplays}{\setlength{\abovedisplayskip}{3pt}\setlength{\belowdisplayskip}{3pt}%
+  \setlength{\abovedisplayshortskip}{3pt}\setlength{\belowdisplayshortskip}{3pt}}
+\begin{document}
+
+\begin{frame}[shrink]{Founder burden model --- do coding insertions cost fitness?}
+\small\tightdisplays
+
+\textbf{Unit: the founder} ($n=231$), not the variant. Fitted once on mean fitness,
+and once per garden.
+\vspace{-2pt}
+
+\begin{block}{Response --- how founder $f$ fared in GrENE-Net}
+\[
+y_f=\frac{1}{31}\sum_{s=1}^{31}
+\log\!\frac{H_{0f}+\Delta H_{sf}+\varepsilon}{H_{0f}+\varepsilon},
+\qquad \varepsilon=10^{-5}
+\]
+$H_{0f}$: frequency of founder $f$ in the seed mix;\;
+$\Delta H_{sf}$: its change in garden $s$ (last generation).
+\end{block}
+\vspace{-4pt}
+
+\begin{block}{Predictor --- burden as a \emph{rate}, per class $c$}
+\[
+r^{(c)}_f=\frac{\#\{\text{class-}c\ \text{variants } f \text{ carries}\}}
+                {\#\{\text{class-}c\ \text{variants } f \text{ is called at}\}}
+\]
+\end{block}
+\vspace{-4pt}
+
+\begin{block}{Linear mixed model (REML, Wald test on $\beta_1$)}
+\[
+\mathbf{y}=\beta_0+\beta_1 z\!\left(r^{\mathrm{CDS}}\right)
++\beta_2 z\!\left(r^{\mathrm{interg}}\right)
++\beta_3 z(c_{\mathrm{SV}})+\beta_4 z(c_{\mathrm{SNP}})+\beta_5 a
++\mathbf{u}+\mathbf{e}
+\]
+\[
+\mathbf{u}\sim\mathcal{N}(\mathbf{0},\sigma^2_g\mathbf{K}),\qquad
+\mathbf{e}\sim\mathcal{N}(\mathbf{0},\sigma^2_e\mathbf{I}_{231})
+\]
+\end{block}
+
+\end{frame}
+
+\begin{frame}[shrink]{Burden model --- terms and result}
+
+\begin{itemize}\itemsep3pt
+  \item $z(\cdot)$: standardised across founders, so $\beta_1$ is
+        \textbf{per SD of burden}. Median founder carries $46$ of $347$ called
+        shared CDS insertion events; $1\,\mathrm{SD}\approx 9.5$ events.
+  \item $\beta_2$, \textbf{intergenic burden of the same class}: absorbs how far a
+        founder is from the reference overall $\Rightarrow$ $\beta_1$ is a
+        \textbf{CDS-specific} contrast ($r=0.76$ between the two rates).
+  \item $\beta_3,\beta_4$: SV and SNP call rates. $\beta_5$: $a=1$ for long-read
+        (cactus) founders.
+  \item $\mathbf{K}$: standardised SNP GRM, $\mathbf{K}=\mathbf{Z}\mathbf{Z}^{\!\top}\!/M$
+        ($M\approx35{,}000$ SNPs, MAC $\ge 5$, called in $\ge 90\%$).
+        \textbf{Relatedness is in the model}, so $\beta_1$ is not a lineage effect.
+        Fitted share of kinship variance: $h^2=0.74$.
+\end{itemize}
+
+\begin{center}
+\begin{tabular}{lcc}
+\toprule
+Shared CDS insertion burden & $\beta_1$ (per SD) & $p$ \\
+\midrule
+Main model                            & $-0.219 \pm 0.064$ & $6\times10^{-4}$ \\
+\quad permutation null (1000$\times$) &                    & $<0.001$ \\
+$+$ SNP and indel CDS burden          & $-0.175 \pm 0.066$ & $0.008$ \\
+Rare events only (2--10 carriers)     & $-0.150 \pm 0.058$ & $0.010$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+Fitted garden by garden: $\beta_1<0$ in \textbf{29 of 31} gardens.
+
+\end{frame}
+
+\end{document}
